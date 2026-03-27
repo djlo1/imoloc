@@ -1,4 +1,5 @@
 import AddUserModal from '../components/AddUserModal'
+import AddUserModal from '../components/AddUserModal'
 import { useState, useEffect, useRef } from 'react'
 import AddUserModal from '../components/AddUserModal'
 import { Link } from 'react-router-dom'
