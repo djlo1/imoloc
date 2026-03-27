@@ -1,7 +1,5 @@
 import AddUserModal from '../components/AddUserModal'
-import AddUserModal from '../components/AddUserModal'
 import { useState, useEffect, useRef } from 'react'
-import AddUserModal from '../components/AddUserModal'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
@@ -513,38 +511,9 @@ export default function Overview() {
       )}
 
       {/* ══ MODAL AJOUTER UTILISATEUR ══ */}
-      /* AddUserModal externe */
-      {showAddUserModal && (
-        <div className="ov-modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowAddUserModal(false)}>
-          <div className="ov-modal">
-            <div className="ov-modal-head">
-              <span className="ov-modal-title">Ajouter un utilisateur</span>
-              <button className="ov-modal-close" onClick={()=>setShowAddUserModal(false)}><svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
-            </div>
-            <div className="ov-modal-body">
-              <div style={{padding:'12px 14px',borderRadius:8,background:'rgba(0,120,212,0.08)',border:'1px solid rgba(0,120,212,0.2)',fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:18}}>
-                Ajoutez un membre à votre organisation. Un email d'invitation sera envoyé.
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
-                <div><label className="ov-form-lbl">Prénom *</label><input className="ov-form-input" value={newUser.prenom} onChange={e=>setNewUser(p=>({...p,prenom:e.target.value}))} placeholder="Jean"/></div>
-                <div><label className="ov-form-lbl">Nom *</label><input className="ov-form-input" value={newUser.nom} onChange={e=>setNewUser(p=>({...p,nom:e.target.value}))} placeholder="Dupont"/></div>
-              </div>
-              <label className="ov-form-lbl">Email professionnel *</label>
-              <input className="ov-form-input" type="email" value={newUser.email} onChange={e=>setNewUser(p=>({...p,email:e.target.value}))} placeholder="jean.dupont@organisation.com"/>
-              <label className="ov-form-lbl">Rôle</label>
-              <select className="ov-form-input" value={newUser.role} onChange={e=>setNewUser(p=>({...p,role:e.target.value}))}>
-                {['Administrateur','Gestionnaire','Agent','Comptable','Lecteur'].map(r=><option key={r}>{r}</option>)}
-              </select>
-            </div>
-            <div className="ov-modal-foot">
-              <button className="ov-btn ov-btn-ghost" onClick={()=>setShowAddUserModal(false)}>Annuler</button>
-              <button className="ov-btn ov-btn-blue">Envoyer l'invitation</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showAddUserModal && <AddUserModal onClose={() => setShowAddUserModal(false)} agenceName={agence?.nom || 'Mon organisation'}/>}
 
-      {/* ══ MODAL RÉINITIALISER MOT DE PASSE ══ */}
+            {/* ══ MODAL RÉINITIALISER MOT DE PASSE ══ */}
       {showResetModal && (
         <div className="ov-modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowResetModal(false)}>
           <div className="ov-modal">
