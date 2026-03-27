@@ -1,4 +1,6 @@
+import AddUserModal from '../components/AddUserModal'
 import { useState, useEffect, useRef } from 'react'
+import AddUserModal from '../components/AddUserModal'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
@@ -510,6 +512,7 @@ export default function Overview() {
       )}
 
       {/* ══ MODAL AJOUTER UTILISATEUR ══ */}
+      /* AddUserModal externe */
       {showAddUserModal && (
         <div className="ov-modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowAddUserModal(false)}>
           <div className="ov-modal">
