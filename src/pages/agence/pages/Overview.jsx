@@ -95,17 +95,17 @@ export default function Overview() {
         .ov-bar-more:hover{color:#e6edf3;background:rgba(255,255,255,0.06)}
 
         /* ── Vue dropdown ── */
-        .ov-vd{position:absolute;top:calc(100% + 4px);left:0;background:#1c2434;border:1px solid rgba(255,255,255,0.09);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:100;min-width:240px;overflow:hidden}
+        .ov-vd{position:absolute;top:calc(100% + 4px);left:0;background:#1c2434;border:1px solid rgba(255,255,255,0.09);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:500;min-width:240px;overflow:hidden}
         .ov-vd-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13.5px;color:rgba(255,255,255,0.6);cursor:pointer;transition:background 0.1s;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif}
         .ov-vd-item:hover{background:rgba(255,255,255,0.05);color:#e6edf3}
         .ov-vd-item.active{color:#4da6ff}
         .ov-vd-check{width:16px;height:16px;flex-shrink:0}
 
         /* ── More dropdown ── */
-        .ov-md{position:absolute;top:calc(100% + 4px);right:0;background:#1c2434;border:1px solid rgba(255,255,255,0.09);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:100;min-width:220px;overflow:hidden}
+        .ov-md{position:absolute;top:calc(100% + 4px);right:0;background:#1c2434;border:1px solid rgba(255,255,255,0.09);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:500;min-width:220px;overflow:hidden}
 
         /* ── Custom dropdown ── */
-        .ov-cd{position:absolute;top:calc(100% + 4px);right:0;background:#1c2434;border:1px solid rgba(255,255,255,0.09);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:100;width:280px}
+        .ov-cd{position:absolute;top:calc(100% + 4px);right:0;background:#1c2434;border:1px solid rgba(255,255,255,0.09);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:500;width:280px}
         .ov-cd-head{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.07);font-size:14px;font-weight:600;color:#e6edf3}
         .ov-cd-item{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;transition:background 0.1s}
         .ov-cd-item:hover{background:rgba(255,255,255,0.04)}

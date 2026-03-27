@@ -25,24 +25,52 @@ export default function DashboardAgence() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html,body,#root{width:100%;min-height:100vh}
-        .ac{display:flex;width:100vw;min-height:100vh;background:#0d1117;font-family:'Inter',sans-serif;color:#e6edf3;overflow:hidden}
+
+        /* ── Layout principal ── */
+        .ac-root{display:flex;flex-direction:column;width:100vw;min-height:100vh;background:#0d1117;font-family:'Inter',sans-serif;color:#e6edf3}
+
+        /* Header pleine largeur EN HAUT */
+        .ac-header{width:100%;flex-shrink:0}
+
+        /* Contenu sous le header = sidebar + page */
+        .ac-body{display:flex;flex:1;min-height:0;overflow:hidden}
+
+        /* Sidebar */
+        .ac-sidebar{flex-shrink:0}
+
+        /* Overlay mobile */
         .ac-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;backdrop-filter:blur(4px);display:none}
-        .ac-main{display:flex;flex-direction:column;flex:1;min-width:0}
-        .ac-content{flex:1;overflow-y:auto;padding:0;min-height:calc(100vh - 48px)}
-        .ac-content-inner{padding:24px 28px;max-width:1400px}
-        @media(max-width:768px){.ac-overlay{display:block}.ac-content-inner{padding:16px}}
+        @media(max-width:768px){.ac-overlay{display:block}}
+
+        /* Zone de contenu */
+        .ac-main{flex:1;overflow-y:auto;min-width:0}
+        .ac-inner{padding:24px 28px}
+        @media(max-width:768px){.ac-inner{padding:16px}}
       `}</style>
-      <div className="ac">
-        {mobileOpen && <div className="ac-overlay" onClick={() => setMobileOpen(false)}/>}
-        <Sidebar collapsed={collapsed} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)}/>
-        <div className="ac-main">
+
+      <div className="ac-root">
+        {/* ── HEADER PLEINE LARGEUR ── */}
+        <div className="ac-header">
           <Header
             onMenuClick={() => setMobileOpen(true)}
             onToggleSidebar={() => setCollapsed(!collapsed)}
-            collapsed={collapsed}
           />
-          <div className="ac-content">
-            <div className="ac-content-inner">
+        </div>
+
+        {/* ── CORPS = SIDEBAR + CONTENU ── */}
+        <div className="ac-body">
+          {mobileOpen && <div className="ac-overlay" onClick={() => setMobileOpen(false)}/>}
+
+          <div className="ac-sidebar">
+            <Sidebar
+              collapsed={collapsed}
+              mobileOpen={mobileOpen}
+              onClose={() => setMobileOpen(false)}
+            />
+          </div>
+
+          <div className="ac-main">
+            <div className="ac-inner">
               <Routes>
                 <Route index element={<Overview />} />
                 <Route path="biens" element={<Biens />} />
