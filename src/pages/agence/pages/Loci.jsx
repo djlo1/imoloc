@@ -26,6 +26,8 @@ export default function Loci() {
   const [activeConvId, setActiveConvId] = useState(null)
   const [showHistory, setShowHistory] = useState(false)
   const [savingConv, setSavingConv] = useState(false)
+  const [histSearch, setHistSearch] = useState('')
+  const [favorites, setFavorites] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [thinking, setThinking] = useState(false)
@@ -45,7 +47,10 @@ export default function Loci() {
         const { data:myProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
         
         // Déterminer le vrai rôle
-        const userRole = myProfile?.role || user?.user_metadata?.role || 'global_admin'
+        // Le créateur de l'agence est toujours global_admin
+        const isAgenceOwner = ag?.profile_id === user.id
+        const userRole = isAgenceOwner ? 'global_admin' : (myProfile?.role || user?.user_metadata?.role || 'global_admin')
+        console.log('Loci role détecté:', userRole, '| isOwner:', isAgenceOwner, '| profileRole:', myProfile?.role)
 
         // Agence
         const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
@@ -261,6 +266,49 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
     { icon:'📈', title:'Dashboard exécutif', desc:'Vue synthétique pour la prise de décision rapide', color:'#a78bfa', badge:'Disponible' },
     { icon:'🤝', title:'Analyse locataires', desc:'Historique, comportement et recommandations par locataire', color:'#0078d4', badge:'IA' },
   ]
+
+  // Composant item conversation
+  const ConvItem = ({ conv, active, isFav, onOpen, onFav, onArchive }) => {
+    const [menuOpen, setMenuOpen] = useState(false)
+    return (
+      <div style={{position:'relative',marginBottom:3}}>
+        <div
+          className={`loci-hist-item ${active?'active':''}`}
+          onClick={onOpen}>
+          <div style={{display:'flex',alignItems:'center',justify:'space-between',gap:6}}>
+            <div className="loci-hist-item-title" style={{flex:1}}>{conv.titre || 'Conversation'}</div>
+            <div style={{display:'flex',gap:4,flexShrink:0}}>
+              <button onClick={e=>{e.stopPropagation();onFav()}}
+                style={{background:'none',border:'none',cursor:'pointer',fontSize:12,opacity:isFav?1:0.3,padding:'1px 2px',transition:'opacity 0.15s'}}
+                title={isFav?'Retirer des favoris':'Ajouter aux favoris'}>⭐</button>
+              <button onClick={e=>{e.stopPropagation();setMenuOpen(m=>!m)}}
+                style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:14,padding:'1px 2px',lineHeight:1}}>···</button>
+            </div>
+          </div>
+          <div className="loci-hist-item-date">
+            {new Date(conv.updated_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
+          </div>
+        </div>
+        {menuOpen && (
+          <div style={{position:'absolute',right:0,top:'100%',background:'#1c2434',border:'1px solid rgba(255,255,255,0.09)',borderRadius:7,zIndex:10,minWidth:160,boxShadow:'0 8px 24px rgba(0,0,0,0.5)',overflow:'hidden'}}>
+            <button onClick={()=>{onOpen();setMenuOpen(false)}}
+              style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.65)',fontSize:13,fontFamily:'Inter',width:'100%',textAlign:'left'}}>
+              ▶ Continuer la conversation
+            </button>
+            <button onClick={()=>{onFav();setMenuOpen(false)}}
+              style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.65)',fontSize:13,fontFamily:'Inter',width:'100%',textAlign:'left'}}>
+              ⭐ {isFav?'Retirer des favoris':'Mettre en favori'}
+            </button>
+            <div style={{height:'1px',background:'rgba(255,255,255,0.06)'}}/>
+            <button onClick={()=>{onArchive();setMenuOpen(false)}}
+              style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(239,68,68,0.7)',fontSize:13,fontFamily:'Inter',width:'100%',textAlign:'left'}}>
+              🗑️ Archiver / Supprimer
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <>
@@ -620,7 +668,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                   </div>
                   <div style={{marginLeft:'auto',display:'flex',gap:8}}>
                     <button className="loci-hist-btn" onClick={()=>setShowHistory(h=>!h)}>
-                      🕐 Historique
+                      💬 Mes conversations
                     </button>
                     <button className="loci-hist-btn" onClick={()=>{ setMessages([WELCOME]); setActiveConvId(null) }}>
                       + Nouveau
@@ -682,31 +730,83 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                 </div>
               </div>
 
-              {/* Historique conversations */}
+              {/* Mes conversations */}
               {showHistory && (
                 <div className="loci-hist-panel">
                   <div className="loci-hist-head">
-                    <span className="loci-hist-title">🕐 Historique</span>
-                    <span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>3 mois</span>
+                    <span className="loci-hist-title">💬 Mes conversations</span>
+                    <span style={{fontSize:10,padding:'2px 7px',borderRadius:'100px',background:'rgba(108,99,255,0.12)',color:'#a78bfa',border:'1px solid rgba(108,99,255,0.2)'}}>3 mois</span>
                   </div>
+
+                  {/* Recherche */}
+                  <div style={{padding:'8px 10px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:7,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:7,padding:'7px 10px'}}>
+                      <svg width="12" height="12" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
+                      <input
+                        value={histSearch}
+                        onChange={e=>setHistSearch(e.target.value)}
+                        placeholder="Rechercher..."
+                        style={{background:'none',border:'none',outline:'none',fontFamily:'Inter',fontSize:12.5,color:'#e6edf3',width:'100%'}}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Nouvelle conversation */}
                   <button className="loci-hist-new" onClick={()=>{ setMessages([WELCOME]); setActiveConvId(null) }}>
-                    + Nouvelle conversation
+                    <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                    Nouvelle conversation
                   </button>
+
                   <div className="loci-hist-list">
+                    {/* Favoris */}
+                    {favorites.length > 0 && (
+                      <>
+                        <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.25)',textTransform:'uppercase',letterSpacing:'0.08em',padding:'4px 6px',marginBottom:4}}>⭐ Favoris</div>
+                        {conversations
+                          .filter(c=>favorites.includes(c.id) && c.titre?.toLowerCase().includes(histSearch.toLowerCase()))
+                          .map((conv,i)=>(
+                          <ConvItem key={i} conv={conv} active={activeConvId===conv.id} isFav={true}
+                            onOpen={async()=>{
+                              const { data } = await supabase.from('loci_conversations').select('messages').eq('id', conv.id).single()
+                              if (data?.messages) { setMessages(data.messages); setActiveConvId(conv.id) }
+                            }}
+                            onFav={()=>setFavorites(f=>f.includes(conv.id)?f.filter(x=>x!==conv.id):[...f,conv.id])}
+                            onArchive={async()=>{
+                              await supabase.from('loci_conversations').delete().eq('id', conv.id)
+                              setConversations(p=>p.filter(c=>c.id!==conv.id))
+                              if (activeConvId===conv.id) { setMessages([WELCOME]); setActiveConvId(null) }
+                            }}
+                          />
+                        ))}
+                        <div style={{height:'1px',background:'rgba(255,255,255,0.06)',margin:'8px 0'}}/>
+                      </>
+                    )}
+
+                    {/* Toutes les conversations */}
                     {conversations.length === 0 ? (
-                      <div className="loci-hist-empty">Aucune conversation sauvegardée</div>
-                    ) : conversations.map((conv,i) => (
-                      <div key={i}
-                        className={`loci-hist-item ${activeConvId===conv.id?'active':''}`}
-                        onClick={async()=>{
+                      <div className="loci-hist-empty">
+                        <div style={{fontSize:24,marginBottom:8,opacity:0.3}}>💬</div>
+                        Aucune conversation sauvegardée
+                      </div>
+                    ) : conversations
+                        .filter(c=>!favorites.includes(c.id) && c.titre?.toLowerCase().includes(histSearch.toLowerCase()))
+                        .length === 0 && histSearch ? (
+                      <div className="loci-hist-empty">Aucun résultat pour "{histSearch}"</div>
+                    ) : conversations
+                        .filter(c=>!favorites.includes(c.id) && c.titre?.toLowerCase().includes(histSearch.toLowerCase()))
+                        .map((conv,i)=>(
+                      <ConvItem key={i} conv={conv} active={activeConvId===conv.id} isFav={false}
+                        onOpen={async()=>{
                           const { data } = await supabase.from('loci_conversations').select('messages').eq('id', conv.id).single()
                           if (data?.messages) { setMessages(data.messages); setActiveConvId(conv.id) }
-                        }}>
-                        <div className="loci-hist-item-title">{conv.titre || 'Conversation'}</div>
-                        <div className="loci-hist-item-date">
-                          {new Date(conv.updated_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
-                        </div>
-                      </div>
+                        }}
+                        onFav={()=>setFavorites(f=>f.includes(conv.id)?f.filter(x=>x!==conv.id):[...f,conv.id])}
+                        onArchive={async()=>{
+                          await supabase.from('loci_conversations').delete().eq('id', conv.id)
+                          setConversations(p=>p.filter(c=>c.id!==conv.id))
+                          if (activeConvId===conv.id) { setMessages([WELCOME]); setActiveConvId(null) }
+                        }}
+                      />
                     ))}
                   </div>
                 </div>
