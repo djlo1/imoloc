@@ -9,8 +9,9 @@ const NAV = [
   { id:'users', label:'Utilisateurs', icon:'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z',
     children:[
       { label:'Utilisateurs actifs', path:'/agence/utilisateurs' },
-      { label:'Propriétaires', path:'/agence/proprietaires' },
-      { label:'Invités', path:'/agence/invites' },
+      { label:'Contacts', path:'/agence/utilisateurs/contacts' },
+      { label:'Utilisateurs invités', path:'/agence/utilisateurs/invites' },
+      { label:'Utilisateurs supprimés', path:'/agence/utilisateurs/supprimes' },
     ]
   },
   { id:'biens', label:'Biens immobiliers', icon:'M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z',
