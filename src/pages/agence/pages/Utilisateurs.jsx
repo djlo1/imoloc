@@ -848,10 +848,21 @@ export default function Utilisateurs() {
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
-              <div className="ud-quick">
-                <button className="ud-qa">🔑 Réinitialiser le mot de passe</button>
-                <button className="ud-qa">🚫 Bloquer la connexion</button>
-                {!selectedUser.isOwner&&<button className="ud-qa red" onClick={()=>handleDelete(selectedUser)}>❌ Supprimer</button>}
+              <div style={{display:'flex',alignItems:'center',gap:24,marginBottom:20,flexWrap:'wrap'}}>
+                <span style={{display:'flex',alignItems:'center',gap:8,fontSize:13.5,color:'rgba(255,255,255,0.8)',cursor:'pointer'}}>
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/></svg>
+                  Réinitialiser le mot de passe
+                </span>
+                <span style={{display:'flex',alignItems:'center',gap:8,fontSize:13.5,color:'rgba(255,255,255,0.8)',cursor:'pointer'}}>
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                  Bloquer la connexion
+                </span>
+                {!selectedUser.isOwner&&(
+                  <span style={{display:'flex',alignItems:'center',gap:8,fontSize:13.5,color:'rgba(255,255,255,0.8)',cursor:'pointer'}} onClick={()=>handleDelete(selectedUser)}>
+                    <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z"/></svg>
+                    Supprimer l'utilisateur
+                  </span>
+                )}
               </div>
               <div className="ud-tabs">
                 {['compte','appareils','licences','courrier','onedrive'].map(t=>(
