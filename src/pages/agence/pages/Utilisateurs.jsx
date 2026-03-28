@@ -304,7 +304,7 @@ export default function Utilisateurs() {
 
         /* Drawer utilisateur */
         .ud-ov{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;display:flex;justify-content:flex-end}
-        .ud-panel{width:780px;height:100%;background:#161b22;border-left:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;animation:up-sl 0.22s ease;overflow:hidden}
+        .ud-panel{width:920px;height:100%;background:#161b22;border-left:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;animation:up-sl 0.22s ease;overflow:hidden}
         .ud-head{padding:32px 36px 0;background:linear-gradient(135deg,rgba(0,120,212,0.06),rgba(108,99,255,0.04));border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
         .ud-head-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
         .ud-av{width:86px;height:86px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#fff;flex-shrink:0}
@@ -314,13 +314,43 @@ export default function Utilisateurs() {
         .ud-qa{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:6px;font-size:13.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:'Inter',sans-serif;transition:all 0.15s}
         .ud-qa:hover{background:rgba(255,255,255,0.09);color:#e6edf3}
         .ud-qa.red{border-color:rgba(239,68,68,0.25);color:#ef4444;background:rgba(239,68,68,0.05)}.ud-qa.red:hover{background:rgba(239,68,68,0.12)}
-        .ud-tabs{display:flex;overflow-x:auto;gap:0}
+        .ud-tabs{display:flex;overflow-x:visible;gap:0;flex-wrap:wrap}
         .ud-tab{padding:12px 20px;font-size:14px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap}
         .ud-tab:hover{color:rgba(255,255,255,0.75)}.ud-tab.active{color:#e6edf3;border-bottom-color:#0078d4}
         .ud-body{flex:1;overflow-y:auto;padding:32px 36px}
         .ud-body::-webkit-scrollbar{width:4px}
         .ud-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
         .ud-section{margin-bottom:40px}
+        .ud-grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:0}
+        .ud-field{display:flex;flex-direction:column;gap:6px;padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px;transition:all 0.15s}
+        .ud-field:hover{border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.04)}
+        .ud-field-lbl{font-size:12px;color:rgba(255,255,255,0.35);font-weight:500;text-transform:uppercase;letter-spacing:0.06em}
+        .ud-field-val{font-size:14.5px;color:#e6edf3;font-weight:500}
+        .ud-field-val a{color:#4da6ff;text-decoration:none}.ud-field-val a:hover{text-decoration:underline}
+        .ud-field-val.empty{color:rgba(255,255,255,0.25);font-style:italic;font-weight:400}
+        .ud-device-card{display:flex;align-items:center;gap:14px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;margin-bottom:10px;transition:all 0.15s}
+        .ud-device-card:hover{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.05)}
+        .ud-device-icon{width:44px;height:44px;border-radius:10px;background:rgba(0,120,212,0.12);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+        .ud-device-name{font-size:14px;font-weight:600;color:#e6edf3;margin-bottom:3px}
+        .ud-device-meta{font-size:12px;color:rgba(255,255,255,0.35)}
+        .ud-device-status{display:flex;align-items:center;gap:5px;font-size:12px;color:#00c896;margin-top:3px}
+        .ud-revoke-btn{margin-left:auto;padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid rgba(239,68,68,0.25);background:rgba(239,68,68,0.07);color:#ef4444;font-family:Inter,sans-serif;transition:all 0.15s;flex-shrink:0}
+        .ud-revoke-btn:hover{background:rgba(239,68,68,0.15)}
+        .ud-mail-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;margin-bottom:10px;transition:all 0.15s}
+        .ud-mail-card:hover{border-color:rgba(255,255,255,0.12)}
+        .ud-mail-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+        .ud-add-btn{display:flex;align-items:center;gap:8px;padding:11px 16px;border-radius:8px;border:1.5px dashed rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.4);font-family:Inter,sans-serif;font-size:13.5px;cursor:pointer;transition:all 0.15s;width:100%}
+        .ud-add-btn:hover{border-color:rgba(0,120,212,0.4);color:#4da6ff;background:rgba(0,120,212,0.05)}
+        .ud-file-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;margin-bottom:8px;transition:all 0.15s;cursor:pointer}
+        .ud-file-card:hover{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.05)}
+        .ud-file-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+        .ud-file-name{font-size:13.5px;font-weight:500;color:#e6edf3;margin-bottom:2px}
+        .ud-file-meta{font-size:11.5px;color:rgba(255,255,255,0.3)}
+        .ud-file-dl{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.3);padding:5px;border-radius:5px;transition:all 0.1s;display:flex;flex-shrink:0}
+        .ud-file-dl:hover{background:rgba(255,255,255,0.08);color:#e6edf3}
+        .ud-drive-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+        .ud-drive-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+        .ud-drive-stat{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px 14px;text-align:center}
         .ud-sh{font-size:13px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
         .ud-sa{font-size:12px;color:#4da6ff;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500;background:none;border:none;font-family:'Inter',sans-serif}
         .ud-sa:hover{text-decoration:underline}
@@ -820,90 +850,159 @@ export default function Utilisateurs() {
               {/* ── Onglet Compte ── */}
               {userPanelTab==='compte'&&(
                 <>
+                  {/* Identité + Activité en 2 colonnes */}
                   <div className="ud-section">
-                    <div className="ud-sh">
-                      Identité
-                      <button className="ud-sa">Gérer le nom d'utilisateur</button>
+                    <div className="ud-sh">Identité <button className="ud-sa">Gérer</button></div>
+                    <div className="ud-grid2">
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Prénom</span>
+                        <span className="ud-field-val">{selectedUser.prenom||<span className="empty">Non renseigné</span>}</span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Nom</span>
+                        <span className="ud-field-val">{selectedUser.nom||<span className="empty">Non renseigné</span>}</span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Email principal</span>
+                        <span className="ud-field-val">{selectedUser.email||'—'}</span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Type de compte</span>
+                        <span className="ud-field-val">{selectedUser.type_compte||'Organisation'}</span>
+                      </div>
                     </div>
-                    <div className="ud-row"><span className="ud-rk">Nom d'utilisateur</span><span className="ud-rv">{selectedUser.email||'—'}</span></div>
-                    <div className="ud-row"><span className="ud-rk">Prénom</span><span className="ud-rv">{selectedUser.prenom||'—'}</span></div>
-                    <div className="ud-row"><span className="ud-rk">Nom</span><span className="ud-rv">{selectedUser.nom||'—'}</span></div>
-                    <div className="ud-row"><span className="ud-rk">Type de compte</span><span className="ud-rv">{selectedUser.type_compte||'Organisation'}</span></div>
                   </div>
 
+                  {/* Activité */}
                   <div className="ud-section">
-                    <div className="ud-sh">
-                      Activité
-                      <button className="ud-sa">Afficher les 7 derniers jours</button>
+                    <div className="ud-sh">Activité <button className="ud-sa">Voir l'historique</button></div>
+                    <div className="ud-grid2">
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Dernière connexion</span>
+                        <span className="ud-field-val">{selectedUser.derniere_connexion?new Date(selectedUser.derniere_connexion).toLocaleDateString('fr-FR'):<span className="empty">Jamais connecté</span>}</span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Statut</span>
+                        <span className="ud-field-val" style={{display:'flex',alignItems:'center',gap:7}}>
+                          <span style={{width:9,height:9,borderRadius:'50%',background:!selectedUser.statut||selectedUser.statut==='actif'?'#00c896':'#f59e0b',flexShrink:0}}/>
+                          {!selectedUser.statut||selectedUser.statut==='actif'?'Actif':'Inactif'}
+                        </span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Membre depuis</span>
+                        <span className="ud-field-val">{selectedUser.created_at?new Date(selectedUser.created_at).toLocaleDateString('fr-FR'):'—'}</span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">MFA</span>
+                        <span className="ud-field-val empty">Non configuré</span>
+                      </div>
                     </div>
-                    <div className="ud-row"><span className="ud-rk">Dernière connexion</span><span className="ud-rv">{selectedUser.derniere_connexion?new Date(selectedUser.derniere_connexion).toLocaleDateString('fr-FR'):<span style={{color:'rgba(255,255,255,0.3)',fontStyle:'italic'}}>Jamais connecté</span>}</span></div>
-                    <div className="ud-row"><span className="ud-rk">Statut</span>
-                      <span className="ud-rv" style={{display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
-                        <span style={{width:8,height:8,borderRadius:'50%',background:!selectedUser.statut||selectedUser.statut==='actif'?'#00c896':'#f59e0b'}}/>
-                        {!selectedUser.statut||selectedUser.statut==='actif'?'Actif':'Inactif'}
-                      </span>
-                    </div>
-                    <div className="ud-row"><span className="ud-rk">Membre depuis</span><span className="ud-rv">{selectedUser.created_at?new Date(selectedUser.created_at).toLocaleDateString('fr-FR'):'—'}</span></div>
                   </div>
 
+                  {/* Organisation */}
                   <div className="ud-section">
-                    <div className="ud-sh">
-                      Sécurité
-                      <button className="ud-sa">Gérer</button>
+                    <div className="ud-sh">Organisation <button className="ud-sa">Gérer les équipes</button></div>
+                    <div className="ud-grid2">
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Agence</span>
+                        <span className="ud-field-val">{agence?.nom||'—'}</span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Département</span>
+                        <span className="ud-field-val">{selectedUser.departement||<span className="empty">Non renseigné</span>}</span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Poste</span>
+                        <span className="ud-field-val">{selectedUser.poste||<span className="empty">Non renseigné</span>}</span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Téléphone</span>
+                        <span className="ud-field-val">{selectedUser.telephone||<a href="#">Ajouter</a>}</span>
+                      </div>
                     </div>
-                    <div className="ud-row"><span className="ud-rk">Email de secours</span><span className="ud-rv"><a href="#">Ajouter une adresse</a></span></div>
-                    <div className="ud-row"><span className="ud-rk">Sessions actives</span><span className="ud-rv"><a href="#">Déconnecter de toutes les sessions</a></span></div>
-                    <div className="ud-row"><span className="ud-rk">MFA</span><span className="ud-rv" style={{color:'rgba(255,255,255,0.35)',fontStyle:'italic'}}>Non configuré</span></div>
                   </div>
 
+                  {/* Rôles */}
                   <div className="ud-section">
-                    <div className="ud-sh">
-                      Organisation
-                      <button className="ud-sa">Gérer les équipes</button>
-                    </div>
-                    <div className="ud-row"><span className="ud-rk">Agence</span><span className="ud-rv">{agence?.nom||'—'}</span></div>
-                    <div className="ud-row"><span className="ud-rk">Département</span><span className="ud-rv">{selectedUser.departement||<span style={{color:'rgba(255,255,255,0.3)',fontStyle:'italic'}}>Non renseigné</span>}</span></div>
-                    <div className="ud-row"><span className="ud-rk">Poste</span><span className="ud-rv">{selectedUser.poste||<span style={{color:'rgba(255,255,255,0.3)',fontStyle:'italic'}}>Non renseigné</span>}</span></div>
-                  </div>
-
-                  <div className="ud-section">
-                    <div className="ud-sh">
-                      Rôles
-                      <button className="ud-sa">Gérer les rôles</button>
-                    </div>
-                    {selectedUser.isOwner ? (
-                      <div style={{padding:'12px 14px',borderRadius:8,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.18)',fontSize:13.5,color:'rgba(255,255,255,0.65)'}}>
-                        👑 <strong style={{color:'#4da6ff'}}>Administrateur global</strong> — Accès complet à tous les paramètres et fonctionnalités de l'organisation.
+                    <div className="ud-sh">Rôles et permissions <button className="ud-sa">Gérer les rôles</button></div>
+                    {selectedUser.isOwner?(
+                      <div style={{padding:'16px 18px',borderRadius:10,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.18)',display:'flex',alignItems:'center',gap:14}}>
+                        <span style={{fontSize:28}}>👑</span>
+                        <div>
+                          <div style={{fontSize:15,fontWeight:700,color:'#4da6ff',marginBottom:4}}>Administrateur global</div>
+                          <div style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>Accès complet à tous les paramètres, utilisateurs, facturation et données de l'organisation.</div>
+                        </div>
                       </div>
                     ):(
-                      <>
-                        {selectedUser.role==='lecteur'
-                          ? <div className="ud-no-admin">Aucun accès administrateur</div>
-                          : <div style={{padding:'12px 14px',borderRadius:8,background:`${ROLES_COLORS[selectedUser.role]||'#0078d4'}0f`,border:`1px solid ${ROLES_COLORS[selectedUser.role]||'#0078d4'}25`,fontSize:13.5,color:'rgba(255,255,255,0.65)'}}>
-                              <span style={{color:ROLES_COLORS[selectedUser.role]||'#0078d4',fontWeight:600}}>{ROLES_LABELS[selectedUser.role]||selectedUser.role}</span>
-                            </div>
-                        }
-                      </>
+                      <div style={{padding:'16px 18px',borderRadius:10,background:`${ROLES_COLORS[selectedUser.role]||'#0078d4'}0e`,border:`1px solid ${ROLES_COLORS[selectedUser.role]||'#0078d4'}28`,display:'flex',alignItems:'center',gap:14}}>
+                        <span style={{fontSize:28}}>🔑</span>
+                        <div>
+                          <div style={{fontSize:15,fontWeight:700,color:ROLES_COLORS[selectedUser.role]||'#0078d4',marginBottom:4}}>{ROLES_LABELS[selectedUser.role]||selectedUser.role}</div>
+                          <div style={{fontSize:13,color:'rgba(255,255,255,0.45)'}}>Accès défini par le rôle attribué à cet utilisateur.</div>
+                        </div>
+                      </div>
                     )}
                   </div>
 
+                  {/* Sécurité */}
                   <div className="ud-section">
-                    <div className="ud-sh">Informations de contact</div>
-                    <div className="ud-row"><span className="ud-rk">Nom d'affichage</span><span className="ud-rv">{selectedUser.prenom} {selectedUser.nom}</span></div>
-                    <div className="ud-row"><span className="ud-rk">Email</span><span className="ud-rv">{selectedUser.email||'—'}</span></div>
-                    <div className="ud-row"><span className="ud-rk">Téléphone</span><span className="ud-rv">{selectedUser.telephone||<a href="#">Ajouter</a>}</span></div>
-                    <div className="ud-row"><span className="ud-rk">Lieu</span><span className="ud-rv">{selectedUser.pays||'Bénin'}</span></div>
+                    <div className="ud-sh">Sécurité</div>
+                    <div className="ud-grid2">
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Email de secours</span>
+                        <span className="ud-field-val"><a href="#">Ajouter une adresse</a></span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Sessions actives</span>
+                        <span className="ud-field-val"><a href="#">Déconnecter tout</a></span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Lieu d'utilisation</span>
+                        <span className="ud-field-val">{selectedUser.pays||'Bénin'}</span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Authentification</span>
+                        <span className="ud-field-val empty">Email / Mot de passe</span>
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
 
               {/* ── Onglet Appareils ── */}
               {userPanelTab==='appareils'&&(
-                <div className="ud-empty-tab">
-                  <div style={{fontSize:36,marginBottom:12,opacity:0.3}}>💻</div>
-                  <div style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Aucun appareil enregistré</div>
-                  <div>Les appareils connectés de cet utilisateur apparaîtront ici.</div>
-                </div>
+                <>
+                  <div className="ud-section">
+                    <div className="ud-sh">
+                      Appareils connectés
+                      <button className="ud-sa">Tout révoquer</button>
+                    </div>
+                    {[
+                      {ic:'💻',name:'Kali Linux — Chrome',type:'Navigateur web',loc:'Cotonou, Bénin',last:'Maintenant',active:true},
+                      {ic:'📱',name:'Android — Samsung Galaxy',type:'Application mobile',loc:'Abomey-Calavi, Bénin',last:'Il y a 2 heures',active:false},
+                    ].map((d,i)=>(
+                      <div key={i} className="ud-device-card">
+                        <div className="ud-device-icon">{d.ic}</div>
+                        <div style={{flex:1}}>
+                          <div className="ud-device-name">{d.name}</div>
+                          <div className="ud-device-meta">{d.type} · {d.loc}</div>
+                          <div className="ud-device-status">
+                            <span style={{width:7,height:7,borderRadius:'50%',background:d.active?'#00c896':'rgba(255,255,255,0.25)'}}/>
+                            {d.active?'Session active':'Dernière activité : '+d.last}
+                          </div>
+                        </div>
+                        <div style={{display:'flex',flexDirection:'column',gap:6,flexShrink:0}}>
+                          <button className="ud-revoke-btn">Révoquer l'accès</button>
+                          {d.active&&<button className="ud-revoke-btn" style={{borderColor:'rgba(245,158,11,0.25)',background:'rgba(245,158,11,0.07)',color:'#f59e0b'}}>Fermer la session</button>}
+                        </div>
+                      </div>
+                    ))}
+                    <button className="ud-add-btn" style={{marginTop:10}}>
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                      Ajouter un appareil approuvé
+                    </button>
+                  </div>
+                </>
               )}
 
               {/* ── Onglet Licences ── */}
@@ -923,15 +1022,91 @@ export default function Utilisateurs() {
                 </div>
               )}
 
-              {/* ── Onglets Courrier & OneDrive ── */}
-              {(userPanelTab==='courrier'||userPanelTab==='onedrive')&&(
-                <div className="ud-empty-tab">
-                  <div style={{fontSize:36,marginBottom:12,opacity:0.3}}>{userPanelTab==='courrier'?'📧':'☁️'}</div>
-                  <div style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>
-                    {userPanelTab==='courrier'?'Courrier':'OneDrive'}
+              {/* ── Onglet Courrier ── */}
+              {userPanelTab==='courrier'&&(
+                <>
+                  <div className="ud-section">
+                    <div className="ud-sh">Adresses email</div>
+                    <div className="ud-mail-card">
+                      <div className="ud-mail-icon" style={{background:'rgba(0,120,212,0.12)',color:'#4da6ff'}}>✉️</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:2}}>{selectedUser.email}</div>
+                        <div style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>Adresse principale · Imoloc</div>
+                      </div>
+                      <span style={{fontSize:11,padding:'2px 9px',borderRadius:'100px',background:'rgba(0,200,150,0.1)',color:'#00c896',fontWeight:600}}>Principal</span>
+                    </div>
+                    <button className="ud-add-btn">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                      Ajouter un alias email
+                    </button>
                   </div>
-                  <div>Fonctionnalité disponible prochainement.</div>
-                </div>
+
+                  <div className="ud-section">
+                    <div className="ud-sh">Adresse de récupération</div>
+                    <div style={{padding:'14px 16px',borderRadius:8,background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.18)',fontSize:13.5,color:'rgba(255,255,255,0.5)',marginBottom:14}}>
+                      ⚠️ Aucune adresse de récupération configurée. En cas de perte d'accès, la récupération du compte sera impossible.
+                    </div>
+                    <button className="ud-add-btn">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                      Ajouter une adresse de récupération
+                    </button>
+                  </div>
+
+                  <div className="ud-section">
+                    <div className="ud-sh">Paramètres de messagerie</div>
+                    <div className="ud-grid2">
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Notifications</span>
+                        <span className="ud-field-val">Activées</span>
+                      </div>
+                      <div className="ud-field">
+                        <span className="ud-field-lbl">Fréquence des rappels</span>
+                        <span className="ud-field-val empty">Non configuré</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── Onglet Drive Imoloc ── */}
+              {userPanelTab==='onedrive'&&(
+                <>
+                  <div className="ud-drive-header">
+                    <div>
+                      <div style={{fontSize:17,fontWeight:700,color:'#e6edf3',marginBottom:3}}>☁️ Drive Imoloc</div>
+                      <div style={{fontSize:13,color:'rgba(255,255,255,0.35)'}}>Fichiers et documents de {selectedUser.prenom} {selectedUser.nom}</div>
+                    </div>
+                    <button style={{display:'flex',alignItems:'center',gap:7,padding:'8px 16px',borderRadius:7,background:'rgba(0,120,212,0.1)',border:'1px solid rgba(0,120,212,0.25)',color:'#4da6ff',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
+                      📦 Télécharger tout en ZIP
+                    </button>
+                  </div>
+
+                  <div className="ud-drive-stats">
+                    {[
+                      {ic:'📄',lbl:'Documents',val:'0'},
+                      {ic:'📋',lbl:'Baux',val:'0'},
+                      {ic:'🖼️',lbl:'Images',val:'0'},
+                    ].map((s,i)=>(
+                      <div key={i} className="ud-drive-stat">
+                        <div style={{fontSize:22,marginBottom:6}}>{s.ic}</div>
+                        <div style={{fontSize:18,fontWeight:700,color:'#e6edf3',marginBottom:2}}>{s.val}</div>
+                        <div style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{s.lbl}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="ud-section">
+                    <div className="ud-sh">
+                      Documents récents
+                      <button className="ud-sa">Voir tout</button>
+                    </div>
+                    <div style={{textAlign:'center',padding:'40px 20px',color:'rgba(255,255,255,0.25)'}}>
+                      <div style={{fontSize:36,marginBottom:12,opacity:0.4}}>📂</div>
+                      <div style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.35)',marginBottom:8}}>Aucun fichier disponible</div>
+                      <div style={{fontSize:13}}>Les fichiers partagés avec cet utilisateur apparaîtront ici.</div>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </div>
