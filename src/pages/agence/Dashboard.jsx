@@ -84,6 +84,9 @@ export default function DashboardAgence() {
                 <Route path="paiements" element={<Paiements />} />
                 <Route path="baux" element={<Baux />} />
                 <Route path="utilisateurs" element={<Utilisateurs />} />
+                <Route path="utilisateurs/contacts" element={<Utilisateurs />} />
+                <Route path="utilisateurs/invites" element={<Utilisateurs />} />
+                <Route path="utilisateurs/supprimes" element={<Utilisateurs />} />
                 <Route path="utilisateurs/*" element={<Utilisateurs />} />
                 <Route path="organisation" element={<Organisation />} />
                 <Route path="abonnement" element={<Abonnement />} />
