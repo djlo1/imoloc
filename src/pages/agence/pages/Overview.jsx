@@ -29,7 +29,6 @@ export default function Overview() {
   const [customDropdown, setCustomDropdown] = useState(false)
   const [visibleItems, setVisibleItems] = useState(TABLEAU_ITEMS)
   const [orgTab, setOrgTab] = useState('biens')
-  const [showResetModal, setShowResetModal] = useState(false)
   const [showAddUserModal, setShowAddUserModal] = useState(false)
   const [showResetPanel, setShowResetPanel] = useState(false)
   const [showAddTeamModal, setShowAddTeamModal] = useState(false)
@@ -122,14 +121,6 @@ export default function Overview() {
         .ov-cd-toggle.off::after{left:3px}
 
         /* ── Modal ── */
-        .ov-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)}
-        .ov-modal{background:#161b22;border:1px solid rgba(255,255,255,0.09);border-radius:10px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto}
-        .ov-modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.07)}
-        .ov-modal-title{font-size:16px;font-weight:700;color:#e6edf3}
-        .ov-modal-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);padding:4px;border-radius:5px;display:flex;transition:all 0.1s}
-        .ov-modal-close:hover{background:rgba(255,255,255,0.06);color:#e6edf3}
-        .ov-modal-body{padding:22px 24px}
-        .ov-modal-foot{padding:14px 24px;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:flex-end;gap:10px}
         .ov-form-lbl{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);margin-bottom:7px;text-transform:uppercase;letter-spacing:0.06em}
         .ov-form-input{width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:7px;font-family:'Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s;margin-bottom:14px}
         .ov-form-input:focus{border-color:#0078d4}
@@ -518,56 +509,8 @@ export default function Overview() {
       {showResetPanel && <ResetPasswordPanel onClose={() => setShowResetPanel(false)} agenceId={agence?.id}/>}
       {showAddUserModal && <AddUserModal onClose={() => setShowAddUserModal(false)} agenceName={agence?.nom || 'Mon organisation'}/>}
 
-            {/* ══ MODAL RÉINITIALISER MOT DE PASSE ══ */}
-      {showResetModal && (
-        <div className="ov-modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowResetModal(false)}>
-          <div className="ov-modal">
-            <div className="ov-modal-head">
-              <span className="ov-modal-title">Réinitialiser le mot de passe</span>
-              <button className="ov-modal-close" onClick={()=>setShowResetModal(false)}><svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
-            </div>
-            <div className="ov-modal-body">
-              <div style={{padding:'12px 14px',borderRadius:8,background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.2)',fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:18}}>
-                Un email de réinitialisation sera envoyé à l'utilisateur concerné.
-              </div>
-              <label className="ov-form-lbl">Email de l'utilisateur *</label>
-              <input className="ov-form-input" type="email" value={resetEmail} onChange={e=>setResetEmail(e.target.value)} placeholder="utilisateur@organisation.com"/>
-            </div>
-            <div className="ov-modal-foot">
-              <button className="ov-btn ov-btn-ghost" onClick={()=>setShowResetModal(false)}>Annuler</button>
-              <button className="ov-btn ov-btn-blue">Envoyer le lien de réinitialisation</button>
-            </div>
-          </div>
-        </div>
       )}
 
-      {/* ══ MODAL AJOUTER ÉQUIPE ══ */}
-      {showAddTeamModal && (
-        <div className="ov-modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowAddTeamModal(false)}>
-          <div className="ov-modal">
-            <div className="ov-modal-head">
-              <span className="ov-modal-title">Ajouter une équipe</span>
-              <button className="ov-modal-close" onClick={()=>setShowAddTeamModal(false)}><svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
-            </div>
-            <div className="ov-modal-body">
-              <div style={{padding:'12px 14px',borderRadius:8,background:'rgba(108,99,255,0.08)',border:'1px solid rgba(108,99,255,0.2)',fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:18}}>
-                Créez une équipe pour regrouper vos agents par agence ou par zone géographique.
-              </div>
-              <label className="ov-form-lbl">Nom de l'équipe *</label>
-              <input className="ov-form-input" value={newTeam.nom} onChange={e=>setNewTeam(p=>({...p,nom:e.target.value}))} placeholder="Ex: Agence Cotonou Nord"/>
-              <label className="ov-form-lbl">Description</label>
-              <textarea className="ov-form-input" rows={3} value={newTeam.description} onChange={e=>setNewTeam(p=>({...p,description:e.target.value}))} placeholder="Description de l'équipe..." style={{resize:'vertical'}}/>
-              <div style={{padding:'10px 14px',borderRadius:8,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',fontSize:13,color:'rgba(255,255,255,0.35)'}}>
-                ⭐ La gestion d'équipes multiples est disponible sur le plan <strong style={{color:'#4da6ff'}}>Standard et supérieur</strong>.
-              </div>
-            </div>
-            <div className="ov-modal-foot">
-              <button className="ov-btn ov-btn-ghost" onClick={()=>setShowAddTeamModal(false)}>Annuler</button>
-              <button className="ov-btn ov-btn-blue">Créer l'équipe</button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }
