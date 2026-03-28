@@ -608,7 +608,7 @@ export default function Utilisateurs() {
                           {cols.includes('userPrincipalName')&&<td style={{color:'rgba(255,255,255,0.45)',fontSize:12}}>{u.email||'—'}</td>}
                           {cols.includes('role')&&(
                             <td>
-                              <span className="us-pill" style={{background:`${col}18`,color,fontSize:11}}>
+                              <span className="us-pill" style={{background:`${col}18`,color:col,fontSize:11}}>
                                 {ROLES_LABELS[u.role]||u.role}
                               </span>
                             </td>
