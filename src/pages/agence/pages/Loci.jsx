@@ -18,7 +18,7 @@ export default function Loci() {
   const { profile } = useAuthStore()
   const location = useLocation()
   const navigate = useNavigate()
-  const [stats, setStats] = useState({ biens:0, locataires:0, revenus:0, retards:0, taux:0 })
+  const [stats, setStats] = useState({ biens:0, biensLibres:0, biensOccupes:0, biensMaintenance:0, locataires:0, revenus:0, revenusMois:0, retards:0, enAttente:0, taux:0, utilisateurs:0, equipes:0, invitationsEnAttente:0, totalPaiements:0, paiementsPayes:0, _biens:[], _utilisateurs:[], _equipes:[], _invitations:[], _monRole:'agent' })
   const [agence, setAgence] = useState(null)
   const [messages, setMessages] = useState([{
     role:'assistant',
@@ -39,19 +39,59 @@ export default function Loci() {
     const init = async () => {
       try {
         const { data:{ user } } = await supabase.auth.getUser()
+
+        // Profil de l'utilisateur connecté
+        const { data:myProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+
+        // Agence
         const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
         setAgence(ag)
+
         if (ag?.id) {
-          const [{ data:b },{ data:l },{ data:p }] = await Promise.all([
+          const [
+            { data:b },{ data:l },{ data:p },
+            { data:au },{ data:eq },{ data:inv },{ data:baux }
+          ] = await Promise.all([
             supabase.from('biens').select('*').eq('agence_id', ag.id),
             supabase.from('locataires').select('*').eq('agence_id', ag.id),
             supabase.from('paiements').select('*').eq('agence_id', ag.id),
+            supabase.from('agence_users').select('*').eq('agence_id', ag.id),
+            supabase.from('equipes').select('*, equipe_membres(*)').eq('agence_id', ag.id),
+            supabase.from('invitations').select('*').eq('agence_id', ag.id),
+            supabase.from('baux').select('*').limit(100),
           ])
-          const bD=b||[], lD=l||[], pD=p||[]
+
+          const bD=b||[], lD=l||[], pD=p||[], auD=au||[], eqD=eq||[], invD=inv||[]
+
           const rev = pD.filter(x=>x.statut==='payé').reduce((s,x)=>s+Number(x.montant||0),0)
           const ret = pD.filter(x=>x.statut==='retard').length
+          const attente = pD.filter(x=>x.statut==='en attente').length
           const occ = bD.length>0 ? Math.round((lD.length/bD.length)*100) : 0
-          setStats({ biens:bD.length, locataires:lD.length, revenus:rev, retards:ret, taux:occ })
+          const revMois = pD.filter(x=>x.statut==='payé'&&new Date(x.date_paiement).getMonth()===new Date().getMonth()).reduce((s,x)=>s+Number(x.montant||0),0)
+
+          setStats({
+            biens:bD.length,
+            biensLibres: bD.filter(x=>x.statut==='libre').length,
+            biensOccupes: bD.filter(x=>x.statut==='occupé').length,
+            biensMaintenance: bD.filter(x=>x.statut==='maintenance').length,
+            locataires:lD.length,
+            revenus:rev,
+            revenusMois:revMois,
+            retards:ret,
+            enAttente:attente,
+            taux:occ,
+            utilisateurs: auD.length + 1, // +1 pour l'admin
+            equipes: eqD.length,
+            invitationsEnAttente: invD.filter(x=>x.statut==='en_attente').length,
+            totalPaiements: pD.length,
+            paiementsPayes: pD.filter(x=>x.statut==='payé').length,
+            // Données détaillées pour le contexte IA
+            _biens: bD.map(x=>({nom:x.nom,type:x.type,ville:x.ville,loyer:x.loyer,statut:x.statut})),
+            _utilisateurs: auD.map(x=>({role:x.role,poste:x.poste,departement:x.departement,statut:x.statut})),
+            _equipes: eqD.map(x=>({nom:x.nom,confidentialite:x.confidentialite,membres:x.equipe_membres?.length||0})),
+            _invitations: invD.map(x=>({email:x.email,role:x.role,statut:x.statut})),
+            _monRole: myProfile?.role || 'agent',
+          })
         }
       } catch(e) { console.error(e) }
     }
@@ -71,24 +111,58 @@ export default function Loci() {
     setLoading(true)
     setThinking(true)
 
-    const systemPrompt = `Tu es Loci, l'assistant IA intelligent de la plateforme Imoloc, spécialisé en gestion immobilière en Afrique de l'Ouest.
-Tu aides ${profile?.prenom || 'l\'administrateur'} de l'organisation "${agence?.nom || 'Mon organisation'}".
+    // Filtrer les données selon le rôle
+    const monRole = stats._monRole || 'agent'
+    const isAdmin = ['global_admin','user_admin','admin'].includes(monRole)
+    const isBilling = ['global_admin','billing_admin','admin'].includes(monRole)
+    const isReports = ['global_admin','reports_reader','admin'].includes(monRole)
 
-📊 DONNÉES EN TEMPS RÉEL:
-- Biens immobiliers: ${stats.biens}
-- Locataires actifs: ${stats.locataires}
-- Revenus totaux encaissés: ${stats.revenus.toLocaleString()} FCFA
-- Loyers en retard: ${stats.retards}
+    const systemPrompt = `Tu es Loci, l'assistant IA de la plateforme Imoloc, spécialisé en gestion immobilière en Afrique de l'Ouest.
+Tu assistes ${profile?.prenom || 'l\'utilisateur'} ${profile?.nom || ''} (rôle: ${monRole}) de l'organisation "${agence?.nom || 'Mon organisation'}".
+
+🏢 DONNÉES COMPLÈTES DE L'ORGANISATION (temps réel):
+
+📦 BIENS IMMOBILIERS:
+- Total: ${stats.biens} biens
+- Occupés: ${stats.biensOccupes || 0}
+- Libres: ${stats.biensLibres || 0}
+- En maintenance: ${stats.biensMaintenance || 0}
 - Taux d'occupation: ${stats.taux}%
+- Détail: ${JSON.stringify(stats._biens || [])}
 
-INSTRUCTIONS:
-- Réponds TOUJOURS en français
-- Sois analytique, précis et actionnable
-- Utilise les données réelles pour personnaliser tes réponses
-- Propose des solutions concrètes adaptées au marché africain (Mobile Money, etc.)
-- Utilise des emojis pour rendre la réponse lisible
-- Si retards > 0, mentionne des stratégies de recouvrement
-- Formate bien avec des listes quand c'est pertinent`
+👥 LOCATAIRES:
+- Total locataires actifs: ${stats.locataires}
+
+💰 PAIEMENTS & FINANCES:
+- Total paiements enregistrés: ${stats.totalPaiements || 0}
+- Paiements effectués: ${stats.paiementsPayes || 0}
+- Loyers en retard: ${stats.retards}
+- Paiements en attente: ${stats.enAttente || 0}
+- Revenus totaux encaissés: ${stats.revenus.toLocaleString()} FCFA
+- Revenus ce mois: ${(stats.revenusMois||0).toLocaleString()} FCFA
+
+${isAdmin ? `👤 UTILISATEURS & ÉQUIPES (visible car rôle: ${monRole}):
+- Utilisateurs dans l'organisation: ${stats.utilisateurs || 1}
+- Équipes créées: ${stats.equipes || 0}
+- Invitations en attente: ${stats.invitationsEnAttente || 0}
+- Détail utilisateurs: ${JSON.stringify(stats._utilisateurs || [])}
+- Détail équipes: ${JSON.stringify(stats._equipes || [])}
+- Invitations: ${JSON.stringify(stats._invitations || [])}` : `⚠️ ACCÈS RESTREINT: Les informations sur les utilisateurs, équipes et invitations ne sont pas accessibles avec le rôle "${monRole}". Redirige poliment vers un administrateur.`}
+
+${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
+- Abonnement actif: Plan Standard
+- Prochaine facturation: 1er du mois prochain` : ''}
+
+🎯 RÈGLES STRICTES:
+1. Réponds TOUJOURS en français
+2. Utilise UNIQUEMENT les données ci-dessus pour répondre
+3. Respecte les niveaux d'accès selon le rôle "${monRole}"
+4. Sois précis avec les chiffres réels (ne pas inventer)
+5. Si une info n'est pas disponible dans les données, dis-le clairement
+6. Utilise des emojis pour structurer les réponses
+7. Propose des actions concrètes adaptées au marché africain
+8. Pour les retards de paiement, suggère des stratégies de recouvrement (relance SMS, Mobile Money, etc.)
+9. Formate avec des listes et sections claires`
 
     try {
       const apiMessages = newMessages
