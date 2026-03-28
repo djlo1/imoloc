@@ -26,7 +26,14 @@ function PrivateRoute({ children, roles }) {
   const { user, profile, loading } = useAuthStore()
   if (loading) return <Loader />
   if (!user) return <Navigate to="/login" replace />
-  if (roles && profile && !roles.includes(profile.role)) return <Navigate to="/login" replace />
+  if (roles && profile && !roles.includes(profile.role)) {
+    // Rediriger vers le bon dashboard selon le rôle
+    const AGENCE_ROLES = ['agence','global_admin','user_admin','billing_admin','reports_reader','security_admin','password_admin','agent','comptable','lecteur']
+    if (AGENCE_ROLES.includes(profile.role)) return <Navigate to="/agence" replace />
+    if (profile.role === 'proprietaire') return <Navigate to="/proprietaire" replace />
+    if (profile.role === 'locataire') return <Navigate to="/locataire" replace />
+    if (profile.role === 'super_admin') return <Navigate to="/admin" replace />
+  }
   return children
 }
 
@@ -38,9 +45,9 @@ export default function App() {
     const fetchProfile = async (userId) => {
       try {
         const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-        if (mounted) setProfile(data || { id: userId, role: 'agence' })
+        if (mounted) setProfile(data || { id: userId, role: 'global_admin' })
       } catch {
-        if (mounted) setProfile({ id: userId, role: 'agence' })
+        if (mounted) setProfile({ id: userId, role: 'global_admin' })
       } finally {
         if (mounted) setLoading(false)
       }
@@ -52,8 +59,8 @@ export default function App() {
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return
-      if (event === 'SIGNED_IN' && session?.user) { setUser(session.user); fetchProfile(session.user.id) }
-      else if (event === 'SIGNED_OUT') { setUser(null); setProfile(null); setLoading(false) }
+      if (event === 'SIGNED_OUT') { setUser(null); setProfile(null); setLoading(false) }
+      // Ne pas refaire fetchProfile sur SIGNED_IN pour éviter le double appel
     })
     return () => { mounted = false; subscription.unsubscribe() }
   }, [])
