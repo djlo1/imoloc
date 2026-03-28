@@ -304,30 +304,30 @@ export default function Utilisateurs() {
 
         /* Drawer utilisateur */
         .ud-ov{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;display:flex;justify-content:flex-end}
-        .ud-panel{width:600px;height:100%;background:#161b22;border-left:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;animation:up-sl 0.22s ease;overflow:hidden}
-        .ud-head{padding:26px 28px 0;background:linear-gradient(135deg,rgba(0,120,212,0.06),rgba(108,99,255,0.04));border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+        .ud-panel{width:780px;height:100%;background:#161b22;border-left:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;animation:up-sl 0.22s ease;overflow:hidden}
+        .ud-head{padding:32px 36px 0;background:linear-gradient(135deg,rgba(0,120,212,0.06),rgba(108,99,255,0.04));border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
         .ud-head-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
-        .ud-av{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;flex-shrink:0}
-        .ud-name{font-size:22px;font-weight:700;color:#e6edf3;margin-bottom:6px}
+        .ud-av{width:86px;height:86px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#fff;flex-shrink:0}
+        .ud-name{font-size:26px;font-weight:700;color:#e6edf3;margin-bottom:6px}
         .ud-role{font-size:12px;color:rgba(255,255,255,0.4)}
-        .ud-quick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-        .ud-qa{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:5px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:'Inter',sans-serif;transition:all 0.15s}
+        .ud-quick{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
+        .ud-qa{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:6px;font-size:13.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:'Inter',sans-serif;transition:all 0.15s}
         .ud-qa:hover{background:rgba(255,255,255,0.09);color:#e6edf3}
         .ud-qa.red{border-color:rgba(239,68,68,0.25);color:#ef4444;background:rgba(239,68,68,0.05)}.ud-qa.red:hover{background:rgba(239,68,68,0.12)}
         .ud-tabs{display:flex;overflow-x:auto;gap:0}
-        .ud-tab{padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap}
+        .ud-tab{padding:12px 20px;font-size:14px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap}
         .ud-tab:hover{color:rgba(255,255,255,0.75)}.ud-tab.active{color:#e6edf3;border-bottom-color:#0078d4}
-        .ud-body{flex:1;overflow-y:auto;padding:26px 28px}
+        .ud-body{flex:1;overflow-y:auto;padding:32px 36px}
         .ud-body::-webkit-scrollbar{width:4px}
         .ud-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
-        .ud-section{margin-bottom:32px}
-        .ud-sh{font-size:12px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+        .ud-section{margin-bottom:40px}
+        .ud-sh{font-size:13px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
         .ud-sa{font-size:12px;color:#4da6ff;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500;background:none;border:none;font-family:'Inter',sans-serif}
         .ud-sa:hover{text-decoration:underline}
-        .ud-row{display:flex;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+        .ud-row{display:flex;align-items:flex-start;justify-content:space-between;padding:15px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
         .ud-row:last-child{border-bottom:none}
-        .ud-rk{font-size:13.5px;color:rgba(255,255,255,0.4);flex-shrink:0;width:180px}
-        .ud-rv{font-size:13.5px;color:#e6edf3;font-weight:500;text-align:right;flex:1;word-break:break-word}
+        .ud-rk{font-size:14px;color:rgba(255,255,255,0.4);flex-shrink:0;width:200px}
+        .ud-rv{font-size:14.5px;color:#e6edf3;font-weight:500;text-align:right;flex:1;word-break:break-word}
         .ud-rv a{color:#4da6ff;text-decoration:none}.ud-rv a:hover{text-decoration:underline}
         .ud-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;transition:all 0.15s;cursor:pointer}
         .ud-card:hover{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.05)}
