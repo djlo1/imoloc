@@ -1,4 +1,5 @@
 import AddUserModal from '../components/AddUserModal'
+import ResetPasswordPanel from '../components/ResetPasswordPanel'
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
@@ -29,6 +30,7 @@ export default function Overview() {
   const [orgTab, setOrgTab] = useState('biens')
   const [showResetModal, setShowResetModal] = useState(false)
   const [showAddUserModal, setShowAddUserModal] = useState(false)
+  const [showResetPanel, setShowResetPanel] = useState(false)
   const [showAddTeamModal, setShowAddTeamModal] = useState(false)
   const [resetEmail, setResetEmail] = useState('')
   const [newUser, setNewUser] = useState({ prenom:'', nom:'', email:'', role:'Agent' })
@@ -218,7 +220,7 @@ export default function Overview() {
           <div className="ov-bar-sep"/>
 
           {/* Réinitialiser mot de passe */}
-          <button className="ov-bar-btn" onClick={()=>setShowResetModal(true)}>
+          <button className="ov-bar-btn" onClick={()=>setShowResetPanel(true)}>
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
             Réinitialiser le mot de passe
           </button>
@@ -511,6 +513,7 @@ export default function Overview() {
       )}
 
       {/* ══ MODAL AJOUTER UTILISATEUR ══ */}
+      {showResetPanel && <ResetPasswordPanel onClose={() => setShowResetPanel(false)} agenceId={agence?.id}/>}
       {showAddUserModal && <AddUserModal onClose={() => setShowAddUserModal(false)} agenceName={agence?.nom || 'Mon organisation'}/>}
 
             {/* ══ MODAL RÉINITIALISER MOT DE PASSE ══ */}
