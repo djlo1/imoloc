@@ -20,11 +20,12 @@ export default function Loci() {
   const navigate = useNavigate()
   const [stats, setStats] = useState({ biens:0, biensLibres:0, biensOccupes:0, biensMaintenance:0, locataires:0, revenus:0, revenusMois:0, retards:0, enAttente:0, taux:0, utilisateurs:0, equipes:0, invitationsEnAttente:0, totalPaiements:0, paiementsPayes:0, _biens:[], _utilisateurs:[], _equipes:[], _invitations:[], _monRole:'agent' })
   const [agence, setAgence] = useState(null)
-  const [messages, setMessages] = useState([{
-    role:'assistant',
-    content:`Bonjour ${profile?.prenom || ''} ! Je suis **Loci**, votre assistant IA immobilier. Je connais vos données en temps réel et je suis là pour vous aider à prendre de meilleures décisions. Posez-moi n'importe quelle question sur vos biens, locataires ou finances ! 🏠✨`,
-    model:'loci'
-  }])
+  const WELCOME = { role:'assistant', content:`Bonjour ${profile?.prenom || ''} ! Je suis **Loci**, votre assistant IA immobilier. Je connais vos données en temps réel et je suis là pour vous aider à prendre de meilleures décisions. Posez-moi n'importe quelle question sur vos biens, locataires, utilisateurs ou finances ! 🏠✨` }
+  const [messages, setMessages] = useState([WELCOME])
+  const [conversations, setConversations] = useState([])
+  const [activeConvId, setActiveConvId] = useState(null)
+  const [showHistory, setShowHistory] = useState(false)
+  const [savingConv, setSavingConv] = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [thinking, setThinking] = useState(false)
@@ -42,6 +43,9 @@ export default function Loci() {
 
         // Profil de l'utilisateur connecté
         const { data:myProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        
+        // Déterminer le vrai rôle
+        const userRole = myProfile?.role || user?.user_metadata?.role || 'global_admin'
 
         // Agence
         const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
@@ -90,12 +94,25 @@ export default function Loci() {
             _utilisateurs: auD.map(x=>({role:x.role,poste:x.poste,departement:x.departement,statut:x.statut})),
             _equipes: eqD.map(x=>({nom:x.nom,confidentialite:x.confidentialite,membres:x.equipe_membres?.length||0})),
             _invitations: invD.map(x=>({email:x.email,role:x.role,statut:x.statut})),
-            _monRole: myProfile?.role || 'agent',
+            _monRole: userRole,
           })
         }
       } catch(e) { console.error(e) }
     }
+    const loadHistory = async () => {
+      try {
+        const { data:{ user } } = await supabase.auth.getUser()
+        const { data:convs } = await supabase
+          .from('loci_conversations')
+          .select('id, titre, created_at, updated_at')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false })
+          .limit(50)
+        setConversations(convs || [])
+      } catch(e) { console.error('History error:', e) }
+    }
     init()
+    loadHistory()
   }, [])
 
   useEffect(() => {
@@ -184,11 +201,28 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
       if (data.error) throw new Error(data.error)
 
       setThinking(false)
-      setMessages(prev => [...prev, {
-        role:'assistant',
-        content: data.reply,
-        model: data.model,
-      }])
+      const newReply = { role:'assistant', content: data.reply }
+      const finalMessages = [...newMessages, newReply]
+      setMessages(finalMessages)
+
+      // Sauvegarder dans l'historique
+      try {
+        const { data:{ user } } = await supabase.auth.getUser()
+        const titre = msg.slice(0, 60) + (msg.length > 60 ? '...' : '')
+        if (activeConvId) {
+          await supabase.from('loci_conversations')
+            .update({ messages: finalMessages, updated_at: new Date().toISOString() })
+            .eq('id', activeConvId)
+        } else {
+          const { data:newConv } = await supabase.from('loci_conversations')
+            .insert({ user_id: user.id, agence_id: agence?.id, titre, messages: finalMessages })
+            .select().single()
+          if (newConv) {
+            setActiveConvId(newConv.id)
+            setConversations(prev => [{ id:newConv.id, titre, created_at:newConv.created_at, updated_at:newConv.updated_at }, ...prev])
+          }
+        }
+      } catch(e) { console.error('Save conv error:', e) }
     } catch(e) {
       console.error('Loci error:', e)
       setThinking(false)
@@ -337,7 +371,6 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
         .loci-bubble{padding:12px 16px;border-radius:14px;font-size:13.5px;line-height:1.7;max-width:80%}
         .loci-msg.assistant .loci-bubble{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.85);border-radius:4px 14px 14px 14px}
         .loci-msg.user .loci-bubble{background:linear-gradient(135deg,rgba(108,99,255,0.3),rgba(0,200,150,0.15));border:1px solid rgba(108,99,255,0.35);color:#e6edf3;border-radius:14px 4px 14px 14px}
-        .loci-model-tag{font-size:10px;color:rgba(167,139,250,0.5);margin-bottom:5px;display:flex;align-items:center;gap:4px}
         .loci-thinking{display:flex;gap:4px;align-items:center;padding:14px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:4px 14px 14px 14px;width:fit-content}
         .loci-thinking span{width:7px;height:7px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#34d399);animation:loci-bounce 1.2s infinite}
         .loci-thinking span:nth-child(2){animation-delay:0.15s}
@@ -384,6 +417,24 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
         @media(max-width:1200px){.loci-kpis{grid-template-columns:repeat(3,1fr)}.loci-bi-grid{grid-template-columns:1fr 1fr}}
         @media(max-width:900px){.loci-grid2,.loci-grid3,.loci-bi-grid,.loci-bi-stats{grid-template-columns:1fr}.loci-kpis{grid-template-columns:1fr 1fr}.loci-chat-sidebar{display:none}}
         @media(max-width:600px){.loci-kpis{grid-template-columns:1fr}.loci-previsions{grid-template-columns:1fr 1fr}}
+
+        /* Historique */
+        .loci-hist-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(108,99,255,0.25);background:rgba(108,99,255,0.08);color:#a78bfa;font-family:'Inter',sans-serif;transition:all 0.15s}
+        .loci-hist-btn:hover{background:rgba(108,99,255,0.18)}
+        .loci-hist-panel{width:260px;background:#161b22;border:1px solid rgba(108,99,255,0.2);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;animation:loci-fade-up 0.25s ease}
+        .loci-hist-head{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+        .loci-hist-title{font-size:13px;font-weight:700;color:#e6edf3}
+        .loci-hist-list{flex:1;overflow-y:auto;padding:8px}
+        .loci-hist-list::-webkit-scrollbar{width:3px}
+        .loci-hist-list::-webkit-scrollbar-thumb{background:rgba(108,99,255,0.2);border-radius:2px}
+        .loci-hist-item{padding:10px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;border:1px solid transparent;margin-bottom:4px}
+        .loci-hist-item:hover{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.07)}
+        .loci-hist-item.active{background:rgba(108,99,255,0.1);border-color:rgba(108,99,255,0.25)}
+        .loci-hist-item-title{font-size:12.5px;color:#e6edf3;font-weight:500;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .loci-hist-item-date{font-size:11px;color:rgba(255,255,255,0.3)}
+        .loci-hist-new{display:flex;align-items:center;gap:7px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#a78bfa;border:1px dashed rgba(108,99,255,0.25);margin:8px;transition:all 0.15s;background:none;font-family:'Inter',sans-serif;width:calc(100% - 16px);justify-content:center}
+        .loci-hist-new:hover{background:rgba(108,99,255,0.1)}
+        .loci-hist-empty{text-align:center;padding:24px;color:rgba(255,255,255,0.25);font-size:13px}
       `}</style>
 
       <div className="loci-page">
@@ -565,11 +616,15 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                   <div className="loci-chat-avatar">✨</div>
                   <div>
                     <div style={{fontSize:14,fontWeight:700,background:'linear-gradient(135deg,#a78bfa,#34d399)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Loci</div>
-                    <div className="loci-chat-status">En ligne · Multi-modèles actifs</div>
+                    <div className="loci-chat-status">En ligne · Données org. en temps réel</div>
                   </div>
-                  <div style={{marginLeft:'auto',fontSize:11,color:'rgba(255,255,255,0.25)',textAlign:'right'}}>
-                    <div>Claude · Llama · Gemini</div>
-                    <div>Données org. en temps réel</div>
+                  <div style={{marginLeft:'auto',display:'flex',gap:8}}>
+                    <button className="loci-hist-btn" onClick={()=>setShowHistory(h=>!h)}>
+                      🕐 Historique
+                    </button>
+                    <button className="loci-hist-btn" onClick={()=>{ setMessages([WELCOME]); setActiveConvId(null) }}>
+                      + Nouveau
+                    </button>
                   </div>
                 </div>
 
@@ -581,9 +636,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                         : <div className="loci-msg-av" style={{background:'linear-gradient(135deg,#0078d4,#6c63ff)'}}>{profile?.prenom?.[0]?.toUpperCase()||'A'}</div>
                       }
                       <div className="loci-bubble">
-                        {msg.model && msg.role==='assistant' && (
-                          <div className="loci-model-tag">✨ {msg.model}</div>
-                        )}
+
                         {msg.content.split('\n').map((line,j)=>(
                           <span key={j}>
                             {line.split('**').map((part,k)=>k%2===1?<strong key={k} style={{color:'#e6edf3'}}>{part}</strong>:part)}
@@ -628,6 +681,36 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                   </button>
                 </div>
               </div>
+
+              {/* Historique conversations */}
+              {showHistory && (
+                <div className="loci-hist-panel">
+                  <div className="loci-hist-head">
+                    <span className="loci-hist-title">🕐 Historique</span>
+                    <span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>3 mois</span>
+                  </div>
+                  <button className="loci-hist-new" onClick={()=>{ setMessages([WELCOME]); setActiveConvId(null) }}>
+                    + Nouvelle conversation
+                  </button>
+                  <div className="loci-hist-list">
+                    {conversations.length === 0 ? (
+                      <div className="loci-hist-empty">Aucune conversation sauvegardée</div>
+                    ) : conversations.map((conv,i) => (
+                      <div key={i}
+                        className={`loci-hist-item ${activeConvId===conv.id?'active':''}`}
+                        onClick={async()=>{
+                          const { data } = await supabase.from('loci_conversations').select('messages').eq('id', conv.id).single()
+                          if (data?.messages) { setMessages(data.messages); setActiveConvId(conv.id) }
+                        }}>
+                        <div className="loci-hist-item-title">{conv.titre || 'Conversation'}</div>
+                        <div className="loci-hist-item-date">
+                          {new Date(conv.updated_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Sidebar stats */}
               <div className="loci-chat-sidebar">
