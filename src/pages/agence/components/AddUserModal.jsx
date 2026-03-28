@@ -179,6 +179,30 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
         }
       }
 
+      // Appeler la Edge Function pour envoyer l'email
+      const SUPABASE_URL = 'https://zecyfnurrcslukxvmpca.supabase.co'
+      const { data: { session } } = await supabase.auth.getSession()
+      const siteUrl = window.location.origin
+      const loginUrl = `${siteUrl}/premiere-connexion?email=${encodeURIComponent(form.email)}&force=${form.force_change}`
+
+      await fetch(`${SUPABASE_URL}/functions/v1/send-invitation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`,
+        },
+        body: JSON.stringify({
+          email: form.email,
+          prenom: form.prenom,
+          nom: form.nom,
+          agenceName: agenceName,
+          role: ROLES.find(r => r.id === form.role)?.label || form.role,
+          password: finalPassword,
+          force_change: form.force_change,
+          loginUrl,
+        }),
+      })
+
       toast.success(`✅ Invitation envoyée à ${form.email} !`)
       onClose()
     } catch (err) {
