@@ -1041,7 +1041,7 @@ export default function Utilisateurs() {
 
                   {/* Sélecteur lieu */}
                   <div style={{marginBottom:22}}>
-                    <div style={{fontSize:13px,fontWeight:600,color:'#e6edf3',marginBottom:8}}>
+                    <div style={{fontSize:13,fontWeight:600,color:'#e6edf3',marginBottom:8}}>
                       Sélectionner un lieu <span style={{color:'#ef4444'}}>*</span>
                     </div>
                     <select style={{width:'100%',padding:'9px 13px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:5,color:'#e6edf3',fontFamily:'Inter',fontSize:14,outline:'none'}}>
