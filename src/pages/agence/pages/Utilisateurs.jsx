@@ -393,19 +393,7 @@ export default function Utilisateurs() {
           {tab==='contacts'&&'Personnes externes visibles par votre organisation'}
         </div>
 
-        {/* Tabs navigation */}
-        <div className="us-tabs">
-          {[
-            {id:'actifs',label:'Utilisateurs actifs',path:'/agence/utilisateurs',cnt:actifs.length},
-            {id:'contacts',label:'Contacts',path:'/agence/utilisateurs/contacts',cnt:null},
-            {id:'invites',label:'Utilisateurs invités',path:'/agence/utilisateurs/invites',cnt:invites.length},
-            {id:'supprimes',label:'Utilisateurs supprimés',path:'/agence/utilisateurs/supprimes',cnt:supprimes.length},
-          ].map(t=>(
-            <button key={t.id} className={`us-tab ${tab===t.id?'active':''}`} onClick={()=>navigate(t.path)}>
-              {t.label}{t.cnt!==null&&<span className="us-cnt">{t.cnt}</span>}
-            </button>
-          ))}
-        </div>
+
 
         {/* ══ PAGE UTILISATEURS ACTIFS ══ */}
         {tab==='actifs'&&(

@@ -132,7 +132,7 @@ export default function Overview() {
         .ov-btn-ghost:hover{background:rgba(255,255,255,0.09);color:#e6edf3}
 
         /* ── Vue simplifiée ── */
-        .ov-simple{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+        .ov-simple{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px}
         .ov-simple-card{background:#1c2434;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:20px;position:relative}
         .ov-simple-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
         .ov-simple-card-name{font-size:12.5px;font-weight:600;color:rgba(255,255,255,0.45)}
@@ -149,9 +149,9 @@ export default function Overview() {
         .ov-simple-btn.ghost:hover{background:rgba(255,255,255,0.08);color:#e6edf3}
 
         /* ── Vue tableau de bord ── */
-        .ov-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
-        .ov-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-        .ov-card{background:#1c2434;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:20px}
+        .ov-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:20px}
+        .ov-grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+        .ov-card{background:#1c2434;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:28px}
         .ov-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
         .ov-card-title{font-size:13px;font-weight:600;color:rgba(255,255,255,0.5)}
         .ov-card-more{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.2);font-size:16px;padding:0}
@@ -493,9 +493,9 @@ export default function Overview() {
       {viewMode === 'tableau' && (
         <>
           <div className="ov-grid3">
-            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Biens</span><button className="ov-card-more">···</button></div><div style={{fontSize:32,fontWeight:700,color:'#0078d4'}}>{stats.biens}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{bienOcc} occupés · {bienLib} libres</div><div className="ov-progress" style={{marginTop:12}}><div className="ov-progress-fill" style={{width:`${tauxOcc}%`,background:'#0078d4'}}/></div><Link to="/agence/biens" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Gérer les biens →</Link></div>
-            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Locataires</span><button className="ov-card-more">···</button></div><div style={{fontSize:32,fontWeight:700,color:'#6c63ff'}}>{stats.locataires}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{stats.retards} loyer{stats.retards>1?'s':''} en retard</div><Link to="/agence/locataires" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les locataires →</Link></div>
-            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Revenus ce mois</span><button className="ov-card-more">···</button></div><div style={{fontSize:22,fontWeight:700,color:'#00c896'}}>{stats.revenus.toLocaleString()} FCFA</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>Plan Standard actif</div><Link to="/agence/paiements" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les paiements →</Link></div>
+            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Biens</span><button className="ov-card-more">···</button></div><div style={{fontSize:40,fontWeight:800,color:'#0078d4',letterSpacing:'-0.03em'}}>{stats.biens}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{bienOcc} occupés · {bienLib} libres</div><div className="ov-progress" style={{marginTop:12}}><div className="ov-progress-fill" style={{width:`${tauxOcc}%`,background:'#0078d4'}}/></div><Link to="/agence/biens" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Gérer les biens →</Link></div>
+            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Locataires</span><button className="ov-card-more">···</button></div><div style={{fontSize:40,fontWeight:800,color:'#6c63ff',letterSpacing:'-0.03em'}}>{stats.locataires}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{stats.retards} loyer{stats.retards>1?'s':''} en retard</div><Link to="/agence/locataires" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les locataires →</Link></div>
+            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Revenus ce mois</span><button className="ov-card-more">···</button></div><div style={{fontSize:28,fontWeight:800,color:'#00c896',letterSpacing:'-0.02em'}}>{stats.revenus.toLocaleString()} FCFA</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>Plan Standard actif</div><Link to="/agence/paiements" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les paiements →</Link></div>
           </div>
           <div className="ov-grid2">
             <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Biens récents</span><Link to="/agence/biens" className="ov-link" style={{fontSize:12}}>Voir tout</Link></div>{biens.length===0?<div className="ov-empty">Aucun bien</div>:biens.slice(0,4).map((b,i)=><div key={i} className="ov-item-row"><span style={{color:'#e6edf3',fontWeight:500}}>{b.nom}</span><span className="ov-badge" style={{background:b.statut==='libre'?'rgba(0,200,150,0.1)':'rgba(0,120,212,0.1)',color:b.statut==='libre'?'#00c896':'#0078d4'}}>{b.statut}</span></div>)}</div>
