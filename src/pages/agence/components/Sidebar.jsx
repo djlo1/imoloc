@@ -5,6 +5,8 @@ import { useAuthStore } from '../../../store/authStore'
 
 const NAV = [
   { id:'home', label:'Accueil', path:'/agence', exact:true, icon:'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25' },
+  { id:'loci', label:'Loci', path:'/agence/loci', exact:true, icon:'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z',
+    isLoci: true },
   { id:'users', label:'Utilisateurs', icon:'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z',
     children:[
       { label:'Utilisateurs actifs', path:'/agence/utilisateurs' },
@@ -30,7 +32,7 @@ const NAV = [
   { id:'facturation', label:'Facturation', icon:'M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z',
     children:[
       { label:'Factures et paiements', path:'/agence/abonnement' },
-      { label:'Factures et paiements', path:'/agence/paiements' },
+      
       { label:'Modes de paiement', path:'/agence/abonnement/modes' },
     ]
   },
@@ -45,7 +47,6 @@ const NAV = [
 ]
 
 const ADMIN_CENTERS = [
-  { label:'Paiements', path:'/agence/paiements', icon:'💳' },
   { label:'Baux', path:'/agence/baux', icon:'📄' },
   { label:'Rapports', path:'/agence/rapports', icon:'📊' },
   { label:'Maintenance', path:'/agence/maintenance', icon:'🔧' },
@@ -74,6 +75,10 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
         .sb3-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.85)}
         .sb3-item.active{background:rgba(0,120,212,0.12);color:#4da6ff}
         .sb3-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:#0078d4}
+        .sb3-loci{display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;transition:all 0.15s;position:relative;border:none;width:100%;text-align:left;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-decoration:none;background:linear-gradient(135deg,rgba(108,99,255,0.08),rgba(0,200,150,0.08));border-left:2px solid transparent;color:rgba(255,255,255,0.7)}
+        .sb3-loci:hover{background:linear-gradient(135deg,rgba(108,99,255,0.15),rgba(0,200,150,0.15));color:#e6edf3}
+        .sb3-loci.active{border-left-color:#6c63ff;color:#a78bfa}
+        .sb3-loci-icon{width:16px;height:16px;flex-shrink:0;background:linear-gradient(135deg,#6c63ff,#00c896);border-radius:50%;display:flex;align-items:center;justify-content:center}
         .sb3-icon{width:16px;height:16px;flex-shrink:0}
         .sb3-lbl{flex:1;overflow:hidden;text-overflow:ellipsis}
         .sb3-chevron{width:14px;height:14px;flex-shrink:0;transition:transform 0.2s;opacity:0.4}
@@ -111,6 +116,23 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
           </Link>
 
           {/* Sections expandables */}
+          {/* Loci AI */}
+          <Link to="/agence/loci" className={`sb3-loci ${isActive('/agence/loci', true) ? 'active' : ''}`} onClick={onClose}>
+            <div className="sb3-loci-icon">
+              <svg width="9" height="9" fill="none" stroke="#fff" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+              </svg>
+            </div>
+            {!collapsed && (
+              <span style={{background:'linear-gradient(135deg,#a78bfa,#34d399)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:600}}>
+                Loci
+              </span>
+            )}
+            {!collapsed && (
+              <span style={{fontSize:10,padding:'1px 6px',borderRadius:'100px',background:'linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,200,150,0.2))',color:'#a78bfa',marginLeft:'auto',flexShrink:0,WebkitTextFillColor:'#a78bfa'}}>IA</span>
+            )}
+          </Link>
+
           {NAV.slice(1).map(item => (
             <div key={item.id}>
               <button className={`sb3-item ${item.children?.some(c=>isActive(c.path))?'active':''}`} onClick={()=>toggle(item.id)}>

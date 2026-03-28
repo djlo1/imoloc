@@ -14,6 +14,7 @@ import Securite from './pages/Securite'
 import Parametres from './pages/Parametres'
 import Rapports from './pages/Rapports'
 import Integrations from './pages/Integrations'
+import Loci from './pages/Loci'
 
 export default function DashboardAgence() {
   const [collapsed, setCollapsed] = useState(false)
@@ -73,6 +74,8 @@ export default function DashboardAgence() {
             <div className="ac-inner">
               <Routes>
                 <Route index element={<Overview />} />
+                <Route path="loci" element={<Loci />} />
+                <Route path="loci/*" element={<Loci />} />
                 <Route path="biens" element={<Biens />} />
                 <Route path="biens/*" element={<Biens />} />
                 <Route path="locataires" element={<Locataires />} />
