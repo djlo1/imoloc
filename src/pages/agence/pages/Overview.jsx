@@ -1,5 +1,6 @@
 import AddUserModal from '../components/AddUserModal'
 import ResetPasswordPanel from '../components/ResetPasswordPanel'
+import AddTeamModal from '../components/AddTeamModal'
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
@@ -513,6 +514,7 @@ export default function Overview() {
       )}
 
       {/* ══ MODAL AJOUTER UTILISATEUR ══ */}
+      {showAddTeamModal && <AddTeamModal onClose={() => setShowAddTeamModal(false)} agenceId={agence?.id} agenceName={agence?.nom}/> }
       {showResetPanel && <ResetPasswordPanel onClose={() => setShowResetPanel(false)} agenceId={agence?.id}/>}
       {showAddUserModal && <AddUserModal onClose={() => setShowAddUserModal(false)} agenceName={agence?.nom || 'Mon organisation'}/>}
 
