@@ -43,18 +43,32 @@ export default function Loci() {
       try {
         const { data:{ user } } = await supabase.auth.getUser()
 
-        // Profil de l'utilisateur connecté
+        // ÉTAPE 1: Récupérer le profil
         const { data:myProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-        
-        // Déterminer le vrai rôle
-        // Le créateur de l'agence est toujours global_admin
-        const isAgenceOwner = ag?.profile_id === user.id
-        const userRole = isAgenceOwner ? 'global_admin' : (myProfile?.role || user?.user_metadata?.role || 'global_admin')
-        console.log('Loci role détecté:', userRole, '| isOwner:', isAgenceOwner, '| profileRole:', myProfile?.role)
 
-        // Agence
+        // ÉTAPE 2: Récupérer l'agence
         const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
         setAgence(ag)
+
+        // ÉTAPE 3: Déterminer le rôle - propriétaire agence = global_admin TOUJOURS
+        const isOwner = ag?.profile_id === user.id
+        const ROLE = isOwner ? 'global_admin' : (myProfile?.role || 'global_admin')
+        console.log('🔑 Loci ROLE:', ROLE, '| isOwner:', isOwner)
+
+        // ÉTAPE 1: Récupérer le profil
+        const { data:myProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+
+        // ÉTAPE 2: Récupérer l'agence
+        const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
+        setAgence(ag)
+
+        // ÉTAPE 3: Déterminer le rôle - propriétaire agence = global_admin TOUJOURS
+        const isOwner = ag?.profile_id === user.id
+        const ROLE = isOwner ? 'global_admin' : (myProfile?.role || 'global_admin')
+        console.log('🔑 Loci ROLE:', ROLE, '| isOwner:', isOwner)
+
+
+
 
         if (ag?.id) {
           const [
@@ -99,7 +113,7 @@ export default function Loci() {
             _utilisateurs: auD.map(x=>({role:x.role,poste:x.poste,departement:x.departement,statut:x.statut})),
             _equipes: eqD.map(x=>({nom:x.nom,confidentialite:x.confidentialite,membres:x.equipe_membres?.length||0})),
             _invitations: invD.map(x=>({email:x.email,role:x.role,statut:x.statut})),
-            _monRole: userRole,
+            _monRole: ROLE,
           })
         }
       } catch(e) { console.error(e) }
@@ -107,17 +121,22 @@ export default function Loci() {
     const loadHistory = async () => {
       try {
         const { data:{ user } } = await supabase.auth.getUser()
-        const { data:convs } = await supabase
+        if (!user) return
+        const { data:convs, error } = await supabase
           .from('loci_conversations')
           .select('id, titre, created_at, updated_at')
           .eq('user_id', user.id)
           .order('updated_at', { ascending: false })
-          .limit(50)
-        setConversations(convs || [])
+          .limit(90)
+        if (error) console.error('Load history error:', error)
+        else {
+          setConversations(convs || [])
+          console.log('✅ Historique chargé:', convs?.length, 'conversations')
+        }
       } catch(e) { console.error('History error:', e) }
     }
     init()
-    loadHistory()
+    setTimeout(loadHistory, 500) // Attendre que init() finisse
   }, [])
 
   useEffect(() => {
@@ -212,22 +231,50 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
 
       // Sauvegarder dans l'historique
       try {
-        const { data:{ user } } = await supabase.auth.getUser()
+        const { data:{ user: currentUser } } = await supabase.auth.getUser()
+        if (!currentUser) throw new Error('Non connecté')
+        
         const titre = msg.slice(0, 60) + (msg.length > 60 ? '...' : '')
+        
         if (activeConvId) {
-          await supabase.from('loci_conversations')
-            .update({ messages: finalMessages, updated_at: new Date().toISOString() })
+          // Mettre à jour conversation existante
+          const { error: updateErr } = await supabase
+            .from('loci_conversations')
+            .update({ 
+              messages: finalMessages, 
+              updated_at: new Date().toISOString() 
+            })
             .eq('id', activeConvId)
+          if (updateErr) console.error('Update conv error:', updateErr)
+          else {
+            setConversations(prev => prev.map(c => 
+              c.id === activeConvId ? {...c, updated_at: new Date().toISOString()} : c
+            ))
+          }
         } else {
-          const { data:newConv } = await supabase.from('loci_conversations')
-            .insert({ user_id: user.id, agence_id: agence?.id, titre, messages: finalMessages })
-            .select().single()
-          if (newConv) {
+          // Créer nouvelle conversation
+          const { data:newConv, error: insertErr } = await supabase
+            .from('loci_conversations')
+            .insert({ 
+              user_id: currentUser.id, 
+              agence_id: agence?.id || null, 
+              titre, 
+              messages: finalMessages 
+            })
+            .select('id, titre, created_at, updated_at')
+            .single()
+          
+          if (insertErr) {
+            console.error('Insert conv error:', insertErr)
+          } else if (newConv) {
             setActiveConvId(newConv.id)
-            setConversations(prev => [{ id:newConv.id, titre, created_at:newConv.created_at, updated_at:newConv.updated_at }, ...prev])
+            setConversations(prev => [newConv, ...prev])
+            console.log('✅ Conversation sauvegardée:', newConv.id)
           }
         }
-      } catch(e) { console.error('Save conv error:', e) }
+      } catch(e) { 
+        console.error('Save conv error:', e.message) 
+      }
     } catch(e) {
       console.error('Loci error:', e)
       setThinking(false)
