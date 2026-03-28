@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 
@@ -19,7 +20,13 @@ const SAMPLE_MESSAGES = [
 
 export default function Loci() {
   const { profile } = useAuthStore()
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const location = useLocation()
+  const getInitialTab = () => {
+    if (location.pathname.includes('/chat')) return 'chat'
+    if (location.pathname.includes('/outils')) return 'outils'
+    return 'dashboard'
+  }
+  const [activeTab, setActiveTab] = useState(getInitialTab)
   const [messages, setMessages] = useState(SAMPLE_MESSAGES)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -405,6 +412,7 @@ Réponds en français, de façon concise, professionnelle et utile. Utilise des 
                   </div>
                 )}
                 <div className="loci-msg-bubble">
+                  {msg.model && <div style={{fontSize:10,color:'rgba(167,139,250,0.5)',marginBottom:6}}>✨ {msg.model}</div>}
                   {msg.content.split('\n').map((line,j)=>(
                     <span key={j}>
                       {line.split('**').map((part,k)=>k%2===1?<strong key={k}>{part}</strong>:part)}

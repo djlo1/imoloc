@@ -75,7 +75,8 @@ export default function DashboardAgence() {
               <Routes>
                 <Route index element={<Overview />} />
                 <Route path="loci" element={<Loci />} />
-                <Route path="loci/*" element={<Loci />} />
+                <Route path="loci/chat" element={<Loci />} />
+                <Route path="loci/outils" element={<Loci />} />
                 <Route path="biens" element={<Biens />} />
                 <Route path="biens/*" element={<Biens />} />
                 <Route path="locataires" element={<Locataires />} />

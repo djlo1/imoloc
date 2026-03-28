@@ -5,8 +5,7 @@ import { useAuthStore } from '../../../store/authStore'
 
 const NAV = [
   { id:'home', label:'Accueil', path:'/agence', exact:true, icon:'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25' },
-  { id:'loci', label:'Loci', path:'/agence/loci', exact:true, icon:'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z',
-    isLoci: true },
+
   { id:'users', label:'Utilisateurs', icon:'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z',
     children:[
       { label:'Utilisateurs actifs', path:'/agence/utilisateurs' },
@@ -117,21 +116,38 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
 
           {/* Sections expandables */}
           {/* Loci AI */}
-          <Link to="/agence/loci" className={`sb3-loci ${isActive('/agence/loci', true) ? 'active' : ''}`} onClick={onClose}>
+          <Link to="/agence/loci" className={`sb3-loci ${location.pathname.startsWith('/agence/loci') ? 'active' : ''}`} onClick={onClose}>
             <div className="sb3-loci-icon">
               <svg width="9" height="9" fill="none" stroke="#fff" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
               </svg>
             </div>
             {!collapsed && (
-              <span style={{background:'linear-gradient(135deg,#a78bfa,#34d399)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:600}}>
-                Loci
-              </span>
-            )}
-            {!collapsed && (
-              <span style={{fontSize:10,padding:'1px 6px',borderRadius:'100px',background:'linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,200,150,0.2))',color:'#a78bfa',marginLeft:'auto',flexShrink:0,WebkitTextFillColor:'#a78bfa'}}>IA</span>
+              <>
+                <span style={{background:'linear-gradient(135deg,#a78bfa,#34d399)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:600}}>
+                  Loci
+                </span>
+                <span style={{fontSize:10,padding:'1px 6px',borderRadius:'100px',background:'linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,200,150,0.2))',color:'#a78bfa',marginLeft:'auto',flexShrink:0,WebkitTextFillColor:'#a78bfa'}}>IA</span>
+              </>
             )}
           </Link>
+          {/* Sous-menu Loci */}
+          {!collapsed && location.pathname.startsWith('/agence/loci') && (
+            <div style={{paddingLeft:30}}>
+              <Link to="/agence/loci" className="sb3-sub-item" onClick={onClose}
+                style={{display:'flex',alignItems:'center',padding:'5px 14px',cursor:'pointer',fontSize:12.5,color:location.pathname==='/agence/loci'?'#a78bfa':'rgba(255,255,255,0.4)',transition:'all 0.1s',textDecoration:'none',borderLeft:'1px solid rgba(108,99,255,0.2)'}}>
+                📊 Tableau de bord
+              </Link>
+              <Link to="/agence/loci/chat" className="sb3-sub-item" onClick={onClose}
+                style={{display:'flex',alignItems:'center',padding:'5px 14px',cursor:'pointer',fontSize:12.5,color:location.pathname==='/agence/loci/chat'?'#a78bfa':'rgba(255,255,255,0.4)',transition:'all 0.1s',textDecoration:'none',borderLeft:'1px solid rgba(108,99,255,0.2)'}}>
+                💬 Loci Chat
+              </Link>
+              <Link to="/agence/loci/outils" className="sb3-sub-item" onClick={onClose}
+                style={{display:'flex',alignItems:'center',padding:'5px 14px',cursor:'pointer',fontSize:12.5,color:location.pathname==='/agence/loci/outils'?'#a78bfa':'rgba(255,255,255,0.4)',transition:'all 0.1s',textDecoration:'none',borderLeft:'1px solid rgba(108,99,255,0.2)'}}>
+                🛠️ Outils BI
+              </Link>
+            </div>
+          )}
 
           {NAV.slice(1).map(item => (
             <div key={item.id}>
