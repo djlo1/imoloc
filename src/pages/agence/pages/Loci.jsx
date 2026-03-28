@@ -21,12 +21,13 @@ const SAMPLE_MESSAGES = [
 export default function Loci() {
   const { profile } = useAuthStore()
   const location = useLocation()
-  const getInitialTab = () => {
-    if (location.pathname.includes('/chat')) return 'chat'
-    if (location.pathname.includes('/outils')) return 'outils'
-    return 'dashboard'
-  }
-  const [activeTab, setActiveTab] = useState(getInitialTab)
+  const [activeTab, setActiveTab] = useState('dashboard')
+
+  useEffect(() => {
+    if (location.pathname.includes('/chat')) setActiveTab('chat')
+    else if (location.pathname.includes('/outils')) setActiveTab('outils')
+    else setActiveTab('dashboard')
+  }, [location.pathname])
   const [messages, setMessages] = useState(SAMPLE_MESSAGES)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
