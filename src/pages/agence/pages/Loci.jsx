@@ -42,38 +42,22 @@ export default function Loci() {
     const init = async () => {
       try {
         const { data:{ user } } = await supabase.auth.getUser()
+        if (!user) return
 
-        // ÉTAPE 1: Récupérer le profil
-        const { data:myProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        const [{ data:myProfile }, { data:ag }] = await Promise.all([
+          supabase.from('profiles').select('*').eq('id', user.id).single(),
+          supabase.from('agences').select('*').eq('profile_id', user.id).single(),
+        ])
 
-        // ÉTAPE 2: Récupérer l'agence
-        const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
         setAgence(ag)
 
-        // ÉTAPE 3: Déterminer le rôle - propriétaire agence = global_admin TOUJOURS
-        const isOwner = ag?.profile_id === user.id
-        const ROLE = isOwner ? 'global_admin' : (myProfile?.role || 'global_admin')
-        console.log('🔑 Loci ROLE:', ROLE, '| isOwner:', isOwner)
-
-        // ÉTAPE 1: Récupérer le profil
-        const { data:myProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-
-        // ÉTAPE 2: Récupérer l'agence
-        const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
-        setAgence(ag)
-
-        // ÉTAPE 3: Déterminer le rôle - propriétaire agence = global_admin TOUJOURS
-        const isOwner = ag?.profile_id === user.id
-        const ROLE = isOwner ? 'global_admin' : (myProfile?.role || 'global_admin')
-        console.log('🔑 Loci ROLE:', ROLE, '| isOwner:', isOwner)
-
-
-
+        // Propriétaire de l'agence = toujours global_admin
+        const ROLE = (ag?.profile_id === user.id) ? 'global_admin' : (myProfile?.role || 'global_admin')
 
         if (ag?.id) {
           const [
             { data:b },{ data:l },{ data:p },
-            { data:au },{ data:eq },{ data:inv },{ data:baux }
+            { data:au },{ data:eq },{ data:inv }
           ] = await Promise.all([
             supabase.from('biens').select('*').eq('agence_id', ag.id),
             supabase.from('locataires').select('*').eq('agence_id', ag.id),
@@ -81,14 +65,11 @@ export default function Loci() {
             supabase.from('agence_users').select('*').eq('agence_id', ag.id),
             supabase.from('equipes').select('*, equipe_membres(*)').eq('agence_id', ag.id),
             supabase.from('invitations').select('*').eq('agence_id', ag.id),
-            supabase.from('baux').select('*').limit(100),
           ])
 
           const bD=b||[], lD=l||[], pD=p||[], auD=au||[], eqD=eq||[], invD=inv||[]
-
           const rev = pD.filter(x=>x.statut==='payé').reduce((s,x)=>s+Number(x.montant||0),0)
           const ret = pD.filter(x=>x.statut==='retard').length
-          const attente = pD.filter(x=>x.statut==='en attente').length
           const occ = bD.length>0 ? Math.round((lD.length/bD.length)*100) : 0
           const revMois = pD.filter(x=>x.statut==='payé'&&new Date(x.date_paiement).getMonth()===new Date().getMonth()).reduce((s,x)=>s+Number(x.montant||0),0)
 
@@ -101,24 +82,24 @@ export default function Loci() {
             revenus:rev,
             revenusMois:revMois,
             retards:ret,
-            enAttente:attente,
+            enAttente: pD.filter(x=>x.statut==='en attente').length,
             taux:occ,
-            utilisateurs: auD.length + 1, // +1 pour l'admin
+            utilisateurs: auD.length + 1,
             equipes: eqD.length,
             invitationsEnAttente: invD.filter(x=>x.statut==='en_attente').length,
             totalPaiements: pD.length,
             paiementsPayes: pD.filter(x=>x.statut==='payé').length,
-            // Données détaillées pour le contexte IA
             _biens: bD.map(x=>({nom:x.nom,type:x.type,ville:x.ville,loyer:x.loyer,statut:x.statut})),
-            _utilisateurs: auD.map(x=>({role:x.role,poste:x.poste,departement:x.departement,statut:x.statut})),
+            _utilisateurs: auD.map(x=>({role:x.role,poste:x.poste,departement:x.departement,email:x.email,prenom:x.prenom,nom:x.nom})),
             _equipes: eqD.map(x=>({nom:x.nom,confidentialite:x.confidentialite,membres:x.equipe_membres?.length||0})),
             _invitations: invD.map(x=>({email:x.email,role:x.role,statut:x.statut})),
             _monRole: ROLE,
           })
         }
-      } catch(e) { console.error(e) }
+      } catch(e) { console.error('Loci init error:', e) }
     }
-    const loadHistory = async () => {
+
+        const loadHistory = async () => {
       try {
         const { data:{ user } } = await supabase.auth.getUser()
         if (!user) return
