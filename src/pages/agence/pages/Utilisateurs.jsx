@@ -72,6 +72,15 @@ export default function Utilisateurs() {
   const [rowMenu, setRowMenu] = useState(null)
   const [inviteForm, setInviteForm] = useState({ email:'', prenom:'', nom:'', organisation:'', message:'' })
   const [inviting, setInviting] = useState(false)
+  const [showAddPanel, setShowAddPanel] = useState(false)
+  const [showBulkPanel, setShowBulkPanel] = useState(false)
+  const [addForm, setAddForm] = useState({ prenom:'', nom:'', email:'', role:'agent', poste:'', departement:'' })
+  const [adding, setAdding] = useState(false)
+  const [bulkRows, setBulkRows] = useState([
+    { prenom:'', nom:'', email:'', role:'agent' },
+    { prenom:'', nom:'', email:'', role:'agent' },
+  ])
+  const [bulkAdding, setBulkAdding] = useState(false)
   const resizingCol = useRef(null)
   const startX = useRef(0)
   const startW = useRef(0)
@@ -153,6 +162,87 @@ export default function Utilisateurs() {
       toast.success(`${sup.prenom} restauré`)
       fetchData()
     } catch(e) { toast.error('Erreur') }
+  }
+
+  const handleAdd = async (e) => {
+    e.preventDefault()
+    if (!agence?.id) return toast.error('Aucune agence trouvée')
+    setAdding(true)
+    try {
+      // Créer le profil
+      const { data:{ user:cu } } = await supabase.auth.getUser()
+      const { data:newProfile, error:pErr } = await supabase.from('profiles').insert({
+        email: addForm.email,
+        nom: addForm.nom,
+        prenom: addForm.prenom,
+        role: addForm.role,
+        type_compte: 'organisation',
+        statut: 'actif',
+      }).select().single()
+      if (pErr) throw pErr
+
+      // Lier à l'agence
+      await supabase.from('agence_users').insert({
+        agence_id: agence.id,
+        user_id: newProfile.id,
+        email: addForm.email,
+        nom: addForm.nom,
+        prenom: addForm.prenom,
+        role: addForm.role,
+        poste: addForm.poste,
+        departement: addForm.departement,
+      })
+
+      // Envoyer invitation email
+      await fetch('https://zecyfnurrcslukxvmpca.supabase.co/functions/v1/send-invitation', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          email: addForm.email,
+          prenom: addForm.prenom,
+          nom: addForm.nom,
+          agenceName: agence.nom,
+          role: ROLES_LABELS[addForm.role]||addForm.role,
+          loginUrl: window.location.origin+'/login',
+        })
+      })
+
+      toast.success(`✅ ${addForm.prenom} ${addForm.nom} ajouté avec succès !`)
+      setAddForm({ prenom:'', nom:'', email:'', role:'agent', poste:'', departement:'' })
+      setShowAddPanel(false)
+      fetchData()
+    } catch(e) {
+      console.error(e)
+      toast.error(e.message||'Erreur lors de l'ajout')
+    } finally { setAdding(false) }
+  }
+
+  const handleBulkAdd = async () => {
+    const validRows = bulkRows.filter(r=>r.email&&r.prenom)
+    if (!validRows.length) return toast.error('Remplissez au moins une ligne complète')
+    if (!agence?.id) return toast.error('Aucune agence trouvée')
+    setBulkAdding(true)
+    let success = 0, errors = 0
+    for (const row of validRows) {
+      try {
+        const { data:np } = await supabase.from('profiles').insert({
+          email:row.email, nom:row.nom, prenom:row.prenom,
+          role:row.role, type_compte:'organisation', statut:'actif',
+        }).select().single()
+        if (np) {
+          await supabase.from('agence_users').insert({
+            agence_id:agence.id, user_id:np.id,
+            email:row.email, nom:row.nom, prenom:row.prenom, role:row.role,
+          })
+          success++
+        }
+      } catch(e) { errors++ }
+    }
+    toast.success(`✅ ${success} utilisateur(s) ajouté(s)${errors>0?' · '+errors+' erreur(s)':''}`)
+    setBulkRows([{prenom:'',nom:'',email:'',role:'agent'},{prenom:'',nom:'',email:'',role:'agent'}])
+    setShowBulkPanel(false)
+    fetchData()
+    setBulkAdding(false)
   }
 
   const handleInvite = async (e) => {
@@ -464,12 +554,18 @@ export default function Utilisateurs() {
 
             {/* Toolbar */}
             <div className="us-toolbar">
-              <button className="us-btn us-btn-p" onClick={()=>navigate('/agence',{state:{openAddUser:true}})}>
+              <button className="us-btn us-btn-p" onClick={()=>setShowAddPanel(true)}>
                 <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Ajouter un utilisateur
               </button>
-              <button className="us-btn">📋 Modèles</button>
-              <button className="us-btn">👥 Ajouter plusieurs</button>
+              <button className="us-btn" onClick={()=>{
+                const csv = 'Prénom,Nom,Email,Rôle
+Jean,Dupont,jean@exemple.com,agent'
+                const blob = new Blob([csv],{type:'text/csv'})
+                const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modele_utilisateurs.csv'; a.click()
+                toast.success('Modèle CSV téléchargé !')
+              }}>📋 Modèles</button>
+              <button className="us-btn" onClick={()=>setShowBulkPanel(true)}>👥 Ajouter plusieurs</button>
               <button className="us-btn">🔐 MFA</button>
               <div className="us-sep"/>
               <button className="us-btn us-btn-d" disabled={selected.length===0} onClick={()=>{const u=actifs.find(x=>x.id===selected[0]);if(u)handleDelete(u)}}>
@@ -1296,6 +1392,163 @@ export default function Utilisateurs() {
           </div>
         </div>
       )}
+    <>
+      {/* ══ PANEL AJOUTER UN UTILISATEUR ══ */}
+      {showAddPanel&&(
+        <div className="ui-ov" onClick={e=>e.target===e.currentTarget&&setShowAddPanel(false)}>
+          <div className="ui-panel">
+            <div className="ui-head">
+              <span style={{fontSize:16,fontWeight:700,color:'#e6edf3'}}>Ajouter un utilisateur</span>
+              <button className="up-cls" onClick={()=>setShowAddPanel(false)}>
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div className="ui-body">
+              <div style={{padding:'12px 14px',borderRadius:7,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.18)',fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.65,marginBottom:20,display:'flex',gap:10}}>
+                <span style={{fontSize:18,flexShrink:0}}>ℹ️</span>
+                <div>L'utilisateur recevra un email d'invitation avec ses identifiants de connexion à <strong style={{color:'rgba(255,255,255,0.7)'}}>{agence?.nom}</strong>.</div>
+              </div>
+              <form id="add-form" onSubmit={handleAdd}>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                  <div className="ui-f">
+                    <label className="ui-l">Prénom <span style={{color:'#ef4444'}}>*</span></label>
+                    <input className="ui-i" required value={addForm.prenom} onChange={e=>setAddForm(f=>({...f,prenom:e.target.value}))} placeholder="Jean" autoFocus/>
+                  </div>
+                  <div className="ui-f">
+                    <label className="ui-l">Nom <span style={{color:'#ef4444'}}>*</span></label>
+                    <input className="ui-i" required value={addForm.nom} onChange={e=>setAddForm(f=>({...f,nom:e.target.value}))} placeholder="Dupont"/>
+                  </div>
+                </div>
+                <div className="ui-f">
+                  <label className="ui-l">Email <span style={{color:'#ef4444'}}>*</span></label>
+                  <input className="ui-i" type="email" required value={addForm.email} onChange={e=>setAddForm(f=>({...f,email:e.target.value}))} placeholder="jean.dupont@exemple.com"/>
+                </div>
+                <div className="ui-f">
+                  <label className="ui-l">Rôle <span style={{color:'#ef4444'}}>*</span></label>
+                  <select className="ui-i" value={addForm.role} onChange={e=>setAddForm(f=>({...f,role:e.target.value}))}>
+                    {Object.entries(ROLES_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+                  </select>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                  <div className="ui-f">
+                    <label className="ui-l">Poste</label>
+                    <input className="ui-i" value={addForm.poste} onChange={e=>setAddForm(f=>({...f,poste:e.target.value}))} placeholder="Responsable commercial"/>
+                  </div>
+                  <div className="ui-f">
+                    <label className="ui-l">Département</label>
+                    <input className="ui-i" value={addForm.departement} onChange={e=>setAddForm(f=>({...f,departement:e.target.value}))} placeholder="Commercial"/>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div className="ui-foot">
+              <button className="ui-fb ui-fb-g" onClick={()=>setShowAddPanel(false)}>Annuler</button>
+              <button className="ui-fb ui-fb-b" form="add-form" type="submit" disabled={adding}>
+                {adding?'Ajout en cours...':'Ajouter l'utilisateur'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ PANEL AJOUTER PLUSIEURS UTILISATEURS ══ */}
+      {showBulkPanel&&(
+        <div className="ui-ov" onClick={e=>e.target===e.currentTarget&&setShowBulkPanel(false)}>
+          <div className="ui-panel" style={{width:680}}>
+            <div className="ui-head">
+              <span style={{fontSize:16,fontWeight:700,color:'#e6edf3'}}>Ajouter plusieurs utilisateurs</span>
+              <button className="up-cls" onClick={()=>setShowBulkPanel(false)}>
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div className="ui-body">
+              {/* Options */}
+              <div style={{display:'flex',gap:10,marginBottom:20}}>
+                <div style={{flex:1,padding:'14px 16px',borderRadius:8,background:'rgba(0,120,212,0.08)',border:'1px solid rgba(0,120,212,0.25)',cursor:'pointer'}}>
+                  <div style={{fontSize:14,fontWeight:600,color:'#4da6ff',marginBottom:4}}>📋 Saisie manuelle</div>
+                  <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>Remplissez le tableau ligne par ligne</div>
+                </div>
+                <div onClick={()=>{
+                  const csv = 'Prénom,Nom,Email,Rôle
+Jean,Dupont,jean@exemple.com,agent
+Marie,Martin,marie@exemple.com,comptable'
+                  const blob = new Blob([csv],{type:'text/csv'})
+                  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modele_utilisateurs.csv'; a.click()
+                  toast.success('Modèle CSV téléchargé !')
+                }} style={{flex:1,padding:'14px 16px',borderRadius:8,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',cursor:'pointer',transition:'all 0.15s'}}>
+                  <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:4}}>📥 Import CSV</div>
+                  <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>Téléchargez le modèle et importez</div>
+                </div>
+              </div>
+
+              {/* Tableau saisie */}
+              <div style={{marginBottom:12}}>
+                <table style={{width:'100%',borderCollapse:'collapse'}}>
+                  <thead>
+                    <tr>
+                      {['Prénom *','Nom','Email *','Rôle'].map((h,i)=>(
+                        <th key={i} style={{fontSize:12,fontWeight:600,color:'rgba(255,255,255,0.4)',padding:'8px 10px',textAlign:'left',borderBottom:'1px solid rgba(255,255,255,0.07)'}}>
+                          {h}
+                        </th>
+                      ))}
+                      <th style={{width:36}}/>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bulkRows.map((row,i)=>(
+                      <tr key={i}>
+                        {['prenom','nom','email'].map(field=>(
+                          <td key={field} style={{padding:'5px 4px'}}>
+                            <input
+                              className="ui-i"
+                              style={{padding:'7px 10px',fontSize:13}}
+                              value={row[field]}
+                              onChange={e=>setBulkRows(prev=>prev.map((r,j)=>j===i?{...r,[field]:e.target.value}:r))}
+                              placeholder={field==='prenom'?'Jean':field==='nom'?'Dupont':'email@ex.com'}
+                            />
+                          </td>
+                        ))}
+                        <td style={{padding:'5px 4px'}}>
+                          <select
+                            className="ui-i"
+                            style={{padding:'7px 8px',fontSize:12}}
+                            value={row.role}
+                            onChange={e=>setBulkRows(prev=>prev.map((r,j)=>j===i?{...r,role:e.target.value}:r))}>
+                            {Object.entries(ROLES_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+                          </select>
+                        </td>
+                        <td style={{padding:'5px 4px',textAlign:'center'}}>
+                          <button onClick={()=>setBulkRows(p=>p.filter((_,j)=>j!==i))} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.25)',fontSize:16,padding:'2px 5px',lineHeight:1,transition:'color 0.1s'}}
+                            onMouseOver={e=>e.currentTarget.style.color='#ef4444'}
+                            onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.25)'}>×</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button onClick={()=>setBulkRows(p=>[...p,{prenom:'',nom:'',email:'',role:'agent'}])}
+                style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:6,border:'1px dashed rgba(255,255,255,0.12)',background:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',fontFamily:'Inter',width:'100%',justifyContent:'center',marginBottom:16,transition:'all 0.15s'}}
+                onMouseOver={e=>{e.currentTarget.style.borderColor='rgba(0,120,212,0.4)';e.currentTarget.style.color='#4da6ff'}}
+                onMouseOut={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.12)';e.currentTarget.style.color='rgba(255,255,255,0.4)'}}>
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                Ajouter une ligne
+              </button>
+
+              <div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',padding:'10px 14px',borderRadius:6,background:'rgba(245,158,11,0.05)',border:'1px solid rgba(245,158,11,0.15)'}}>
+                ⚠️ {bulkRows.filter(r=>r.email&&r.prenom).length} ligne(s) valide(s) sur {bulkRows.length} · Seules les lignes avec prénom et email seront importées.
+              </div>
+            </div>
+            <div className="ui-foot">
+              <button className="ui-fb ui-fb-g" onClick={()=>setShowBulkPanel(false)}>Annuler</button>
+              <button className="ui-fb ui-fb-b" onClick={handleBulkAdd} disabled={bulkAdding||!bulkRows.filter(r=>r.email&&r.prenom).length}>
+                {bulkAdding?'Import en cours...':'Importer les utilisateurs'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
     </>
   )
 }
