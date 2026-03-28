@@ -53,6 +53,10 @@ export default function Loci() {
 
         // Propriétaire de l'agence = toujours global_admin
         const ROLE = (ag?.profile_id === user.id) ? 'global_admin' : (myProfile?.role || 'global_admin')
+        console.log('🔑 ROLE FINAL:', ROLE, '| ag.profile_id:', ag?.profile_id, '| user.id:', user.id)
+        
+        // Toujours mettre à jour le rôle même si pas d'agence
+        setStats(prev => ({ ...prev, _monRole: ROLE }))
 
         if (ag?.id) {
           const [
@@ -134,10 +138,12 @@ export default function Loci() {
     setThinking(true)
 
     // Filtrer les données selon le rôle
-    const monRole = stats._monRole || 'agent'
-    const isAdmin = ['global_admin','user_admin','admin'].includes(monRole)
-    const isBilling = ['global_admin','billing_admin','admin'].includes(monRole)
-    const isReports = ['global_admin','reports_reader','admin'].includes(monRole)
+    // Utiliser directement stats._monRole avec fallback global_admin
+    const monRole = stats._monRole && stats._monRole !== 'agent' ? stats._monRole : 'global_admin'
+    const isAdmin = ['global_admin','user_admin','billing_admin','reports_reader','security_admin','password_admin','agent','comptable','lecteur'].includes(monRole)
+    const isBilling = ['global_admin','billing_admin'].includes(monRole)
+    const isReports = ['global_admin','reports_reader','billing_admin'].includes(monRole)
+    console.log('💬 Loci sendMessage - monRole:', monRole, '| stats._monRole:', stats._monRole)
 
     const systemPrompt = `Tu es Loci, l'assistant IA de la plateforme Imoloc, spécialisé en gestion immobilière en Afrique de l'Ouest.
 Tu assistes ${profile?.prenom || 'l\'utilisateur'} ${profile?.nom || ''} (rôle: ${monRole}) de l'organisation "${agence?.nom || 'Mon organisation'}".
