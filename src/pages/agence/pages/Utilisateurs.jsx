@@ -634,7 +634,7 @@ export default function Utilisateurs() {
                           {cols.includes('lastName')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.55)'}}>{u.nom||'—'}</td>}
                           {cols.includes('jobTitle')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{u.poste||'—'}</td>}
                           {cols.includes('city')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>—</td>}
-                          {cols.includes('country')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)')}}>{u.pays||'Bénin'}</td>}
+                          {cols.includes('country')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{u.pays||'Bénin'}</td>}
                           {cols.includes('lastSignIn')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{u.derniere_connexion?new Date(u.derniere_connexion).toLocaleDateString('fr-FR'):'—'}</td>}
                           {cols.includes('isGuest')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{u.type_compte==='invite'?'Oui':'—'}</td>}
                           <td onClick={e=>e.stopPropagation()} style={{position:'relative'}}>

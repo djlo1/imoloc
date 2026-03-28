@@ -509,7 +509,6 @@ export default function Overview() {
       {showResetPanel && <ResetPasswordPanel onClose={() => setShowResetPanel(false)} agenceId={agence?.id}/>}
       {showAddUserModal && <AddUserModal onClose={() => setShowAddUserModal(false)} agenceName={agence?.nom || 'Mon organisation'}/>}
 
-      )}
 
     </>
   )
