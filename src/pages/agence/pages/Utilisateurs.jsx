@@ -213,7 +213,7 @@ export default function Utilisateurs() {
       fetchData()
     } catch(e) {
       console.error(e)
-      toast.error(e.message||'Erreur lors de l'ajout')
+      toast.error(e.message||"Erreur lors de l'ajout")
     } finally { setAdding(false) }
   }
 
