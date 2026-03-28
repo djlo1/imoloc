@@ -63,7 +63,7 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/agence/*" element={<PrivateRoute roles={['agence']}><DashboardAgence /></PrivateRoute>} />
+      <Route path="/agence/*" element={<PrivateRoute roles={['agence','global_admin','user_admin','billing_admin','reports_reader','security_admin','password_admin','agent','comptable','lecteur']}><DashboardAgence /></PrivateRoute>} />
       <Route path="/proprietaire/*" element={<PrivateRoute roles={['proprietaire']}><DashboardProprietaire /></PrivateRoute>} />
       <Route path="/locataire/*" element={<PrivateRoute roles={['locataire']}><DashboardLocataire /></PrivateRoute>} />
       <Route path="/admin/*" element={<PrivateRoute roles={['super_admin']}><DashboardAdmin /></PrivateRoute>} />
