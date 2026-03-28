@@ -32,10 +32,12 @@ export default function Login() {
       const p = profile || { id: data.user.id, role: 'agence' }
       setProfile(p)
       toast.success('Connexion réussie !')
+      const AGENCE_ROLES = ['global_admin','user_admin','billing_admin','reports_reader','security_admin','password_admin','agent','comptable','lecteur']
       if (p.role === 'super_admin') navigate('/admin')
-      else if (p.role === 'agence') navigate('/agence')
+      else if (AGENCE_ROLES.includes(p.role)) navigate('/agence')
       else if (p.role === 'proprietaire') navigate('/proprietaire')
-      else navigate('/locataire')
+      else if (p.role === 'locataire') navigate('/locataire')
+      else navigate('/agence') // fallback
     } catch (err) {
       toast.error('Email ou mot de passe incorrect')
     } finally {
