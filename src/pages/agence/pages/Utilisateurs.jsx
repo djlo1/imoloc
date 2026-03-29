@@ -1363,7 +1363,7 @@ export default function Utilisateurs() {
             {/* Steps indicator */}
             <div style={{display:'flex',gap:0,padding:'0 28px',borderBottom:'1px solid rgba(255,255,255,0.07)',flexShrink:0}}>
               {[
-                {n:1,label:'Méthode d'import'},
+                {n:1,label:"Méthode d'import"},
                 {n:2,label:'Saisie des utilisateurs'},
                 {n:3,label:'Vérification & Import'},
               ].map((s,i)=>(
