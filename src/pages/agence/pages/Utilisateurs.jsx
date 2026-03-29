@@ -1443,7 +1443,7 @@ export default function Utilisateurs() {
             <div className="ui-foot">
               <button className="ui-fb ui-fb-g" onClick={()=>setShowAddPanel(false)}>Annuler</button>
               <button className="ui-fb ui-fb-b" form="add-form" type="submit" disabled={adding}>
-                {adding?'Ajout en cours...':'Ajouter l'utilisateur'}
+                {adding?'Ajout en cours...':"Ajouter l'utilisateur"}
               </button>
             </div>
           </div>
