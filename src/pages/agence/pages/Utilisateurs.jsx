@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
+import AddUserModal from '../components/AddUserModal'
 
 // ── Constantes ──────────────────────────────────────────
 const ROLES_LABELS = {
@@ -72,10 +73,11 @@ export default function Utilisateurs() {
   const [rowMenu, setRowMenu] = useState(null)
   const [inviteForm, setInviteForm] = useState({ email:'', prenom:'', nom:'', organisation:'', message:'' })
   const [inviting, setInviting] = useState(false)
-  const [showAddPanel, setShowAddPanel] = useState(false)
+  const [showAddUserModal, setShowAddUserModal] = useState(false)
   const [showBulkPanel, setShowBulkPanel] = useState(false)
-  const [addForm, setAddForm] = useState({ prenom:'', nom:'', email:'', role:'agent', poste:'', departement:'' })
-  const [adding, setAdding] = useState(false)
+
+  const [bulkStep, setBulkStep] = useState(1)
+  const [bulkMode, setBulkMode] = useState('manual') // 'manual' | 'csv'
   const [bulkRows, setBulkRows] = useState([
     { prenom:'', nom:'', email:'', role:'agent' },
     { prenom:'', nom:'', email:'', role:'agent' },
@@ -162,59 +164,6 @@ export default function Utilisateurs() {
       toast.success(`${sup.prenom} restauré`)
       fetchData()
     } catch(e) { toast.error('Erreur') }
-  }
-
-  const handleAdd = async (e) => {
-    e.preventDefault()
-    if (!agence?.id) return toast.error('Aucune agence trouvée')
-    setAdding(true)
-    try {
-      // Créer le profil
-      const { data:{ user:cu } } = await supabase.auth.getUser()
-      const { data:newProfile, error:pErr } = await supabase.from('profiles').insert({
-        email: addForm.email,
-        nom: addForm.nom,
-        prenom: addForm.prenom,
-        role: addForm.role,
-        type_compte: 'organisation',
-        statut: 'actif',
-      }).select().single()
-      if (pErr) throw pErr
-
-      // Lier à l'agence
-      await supabase.from('agence_users').insert({
-        agence_id: agence.id,
-        user_id: newProfile.id,
-        email: addForm.email,
-        nom: addForm.nom,
-        prenom: addForm.prenom,
-        role: addForm.role,
-        poste: addForm.poste,
-        departement: addForm.departement,
-      })
-
-      // Envoyer invitation email
-      await fetch('https://zecyfnurrcslukxvmpca.supabase.co/functions/v1/send-invitation', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          email: addForm.email,
-          prenom: addForm.prenom,
-          nom: addForm.nom,
-          agenceName: agence.nom,
-          role: ROLES_LABELS[addForm.role]||addForm.role,
-          loginUrl: window.location.origin+'/login',
-        })
-      })
-
-      toast.success(`✅ ${addForm.prenom} ${addForm.nom} ajouté avec succès !`)
-      setAddForm({ prenom:'', nom:'', email:'', role:'agent', poste:'', departement:'' })
-      setShowAddPanel(false)
-      fetchData()
-    } catch(e) {
-      console.error(e)
-      toast.error(e.message||"Erreur lors de l'ajout")
-    } finally { setAdding(false) }
   }
 
   const handleBulkAdd = async () => {
@@ -554,7 +503,7 @@ export default function Utilisateurs() {
 
             {/* Toolbar */}
             <div className="us-toolbar">
-              <button className="us-btn us-btn-p" onClick={()=>setShowAddPanel(true)}>
+              <button className="us-btn us-btn-p" onClick={()=>setShowAddUserModal(true)}>
                 <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Ajouter un utilisateur
               </button>
@@ -1392,160 +1341,270 @@ export default function Utilisateurs() {
         </div>
       )}
     <>
-      {/* ══ PANEL AJOUTER UN UTILISATEUR ══ */}
-      {showAddPanel&&(
-        <div className="ui-ov" onClick={e=>e.target===e.currentTarget&&setShowAddPanel(false)}>
-          <div className="ui-panel">
-            <div className="ui-head">
-              <span style={{fontSize:16,fontWeight:700,color:'#e6edf3'}}>Ajouter un utilisateur</span>
-              <button className="up-cls" onClick={()=>setShowAddPanel(false)}>
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-            </div>
-            <div className="ui-body">
-              <div style={{padding:'12px 14px',borderRadius:7,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.18)',fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.65,marginBottom:20,display:'flex',gap:10}}>
-                <span style={{fontSize:18,flexShrink:0}}>ℹ️</span>
-                <div>L'utilisateur recevra un email d'invitation avec ses identifiants de connexion à <strong style={{color:'rgba(255,255,255,0.7)'}}>{agence?.nom}</strong>.</div>
-              </div>
-              <form id="add-form" onSubmit={handleAdd}>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                  <div className="ui-f">
-                    <label className="ui-l">Prénom <span style={{color:'#ef4444'}}>*</span></label>
-                    <input className="ui-i" required value={addForm.prenom} onChange={e=>setAddForm(f=>({...f,prenom:e.target.value}))} placeholder="Jean" autoFocus/>
-                  </div>
-                  <div className="ui-f">
-                    <label className="ui-l">Nom <span style={{color:'#ef4444'}}>*</span></label>
-                    <input className="ui-i" required value={addForm.nom} onChange={e=>setAddForm(f=>({...f,nom:e.target.value}))} placeholder="Dupont"/>
-                  </div>
-                </div>
-                <div className="ui-f">
-                  <label className="ui-l">Email <span style={{color:'#ef4444'}}>*</span></label>
-                  <input className="ui-i" type="email" required value={addForm.email} onChange={e=>setAddForm(f=>({...f,email:e.target.value}))} placeholder="jean.dupont@exemple.com"/>
-                </div>
-                <div className="ui-f">
-                  <label className="ui-l">Rôle <span style={{color:'#ef4444'}}>*</span></label>
-                  <select className="ui-i" value={addForm.role} onChange={e=>setAddForm(f=>({...f,role:e.target.value}))}>
-                    {Object.entries(ROLES_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
-                  </select>
-                </div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                  <div className="ui-f">
-                    <label className="ui-l">Poste</label>
-                    <input className="ui-i" value={addForm.poste} onChange={e=>setAddForm(f=>({...f,poste:e.target.value}))} placeholder="Responsable commercial"/>
-                  </div>
-                  <div className="ui-f">
-                    <label className="ui-l">Département</label>
-                    <input className="ui-i" value={addForm.departement} onChange={e=>setAddForm(f=>({...f,departement:e.target.value}))} placeholder="Commercial"/>
-                  </div>
-                </div>
-              </form>
-            </div>
-            <div className="ui-foot">
-              <button className="ui-fb ui-fb-g" onClick={()=>setShowAddPanel(false)}>Annuler</button>
-              <button className="ui-fb ui-fb-b" form="add-form" type="submit" disabled={adding}>
-                {adding?'Ajout en cours...':"Ajouter l'utilisateur"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ══ MODAL AJOUTER UN UTILISATEUR ══ */}
+      {showAddUserModal&&<AddUserModal onClose={()=>{ setShowAddUserModal(false); fetchData() }} agenceName={agence?.nom||'Mon organisation'}/>}
 
-      {/* ══ PANEL AJOUTER PLUSIEURS UTILISATEURS ══ */}
+            {/* ══ PANEL AJOUTER PLUSIEURS UTILISATEURS ══ */}
       {showBulkPanel&&(
-        <div className="ui-ov" onClick={e=>e.target===e.currentTarget&&setShowBulkPanel(false)}>
-          <div className="ui-panel" style={{width:680}}>
-            <div className="ui-head">
-              <span style={{fontSize:16,fontWeight:700,color:'#e6edf3'}}>Ajouter plusieurs utilisateurs</span>
-              <button className="up-cls" onClick={()=>setShowBulkPanel(false)}>
+        <div className="ui-ov" onClick={e=>e.target===e.currentTarget&&(setShowBulkPanel(false)||setBulkStep(1))}>
+          <div className="ui-panel" style={{width:900,display:'flex',flexDirection:'column',height:'100%'}}>
+
+            {/* Header */}
+            <div style={{padding:'18px 28px',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+              <div>
+                <div style={{fontSize:17,fontWeight:700,color:'#e6edf3',marginBottom:4}}>Ajouter plusieurs utilisateurs</div>
+                <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>Étape {bulkStep} sur 3</div>
+              </div>
+              <button className="up-cls" onClick={()=>{setShowBulkPanel(false);setBulkStep(1)}}>
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </div>
-            <div className="ui-body">
-              {/* Options */}
-              <div style={{display:'flex',gap:10,marginBottom:20}}>
-                <div style={{flex:1,padding:'14px 16px',borderRadius:8,background:'rgba(0,120,212,0.08)',border:'1px solid rgba(0,120,212,0.25)',cursor:'pointer'}}>
-                  <div style={{fontSize:14,fontWeight:600,color:'#4da6ff',marginBottom:4}}>📋 Saisie manuelle</div>
-                  <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>Remplissez le tableau ligne par ligne</div>
-                </div>
-                <div onClick={()=>{
-                  const csv = 'Prenom,Nom,Email,Role\nJean,Dupont,jean@exemple.com,agent\nMarie,Martin,marie@exemple.com,comptable'
-                  const blob = new Blob([csv],{type:'text/csv'})
-                  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modele_utilisateurs.csv'; a.click()
-                  toast.success('Modèle CSV téléchargé !')
-                }} style={{flex:1,padding:'14px 16px',borderRadius:8,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',cursor:'pointer',transition:'all 0.15s'}}>
-                  <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:4}}>📥 Import CSV</div>
-                  <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>Téléchargez le modèle et importez</div>
-                </div>
-              </div>
 
-              {/* Tableau saisie */}
-              <div style={{marginBottom:12}}>
-                <table style={{width:'100%',borderCollapse:'collapse'}}>
-                  <thead>
-                    <tr>
-                      {['Prénom *','Nom','Email *','Rôle'].map((h,i)=>(
-                        <th key={i} style={{fontSize:12,fontWeight:600,color:'rgba(255,255,255,0.4)',padding:'8px 10px',textAlign:'left',borderBottom:'1px solid rgba(255,255,255,0.07)'}}>
-                          {h}
-                        </th>
-                      ))}
-                      <th style={{width:36}}/>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bulkRows.map((row,i)=>(
-                      <tr key={i}>
-                        {['prenom','nom','email'].map(field=>(
-                          <td key={field} style={{padding:'5px 4px'}}>
-                            <input
-                              className="ui-i"
-                              style={{padding:'7px 10px',fontSize:13}}
-                              value={row[field]}
-                              onChange={e=>setBulkRows(prev=>prev.map((r,j)=>j===i?{...r,[field]:e.target.value}:r))}
-                              placeholder={field==='prenom'?'Jean':field==='nom'?'Dupont':'email@ex.com'}
-                            />
-                          </td>
-                        ))}
-                        <td style={{padding:'5px 4px'}}>
-                          <select
-                            className="ui-i"
-                            style={{padding:'7px 8px',fontSize:12}}
-                            value={row.role}
-                            onChange={e=>setBulkRows(prev=>prev.map((r,j)=>j===i?{...r,role:e.target.value}:r))}>
-                            {Object.entries(ROLES_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
-                          </select>
-                        </td>
-                        <td style={{padding:'5px 4px',textAlign:'center'}}>
-                          <button onClick={()=>setBulkRows(p=>p.filter((_,j)=>j!==i))} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.25)',fontSize:16,padding:'2px 5px',lineHeight:1,transition:'color 0.1s'}}
-                            onMouseOver={e=>e.currentTarget.style.color='#ef4444'}
-                            onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.25)'}>×</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <button onClick={()=>setBulkRows(p=>[...p,{prenom:'',nom:'',email:'',role:'agent'}])}
-                style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:6,border:'1px dashed rgba(255,255,255,0.12)',background:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',fontFamily:'Inter',width:'100%',justifyContent:'center',marginBottom:16,transition:'all 0.15s'}}
-                onMouseOver={e=>{e.currentTarget.style.borderColor='rgba(0,120,212,0.4)';e.currentTarget.style.color='#4da6ff'}}
-                onMouseOut={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.12)';e.currentTarget.style.color='rgba(255,255,255,0.4)'}}>
-                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                Ajouter une ligne
-              </button>
-
-              <div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',padding:'10px 14px',borderRadius:6,background:'rgba(245,158,11,0.05)',border:'1px solid rgba(245,158,11,0.15)'}}>
-                ⚠️ {bulkRows.filter(r=>r.email&&r.prenom).length} ligne(s) valide(s) sur {bulkRows.length} · Seules les lignes avec prénom et email seront importées.
-              </div>
+            {/* Steps indicator */}
+            <div style={{display:'flex',gap:0,padding:'0 28px',borderBottom:'1px solid rgba(255,255,255,0.07)',flexShrink:0}}>
+              {[
+                {n:1,label:'Méthode d'import'},
+                {n:2,label:'Saisie des utilisateurs'},
+                {n:3,label:'Vérification & Import'},
+              ].map((s,i)=>(
+                <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'14px 20px 14px 0',marginRight:20,borderBottom:`2px solid ${bulkStep>=s.n?'#0078d4':'transparent'}`,cursor:bulkStep>s.n?'pointer':'default'}}
+                  onClick={()=>bulkStep>s.n&&setBulkStep(s.n)}>
+                  <div style={{width:24,height:24,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,background:bulkStep>s.n?'#0078d4':bulkStep===s.n?'#0078d4':'rgba(255,255,255,0.1)',color:'#fff',flexShrink:0}}>
+                    {bulkStep>s.n?<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>:s.n}
+                  </div>
+                  <span style={{fontSize:13,fontWeight:bulkStep===s.n?600:400,color:bulkStep>=s.n?'#e6edf3':'rgba(255,255,255,0.35)'}}>{s.label}</span>
+                </div>
+              ))}
             </div>
-            <div className="ui-foot">
-              <button className="ui-fb ui-fb-g" onClick={()=>setShowBulkPanel(false)}>Annuler</button>
-              <button className="ui-fb ui-fb-b" onClick={handleBulkAdd} disabled={bulkAdding||!bulkRows.filter(r=>r.email&&r.prenom).length}>
-                {bulkAdding?'Import en cours...':'Importer les utilisateurs'}
+
+            {/* Body */}
+            <div style={{flex:1,overflowY:'auto',padding:'24px 28px'}}>
+
+              {/* ─ Étape 1: Méthode ─ */}
+              {bulkStep===1&&(
+                <>
+                  <div style={{fontSize:15,fontWeight:600,color:'#e6edf3',marginBottom:6}}>Comment souhaitez-vous ajouter vos utilisateurs ?</div>
+                  <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:24}}>Choisissez la méthode qui vous convient le mieux.</div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+                    <div onClick={()=>setBulkMode('manual')}
+                      style={{padding:'24px',borderRadius:10,border:`2px solid ${bulkMode==='manual'?'#0078d4':'rgba(255,255,255,0.08)'}`,background:bulkMode==='manual'?'rgba(0,120,212,0.07)':'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.15s'}}>
+                      <div style={{fontSize:32,marginBottom:14}}>📝</div>
+                      <div style={{fontSize:15,fontWeight:700,color:'#e6edf3',marginBottom:8}}>Saisie manuelle</div>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.45)',lineHeight:1.65}}>
+                        Remplissez un tableau directement dans l'interface. Idéal pour ajouter quelques utilisateurs rapidement.
+                      </div>
+                      {bulkMode==='manual'&&<div style={{marginTop:12,fontSize:12.5,color:'#4da6ff',fontWeight:600}}>✓ Sélectionné</div>}
+                    </div>
+                    <div onClick={()=>setBulkMode('csv')}
+                      style={{padding:'24px',borderRadius:10,border:`2px solid ${bulkMode==='csv'?'#0078d4':'rgba(255,255,255,0.08)'}`,background:bulkMode==='csv'?'rgba(0,120,212,0.07)':'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.15s'}}>
+                      <div style={{fontSize:32,marginBottom:14}}>📥</div>
+                      <div style={{fontSize:15,fontWeight:700,color:'#e6edf3',marginBottom:8}}>Import CSV</div>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.45)',lineHeight:1.65}}>
+                        Téléchargez notre modèle CSV, remplissez-le et importez-le. Parfait pour un grand nombre d'utilisateurs.
+                      </div>
+                      {bulkMode==='csv'&&<div style={{marginTop:12,fontSize:12.5,color:'#4da6ff',fontWeight:600}}>✓ Sélectionné</div>}
+                    </div>
+                  </div>
+
+                  {bulkMode==='csv'&&(
+                    <div style={{marginTop:20,padding:'16px 18px',borderRadius:8,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.08)'}}>
+                      <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:8}}>Modèle CSV</div>
+                      <div style={{fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:14,lineHeight:1.65}}>
+                        Le fichier CSV doit contenir les colonnes suivantes : <strong style={{color:'rgba(255,255,255,0.7)'}}>Prenom, Nom, Email, Role</strong>
+                      </div>
+                      <button onClick={()=>{
+                        const csv = 'Prenom,Nom,Email,Role
+Jean,Dupont,jean@exemple.com,agent
+Marie,Martin,marie@exemple.com,comptable'
+                        const blob = new Blob([csv],{type:'text/csv'})
+                        const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modele_utilisateurs.csv'; a.click()
+                        toast.success('Modèle CSV téléchargé !')
+                      }} style={{display:'inline-flex',alignItems:'center',gap:8,padding:'9px 18px',borderRadius:6,background:'#0078d4',border:'none',color:'#fff',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                        Télécharger le modèle CSV
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ─ Étape 2: Saisie ─ */}
+              {bulkStep===2&&(
+                <>
+                  {bulkMode==='manual'&&(
+                    <>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+                        <div>
+                          <div style={{fontSize:15,fontWeight:600,color:'#e6edf3',marginBottom:4}}>Saisissez les utilisateurs</div>
+                          <div style={{fontSize:13,color:'rgba(255,255,255,0.4)'}}>
+                            {bulkRows.filter(r=>r.email&&r.prenom).length} ligne(s) valide(s) sur {bulkRows.length}
+                          </div>
+                        </div>
+                        <button onClick={()=>setBulkRows(p=>[...p,{prenom:'',nom:'',email:'',role:'agent'}])}
+                          style={{display:'flex',alignItems:'center',gap:7,padding:'8px 16px',borderRadius:6,background:'rgba(0,120,212,0.1)',border:'1px solid rgba(0,120,212,0.25)',color:'#4da6ff',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
+                          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                          Ajouter une ligne
+                        </button>
+                      </div>
+                      <div style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,overflow:'hidden'}}>
+                        <table style={{width:'100%',borderCollapse:'collapse'}}>
+                          <thead>
+                            <tr style={{background:'rgba(255,255,255,0.03)'}}>
+                              <th style={{fontSize:12,fontWeight:600,color:'rgba(255,255,255,0.4)',padding:'10px 12px',textAlign:'left',borderBottom:'1px solid rgba(255,255,255,0.07)',width:30}}>#</th>
+                              {['Prénom *','Nom','Email *','Rôle'].map((h,i)=>(
+                                <th key={i} style={{fontSize:12,fontWeight:600,color:'rgba(255,255,255,0.4)',padding:'10px 12px',textAlign:'left',borderBottom:'1px solid rgba(255,255,255,0.07)'}}>{h}</th>
+                              ))}
+                              <th style={{width:40,borderBottom:'1px solid rgba(255,255,255,0.07)'}}/>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bulkRows.map((row,i)=>{
+                              const isValid = row.prenom && row.email
+                              return (
+                                <tr key={i} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:isValid?'rgba(0,200,150,0.02)':'transparent'}}>
+                                  <td style={{padding:'6px 12px',fontSize:12,color:'rgba(255,255,255,0.25)',textAlign:'center'}}>
+                                    {isValid
+                                      ? <span style={{color:'#00c896',fontSize:14}}>✓</span>
+                                      : <span>{i+1}</span>}
+                                  </td>
+                                  {['prenom','nom','email'].map(field=>(
+                                    <td key={field} style={{padding:'5px 6px'}}>
+                                      <input
+                                        style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:5,fontFamily:'Inter',fontSize:13,color:'#e6edf3',outline:'none'}}
+                                        value={row[field]}
+                                        onChange={e=>setBulkRows(prev=>prev.map((r,j)=>j===i?{...r,[field]:e.target.value}:r))}
+                                        placeholder={field==='prenom'?'Jean':field==='nom'?'Dupont':'email@exemple.com'}
+                                        onFocus={e=>e.target.style.borderColor='#0078d4'}
+                                        onBlur={e=>e.target.style.borderColor='rgba(255,255,255,0.08)'}
+                                      />
+                                    </td>
+                                  ))}
+                                  <td style={{padding:'5px 6px'}}>
+                                    <select
+                                      style={{width:'100%',padding:'8px 8px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:5,fontFamily:'Inter',fontSize:12,color:'#e6edf3',outline:'none'}}
+                                      value={row.role}
+                                      onChange={e=>setBulkRows(prev=>prev.map((r,j)=>j===i?{...r,role:e.target.value}:r))}>
+                                      {Object.entries(ROLES_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+                                    </select>
+                                  </td>
+                                  <td style={{padding:'5px 6px',textAlign:'center'}}>
+                                    <button onClick={()=>setBulkRows(p=>p.length>1?p.filter((_,j)=>j!==i):p)}
+                                      style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.2)',fontSize:18,padding:'2px 6px',lineHeight:1,transition:'color 0.1s'}}
+                                      onMouseOver={e=>e.currentTarget.style.color='#ef4444'}
+                                      onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.2)'}>×</button>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                  {bulkMode==='csv'&&(
+                    <div style={{textAlign:'center',padding:'40px'}}>
+                      <div style={{fontSize:40,marginBottom:16}}>📁</div>
+                      <div style={{fontSize:15,fontWeight:600,color:'#e6edf3',marginBottom:8}}>Importer un fichier CSV</div>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:24}}>Glissez-déposez votre fichier ou cliquez pour sélectionner</div>
+                      <input type="file" accept=".csv" onChange={async(e)=>{
+                        const file = e.target.files[0]
+                        if (!file) return
+                        const text = await file.text()
+                        const rows = text.split('
+').slice(1).filter(r=>r.trim()).map(r=>{
+                          const [prenom,nom,email,role] = r.split(',').map(v=>v.trim())
+                          return {prenom:prenom||'',nom:nom||'',email:email||'',role:role||'agent'}
+                        })
+                        setBulkRows(rows)
+                        toast.success(`${rows.length} lignes importées depuis le CSV`)
+                        setBulkStep(3)
+                      }} style={{display:'none'}} id="csv-upload"/>
+                      <label htmlFor="csv-upload" style={{display:'inline-flex',alignItems:'center',gap:8,padding:'11px 24px',borderRadius:6,background:'#0078d4',color:'#fff',fontSize:14,fontWeight:600,cursor:'pointer'}}>
+                        <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                        Choisir un fichier CSV
+                      </label>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ─ Étape 3: Vérification ─ */}
+              {bulkStep===3&&(
+                <>
+                  <div style={{fontSize:15,fontWeight:600,color:'#e6edf3',marginBottom:6}}>Vérification avant import</div>
+                  <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:20}}>
+                    {bulkRows.filter(r=>r.email&&r.prenom).length} utilisateur(s) valide(s) sur {bulkRows.length} seront importés.
+                  </div>
+
+                  {/* Stats */}
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:24}}>
+                    {[
+                      {ic:'✅',val:bulkRows.filter(r=>r.prenom&&r.email).length,lbl:'Valides',col:'#00c896'},
+                      {ic:'⚠️',val:bulkRows.filter(r=>!r.prenom||!r.email).length,lbl:'Incomplets',col:'#f59e0b'},
+                      {ic:'👥',val:bulkRows.length,lbl:'Total',col:'#0078d4'},
+                    ].map((s,i)=>(
+                      <div key={i} style={{padding:'14px 16px',borderRadius:8,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)',textAlign:'center'}}>
+                        <div style={{fontSize:22,marginBottom:6}}>{s.ic}</div>
+                        <div style={{fontSize:22,fontWeight:800,color:s.col,marginBottom:3}}>{s.val}</div>
+                        <div style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{s.lbl}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Liste preview */}
+                  <div style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,overflow:'hidden',maxHeight:320,overflowY:'auto'}}>
+                    {bulkRows.filter(r=>r.prenom&&r.email).map((row,i)=>{
+                      const col = ROLES_COLORS[row.role]||'#0078d4'
+                      return (
+                        <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                          <div style={{width:32,height:32,borderRadius:'50%',background:`linear-gradient(135deg,${col},${col}88)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0}}>
+                            {(row.prenom?.[0]||'').toUpperCase()}{(row.nom?.[0]||'').toUpperCase()}
+                          </div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13.5,fontWeight:600,color:'#e6edf3'}}>{row.prenom} {row.nom}</div>
+                            <div style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{row.email}</div>
+                          </div>
+                          <span style={{fontSize:11,padding:'2px 9px',borderRadius:'100px',background:`${col}18`,color:col,fontWeight:600}}>
+                            {ROLES_LABELS[row.role]||row.role}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {bulkRows.filter(r=>!r.prenom||!r.email).length>0&&(
+                    <div style={{marginTop:14,padding:'12px 16px',borderRadius:8,background:'rgba(245,158,11,0.07)',border:'1px solid rgba(245,158,11,0.2)',fontSize:13,color:'rgba(255,255,255,0.5)'}}>
+                      ⚠️ {bulkRows.filter(r=>!r.prenom||!r.email).length} ligne(s) incomplète(s) seront ignorées.
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div style={{padding:'16px 28px',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+              <button onClick={()=>bulkStep>1?setBulkStep(bulkStep-1):(setShowBulkPanel(false)||setBulkStep(1))}
+                style={{padding:'10px 22px',borderRadius:5,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',color:'rgba(255,255,255,0.6)',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
+                {bulkStep===1?'Annuler':'Précédent'}
               </button>
+              {bulkStep<3?(
+                <button onClick={()=>setBulkStep(bulkStep+1)}
+                  disabled={bulkStep===2&&!bulkRows.filter(r=>r.prenom&&r.email).length}
+                  style={{padding:'10px 22px',borderRadius:5,background:'#0078d4',border:'none',color:'#fff',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter',opacity:bulkStep===2&&!bulkRows.filter(r=>r.prenom&&r.email).length?0.4:1}}>
+                  Suivant
+                </button>
+              ):(
+                <button onClick={handleBulkAdd} disabled={bulkAdding||!bulkRows.filter(r=>r.prenom&&r.email).length}
+                  style={{padding:'10px 22px',borderRadius:5,background:'#0078d4',border:'none',color:'#fff',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter',opacity:bulkAdding?0.6:1}}>
+                  {bulkAdding?'Import en cours...':'Importer les utilisateurs'}
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
-    </>
+
+        </>
     </>
   )
 }
