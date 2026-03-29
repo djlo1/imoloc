@@ -1413,9 +1413,7 @@ export default function Utilisateurs() {
                         Le fichier CSV doit contenir les colonnes suivantes : <strong style={{color:'rgba(255,255,255,0.7)'}}>Prenom, Nom, Email, Role</strong>
                       </div>
                       <button onClick={()=>{
-                        const csv = 'Prenom,Nom,Email,Role
-Jean,Dupont,jean@exemple.com,agent
-Marie,Martin,marie@exemple.com,comptable'
+                        const csv = 'Prenom,Nom,Email,Role\nJean,Dupont,jean@exemple.com,agent\nMarie,Martin,marie@exemple.com,comptable'
                         const blob = new Blob([csv],{type:'text/csv'})
                         const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modele_utilisateurs.csv'; a.click()
                         toast.success('Modèle CSV téléchargé !')
