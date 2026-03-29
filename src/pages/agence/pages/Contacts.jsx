@@ -223,8 +223,7 @@ export default function Contacts() {
             <span className="ct-selbar-txt">{selected.length} contact{selected.length>1?'s':''} sélectionné{selected.length>1?'s':''}</span>
             <button className="ct-action-btn" onClick={()=>{
               const data = contacts.filter(c=>selected.includes(c.id))
-              const csv = ['NomAffichage,Email,Entreprise,TelBureau,TelMobile',...data.map(c=>`${c.display},${c.email},${c.entreprise||''},${c.tel_bureau||''},${c.tel_mobile||''}`)].join('
-')
+              const csv = ['NomAffichage,Email,Entreprise,TelBureau,TelMobile',...data.map(c=>`${c.display},${c.email},${c.entreprise||''},${c.tel_bureau||''},${c.tel_mobile||''}`)].join('\n')
               const a = document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='contacts_selection.csv'; a.click()
               toast.success('Exporté !')
             }}>📥 Exporter</button>
