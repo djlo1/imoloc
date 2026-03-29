@@ -1468,9 +1468,7 @@ export default function Utilisateurs() {
                   <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>Remplissez le tableau ligne par ligne</div>
                 </div>
                 <div onClick={()=>{
-                  const csv = 'Prénom,Nom,Email,Rôle
-Jean,Dupont,jean@exemple.com,agent
-Marie,Martin,marie@exemple.com,comptable'
+                  const csv = 'Prenom,Nom,Email,Role\nJean,Dupont,jean@exemple.com,agent\nMarie,Martin,marie@exemple.com,comptable'
                   const blob = new Blob([csv],{type:'text/csv'})
                   const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modele_utilisateurs.csv'; a.click()
                   toast.success('Modèle CSV téléchargé !')
