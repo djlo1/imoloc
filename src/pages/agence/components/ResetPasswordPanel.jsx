@@ -133,11 +133,27 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
   const handleReset = async () => {
     setResetting(true)
     const newResults = []
+    const SUPA_URL = 'https://zecyfnurrcslukxvmpca.supabase.co'
 
     for (const user of selected) {
       const newPass = generatePassword()
       try {
-        // Sauvegarder dans invitations
+        // 1. Réinitialiser via Admin API
+        if (user.id) {
+          const res = await fetch(`${SUPA_URL}/functions/v1/admin-actions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'reset_password',
+              user_id: user.id,
+              data: { password: newPass }
+            })
+          })
+          const result = await res.json()
+          if (result.error) throw new Error(result.error)
+        }
+
+        // 2. Sauvegarder dans invitations
         await supabase.from('invitations').insert({
           agence_id: agenceId,
           email: user.email,
@@ -148,10 +164,9 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
           statut: 'reset_password',
         })
 
-        // Envoyer email via Edge Function
+        // 3. Envoyer email
         if (user.email) {
-          const SUPABASE_URL = 'https://zecyfnurrcslukxvmpca.supabase.co'
-          await fetch(`${SUPABASE_URL}/functions/v1/send-invitation`, {
+          await fetch(`${SUPA_URL}/functions/v1/send-invitation`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -171,7 +186,7 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
         newResults.push({ user, password: newPass, success: true })
       } catch (e) {
         console.error('Erreur reset:', e)
-        newResults.push({ user, password: '', success: false })
+        newResults.push({ user, password: '', success: false, error: e.message })
       }
     }
 
@@ -179,12 +194,8 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
     setStep(3)
     setResetting(false)
 
-    // Si l'utilisateur courant est dans la sélection → déconnecter
     if (selfSelected) {
-      toast('Votre mot de passe a été réinitialisé. Vous allez être déconnecté...', {
-        icon: '🔐',
-        duration: 3000,
-      })
+      toast('Votre mot de passe a été réinitialisé. Déconnexion dans 3 secondes...', { icon: '🔐', duration: 3000 })
       setTimeout(async () => {
         await supabase.auth.signOut()
         logout()

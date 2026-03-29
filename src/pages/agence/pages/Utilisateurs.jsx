@@ -83,6 +83,7 @@ export default function Utilisateurs() {
     { prenom:'', nom:'', email:'', role:'agent' },
   ])
   const [bulkAdding, setBulkAdding] = useState(false)
+  const [blockedUsers, setBlockedUsers] = useState([])
   const resizingCol = useRef(null)
   const startX = useRef(0)
   const startW = useRef(0)
@@ -137,6 +138,51 @@ export default function Utilisateurs() {
       }
     } catch(e) { console.error(e) }
     finally { setLoading(false) }
+  }
+
+  const toggleBlock = async (user) => {
+    const isBlocked = blockedUsers.includes(user.id)
+    const SUPA_URL = 'https://zecyfnurrcslukxvmpca.supabase.co'
+    try {
+      // 1. Auth Admin
+      if (user.id) {
+        const res = await fetch(`${SUPA_URL}/functions/v1/admin-actions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: isBlocked ? 'unblock_user' : 'block_user',
+            user_id: user.id,
+            data: {}
+          })
+        })
+        const result = await res.json()
+        if (result.error) throw new Error(result.error)
+      }
+
+      // 2. Table connexions_bloquees
+      if (isBlocked) {
+        await supabase.from('connexions_bloquees')
+          .update({ actif: false, date_deblocage: new Date().toISOString() })
+          .eq('user_id', user.id)
+          .eq('agence_id', agence.id)
+          .eq('actif', true)
+        setBlockedUsers(prev => prev.filter(id => id !== user.id))
+        toast.success(`${user.prenom} ${user.nom} débloqué`)
+      } else {
+        const { data:{ user: cu } } = await supabase.auth.getUser()
+        await supabase.from('connexions_bloquees').insert({
+          user_id: user.id,
+          agence_id: agence.id,
+          bloque_par: cu.id,
+          raison: 'Bloqué par un administrateur',
+        })
+        setBlockedUsers(prev => [...prev, user.id])
+        toast.success(`${user.prenom} ${user.nom} bloqué`)
+      }
+      setSelectedUser(prev => prev ? {...prev} : null)
+    } catch(e) {
+      toast.error(e.message || 'Erreur lors du blocage')
+    }
   }
 
   const handleDelete = async (user) => {
@@ -678,6 +724,7 @@ export default function Utilisateurs() {
                                 <div className="us-uname" style={{fontSize:viewMode==='compact'?12.5:13.5}}>
                                   {u.prenom} {u.nom}
                                   {u.isOwner&&<span className="us-owner">👑</span>}
+                                  {blockedUsers.includes(u.id)&&<span style={{fontSize:10,padding:'1px 7px',borderRadius:'100px',background:'rgba(245,158,11,0.12)',color:'#f59e0b',fontWeight:600,border:'1px solid rgba(245,158,11,0.25)'}}>Bloqué</span>}
                                 </div>
                                 {viewMode==='normal'&&<div className="us-uemail">{u.email||'—'}</div>}
                               </div>
