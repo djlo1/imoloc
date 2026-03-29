@@ -1,12 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { supabase } from '../../../lib/supabase'
+import { useAuthStore } from '../../../store/authStore'
 
 const COLONNES = ['Nom du contact','E-mail','Entreprise','Téléphone (bureau)','Téléphone mobile','État de synch.']
 
 export default function Contacts() {
   const navigate = useNavigate()
+  const { profile } = useAuthStore()
+  const [agence, setAgence] = useState(null)
   const [contacts, setContacts] = useState([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showAddPanel, setShowAddPanel] = useState(false)
   const [showBulkPanel, setShowBulkPanel] = useState(false)
@@ -26,26 +31,82 @@ export default function Contacts() {
   const [showColsPanel, setShowColsPanel] = useState(false)
   const [visibleCols, setVisibleCols] = useState(['display','email','entreprise','tel_bureau','tel_mobile','synch'])
 
-  const handleAdd = (e) => {
+  const handleAdd = async (e) => {
     e.preventDefault()
-    if (!form.display || !form.email) return
+    if (!form.display || !form.email || !agence?.id) return
     setAdding(true)
-    setTimeout(() => {
-      setContacts(prev => [...prev, { ...form, id: Date.now() }])
+    try {
+      const { data:{ user } } = await supabase.auth.getUser()
+      const { data, error } = await supabase.from('contacts').insert({
+        agence_id: agence.id,
+        created_by: user.id,
+        display: form.display,
+        email: form.email,
+        prenom: form.prenom,
+        nom: form.nom,
+        entreprise: form.entreprise,
+        tel_bureau: form.tel_bureau,
+        tel_mobile: form.tel_mobile,
+        fax: form.fax,
+        titre: form.titre,
+        site: form.site,
+        adresse: form.adresse,
+        ville: form.ville,
+        departement: form.departement,
+        code_postal: form.code_postal,
+        pays: form.pays,
+        masquer: form.masquer,
+      }).select().single()
+
+      if (error) throw error
+      setContacts(prev => [data, ...prev])
       toast.success(`Contact ${form.display} ajouté !`)
       setForm({ prenom:'', nom:'', display:'', email:'', masquer:false, entreprise:'', tel_bureau:'', tel_mobile:'', fax:'', titre:'', site:'', adresse:'', ville:'', departement:'', code_postal:'', pays:'Bénin' })
       setShowAddPanel(false)
-      setAdding(false)
-    }, 600)
+    } catch(e) {
+      toast.error(e.message || "Erreur lors de l'ajout")
+    } finally { setAdding(false) }
+  }
+
+  useEffect(() => { initData() }, [])
+
+  const initData = async () => {
+    setLoading(true)
+    try {
+      const { data:{ user } } = await supabase.auth.getUser()
+      const { data:agList } = await supabase.from('agences').select('*')
+      const ag = agList?.find(a=>a.profile_id===user.id) || agList?.[0]
+      setAgence(ag)
+      if (ag?.id) {
+        const { data:ctData } = await supabase
+          .from('contacts')
+          .select('*')
+          .eq('agence_id', ag.id)
+          .order('created_at', { ascending: false })
+        setContacts(ctData || [])
+      }
+    } catch(e) { console.error(e) }
+    finally { setLoading(false) }
   }
 
   const canAdd = form.display && form.email
   const toggleSelect = (id) => setSelected(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id])
   const toggleAll = () => setSelected(s=>s.length===filtered.length?[]:filtered.map(c=>c.id))
-  const deleteSelected = () => {
-    setContacts(p=>p.filter(c=>!selected.includes(c.id)))
-    toast.success(`${selected.length} contact(s) supprimé(s)`)
-    setSelected([])
+  const deleteSelected = async () => {
+    try {
+      await supabase.from('contacts').delete().in('id', selected)
+      setContacts(p=>p.filter(c=>!selected.includes(c.id)))
+      toast.success(`${selected.length} contact(s) supprimé(s)`)
+      setSelected([])
+    } catch(e) { toast.error('Erreur lors de la suppression') }
+  }
+
+  const deleteOne = async (id) => {
+    try {
+      await supabase.from('contacts').delete().eq('id', id)
+      setContacts(p=>p.filter(c=>c.id!==id))
+      toast.success('Contact supprimé')
+    } catch(e) { toast.error('Erreur') }
   }
 
   const ALL_COLS = [
@@ -259,7 +320,9 @@ export default function Contacts() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length===0 ? (
+              {loading ? (
+                <tr><td colSpan={ALL_COLS.length+2} style={{textAlign:'center',padding:50,color:'rgba(255,255,255,0.3)'}}>Chargement des contacts...</td></tr>
+              ) : filtered.length===0 ? (
                 <tr><td colSpan={ALL_COLS.length+2}>
                   <div className="ct-empty">
                     <div className="ct-empty-title">Cette page est vide</div>
@@ -294,11 +357,7 @@ export default function Contacts() {
                           <button className="ct-row-ddi" onClick={()=>{setRowMenu(null);toast('Fonctionnalité à venir',{icon:'ℹ️'})}}>✏️ Modifier</button>
                           <button className="ct-row-ddi" onClick={()=>{setRowMenu(null);toast('Fonctionnalité à venir',{icon:'ℹ️'})}}>📧 Envoyer un email</button>
                           <div style={{height:'1px',background:'rgba(255,255,255,0.07)'}}/>
-                          <button className="ct-row-ddi red" onClick={()=>{
-                            setContacts(p=>p.filter(x=>x.id!==c.id))
-                            setRowMenu(null)
-                            toast.success('Contact supprimé')
-                          }}>🗑️ Supprimer</button>
+                          <button className="ct-row-ddi red" onClick={()=>{ deleteOne(c.id); setRowMenu(null) }}>🗑️ Supprimer</button>
                         </div>
                       )}
                     </td>
