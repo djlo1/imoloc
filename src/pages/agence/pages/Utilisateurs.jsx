@@ -1353,7 +1353,7 @@ export default function Utilisateurs() {
             <div style={{padding:'18px 28px',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
               <div>
                 <div style={{fontSize:17,fontWeight:700,color:'#e6edf3',marginBottom:4}}>Ajouter plusieurs utilisateurs</div>
-                <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>Étape {bulkStep} sur 3</div>
+                <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>Étape {bulkStep} sur 6</div>
               </div>
               <button className="up-cls" onClick={()=>{setShowBulkPanel(false);setBulkStep(1)}}>
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -1365,7 +1365,10 @@ export default function Utilisateurs() {
               {[
                 {n:1,label:"Méthode d'import"},
                 {n:2,label:'Saisie des utilisateurs'},
-                {n:3,label:'Vérification & Import'},
+                {n:3,label:'Licences de produits'},
+                {n:4,label:'Applications'},
+                {n:5,label:'Paramètres facultatifs'},
+                {n:6,label:'Terminer'},
               ].map((s,i)=>(
                 <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'14px 20px 14px 0',marginRight:20,borderBottom:`2px solid ${bulkStep>=s.n?'#0078d4':'transparent'}`,cursor:bulkStep>s.n?'pointer':'default'}}
                   onClick={()=>bulkStep>s.n&&setBulkStep(s.n)}>
@@ -1525,35 +1528,149 @@ export default function Utilisateurs() {
                 </>
               )}
 
-              {/* ─ Étape 3: Vérification ─ */}
+              {/* ─ Étape 3: Licences ─ */}
               {bulkStep===3&&(
                 <>
-                  <div style={{fontSize:15,fontWeight:600,color:'#e6edf3',marginBottom:6}}>Vérification avant import</div>
-                  <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:20}}>
-                    {bulkRows.filter(r=>r.email&&r.prenom).length} utilisateur(s) valide(s) sur {bulkRows.length} seront importés.
+                  <div style={{fontSize:15,fontWeight:600,color:'#e6edf3',marginBottom:6}}>Licences de produits</div>
+                  <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:24,lineHeight:1.7}}>
+                    Sélectionnez les licences à attribuer aux {bulkRows.filter(r=>r.prenom&&r.email).length} utilisateurs. Les licences sont attribuées automatiquement selon le rôle mais vous pouvez les personnaliser.
                   </div>
+                  <div style={{padding:'12px 16px',borderRadius:8,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.18)',fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.65,marginBottom:24,display:'flex',gap:10}}>
+                    <span style={{fontSize:18,flexShrink:0}}>ℹ️</span>
+                    <div>Les licences sont attribuées selon le rôle de chaque utilisateur. <a href="#" className="ud-link">En savoir plus sur les licences</a></div>
+                  </div>
+                  {[
+                    {name:'Imoloc Pro',desc:'Accès complet à toutes les fonctionnalités',users:bulkRows.filter(r=>r.role==='global_admin'&&r.prenom&&r.email).length,active:true},
+                    {name:'Imoloc Standard',desc:'Accès aux fonctionnalités standard',users:bulkRows.filter(r=>['agent','comptable','user_admin'].includes(r.role)&&r.prenom&&r.email).length,active:true},
+                    {name:'Loci IA',desc:"Assistant IA immobilier intégré",users:bulkRows.filter(r=>r.prenom&&r.email).length,active:true},
+                    {name:'Imoloc Lecteur',desc:'Accès en lecture seule',users:bulkRows.filter(r=>r.role==='lecteur'&&r.prenom&&r.email).length,active:false},
+                  ].map((lic,i)=>(
+                    <div key={i} style={{display:'flex',alignItems:'center',gap:14,padding:'14px 16px',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                      <div style={{width:18,height:18,borderRadius:3,background:lic.active?'#0078d4':'rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,cursor:'pointer'}}>
+                        {lic.active&&<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:2}}>{lic.name}</div>
+                        <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>{lic.desc}</div>
+                      </div>
+                      <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)',flexShrink:0}}>
+                        {lic.users} utilisateur{lic.users>1?'s':''}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
 
-                  {/* Stats */}
+              {/* ─ Étape 4: Applications ─ */}
+              {bulkStep===4&&(
+                <>
+                  <div style={{fontSize:15,fontWeight:600,color:'#e6edf3',marginBottom:6}}>Applications</div>
+                  <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:24,lineHeight:1.7}}>
+                    Choisissez les applications et modules auxquels les nouveaux utilisateurs auront accès.
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                    {[
+                      {icon:'🏢',name:'Gestion des biens',desc:'Ajout, modification et suivi des biens immobiliers',active:true},
+                      {icon:'👥',name:'Gestion des locataires',desc:'Gestion des dossiers et contrats locataires',active:true},
+                      {icon:'💰',name:'Paiements & Loyers',desc:'Suivi des encaissements et relances',active:true},
+                      {icon:'✨',name:'Loci IA',desc:"Assistant IA pour analyses et recommandations",active:true},
+                      {icon:'📊',name:'Rapports & Analytics',desc:'Tableaux de bord et exports de données',active:false},
+                      {icon:'📋',name:'Gestion des baux',desc:'Création et suivi des contrats de bail',active:true},
+                      {icon:'🔐',name:'Sécurité avancée',desc:'MFA et politiques de sécurité',active:false},
+                      {icon:'📱',name:'Application mobile',desc:'Accès depuis smartphone et tablette',active:false},
+                    ].map((app,i)=>(
+                      <div key={i} style={{display:'flex',alignItems:'flex-start',gap:12,padding:'14px',borderRadius:8,border:'1px solid rgba(255,255,255,0.07)',background:'rgba(255,255,255,0.02)'}}>
+                        <div style={{width:18,height:18,borderRadius:3,background:app.active?'#0078d4':'rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,cursor:'pointer',marginTop:2}}>
+                          {app.active&&<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
+                        </div>
+                        <div style={{flex:1}}>
+                          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
+                            <span style={{fontSize:16}}>{app.icon}</span>
+                            <span style={{fontSize:13.5,fontWeight:600,color:'#e6edf3'}}>{app.name}</span>
+                          </div>
+                          <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',lineHeight:1.5}}>{app.desc}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* ─ Étape 5: Paramètres facultatifs ─ */}
+              {bulkStep===5&&(
+                <>
+                  <div style={{fontSize:15,fontWeight:600,color:'#e6edf3',marginBottom:6}}>Paramètres facultatifs</div>
+                  <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:24,lineHeight:1.7}}>
+                    Ces paramètres sont optionnels. Vous pouvez les configurer maintenant ou plus tard depuis le profil de chaque utilisateur.
+                  </div>
+                  <div style={{display:'flex',flexDirection:'column',gap:20}}>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:12}}>Notification de bienvenue</div>
+                      <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.02)'}}>
+                        <div style={{width:18,height:18,borderRadius:3,background:'#0078d4',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,cursor:'pointer'}}>
+                          <svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                        </div>
+                        <div>
+                          <div style={{fontSize:13.5,fontWeight:500,color:'#e6edf3',marginBottom:2}}>Envoyer un email de bienvenue</div>
+                          <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>Les utilisateurs recevront leurs identifiants de connexion par email</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:12}}>Première connexion</div>
+                      <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.02)'}}>
+                        <div style={{width:18,height:18,borderRadius:3,background:'#0078d4',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,cursor:'pointer'}}>
+                          <svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                        </div>
+                        <div>
+                          <div style={{fontSize:13.5,fontWeight:500,color:'#e6edf3',marginBottom:2}}>Forcer le changement de mot de passe</div>
+                          <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>Les utilisateurs devront définir un nouveau mot de passe à leur première connexion</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:12}}>Agence de rattachement</div>
+                      <select style={{width:'100%',padding:'10px 13px',background:'#1c2434',border:'1px solid rgba(255,255,255,0.12)',borderRadius:5,fontFamily:'Inter',fontSize:14,color:'#e6edf3',outline:'none',colorScheme:'dark'}}>
+                        <option value="" style={{background:'#1c2434',color:'#e6edf3'}}>{agence?.nom||'Mon organisation'}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:8}}>Pays / Région</div>
+                      <select style={{width:'100%',padding:'10px 13px',background:'#1c2434',border:'1px solid rgba(255,255,255,0.12)',borderRadius:5,fontFamily:'Inter',fontSize:14,color:'#e6edf3',outline:'none',colorScheme:'dark'}}>
+                        {['Bénin','Togo','Côte d'Ivoire','Sénégal','Cameroun','Mali','Niger','Burkina Faso','France','Belgique'].map(p=>(
+                          <option key={p} value={p} style={{background:'#1c2434',color:'#e6edf3'}}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ─ Étape 6: Terminer ─ */}
+              {bulkStep===6&&(
+                <>
+                  <div style={{fontSize:15,fontWeight:600,color:'#e6edf3',marginBottom:6}}>Terminer — Vérification finale</div>
+                  <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:20}}>
+                    {bulkRows.filter(r=>r.email&&r.prenom).length} utilisateur(s) prêts à être importés dans <strong style={{color:'rgba(255,255,255,0.7)'}}>{agence?.nom}</strong>.
+                  </div>
                   <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:24}}>
                     {[
                       {ic:'✅',val:bulkRows.filter(r=>r.prenom&&r.email).length,lbl:'Valides',col:'#00c896'},
-                      {ic:'⚠️',val:bulkRows.filter(r=>!r.prenom||!r.email).length,lbl:'Incomplets',col:'#f59e0b'},
+                      {ic:'⚠️',val:bulkRows.filter(r=>!r.prenom||!r.email).length,lbl:'Ignorés',col:'#f59e0b'},
                       {ic:'👥',val:bulkRows.length,lbl:'Total',col:'#0078d4'},
                     ].map((s,i)=>(
-                      <div key={i} style={{padding:'14px 16px',borderRadius:8,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)',textAlign:'center'}}>
+                      <div key={i} style={{padding:'14px',borderRadius:8,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)',textAlign:'center'}}>
                         <div style={{fontSize:22,marginBottom:6}}>{s.ic}</div>
                         <div style={{fontSize:22,fontWeight:800,color:s.col,marginBottom:3}}>{s.val}</div>
                         <div style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{s.lbl}</div>
                       </div>
                     ))}
                   </div>
-
-                  {/* Liste preview */}
-                  <div style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,overflow:'hidden',maxHeight:320,overflowY:'auto'}}>
+                  <div style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,overflow:'hidden',maxHeight:280,overflowY:'auto'}}>
                     {bulkRows.filter(r=>r.prenom&&r.email).map((row,i)=>{
                       const col = ROLES_COLORS[row.role]||'#0078d4'
                       return (
-                        <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                        <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 16px',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
                           <div style={{width:32,height:32,borderRadius:'50%',background:`linear-gradient(135deg,${col},${col}88)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0}}>
                             {(row.prenom?.[0]||'').toUpperCase()}{(row.nom?.[0]||'').toUpperCase()}
                           </div>
@@ -1568,7 +1685,6 @@ export default function Utilisateurs() {
                       )
                     })}
                   </div>
-
                   {bulkRows.filter(r=>!r.prenom||!r.email).length>0&&(
                     <div style={{marginTop:14,padding:'12px 16px',borderRadius:8,background:'rgba(245,158,11,0.07)',border:'1px solid rgba(245,158,11,0.2)',fontSize:13,color:'rgba(255,255,255,0.5)'}}>
                       ⚠️ {bulkRows.filter(r=>!r.prenom||!r.email).length} ligne(s) incomplète(s) seront ignorées.
@@ -1584,7 +1700,7 @@ export default function Utilisateurs() {
                 style={{padding:'10px 22px',borderRadius:5,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',color:'rgba(255,255,255,0.6)',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
                 {bulkStep===1?'Annuler':'Précédent'}
               </button>
-              {bulkStep<3?(
+              {bulkStep<6?(
                 <button onClick={()=>setBulkStep(bulkStep+1)}
                   disabled={bulkStep===2&&!bulkRows.filter(r=>r.prenom&&r.email).length}
                   style={{padding:'10px 22px',borderRadius:5,background:'#0078d4',border:'none',color:'#fff',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter',opacity:bulkStep===2&&!bulkRows.filter(r=>r.prenom&&r.email).length?0.4:1}}>
@@ -1593,7 +1709,7 @@ export default function Utilisateurs() {
               ):(
                 <button onClick={handleBulkAdd} disabled={bulkAdding||!bulkRows.filter(r=>r.prenom&&r.email).length}
                   style={{padding:'10px 22px',borderRadius:5,background:'#0078d4',border:'none',color:'#fff',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter',opacity:bulkAdding?0.6:1}}>
-                  {bulkAdding?'Import en cours...':'Importer les utilisateurs'}
+                  {bulkAdding?"Import en cours...":"Importer les utilisateurs"}
                 </button>
               )}
             </div>
