@@ -11,7 +11,7 @@ const STEPS = [
 ]
 
 const ROLES = [
-  { id:'global_admin', label:'Administrateur global', desc:'Accès complet à tous les paramètres.', badge:'Critique', badgeColor:'#ef4444' },
+  { id:'global_admin', label:'Administrateur global', desc:'Accès complet à tous les paramètres.', badge:'', badgeColor:'#ef4444' },
   { id:'user_admin', label:'Administrateur des utilisateurs', desc:'Gère les comptes, mots de passe et licences.', badge:'Élevé', badgeColor:'#f59e0b' },
   { id:'billing_admin', label:'Administrateur de facturation', desc:'Gère abonnements, paiements et factures.', badge:'Élevé', badgeColor:'#f59e0b' },
   { id:'reports_reader', label:'Administrateur des rapports', desc:'Accès aux statistiques. Lecture seule.', badge:'Standard', badgeColor:'#0078d4' },

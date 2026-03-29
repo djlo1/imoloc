@@ -13,7 +13,7 @@ const ROLES_LABELS = {
   agent:'Agent', comptable:'Comptable', lecteur:'Lecteur', invite:'Invité',
 }
 const ROLES_COLORS = {
-  global_admin:'#ef4444', user_admin:'#f59e0b', billing_admin:'#f59e0b',
+  global_admin:'#f59e0b', user_admin:'#f59e0b', billing_admin:'#f59e0b',
   reports_reader:'#0078d4', security_admin:'#f59e0b', password_admin:'#0078d4',
   agent:'#0078d4', comptable:'#6c63ff', lecteur:'#6c63ff', invite:'#a78bfa',
 }
