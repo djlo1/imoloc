@@ -84,6 +84,14 @@ export default function Utilisateurs() {
   ])
   const [bulkAdding, setBulkAdding] = useState(false)
   const [blockedUsers, setBlockedUsers] = useState([])
+  const [editMode, setEditMode] = useState(false)
+  const [editForm, setEditForm] = useState({})
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [userAppareils, setUserAppareils] = useState([])
+  const [userLicences, setUserLicences] = useState([])
+  const [userDriveFiles, setUserDriveFiles] = useState([])
+  const [driveStats, setDriveStats] = useState({utilise:0, max:5368709120})
+  const [loadingUserData, setLoadingUserData] = useState(false)
   const resizingCol = useRef(null)
   const startX = useRef(0)
   const startW = useRef(0)
@@ -138,6 +146,85 @@ export default function Utilisateurs() {
       }
     } catch(e) { console.error(e) }
     finally { setLoading(false) }
+  }
+
+  const loadUserData = async (user) => {
+    setLoadingUserData(true)
+    setEditForm({
+      prenom: user.prenom || '',
+      nom: user.nom || '',
+      email: user.email || '',
+      telephone: user.telephone || '',
+      poste: user.poste || '',
+      departement: user.departement || '',
+      pays: user.pays || 'Bénin',
+    })
+    try {
+      const [{ data:appData }, { data:licData }, { data:fileData }, { data:statData }] = await Promise.all([
+        supabase.from('appareils_utilisateurs').select('*').eq('user_id', user.id).order('derniere_activite', {ascending:false}),
+        supabase.from('licences_utilisateurs').select('*, licences(*)').eq('user_id', user.id).eq('actif', true),
+        supabase.from('driveloc_fichiers').select('*').eq('user_id', user.id).order('created_at', {ascending:false}),
+        supabase.from('driveloc_stats').select('*').eq('user_id', user.id).single(),
+      ])
+      setUserAppareils(appData || [])
+      setUserLicences(licData || [])
+      setUserDriveFiles(fileData || [])
+      setDriveStats(statData || {stockage_utilise:0, stockage_max:5368709120})
+    } catch(e) { console.error(e) }
+    finally { setLoadingUserData(false) }
+  }
+
+  const saveProfile = async () => {
+    if (!selectedUser) return
+    setSavingProfile(true)
+    try {
+      const { error } = await supabase.from('profiles').update({
+        prenom: editForm.prenom,
+        nom: editForm.nom,
+        telephone: editForm.telephone,
+        poste: editForm.poste,
+        departement: editForm.departement,
+        pays: editForm.pays,
+      }).eq('id', selectedUser.id)
+      if (error) throw error
+
+      // Mettre à jour agence_users aussi
+      await supabase.from('agence_users').update({
+        prenom: editForm.prenom,
+        nom: editForm.nom,
+        poste: editForm.poste,
+        departement: editForm.departement,
+      }).eq('user_id', selectedUser.id).eq('agence_id', agence?.id)
+
+      // Mettre à jour l'affichage local
+      setActifs(prev => prev.map(u => u.id===selectedUser.id ? {...u, ...editForm} : u))
+      setSelectedUser(prev => ({...prev, ...editForm}))
+      setEditMode(false)
+      toast.success('Profil mis à jour !')
+    } catch(e) {
+      toast.error(e.message || 'Erreur lors de la sauvegarde')
+    } finally { setSavingProfile(false) }
+  }
+
+  const revokeAppareil = async (appareilId) => {
+    try {
+      await supabase.from('appareils_utilisateurs').update({
+        revoque: true, actif: false
+      }).eq('id', appareilId)
+      setUserAppareils(prev => prev.map(a => a.id===appareilId ? {...a, revoque:true, actif:false} : a))
+      toast.success('Accès révoqué')
+    } catch(e) { toast.error('Erreur') }
+  }
+
+  const revokeAllAppareils = async (userId) => {
+    if (!confirm('Révoquer tous les appareils de cet utilisateur ?')) return
+    try {
+      await supabase.from('appareils_utilisateurs')
+        .update({ revoque: true, actif: false })
+        .eq('user_id', userId)
+      setUserAppareils(prev => prev.map(a => ({...a, revoque:true, actif:false})))
+      toast.success('Tous les appareils révoqués')
+    } catch(e) { toast.error('Erreur') }
   }
 
   const toggleBlock = async (user) => {
@@ -708,7 +795,7 @@ export default function Utilisateurs() {
                       const avSize = viewMode==='compact' ? 26 : 34
                       const fontSize = viewMode==='compact' ? 10 : 12
                       return (
-                        <tr key={i} className={isSel?'sel':''} onClick={()=>{ if(rowMenu!==u.id) setSelectedUser(u); setUserPanelTab('compte') }}>
+                        <tr key={i} className={isSel?'sel':''} onClick={()=>{ if(rowMenu!==u.id){ setSelectedUser(u); setUserPanelTab('compte'); loadUserData(u) } }}>
                           <td onClick={e=>{e.stopPropagation();toggleSelect(u.id)}}>
                             <div className={`us-cb ${isSel?'on':''}`}>
                               {isSel&&<svg width="8" height="8" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
@@ -766,7 +853,7 @@ export default function Utilisateurs() {
                             <button className="us-mbtn" onClick={e=>{e.stopPropagation();setRowMenu(rowMenu===u.id?null:u.id)}}>···</button>
                             {rowMenu===u.id&&(
                               <div className="us-dd">
-                                <button className="us-ddi" onClick={()=>{setSelectedUser(u);setRowMenu(null)}}>👤 Voir le profil</button>
+                                <button className="us-ddi" onClick={()=>{setSelectedUser(u);loadUserData(u);setRowMenu(null)}}>👤 Voir le profil</button>
                                 <button className="us-ddi" onClick={()=>setRowMenu(null)}>✏️ Modifier</button>
                                 <button className="us-ddi" onClick={()=>setRowMenu(null)}>🔑 Gérer les rôles</button>
                                 <button className="us-ddi" onClick={()=>setRowMenu(null)}>🔐 Réinitialiser le MDP</button>
@@ -955,12 +1042,27 @@ export default function Utilisateurs() {
                   </span>
                 )}
               </div>
-              <div className="ud-tabs">
-                {['compte','appareils','licences','courrier','onedrive'].map(t=>(
-                  <button key={t} className={`ud-tab ${userPanelTab===t?'active':''}`} onClick={()=>setUserPanelTab(t)}>
-                    {{compte:'Compte',appareils:'Appareils',licences:'Licences et applications',courrier:'Courrier',onedrive:'OneDrive'}[t]}
-                  </button>
-                ))}
+              <div className="ud-tabs" style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <div style={{display:'flex'}}>
+                  {['compte','appareils','licences','courrier','driveloc'].map(t=>(
+                    <button key={t} className={`ud-tab ${userPanelTab===t?'active':''}`} onClick={()=>setUserPanelTab(t)}>
+                      {{compte:'Compte',appareils:'Appareils',licences:'Licences et applications',courrier:'Courrier',driveloc:'DriveLoc'}[t]}
+                    </button>
+                  ))}
+                </div>
+                {userPanelTab==='compte'&&(
+                  editMode
+                    ? <div style={{display:'flex',gap:8,marginBottom:2}}>
+                        <button onClick={()=>setEditMode(false)} style={{padding:'6px 14px',borderRadius:4,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',color:'rgba(255,255,255,0.6)',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>Annuler</button>
+                        <button onClick={saveProfile} disabled={savingProfile} style={{padding:'6px 14px',borderRadius:4,background:'#0078d4',border:'none',color:'#fff',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter',opacity:savingProfile?0.6:1}}>
+                          {savingProfile?'Sauvegarde...':'Enregistrer'}
+                        </button>
+                      </div>
+                    : <button onClick={()=>setEditMode(true)} style={{padding:'6px 14px',marginBottom:2,borderRadius:4,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',color:'rgba(255,255,255,0.65)',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter',display:'flex',alignItems:'center',gap:6}}>
+                        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
+                        Modifier
+                      </button>
+                )}
               </div>
             </div>
 
@@ -1032,32 +1134,63 @@ export default function Utilisateurs() {
                   {/* Séparateur */}
                   <div className="ud-divider"/>
 
-                  {/* Informations de contact */}
+                  {/* Informations de contact - mode édition ou lecture */}
                   <div style={{marginBottom:28}}>
                     <div className="ud-section-title">Informations de contact</div>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 2.5rem'}}>
-                      <div>
-                        <div className="ud-blk">
-                          <div className="ud-field-lbl2">Nom d'affichage</div>
-                          <div className="ud-field-val2">{selectedUser.prenom} {selectedUser.nom}</div>
+                    {editMode ? (
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px 2rem'}}>
+                        {[
+                          {k:'prenom',l:'Prénom',p:'Jean'},
+                          {k:'nom',l:'Nom',p:'Dupont'},
+                          {k:'telephone',l:'Téléphone',p:'+229 XX XX XX XX'},
+                          {k:'poste',l:'Poste',p:'Manager'},
+                          {k:'departement',l:'Département',p:'Commercial'},
+                          {k:'pays',l:'Pays',p:'Bénin'},
+                        ].map(({k,l,p})=>(
+                          <div key={k}>
+                            <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:6,fontWeight:600}}>{l}</div>
+                            <input
+                              value={editForm[k]||''}
+                              onChange={e=>setEditForm(f=>({...f,[k]:e.target.value}))}
+                              placeholder={p}
+                              style={{width:'100%',padding:'8px 12px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(0,120,212,0.35)',borderRadius:5,fontFamily:'Inter',fontSize:13.5,color:'#e6edf3',outline:'none'}}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 2.5rem'}}>
+                        <div>
+                          <div className="ud-blk">
+                            <div className="ud-field-lbl2">Nom d'affichage</div>
+                            <div className="ud-field-val2">{selectedUser.prenom} {selectedUser.nom}</div>
+                          </div>
+                          <div className="ud-blk">
+                            <div className="ud-field-lbl2">Numéro de téléphone</div>
+                            <div className="ud-field-val2">{selectedUser.telephone||<span style={{color:'rgba(255,255,255,0.3)'}}>Non renseigné</span>}</div>
+                            {!selectedUser.telephone&&<a onClick={()=>setEditMode(true)} href="#" className="ud-link">Ajouter un numéro</a>}
+                          </div>
+                          <div className="ud-blk">
+                            <div className="ud-field-lbl2">Poste</div>
+                            <div className="ud-field-val2">{selectedUser.poste||<span style={{color:'rgba(255,255,255,0.3)'}}>—</span>}</div>
+                          </div>
                         </div>
-                        <div className="ud-blk">
-                          <div className="ud-field-lbl2">Numéro de téléphone</div>
-                          <div className="ud-field-val2">{selectedUser.telephone||'Non renseigné'}</div>
-                          <a href="#" className="ud-link">Ajouter un numéro de téléphone</a>
+                        <div>
+                          <div className="ud-blk">
+                            <div className="ud-field-lbl2">Prénom</div>
+                            <div className="ud-field-val2">{selectedUser.prenom||'—'}</div>
+                          </div>
+                          <div className="ud-blk">
+                            <div className="ud-field-lbl2">Nom</div>
+                            <div className="ud-field-val2">{selectedUser.nom||'—'}</div>
+                          </div>
+                          <div className="ud-blk">
+                            <div className="ud-field-lbl2">Département</div>
+                            <div className="ud-field-val2">{selectedUser.departement||<span style={{color:'rgba(255,255,255,0.3)'}}>—</span>}</div>
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="ud-blk">
-                          <div className="ud-field-lbl2">Prénom</div>
-                          <div className="ud-field-val2">{selectedUser.prenom||'—'}</div>
-                        </div>
-                        <div className="ud-blk">
-                          <div className="ud-field-lbl2">Nom</div>
-                          <div className="ud-field-val2">{selectedUser.nom||'—'}</div>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Séparateur */}
@@ -1086,33 +1219,35 @@ export default function Utilisateurs() {
                 <>
                   <div className="ud-section">
                     <div className="ud-sh">
-                      Appareils connectés
-                      <button className="ud-sa">Tout révoquer</button>
+                      Appareils connectés ({userAppareils.filter(a=>!a.revoque).length})
+                      <button className="ud-sa" onClick={()=>revokeAllAppareils(selectedUser.id)}>Tout révoquer</button>
                     </div>
-                    {[
-                      {ic:'💻',name:'Kali Linux — Chrome',type:'Navigateur web',loc:'Cotonou, Bénin',last:'Maintenant',active:true},
-                      {ic:'📱',name:'Android — Samsung Galaxy',type:'Application mobile',loc:'Abomey-Calavi, Bénin',last:'Il y a 2 heures',active:false},
-                    ].map((d,i)=>(
-                      <div key={i} className="ud-device-card">
-                        <div className="ud-device-icon">{d.ic}</div>
+                    {loadingUserData ? (
+                      <div style={{textAlign:'center',padding:30,color:'rgba(255,255,255,0.3)'}}>Chargement...</div>
+                    ) : userAppareils.length===0 ? (
+                      <div className="ud-empty-tab">
+                        <div style={{fontSize:36,opacity:0.3,marginBottom:12}}>💻</div>
+                        <div style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Aucun appareil enregistré</div>
+                        <div>Les sessions actives apparaîtront ici automatiquement.</div>
+                      </div>
+                    ) : userAppareils.map((d,i)=>(
+                      <div key={i} className="ud-device-card" style={{opacity:d.revoque?0.45:1}}>
+                        <div className="ud-device-icon">{d.type==='mobile'?'📱':d.type==='tablette'?'📱':'💻'}</div>
                         <div style={{flex:1}}>
-                          <div className="ud-device-name">{d.name}</div>
-                          <div className="ud-device-meta">{d.type} · {d.loc}</div>
+                          <div className="ud-device-name">{d.nom||`${d.os||'Appareil'} — ${d.navigateur||'Navigateur'}`}</div>
+                          <div className="ud-device-meta">{d.type} · {d.localisation||'Localisation inconnue'}</div>
                           <div className="ud-device-status">
-                            <span style={{width:7,height:7,borderRadius:'50%',background:d.active?'#00c896':'rgba(255,255,255,0.25)'}}/>
-                            {d.active?'Session active':'Dernière activité : '+d.last}
+                            <span style={{width:7,height:7,borderRadius:'50%',background:d.actif&&!d.revoque?'#00c896':'rgba(255,255,255,0.25)'}}/>
+                            {d.revoque?'Révoqué':d.actif?'Session active':`Dernière activité : ${new Date(d.derniere_activite).toLocaleDateString('fr-FR')}`}
                           </div>
                         </div>
-                        <div style={{display:'flex',flexDirection:'column',gap:6,flexShrink:0}}>
-                          <button className="ud-revoke-btn">Révoquer l'accès</button>
-                          {d.active&&<button className="ud-revoke-btn" style={{borderColor:'rgba(245,158,11,0.25)',background:'rgba(245,158,11,0.07)',color:'#f59e0b'}}>Fermer la session</button>}
-                        </div>
+                        {!d.revoque&&(
+                          <div style={{display:'flex',flexDirection:'column',gap:6,flexShrink:0}}>
+                            <button className="ud-revoke-btn" onClick={()=>revokeAppareil(d.id)}>Révoquer</button>
+                          </div>
+                        )}
                       </div>
                     ))}
-                    <button className="ud-add-btn" style={{marginTop:10}}>
-                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                      Ajouter un appareil approuvé
-                    </button>
                   </div>
                 </>
               )}
@@ -1147,18 +1282,29 @@ export default function Utilisateurs() {
                   {/* Accordéon Licences */}
                   <div className="ud-accord">
                     <div className="ud-accord-head">
-                      <span>Licences ({(LICENCES[selectedUser.role]||['Imoloc Standard']).length})</span>
+                      <span>Licences ({userLicences.length||LICENCES[selectedUser.role]?.length||1})</span>
                       <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>
                     </div>
                     <div className="ud-accord-body">
-                      {(LICENCES[selectedUser.role]||['Imoloc Standard']).map((l,i)=>(
+                      {userLicences.length>0 ? userLicences.map((lu,i)=>(
+                        <div key={i} className="ud-lic-item">
+                          <div className="ud-lic-cb">
+                            <svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                          </div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:3}}>{lu.licences?.nom||'Licence'}</div>
+                            <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>Attribuée le {new Date(lu.date_attribution).toLocaleDateString('fr-FR')}</div>
+                          </div>
+                          <span style={{fontSize:11,padding:'2px 8px',borderRadius:'100px',background:'rgba(0,200,150,0.1)',color:'#00c896',fontWeight:600}}>Actif</span>
+                        </div>
+                      )) : (LICENCES[selectedUser.role]||['Imoloc Standard']).map((l,i)=>(
                         <div key={i} className="ud-lic-item">
                           <div className="ud-lic-cb">
                             <svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
                           </div>
                           <div>
                             <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:3}}>{l}</div>
-                            <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>Attribué · 1 licence utilisée</div>
+                            <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>Attribué via le rôle</div>
                           </div>
                         </div>
                       ))}
@@ -1237,7 +1383,7 @@ export default function Utilisateurs() {
               )}
 
               {/* ── Onglet Drive Imoloc ── */}
-              {userPanelTab==='onedrive'&&(
+              {userPanelTab==='driveloc'&&(
                 <>
                   {/* Grille supérieure 2 colonnes */}
                   <div className="ud-grid2" style={{marginBottom:28}}>
@@ -1250,8 +1396,10 @@ export default function Utilisateurs() {
                     </div>
                     <div>
                       <div className="ud-field-lbl2">Stockage utilisé</div>
-                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.55)',marginBottom:8}}>0 Mo / 5 Go (0%)</div>
-                      <div className="ud-progress" style={{marginBottom:8}}><div className="ud-progress-fill" style={{width:'0%'}}/></div>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.55)',marginBottom:8}}>
+                {((driveStats.stockage_utilise||0)/1024/1024).toFixed(1)} Mo / {((driveStats.stockage_max||5368709120)/1024/1024/1024).toFixed(0)} Go ({(((driveStats.stockage_utilise||0)/(driveStats.stockage_max||5368709120))*100).toFixed(1)}%)
+              </div>
+                      <div className="ud-progress" style={{marginBottom:8}}><div className="ud-progress-fill" style={{width:`${((driveStats.stockage_utilise||0)/(driveStats.stockage_max||5368709120)*100).toFixed(1)}%`}}/></div>
                       <a href="#" className="ud-link">Modifier le stockage</a>
                     </div>
                   </div>
@@ -1293,11 +1441,32 @@ export default function Utilisateurs() {
                         📦 Télécharger tout en ZIP
                       </button>
                     </div>
-                    <div style={{textAlign:'center',padding:'40px 20px',color:'rgba(255,255,255,0.25)',background:'rgba(255,255,255,0.02)',borderRadius:10,border:'1px dashed rgba(255,255,255,0.07)'}}>
-                      <div style={{fontSize:36,marginBottom:12,opacity:0.4}}>📂</div>
-                      <div style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.35)',marginBottom:8}}>Aucun fichier disponible</div>
-                      <div style={{fontSize:13}}>Les baux, contrats et documents de cet utilisateur apparaîtront ici.</div>
-                    </div>
+                    {loadingUserData ? (
+                      <div style={{textAlign:'center',padding:30,color:'rgba(255,255,255,0.3)'}}>Chargement...</div>
+                    ) : userDriveFiles.length===0 ? (
+                      <div style={{textAlign:'center',padding:'40px 20px',color:'rgba(255,255,255,0.25)',background:'rgba(255,255,255,0.02)',borderRadius:10,border:'1px dashed rgba(255,255,255,0.07)'}}>
+                        <div style={{fontSize:36,marginBottom:12,opacity:0.4}}>📂</div>
+                        <div style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.35)',marginBottom:8}}>Aucun fichier disponible</div>
+                        <div style={{fontSize:13}}>Les baux, contrats et documents de cet utilisateur apparaîtront ici.</div>
+                      </div>
+                    ) : userDriveFiles.map((f,i)=>(
+                      <div key={i} className="ud-file-card">
+                        <div className="ud-file-icon" style={{background:f.type==='bail'?'rgba(0,120,212,0.12)':f.type==='image'?'rgba(0,200,150,0.12)':'rgba(255,255,255,0.06)'}}>
+                          {f.type==='bail'?'📋':f.type==='image'?'🖼️':f.type==='contrat'?'📄':'📎'}
+                        </div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div className="ud-file-name">{f.nom}</div>
+                          <div className="ud-file-meta">
+                            {f.type} · {(f.taille_octets/1024).toFixed(1)} Ko · {new Date(f.created_at).toLocaleDateString('fr-FR')}
+                          </div>
+                        </div>
+                        {f.url&&(
+                          <a href={f.url} download className="ud-file-dl">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                          </a>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </>
               )}
