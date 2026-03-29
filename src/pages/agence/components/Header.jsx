@@ -35,6 +35,19 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const { profile } = useAuthStore()
+  const [agenceId, setAgenceId] = useState(null)
+
+  useEffect(() => {
+    const loadAgence = async () => {
+      const { data:{ user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data:agList } = await supabase.from('agences').select('id').limit(1)
+        if (agList?.[0]) setAgenceId(agList[0].id)
+      }
+    }
+    loadAgence()
+  }, [])
   const [nouveautesOpen, setNouveautesOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [theme, setTheme] = useState('sombre')
