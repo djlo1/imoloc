@@ -1508,8 +1508,7 @@ export default function Utilisateurs() {
                         const file = e.target.files[0]
                         if (!file) return
                         const text = await file.text()
-                        const rows = text.split('
-').slice(1).filter(r=>r.trim()).map(r=>{
+                        const rows = text.split('\n').slice(1).filter(r=>r.trim()).map(r=>{
                           const [prenom,nom,email,role] = r.split(',').map(v=>v.trim())
                           return {prenom:prenom||'',nom:nom||'',email:email||'',role:role||'agent'}
                         })
