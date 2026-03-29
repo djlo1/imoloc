@@ -1637,7 +1637,7 @@ export default function Utilisateurs() {
                     <div>
                       <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:8}}>Pays / Région</div>
                       <select style={{width:'100%',padding:'10px 13px',background:'#1c2434',border:'1px solid rgba(255,255,255,0.12)',borderRadius:5,fontFamily:'Inter',fontSize:14,color:'#e6edf3',outline:'none',colorScheme:'dark'}}>
-                        {['Bénin','Togo','Côte d'Ivoire','Sénégal','Cameroun','Mali','Niger','Burkina Faso','France','Belgique'].map(p=>(
+                        {["Bénin","Togo","Côte d'Ivoire","Sénégal","Cameroun","Mali","Niger","Burkina Faso","France","Belgique"].map(p=>(
                           <option key={p} value={p} style={{background:'#1c2434',color:'#e6edf3'}}>{p}</option>
                         ))}
                       </select>
