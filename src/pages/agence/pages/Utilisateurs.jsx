@@ -559,8 +559,7 @@ export default function Utilisateurs() {
                 Ajouter un utilisateur
               </button>
               <button className="us-btn" onClick={()=>{
-                const csv = 'Prénom,Nom,Email,Rôle
-Jean,Dupont,jean@exemple.com,agent'
+                const csv = 'Prenom,Nom,Email,Role\nJean,Dupont,jean@exemple.com,agent'
                 const blob = new Blob([csv],{type:'text/csv'})
                 const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modele_utilisateurs.csv'; a.click()
                 toast.success('Modèle CSV téléchargé !')
