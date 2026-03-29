@@ -35,7 +35,6 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const { profile } = useAuthStore()
   const [agenceId, setAgenceId] = useState(null)
 
   useEffect(() => {
