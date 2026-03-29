@@ -21,6 +21,10 @@ export default function Contacts() {
   })
   const setF = (k,v) => setForm(f=>({...f,[k]:v}))
   const [csvFile, setCsvFile] = useState(null)
+  const [selected, setSelected] = useState([])
+  const [rowMenu, setRowMenu] = useState(null)
+  const [showColsPanel, setShowColsPanel] = useState(false)
+  const [visibleCols, setVisibleCols] = useState(['display','email','entreprise','tel_bureau','tel_mobile','synch'])
 
   const handleAdd = (e) => {
     e.preventDefault()
@@ -36,6 +40,25 @@ export default function Contacts() {
   }
 
   const canAdd = form.display && form.email
+  const toggleSelect = (id) => setSelected(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id])
+  const toggleAll = () => setSelected(s=>s.length===filtered.length?[]:filtered.map(c=>c.id))
+  const deleteSelected = () => {
+    setContacts(p=>p.filter(c=>!selected.includes(c.id)))
+    toast.success(`${selected.length} contact(s) supprimé(s)`)
+    setSelected([])
+  }
+
+  const ALL_COLS = [
+    {key:'display',label:'Nom du contact'},
+    {key:'email',label:'E-mail'},
+    {key:'entreprise',label:'Entreprise'},
+    {key:'tel_bureau',label:'Téléphone (bureau)'},
+    {key:'tel_mobile',label:'Téléphone mobile'},
+    {key:'titre',label:'Titre'},
+    {key:'ville',label:'Ville'},
+    {key:'pays',label:'Pays'},
+    {key:'synch',label:'État de synch.'},
+  ]
   const filtered = contacts.filter(c =>
     `${c.display} ${c.email} ${c.entreprise}`.toLowerCase().includes(search.toLowerCase())
   )
@@ -75,8 +98,8 @@ export default function Contacts() {
 
         /* Panels */
         .ct-ov{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;display:flex;justify-content:flex-end}
-        .ct-panel{width:420px;height:100%;background:#242424;border-left:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;animation:ct-sl 0.2s ease;overflow:hidden}
-        .ct-panel-wide{width:500px}
+        .ct-panel{width:920px;height:100%;background:#242424;border-left:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;animation:ct-sl 0.2s ease;overflow:hidden}
+        .ct-panel-wide{width:920px}
         @keyframes ct-sl{from{transform:translateX(100%)}to{transform:translateX(0)}}
         .ct-panel-head{padding:20px 22px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
         .ct-panel-title{font-size:17px;font-weight:700;color:#e6edf3}
@@ -114,6 +137,23 @@ export default function Contacts() {
         .ct-upload-row{display:flex;gap:0;margin-top:10px}
         .ct-upload-input{flex:1;padding:'9px 12px';background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-right:none;border-radius:'2px 0 0 2px';font-family:'Inter',sans-serif;font-size:13px;color:'rgba(255,255,255,0.4)';outline:'none'}
         .ct-upload-browse{padding:'9px 20px';background:#0078d4;border:none;border-radius:'0 2px 2px 0';color:#fff;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+        .ct-cb-cell{width:44px;text-align:center}
+        .ct-cb2{width:15px;height:15px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.12s;margin:0 auto;flex-shrink:0}
+        .ct-cb2.on{background:#0078d4;border-color:#0078d4}
+        .ct-cb2.half{background:rgba(0,120,212,0.3);border-color:#0078d4}
+        .ct-selbar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(0,120,212,0.07);border:1px solid rgba(0,120,212,0.18);border-radius:8px;margin-bottom:12px;animation:ct-sl 0.2s ease}
+        .ct-selbar-txt{font-size:13px;color:#4da6ff;font-weight:500;flex:1}
+        .ct-action-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:4px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:'Inter',sans-serif;transition:all 0.15s}
+        .ct-action-btn:hover{background:rgba(255,255,255,0.09);color:#e6edf3}
+        .ct-action-btn.red{border-color:rgba(239,68,68,0.22);background:rgba(239,68,68,0.07);color:#ef4444}
+        .ct-action-btn.red:hover{background:rgba(239,68,68,0.15)}
+        .ct-row-menu{position:relative}
+        .ct-row-dd{position:absolute;right:0;top:calc(100% + 4px);background:#1c2434;border:1px solid rgba(255,255,255,0.1);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:50;min-width:180px;overflow:hidden}
+        .ct-row-ddi{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:13px;color:rgba(255,255,255,0.65);cursor:pointer;transition:background 0.1s;border:none;background:none;font-family:'Inter',sans-serif;width:100%;text-align:left}
+        .ct-row-ddi:hover{background:rgba(255,255,255,0.05);color:#e6edf3}
+        .ct-row-ddi.red:hover{background:rgba(239,68,68,0.08);color:#ef4444}
+        .ct-col-panel{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:300;display:flex;justify-content:flex-end}
+        .ct-col-panel-inner{width:300px;height:100%;background:#161b22;border-left:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;animation:ct-sl 0.2s ease}
       `}</style>
 
       <div className="ct-page">
@@ -137,8 +177,8 @@ export default function Contacts() {
         </div>
 
         <div className="ct-desc">
-          Les contacts sont des personnes externes à votre organisation que vous aimeriez que tout le monde puisse trouver.<br/>
-          Toutes les personnes répertoriées ici sont disponibles dans <strong style={{color:'rgba(255,255,255,0.7)'}}>Outlook</strong> sous Personnes dans <strong style={{color:'rgba(255,255,255,0.7)'}}>Microsoft 365</strong>.
+          Les contacts sont des personnes externes à votre organisation (partenaires, fournisseurs, prestataires) que vous souhaitez rendre accessibles à tous vos collaborateurs.<br/>
+          Toutes les personnes répertoriées ici sont disponibles dans l'annuaire de <strong style={{color:'rgba(255,255,255,0.7)'}}>Imoloc</strong> et peuvent être associées à vos biens, baux et communications.
         </div>
 
         {/* Toolbar */}
@@ -177,32 +217,95 @@ export default function Contacts() {
           </div>
         </div>
 
+        {/* Barre sélection */}
+        {selected.length>0&&(
+          <div className="ct-selbar">
+            <span className="ct-selbar-txt">{selected.length} contact{selected.length>1?'s':''} sélectionné{selected.length>1?'s':''}</span>
+            <button className="ct-action-btn" onClick={()=>{
+              const data = contacts.filter(c=>selected.includes(c.id))
+              const csv = ['NomAffichage,Email,Entreprise,TelBureau,TelMobile',...data.map(c=>`${c.display},${c.email},${c.entreprise||''},${c.tel_bureau||''},${c.tel_mobile||''}`)].join('
+')
+              const a = document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='contacts_selection.csv'; a.click()
+              toast.success('Exporté !')
+            }}>📥 Exporter</button>
+            <button className="ct-action-btn red" onClick={deleteSelected}>🗑️ Supprimer ({selected.length})</button>
+            <button onClick={()=>setSelected([])} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:20,padding:'0 4px',lineHeight:1}}>×</button>
+          </div>
+        )}
+
         {/* Table */}
         <div className="ct-table-wrap">
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px',borderBottom:'1px solid rgba(255,255,255,0.07)',background:'rgba(255,255,255,0.02)'}}>
+            <span style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>
+              {filtered.length} contact{filtered.length>1?'s':''}
+            </span>
+            <button className="ct-action-btn" style={{padding:'4px 10px',fontSize:12}} onClick={()=>setShowColsPanel(true)}>
+              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z"/></svg>
+              Choisir les colonnes
+            </button>
+          </div>
           <table className="ct-table">
             <thead>
               <tr>
-                {COLONNES.map((c,i)=><th key={i}>{c}</th>)}
+                <th className="ct-cb-cell">
+                  <div className={`ct-cb2 ${selected.length===filtered.length&&filtered.length>0?'on':selected.length>0?'half':''}`} onClick={toggleAll}>
+                    {selected.length===filtered.length&&filtered.length>0&&<svg width="8" height="8" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
+                    {selected.length>0&&selected.length<filtered.length&&<div style={{width:7,height:2,background:'#fff',borderRadius:1}}/>}
+                  </div>
+                </th>
+                {ALL_COLS.filter(c=>visibleCols.includes(c.key)).map((c,i)=>(
+                  <th key={i}>{c.label}</th>
+                ))}
+                <th/>
               </tr>
             </thead>
             <tbody>
               {filtered.length===0 ? (
-                <tr><td colSpan={6}>
+                <tr><td colSpan={ALL_COLS.length+2}>
                   <div className="ct-empty">
                     <div className="ct-empty-title">Cette page est vide</div>
-                    <div style={{fontSize:13.5}}>Ajouter votre premier élément pour le voir dans cette liste</div>
+                    <div style={{fontSize:13.5}}>Ajoutez votre premier contact pour le voir dans cette liste</div>
+                    <button className="ct-add-btn" style={{marginTop:16}} onClick={()=>setShowAddPanel(true)}>+ Ajouter un contact</button>
                   </div>
                 </td></tr>
-              ) : filtered.map((c,i)=>(
-                <tr key={i}>
-                  <td style={{color:'#e6edf3',fontWeight:500}}>{c.display}</td>
-                  <td>{c.email}</td>
-                  <td>{c.entreprise||'—'}</td>
-                  <td>{c.tel_bureau||'—'}</td>
-                  <td>{c.tel_mobile||'—'}</td>
-                  <td><span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12.5}}><span style={{width:7,height:7,borderRadius:'50%',background:'#00c896'}}/>Synchronisé</span></td>
-                </tr>
-              ))}
+              ) : filtered.map((c,i)=>{
+                const isSel = selected.includes(c.id)
+                return (
+                  <tr key={i} style={{background:isSel?'rgba(0,120,212,0.05)':'transparent'}}>
+                    <td className="ct-cb-cell">
+                      <div className={`ct-cb2 ${isSel?'on':''}`} onClick={()=>toggleSelect(c.id)}>
+                        {isSel&&<svg width="8" height="8" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
+                      </div>
+                    </td>
+                    {visibleCols.includes('display')&&<td style={{color:'#e6edf3',fontWeight:500}}>{c.display}</td>}
+                    {visibleCols.includes('email')&&<td>{c.email}</td>}
+                    {visibleCols.includes('entreprise')&&<td>{c.entreprise||'—'}</td>}
+                    {visibleCols.includes('tel_bureau')&&<td>{c.tel_bureau||'—'}</td>}
+                    {visibleCols.includes('tel_mobile')&&<td>{c.tel_mobile||'—'}</td>}
+                    {visibleCols.includes('titre')&&<td>{c.titre||'—'}</td>}
+                    {visibleCols.includes('ville')&&<td>{c.ville||'—'}</td>}
+                    {visibleCols.includes('pays')&&<td>{c.pays||'—'}</td>}
+                    {visibleCols.includes('synch')&&(
+                      <td><span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12.5}}><span style={{width:7,height:7,borderRadius:'50%',background:'#00c896'}}/>Actif</span></td>
+                    )}
+                    <td style={{position:'relative'}}>
+                      <button className="ct-action-btn" style={{padding:'4px 8px',fontSize:13}} onClick={e=>{e.stopPropagation();setRowMenu(rowMenu===c.id?null:c.id)}}>···</button>
+                      {rowMenu===c.id&&(
+                        <div className="ct-row-dd">
+                          <button className="ct-row-ddi" onClick={()=>{setRowMenu(null);toast('Fonctionnalité à venir',{icon:'ℹ️'})}}>✏️ Modifier</button>
+                          <button className="ct-row-ddi" onClick={()=>{setRowMenu(null);toast('Fonctionnalité à venir',{icon:'ℹ️'})}}>📧 Envoyer un email</button>
+                          <div style={{height:'1px',background:'rgba(255,255,255,0.07)'}}/>
+                          <button className="ct-row-ddi red" onClick={()=>{
+                            setContacts(p=>p.filter(x=>x.id!==c.id))
+                            setRowMenu(null)
+                            toast.success('Contact supprimé')
+                          }}>🗑️ Supprimer</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -257,7 +360,7 @@ export default function Contacts() {
                   <div className={`ct-cb ${form.masquer?'on':''}`}>
                     {form.masquer&&<svg width="9" height="9" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
                   </div>
-                  <span style={{fontSize:13,color:'rgba(255,255,255,0.6)'}}>Masquer dans la liste d'adresses globale de mon organisation</span>
+                  <span style={{fontSize:13,color:'rgba(255,255,255,0.6)'}}>Ne pas afficher dans l'annuaire de l'organisation</span>
                 </div>
 
                 {/* Accordéon Informations de profil */}
@@ -413,6 +516,40 @@ export default function Contacts() {
               <button className="ct-add-btn" disabled={!csvFile} onClick={()=>setShowBulkPanel(false)}>
                 Ajouter des contacts
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Panel colonnes */}
+      {showColsPanel&&(
+        <div className="ct-col-panel" onClick={e=>e.target===e.currentTarget&&setShowColsPanel(false)}>
+          <div className="ct-col-panel-inner">
+            <div style={{padding:'18px 20px',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+              <span style={{fontSize:15,fontWeight:700,color:'#e6edf3'}}>Choisir les colonnes</span>
+              <button style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',padding:4,display:'flex'}} onClick={()=>setShowColsPanel(false)}>
+                <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div style={{flex:1,overflowY:'auto',padding:'14px 20px'}}>
+              <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:16,lineHeight:1.6}}>
+                Sélectionnez les colonnes à afficher dans le tableau des contacts.
+              </div>
+              {ALL_COLS.map(col=>(
+                <div key={col.key} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.05)',cursor:col.key==='display'?'not-allowed':'pointer'}}
+                  onClick={()=>{
+                    if(col.key==='display') return
+                    setVisibleCols(c=>c.includes(col.key)?c.filter(x=>x!==col.key):[...c,col.key])
+                  }}>
+                  <span style={{fontSize:13.5,color:col.key==='display'?'rgba(255,255,255,0.35)':'rgba(255,255,255,0.7)'}}>{col.label}</span>
+                  <div style={{width:17,height:17,borderRadius:3,border:'1.5px solid rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center',background:visibleCols.includes(col.key)?'#0078d4':'transparent',borderColor:visibleCols.includes(col.key)?'#0078d4':'rgba(255,255,255,0.2)',opacity:col.key==='display'?0.4:1}}>
+                    {visibleCols.includes(col.key)&&<svg width="9" height="9" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{padding:'14px 20px',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',gap:10}}>
+              <button onClick={()=>setVisibleCols(['display','email','entreprise','tel_bureau','tel_mobile','synch'])} style={{flex:1,padding:'9px',borderRadius:5,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',color:'rgba(255,255,255,0.6)',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>Rétablir</button>
+              <button onClick={()=>setShowColsPanel(false)} style={{flex:1,padding:'9px',borderRadius:5,background:'#0078d4',border:'none',color:'#fff',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>Enregistrer</button>
             </div>
           </div>
         </div>
