@@ -38,7 +38,15 @@ export default function Nouveautes() {
           .eq('user_id', user.id),
       ])
 
-      setNouveautes(nouvData || [])
+      // Données fallback si Supabase vide
+      const fallback = [
+        { id:'1', titre:'Loci IA Multi-modèles', description:'Loci utilise maintenant Claude, Llama et Gemini pour des réponses encore plus précises sur vos données immobilières.', type:'feature', version:'2.1.0', publie:true, date_publication:new Date().toISOString() },
+        { id:'2', titre:'Page Utilisateurs Microsoft Style', description:'Nouvelle interface de gestion des utilisateurs avec drawer latéral, colonnes configurables et export CSV.', type:'feature', version:'2.1.0', publie:true, date_publication:new Date(Date.now()-86400000).toISOString() },
+        { id:'3', titre:'DriveLoc — Stockage par utilisateur', description:'Chaque utilisateur dispose maintenant de son espace de stockage personnel pour ses documents et baux.', type:'update', version:'2.1.0', publie:true, date_publication:new Date(Date.now()-172800000).toISOString() },
+        { id:'4', titre:'Gestion des équipes améliorée', description:"Créez des équipes multiagences avec propriétaires et membres. Confidentialité publique ou privée.", type:'update', version:'2.0.5', publie:true, date_publication:new Date(Date.now()-259200000).toISOString() },
+        { id:'5', titre:'Notifications temps réel', description:'Les notifications arrivent instantanément grâce à Supabase Realtime. Badge compteur sur la cloche.', type:'feature', version:'2.1.0', publie:true, date_publication:new Date(Date.now()-345600000).toISOString() },
+      ]
+      setNouveautes(nouvData?.length > 0 ? nouvData : fallback)
       setVues((vuesData || []).map(v => v.nouveaute_id))
 
       // Marquer toutes comme vues

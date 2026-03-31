@@ -118,7 +118,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
 
           {/* Sections expandables */}
           {/* Loci AI */}
-          <Link to="/agence/loci" className={`sb3-loci ${location.pathname.startsWith('/agence/loci') ? 'active' : ''}`} onClick={onClose}>
+          <Link to="/agence/loci" className={`sb3-loci ${location.pathname.startsWith('/agence/loci') ? 'active' : ''}`} onClick={onClose} style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <div className="sb3-loci-icon">
               <svg width="9" height="9" fill="none" stroke="#fff" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
@@ -132,7 +132,8 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
                 <span style={{fontSize:10,padding:'1px 6px',borderRadius:'100px',background:'linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,200,150,0.2))',color:'#a78bfa',marginLeft:'auto',flexShrink:0,WebkitTextFillColor:'#a78bfa'}}>IA</span>
               </>
             )}
-          </Link>
+                  <svg width='12' height='12' fill='none' stroke='currentColor' strokeWidth='2' viewBox='0 0 24 24' style={{marginRight:4,flexShrink:0,transition:'transform 0.2s',transform:location.pathname.startsWith('/agence/loci')?'rotate(180deg)':'rotate(0deg)'}}><path strokeLinecap='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/></svg>
+                </Link>
           {/* Sous-menu Loci */}
           {!collapsed && location.pathname.startsWith('/agence/loci') && (
             <div style={{paddingLeft:30}}>

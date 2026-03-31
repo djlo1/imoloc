@@ -226,37 +226,18 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
         <div className="hd3-right">
 
           {/* Nouveautés */}
-          <div className="hd3-dropdown-zone" style={{position:'relative'}}>
-            <button className="hd3-icon-btn" title="Nouveautés" onClick={()=>{navigate('/agence/nouveautes')}} style={{position:'relative'}}>
+          <div style={{position:'relative'}}>
+            <button className="hd3-icon-btn" title="Nouveautés" onClick={()=>navigate('/agence/nouveautes')} style={{position:'relative'}}>
               {unreadNouveautes>0&&(
-                <span style={{position:'absolute',top:0,right:0,width:8,height:8,borderRadius:'50%',background:'#0078d4',border:'2px solid #0d1117'}}/>
+                <span style={{position:'absolute',top:2,right:2,width:8,height:8,borderRadius:'50%',background:'#0078d4',border:'2px solid #0d1117'}}/>
               )}
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
               </svg>
-              <span className="hd3-badge">2</span>
             </button>
-            {nouveautesOpen && (
-              <div className="hd3-drop hd3-news-menu" style={{position:'absolute'}}>
-                <div style={{padding:'14px 16px',borderBottom:'1px solid rgba(255,255,255,0.07)'}}>
-                  <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:2}}>Nouveautés Imoloc</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>Dernières fonctionnalités et améliorations</div>
-                </div>
-                <div style={{maxHeight:360,overflowY:'auto'}}>
-                  {NOUVEAUTES.map((n,i) => (
-                    <div key={i} className="hd3-news-item">
-                      <div className={`hd3-news-tag ${n.tag==='NOUVEAU'?'nouveau':n.tag==='AMÉLIORATION'?'amelioration':'bientot'}`}>{n.tag}</div>
-                      <div style={{fontSize:13.5,fontWeight:600,color:'#e6edf3',marginBottom:4}}>{n.title}</div>
-                      <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)',lineHeight:1.5,marginBottom:4}}>{n.desc}</div>
-                      <div style={{fontSize:11,color:'rgba(255,255,255,0.2)'}}>{n.date}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Notifications */}
+                    {/* Notifications */}
           <div className="hd3-dropdown-zone" style={{position:'relative'}}>
             <button className="hd3-icon-btn" title="Notifications" onClick={()=>{closeAll();setNotifOpen(v=>!v)}}>
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
