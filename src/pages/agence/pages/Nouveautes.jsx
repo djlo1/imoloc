@@ -23,41 +23,53 @@ export default function Nouveautes() {
     fetchData()
   }, [])
 
+  const FALLBACK = [
+    { id:'1', titre:'Loci IA Multi-modèles', description:"Loci utilise maintenant Claude, Llama et Gemini pour des réponses encore plus précises sur vos données immobilières.", type:'feature', version:'2.1.0', publie:true, date_publication:new Date().toISOString() },
+    { id:'2', titre:'Page Utilisateurs Imoloc Style', description:"Nouvelle interface de gestion des utilisateurs avec drawer latéral, colonnes configurables et export CSV.", type:'feature', version:'2.1.0', publie:true, date_publication:new Date(Date.now()-86400000).toISOString() },
+    { id:'3', titre:'DriveLoc — Stockage par utilisateur', description:"Chaque utilisateur dispose maintenant de son espace de stockage personnel pour ses documents et baux.", type:'update', version:'2.1.0', publie:true, date_publication:new Date(Date.now()-172800000).toISOString() },
+    { id:'4', titre:'Gestion des équipes améliorée', description:"Créez des équipes multiagences avec propriétaires et membres. Confidentialité publique ou privée.", type:'update', version:'2.0.5', publie:true, date_publication:new Date(Date.now()-259200000).toISOString() },
+    { id:'5', titre:'Notifications temps réel', description:"Les notifications arrivent instantanément grâce à Supabase Realtime. Badge compteur sur la cloche.", type:'feature', version:'2.1.0', publie:true, date_publication:new Date(Date.now()-345600000).toISOString() },
+  ]
+
   const fetchData = async () => {
     setLoading(true)
     try {
-      const { data:{ user } } = await supabase.auth.getUser()
+      // D'abord charger les nouveautés publiques (sans auth requise)
+      const { data:nouvData } = await supabase
+        .from('nouveautes')
+        .select('*')
+        .eq('publie', true)
+        .order('date_publication', { ascending: false })
 
-      const [{ data:nouvData }, { data:vuesData }] = await Promise.all([
-        supabase.from('nouveautes')
-          .select('*')
-          .eq('publie', true)
-          .order('date_publication', { ascending: false }),
-        supabase.from('nouveautes_vues')
-          .select('nouveaute_id')
-          .eq('user_id', user.id),
-      ])
+      setNouveautes(nouvData?.length > 0 ? nouvData : FALLBACK)
 
-      // Données fallback si Supabase vide
-      const fallback = [
-        { id:'1', titre:'Loci IA Multi-modèles', description:'Loci utilise maintenant Claude, Llama et Gemini pour des réponses encore plus précises sur vos données immobilières.', type:'feature', version:'2.1.0', publie:true, date_publication:new Date().toISOString() },
-        { id:'2', titre:'Page Utilisateurs Microsoft Style', description:'Nouvelle interface de gestion des utilisateurs avec drawer latéral, colonnes configurables et export CSV.', type:'feature', version:'2.1.0', publie:true, date_publication:new Date(Date.now()-86400000).toISOString() },
-        { id:'3', titre:'DriveLoc — Stockage par utilisateur', description:'Chaque utilisateur dispose maintenant de son espace de stockage personnel pour ses documents et baux.', type:'update', version:'2.1.0', publie:true, date_publication:new Date(Date.now()-172800000).toISOString() },
-        { id:'4', titre:'Gestion des équipes améliorée', description:"Créez des équipes multiagences avec propriétaires et membres. Confidentialité publique ou privée.", type:'update', version:'2.0.5', publie:true, date_publication:new Date(Date.now()-259200000).toISOString() },
-        { id:'5', titre:'Notifications temps réel', description:'Les notifications arrivent instantanément grâce à Supabase Realtime. Badge compteur sur la cloche.', type:'feature', version:'2.1.0', publie:true, date_publication:new Date(Date.now()-345600000).toISOString() },
-      ]
-      setNouveautes(nouvData?.length > 0 ? nouvData : fallback)
-      setVues((vuesData || []).map(v => v.nouveaute_id))
+      // Ensuite les vues (nécessite auth)
+      try {
+        const { data:{ user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data:vuesData } = await supabase
+            .from('nouveautes_vues')
+            .select('nouveaute_id')
+            .eq('user_id', user.id)
+          setVues((vuesData || []).map(v => v.nouveaute_id))
 
-      // Marquer toutes comme vues
-      const nonVues = (nouvData || []).filter(n => !(vuesData||[]).find(v=>v.nouveaute_id===n.id))
-      if (nonVues.length > 0) {
-        await supabase.from('nouveautes_vues').insert(
-          nonVues.map(n => ({ user_id: user.id, nouveaute_id: n.id }))
-        )
-      }
-    } catch(e) { console.error(e) }
-    finally { setLoading(false) }
+          // Marquer comme vues
+          const data = nouvData?.length > 0 ? nouvData : FALLBACK
+          const nonVues = data.filter(n => !(vuesData||[]).find(v=>v.nouveaute_id===n.id))
+          if (nonVues.length > 0) {
+            await supabase.from('nouveautes_vues').insert(
+              nonVues.map(n => ({ user_id: user.id, nouveaute_id: n.id }))
+            ).select()
+          }
+        }
+      } catch(e) { console.error('Auth error:', e) }
+
+    } catch(e) {
+      console.error('Fetch error:', e)
+      setNouveautes(FALLBACK)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const nonVues = nouveautes.filter(n => !vues.includes(n.id))
