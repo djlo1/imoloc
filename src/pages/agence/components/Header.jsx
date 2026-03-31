@@ -53,6 +53,7 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
     }
     loadAgence()
   }, [])
+  const navigate = useNavigate()
   const [unreadNouveautes, setUnreadNouveautes] = useState(0)
   const [nouveautesOpen, setNouveautesOpen] = useState(false)
   const [search, setSearch] = useState('')
