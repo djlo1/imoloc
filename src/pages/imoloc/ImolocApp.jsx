@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 
 // ── Pages ─────────────────────────────────────────────────
 import ImolocDashboard from './pages/ImolocDashboard'
+import Proprietaires from './pages/Proprietaires'
 
 const Soon = ({ title, icon }) => (
   <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:400,gap:16}}>
@@ -358,7 +359,7 @@ export default function ImolocApp() {
           <div className="im-content">
             <Routes>
               <Route index element={<ImolocDashboard agence={agence} stats={stats} navigate={navigate}/>} />
-              <Route path="proprietaires/*" element={<Soon title="Proprietaires" icon="👤"/>} />
+              <Route path="proprietaires/*" element={<Proprietaires />} />
               <Route path="biens/*" element={<Soon title="Biens immobiliers" icon="🏢"/>} />
               <Route path="locataires/*" element={<Soon title="Locataires" icon="👥"/>} />
               <Route path="baux/*" element={<Soon title="Baux et Contrats" icon="📄"/>} />
