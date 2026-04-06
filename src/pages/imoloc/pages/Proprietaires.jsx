@@ -4,8 +4,6 @@ import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
 
-// ── Constantes ──────────────────────────────────────────
-const ROLES_COLORS = { proprietaire:'#0078d4', locataire:'#6c63ff', agent:'#00c896', admin:'#f59e0b' }
 const getInitials = (p) => ((p?.prenom?.[0]||'')+(p?.nom?.[0]||'')).toUpperCase() || '?'
 const COLORS = ['#0078d4','#6c63ff','#00c896','#f59e0b','#4da6ff','#a78bfa']
 const getColor = (i) => COLORS[i % COLORS.length]
@@ -19,19 +17,18 @@ const ALL_COLS = [
   { key:'statut_fiscal', label:'Statut fiscal', checked:false },
   { key:'ifu', label:'IFU', checked:false },
   { key:'nationalite', label:'Nationalite', checked:false },
-  { key:'statut_compte', label:'Statut compte', checked:false },
+  { key:'statut_lien', label:'Statut', checked:true },
   { key:'biens', label:'Biens', checked:true },
   { key:'created_at', label:'Depuis le', checked:false },
 ]
 const DEFAULT_COLS = ALL_COLS.filter(c=>c.checked).map(c=>c.key)
 
-// ── Étapes du formulaire ────────────────────────────────
 const STEPS = [
-  { n:1, label:'Recherche' },
-  { n:2, label:'Identite' },
-  { n:3, label:'Contact' },
-  { n:4, label:'Pieces & Fiscal' },
-  { n:5, label:'Compte' },
+  { n:1, label:'Recherche', desc:'Existant ou nouveau' },
+  { n:2, label:'Identite', desc:'Informations personnelles' },
+  { n:3, label:'Contact', desc:'Coordonnees et adresse' },
+  { n:4, label:'Pieces & Fiscal', desc:'Documents et commission' },
+  { n:5, label:'Compte', desc:'Acces application' },
 ]
 
 export default function ImolocProprietaires() {
@@ -52,22 +49,25 @@ export default function ImolocProprietaires() {
   const [searchExisting, setSearchExisting] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
-  const [addMode, setAddMode] = useState(null) // 'existing' | 'new'
+  const [addMode, setAddMode] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [selectedExisting, setSelectedExisting] = useState(null)
+  const [importBiens, setImportBiens] = useState(false)
+  const [existingBiensCount, setExistingBiensCount] = useState(0)
+  const [existingLocatairesCount, setExistingLocatairesCount] = useState(0)
   const [form, setForm] = useState({
     nom:'', prenom:'', sexe:'H', date_naissance:'', lieu_naissance:'',
     nationalite:'Beninoise', telephone:'', telephone2:'', email:'',
-    adresse:'', ville:'Cotonou', quartier:'', rue:'', pays:'Benin',
+    ville:'Cotonou', quartier:'', rue:'', pays:'Benin',
     type_piece:'CIP', numero_piece:'', date_delivrance_piece:'',
     date_expiration_piece:'', pays_delivrance:'Benin',
     ifu:'', statut_fiscal:'Particulier',
     type_proprietaire:'individuel', nom_entreprise:'', registre_commerce:'',
     note_interne:'', statut_compte:'actif',
     taux_commission:'10', mode_commission:'mensuel',
-    create_account: false, password:'',
+    create_account:false, password:'',
   })
   const setF = (k,v) => setForm(f=>({...f,[k]:v}))
-
   const resizingCol = useRef(null)
   const startX = useRef(0)
   const startW = useRef(0)
@@ -84,7 +84,7 @@ export default function ImolocProprietaires() {
       if (ag?.id) {
         const { data:links } = await supabase
           .from('agence_proprietaires')
-          .select('*, profiles(*), biens(count)')
+          .select('*, profiles(*)')
           .eq('agence_id', ag.id)
         setProprietaires((links||[]).map(l=>({
           ...l.profiles,
@@ -108,11 +108,7 @@ export default function ImolocProprietaires() {
       const diff = ev.clientX - startX.current
       setColWidths(prev => ({...prev, [resizingCol.current]: Math.max(80, startW.current + diff)}))
     }
-    const onUp = () => {
-      resizingCol.current = null
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-    }
+    const onUp = () => { resizingCol.current = null; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
   }, [colWidths])
@@ -130,22 +126,54 @@ export default function ImolocProprietaires() {
     finally { setSearching(false) }
   }
 
-  const linkExisting = async (p) => {
-    if (!agence?.id) return
+  const selectExistingUser = async (u) => {
+    setSelectedExisting(u)
+    // Compter les biens et locataires lies
+    try {
+      const [b, l] = await Promise.all([
+        supabase.from('biens').select('id', {count:'exact'}).eq('proprietaire_id', u.id),
+        supabase.from('locataires').select('id', {count:'exact'}).eq('agence_id', agence?.id),
+      ])
+      setExistingBiensCount(b.count || 0)
+      setExistingLocatairesCount(l.count || 0)
+    } catch(e) { console.error(e) }
+  }
+
+  const linkExisting = async () => {
+    if (!agence?.id || !selectedExisting) return
     setSaving(true)
     try {
-      // Mettre à jour le rôle
-      await supabase.from('profiles').update({ role:'proprietaire' }).eq('id', p.id)
-      // Créer le lien agence-proprietaire
-      const { error } = await supabase.from('agence_proprietaires').insert({
+      // Mettre a jour le role
+      await supabase.from('profiles').update({ role:'proprietaire' }).eq('id', selectedExisting.id)
+      
+      // Statut selon si import demande
+      const statut = importBiens ? 'en_attente_validation' : 'actif'
+      
+      // Lier a l'agence
+      const { error } = await supabase.from('agence_proprietaires').upsert({
         agence_id: agence.id,
-        proprietaire_id: p.id,
-        statut: 'actif',
+        proprietaire_id: selectedExisting.id,
+        statut,
         taux_commission: parseFloat(form.taux_commission) || 10,
         mode_commission: form.mode_commission,
-      })
-      if (error && error.code !== '23505') throw error
-      toast.success(`${p.prenom} ${p.nom} associe comme proprietaire !`)
+      }, { onConflict: 'agence_id,proprietaire_id' })
+      if (error) throw error
+
+      // Si import demande, envoyer notification/email
+      if (importBiens) {
+        // Creer une notification pour le proprietaire
+        await supabase.from('notifications').insert({
+          profile_id: selectedExisting.id,
+          titre: 'Demande de transfert d'agence',
+          message: `L'agence ${agence.nom} souhaite gerer vos biens et importer vos donnees. Veuillez confirmer cette demande.`,
+          type: 'transfert_agence',
+          lien: '/mobile/transfert',
+        })
+        toast.success(`Demande envoyee a ${selectedExisting.prenom} ${selectedExisting.nom} — En attente de validation`)
+      } else {
+        toast.success(`${selectedExisting.prenom} ${selectedExisting.nom} associe comme proprietaire !`)
+      }
+      
       setShowAddPanel(false)
       resetForm()
       initData()
@@ -157,93 +185,50 @@ export default function ImolocProprietaires() {
     if (!agence?.id || !form.nom || !form.prenom) return
     setSaving(true)
     try {
-      let userId = null
-      if (form.create_account && form.email && form.password) {
-        // Créer le compte auth
-        const { data:authData, error:authErr } = await supabase.auth.admin?.createUser?.({
-          email: form.email,
-          password: form.password,
-          email_confirm: true,
-        }) || { error: { message: 'Admin API non disponible' } }
+      const { data:pData, error:pErr } = await supabase.from('profiles').insert({
+        nom: form.nom, prenom: form.prenom, email: form.email || null,
+        telephone: form.telephone, role: 'proprietaire',
+        sexe: form.sexe, nationalite: form.nationalite,
+        date_naissance: form.date_naissance || null,
+        lieu_naissance: form.lieu_naissance,
+        telephone2: form.telephone2,
+        ville: form.ville, quartier: form.quartier,
+        rue: form.rue, pays: form.pays,
+        type_piece: form.type_piece, numero_piece: form.numero_piece,
+        date_delivrance_piece: form.date_delivrance_piece || null,
+        date_expiration_piece: form.date_expiration_piece || null,
+        pays_delivrance: form.pays_delivrance,
+        ifu: form.ifu, statut_fiscal: form.statut_fiscal,
+        type_proprietaire: form.type_proprietaire,
+        nom_entreprise: form.nom_entreprise,
+        registre_commerce: form.registre_commerce,
+        note_interne: form.note_interne,
+        statut_compte: form.statut_compte,
+      }).select().single()
+      if (pErr) throw pErr
 
-        if (authErr) {
-          // Fallback: créer juste le profil sans compte auth
-          const { data:pData, error:pErr } = await supabase.from('profiles').insert({
-            nom: form.nom, prenom: form.prenom, email: form.email,
-            telephone: form.telephone, role: 'proprietaire',
-            sexe: form.sexe, nationalite: form.nationalite,
-            date_naissance: form.date_naissance || null,
-            lieu_naissance: form.lieu_naissance,
-            telephone2: form.telephone2,
-            ville: form.ville, quartier: form.quartier,
-            rue: form.rue, pays: form.pays,
-            type_piece: form.type_piece, numero_piece: form.numero_piece,
-            date_delivrance_piece: form.date_delivrance_piece || null,
-            date_expiration_piece: form.date_expiration_piece || null,
-            pays_delivrance: form.pays_delivrance,
-            ifu: form.ifu, statut_fiscal: form.statut_fiscal,
-            type_proprietaire: form.type_proprietaire,
-            nom_entreprise: form.nom_entreprise,
-            registre_commerce: form.registre_commerce,
-            note_interne: form.note_interne,
-            statut_compte: form.statut_compte,
-          }).select().single()
-          if (pErr) throw pErr
-          userId = pData.id
-        } else {
-          userId = authData?.user?.id
-        }
-      } else {
-        // Créer le profil sans compte auth
-        const { data:pData, error:pErr } = await supabase.from('profiles').insert({
-          nom: form.nom, prenom: form.prenom, email: form.email || null,
-          telephone: form.telephone, role: 'proprietaire',
-          sexe: form.sexe, nationalite: form.nationalite,
-          date_naissance: form.date_naissance || null,
-          lieu_naissance: form.lieu_naissance,
-          telephone2: form.telephone2,
-          ville: form.ville, quartier: form.quartier,
-          rue: form.rue, pays: form.pays,
-          type_piece: form.type_piece, numero_piece: form.numero_piece,
-          date_delivrance_piece: form.date_delivrance_piece || null,
-          date_expiration_piece: form.date_expiration_piece || null,
-          pays_delivrance: form.pays_delivrance,
-          ifu: form.ifu, statut_fiscal: form.statut_fiscal,
-          type_proprietaire: form.type_proprietaire,
-          nom_entreprise: form.nom_entreprise,
-          registre_commerce: form.registre_commerce,
-          note_interne: form.note_interne,
-          statut_compte: form.statut_compte,
-        }).select().single()
-        if (pErr) throw pErr
-        userId = pData.id
-      }
-
-      if (userId) {
-        await supabase.from('agence_proprietaires').insert({
-          agence_id: agence.id,
-          proprietaire_id: userId,
-          statut: 'actif',
-          taux_commission: parseFloat(form.taux_commission) || 10,
-          mode_commission: form.mode_commission,
-        })
-      }
-
+      await supabase.from('agence_proprietaires').insert({
+        agence_id: agence.id,
+        proprietaire_id: pData.id,
+        statut: 'actif',
+        taux_commission: parseFloat(form.taux_commission) || 10,
+        mode_commission: form.mode_commission,
+      })
       toast.success(`${form.prenom} ${form.nom} ajoute comme proprietaire !`)
       setShowAddPanel(false)
       resetForm()
       initData()
-    } catch(e) {
-      console.error(e)
-      toast.error(e.message || "Erreur lors de l'ajout")
-    } finally { setSaving(false) }
+    } catch(e) { toast.error(e.message || "Erreur") }
+    finally { setSaving(false) }
   }
 
   const resetForm = () => {
     setStep(1); setAddMode(null); setSearchExisting(''); setSearchResults([])
+    setSelectedExisting(null); setImportBiens(false)
+    setExistingBiensCount(0); setExistingLocatairesCount(0)
     setForm({ nom:'', prenom:'', sexe:'H', date_naissance:'', lieu_naissance:'',
       nationalite:'Beninoise', telephone:'', telephone2:'', email:'',
-      adresse:'', ville:'Cotonou', quartier:'', rue:'', pays:'Benin',
+      ville:'Cotonou', quartier:'', rue:'', pays:'Benin',
       type_piece:'CIP', numero_piece:'', date_delivrance_piece:'',
       date_expiration_piece:'', pays_delivrance:'Benin',
       ifu:'', statut_fiscal:'Particulier',
@@ -278,33 +263,22 @@ export default function ImolocProprietaires() {
         .pp-bc span{cursor:pointer;transition:color 0.1s}.pp-bc span:hover{color:#4da6ff}
         .pp-title{font-size:26px;font-weight:700;color:#e6edf3;letter-spacing:-0.02em;margin-bottom:4px}
         .pp-sub{font-size:13.5px;color:rgba(255,255,255,0.4);margin-bottom:22px}
-
         .pp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-        .pp-stat{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px 18px;transition:all 0.2s;cursor:pointer}
-        .pp-stat:hover{border-color:rgba(255,255,255,0.13);transform:translateY(-1px)}
+        .pp-stat{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px 18px}
         .pp-stat-val{font-size:26px;font-weight:800;letter-spacing:-0.02em;margin-bottom:3px}
         .pp-stat-lbl{font-size:12px;color:rgba(255,255,255,0.35)}
-
         .pp-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap}
         .pp-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:Inter,sans-serif;transition:all 0.15s;white-space:nowrap}
         .pp-btn:hover:not(:disabled){background:rgba(255,255,255,0.09);color:#e6edf3}
-        .pp-btn:disabled{opacity:0.35;cursor:not-allowed}
         .pp-btn-p{background:#0078d4;border-color:#0078d4;color:#fff}.pp-btn-p:hover:not(:disabled){background:#006cc1}
-        .pp-btn-g{background:rgba(0,200,150,0.08);border-color:rgba(0,200,150,0.22);color:#00c896}.pp-btn-g:hover:not(:disabled){background:rgba(0,200,150,0.15)}
-        .pp-btn-r{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.22);color:#ef4444}.pp-btn-r:hover:not(:disabled){background:rgba(239,68,68,0.15)}
+        .pp-btn-g{background:rgba(0,200,150,0.08);border-color:rgba(0,200,150,0.22);color:#00c896}
+        .pp-btn-r{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.22);color:#ef4444}
         .pp-sep{width:1px;height:22px;background:rgba(255,255,255,0.08)}
         .pp-search{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:4px;padding:7px 12px;margin-left:auto;transition:border-color 0.15s}
         .pp-search:focus-within{border-color:rgba(0,120,212,0.4)}
         .pp-search input{background:none;border:none;outline:none;font-family:Inter,sans-serif;font-size:13px;color:#e6edf3;width:220px}
         .pp-search input::placeholder{color:rgba(255,255,255,0.25)}
-
-        .pp-selbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(0,120,212,0.07);border:1px solid rgba(0,120,212,0.18);border-radius:8px;margin-bottom:12px;animation:pp-in 0.2s ease}
-        .pp-selbar-txt{font-size:13px;color:#4da6ff;font-weight:500;flex:1}
-
-        .pp-vtog{display:flex;gap:2px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:5px;padding:3px}
-        .pp-vbtn{background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:3px;color:rgba(255,255,255,0.4);transition:all 0.15s;font-size:12px;font-family:Inter,sans-serif;display:flex;align-items:center;gap:4px}
-        .pp-vbtn.active{background:rgba(255,255,255,0.1);color:#e6edf3}
-
+        .pp-selbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(0,120,212,0.07);border:1px solid rgba(0,120,212,0.18);border-radius:8px;margin-bottom:12px}
         .pp-tw{border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden}
         .pp-thead-bar{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02)}
         .pp-table{width:100%;border-collapse:collapse;table-layout:fixed}
@@ -316,90 +290,117 @@ export default function ImolocProprietaires() {
         .pp-table tr:hover td{background:rgba(255,255,255,0.025);cursor:pointer}
         .pp-table tr.sel td{background:rgba(0,120,212,0.06)}
         .pp-table tr:last-child td{border-bottom:none}
-        .pp-rh{position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;background:transparent;z-index:1}
-        .pp-rh:hover,.pp-rh:active{background:rgba(0,120,212,0.4)}
-        .pp-cb{width:15px;height:15px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.12s;margin:0 auto;flex-shrink:0}
+        .pp-rh{position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;background:transparent}
+        .pp-rh:hover{background:rgba(0,120,212,0.4)}
+        .pp-cb{width:15px;height:15px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.12s;margin:0 auto}
         .pp-cb.on{background:#0078d4;border-color:#0078d4}
         .pp-cb.half{background:rgba(0,120,212,0.3);border-color:#0078d4}
         .pp-av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex-shrink:0}
         .pp-badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600}
         .pp-empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.3)}
         .pp-foot{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:rgba(255,255,255,0.3)}
+        .pp-vtog{display:flex;gap:2px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:5px;padding:3px}
+        .pp-vbtn{background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:3px;color:rgba(255,255,255,0.4);transition:all 0.15s;font-size:12px;font-family:Inter,sans-serif;display:flex;align-items:center;gap:4px}
+        .pp-vbtn.active{background:rgba(255,255,255,0.1);color:#e6edf3}
 
-        /* Panel colonnes */
-        .pp-ov{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;display:flex;justify-content:flex-end}
-        .pp-panel{width:340px;height:100%;background:#161b22;border-left:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;animation:pp-sl 0.2s ease}
+        /* ─ Panel overlay ─ */
+        .pp-ov{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;justify-content:flex-end}
+        .pp-panel{background:#161b22;border-left:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;animation:pp-sl 0.22s ease;height:100%;overflow:hidden}
         @keyframes pp-sl{from{transform:translateX(100%)}to{transform:translateX(0)}}
-        .pp-ph{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
-        .pp-ph-title{font-size:16px;font-weight:700;color:#e6edf3}
+        .pp-ph{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+        .pp-ph-title{font-size:17px;font-weight:700;color:#e6edf3}
         .pp-cls{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);padding:5px;border-radius:4px;display:flex;transition:all 0.1s}
         .pp-cls:hover{background:rgba(255,255,255,0.07);color:#e6edf3}
-        .pp-pb{flex:1;overflow-y:auto;padding:16px 22px}
+        .pp-pb{flex:1;overflow-y:auto;padding:24px 28px}
         .pp-pb::-webkit-scrollbar{width:4px}
         .pp-pb::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
-        .pp-pf{padding:16px 22px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-shrink:0}
-        .pp-pfb{flex:1;padding:10px;border-radius:5px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:Inter,sans-serif;transition:all 0.15s}
-        .pp-pfb-b{background:#0078d4;color:#fff}.pp-pfb-b:hover{background:#006cc1}
+        .pp-pf{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-shrink:0}
+        .pp-pfb{flex:1;padding:11px;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:Inter,sans-serif;transition:all 0.15s}
+        .pp-pfb-b{background:#0078d4;color:#fff}.pp-pfb-b:hover{background:#006cc1}.pp-pfb-b:disabled{opacity:0.4;cursor:not-allowed}
         .pp-pfb-g{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1)}.pp-pfb-g:hover{background:rgba(255,255,255,0.09)}
-        .pp-col-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-        .pp-col-lbl{font-size:13.5px;color:rgba(255,255,255,0.65)}
-        .pp-col-lbl.dis{color:rgba(255,255,255,0.3)}
-        .pp-col-cb{width:17px;height:17px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s}
-        .pp-col-cb.on{background:#0078d4;border-color:#0078d4}
-        .pp-col-cb.dis{opacity:0.4;cursor:not-allowed}
 
-        /* Panel ajout */
-        .pp-add-panel{width:680px}
-        .pp-steps{display:flex;padding:0 22px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
-        .pp-step{display:flex;align-items:center;gap:8px;padding:12px 16px 12px 0;margin-right:16px;border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s}
-        .pp-step.active{border-bottom-color:#0078d4}
-        .pp-step-n{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.4)}
-        .pp-step-n.active{background:#0078d4;color:#fff}
-        .pp-step-n.done{background:#00c896;color:#fff}
-        .pp-step-lbl{font-size:13px;font-weight:500;color:rgba(255,255,255,0.4)}
-        .pp-step.active .pp-step-lbl{color:#e6edf3}
-        .pp-g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-        .pp-field{margin-bottom:14px}
+        /* ─ Panel ajout large ─ */
+        .pp-add-panel{width:min(820px,96vw)}
+        .pp-add-body{display:flex;flex:1;overflow:hidden}
+        
+        /* ─ Steps vertical ─ */
+        .pp-steps-v{width:200px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);padding:20px 0;display:flex;flex-direction:column;gap:2px;background:rgba(0,0,0,0.15)}
+        .pp-step-v{display:flex;align-items:flex-start;gap:12px;padding:12px 20px;cursor:pointer;transition:background 0.15s;border-left:3px solid transparent;position:relative}
+        .pp-step-v:hover{background:rgba(255,255,255,0.04)}
+        .pp-step-v.active{background:rgba(0,120,212,0.07);border-left-color:#0078d4}
+        .pp-step-v.done{border-left-color:#00c896}
+        .pp-step-v-n{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.4);margin-top:1px}
+        .pp-step-v-n.active{background:#0078d4;color:#fff}
+        .pp-step-v-n.done{background:#00c896;color:#fff}
+        .pp-step-v-info{}
+        .pp-step-v-lbl{font-size:13px;font-weight:600;color:rgba(255,255,255,0.5)}
+        .pp-step-v.active .pp-step-v-lbl{color:#e6edf3}
+        .pp-step-v.done .pp-step-v-lbl{color:rgba(255,255,255,0.6)}
+        .pp-step-v-desc{font-size:11.5px;color:rgba(255,255,255,0.25);margin-top:2px}
+        .pp-step-v-line{position:absolute;left:31px;top:36px;bottom:-2px;width:1px;background:rgba(255,255,255,0.07);z-index:0}
+        
+        /* ─ Contenu steps ─ */
+        .pp-step-content{flex:1;overflow-y:auto;padding:28px 32px}
+        .pp-step-content::-webkit-scrollbar{width:4px}
+        .pp-step-content::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+        .pp-step-title{font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:6px}
+        .pp-step-sub{font-size:13.5px;color:rgba(255,255,255,0.4);margin-bottom:28px;line-height:1.6}
+
+        /* ─ Champs ─ */
+        .pp-g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .pp-field{margin-bottom:16px}
         .pp-lbl{display:block;font-size:12.5px;font-weight:600;color:rgba(255,255,255,0.5);margin-bottom:7px}
-        .pp-inp{width:100%;padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;font-family:Inter,sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s;color-scheme:dark}
+        .pp-inp{width:100%;padding:9px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-family:Inter,sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s;color-scheme:dark}
         .pp-inp:focus{border-color:#0078d4;background:rgba(255,255,255,0.07)}
-        .pp-sec{font-size:12px;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;margin:20px 0 14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.07)}
-        .pp-choice-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
-        .pp-choice{padding:20px;border-radius:10px;border:2px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);cursor:pointer;transition:all 0.18s;text-align:center}
-        .pp-choice:hover{border-color:rgba(0,120,212,0.35);background:rgba(0,120,212,0.05)}
+        .pp-sec{font-size:11.5px;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.09em;margin:24px 0 14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.07)}
+        
+        /* ─ Choix ─ */
+        .pp-choice-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px}
+        .pp-choice{padding:22px 20px;border-radius:12px;border:2px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);cursor:pointer;transition:all 0.18s;text-align:center}
+        .pp-choice:hover{border-color:rgba(0,120,212,0.35);background:rgba(0,120,212,0.05);transform:translateY(-1px)}
         .pp-choice.on{border-color:#0078d4;background:rgba(0,120,212,0.08)}
-        .pp-choice-ic{font-size:32px;margin-bottom:10px}
+        .pp-choice-ic{font-size:34px;margin-bottom:12px}
         .pp-choice-title{font-size:14.5px;font-weight:700;color:#e6edf3;margin-bottom:5px}
-        .pp-choice-desc{font-size:12.5px;color:rgba(255,255,255,0.4);line-height:1.5}
-        .pp-sr-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02);margin-bottom:8px;cursor:pointer;transition:all 0.15s}
-        .pp-sr-item:hover{border-color:rgba(0,120,212,0.35);background:rgba(0,120,212,0.05)}
+        .pp-choice-desc{font-size:12.5px;color:rgba(255,255,255,0.4);line-height:1.55}
+
+        /* ─ Résultat recherche ─ */
+        .pp-sr-item{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:9px;border:2px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02);margin-bottom:8px;cursor:pointer;transition:all 0.15s}
+        .pp-sr-item:hover{border-color:rgba(0,120,212,0.25);background:rgba(0,120,212,0.04)}
+        .pp-sr-item.selected{border-color:#0078d4;background:rgba(0,120,212,0.08)}
+
+        /* ─ Import box ─ */
+        .pp-import-box{border:2px solid rgba(0,200,150,0.2);border-radius:12px;padding:20px;background:rgba(0,200,150,0.04);margin-top:20px}
+        .pp-import-box.on{border-color:#00c896;background:rgba(0,200,150,0.08)}
         .pp-cbk{display:flex;align-items:center;gap:10px;cursor:pointer}
-        .pp-cbk-box{width:17px;height:17px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s}
+        .pp-cbk-box{width:18px;height:18px;border-radius:4px;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s}
         .pp-cbk-box.on{background:#0078d4;border-color:#0078d4}
 
-        /* Drawer détail */
-        .pp-detail-panel{width:600px}
-        .pp-detail-head{padding:22px 26px 0;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;background:linear-gradient(135deg,rgba(0,120,212,0.05),rgba(0,0,0,0))}
-        .pp-detail-av{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;flex-shrink:0}
-        .pp-detail-name{font-size:20px;font-weight:700;color:#e6edf3;margin-bottom:4px}
-        .pp-detail-meta{font-size:13px;color:rgba(255,255,255,0.4)}
+        /* ─ Colonnes panel ─ */
+        .pp-cols-panel{width:340px}
+        .pp-col-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+        .pp-col-lbl{font-size:13.5px;color:rgba(255,255,255,0.65)}
+        .pp-col-cb{width:17px;height:17px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s}
+        .pp-col-cb.on{background:#0078d4;border-color:#0078d4}
+
+        /* ─ Drawer detail ─ */
+        .pp-detail-panel{width:min(620px,96vw)}
+        .pp-detail-head{padding:24px 28px 0;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
         .pp-detail-tabs{display:flex;margin-top:18px}
-        .pp-detail-tab{padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap}
+        .pp-detail-tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap}
         .pp-detail-tab:hover{color:rgba(255,255,255,0.75)}
         .pp-detail-tab.active{color:#e6edf3;border-bottom-color:#0078d4}
-        .pp-blk{display:flex;flex-direction:column;gap:3px;margin-bottom:24px}
+        .pp-blk{display:flex;flex-direction:column;gap:3px;margin-bottom:22px}
         .pp-blk-lbl{font-size:13px;font-weight:600;color:#e6edf3;margin-bottom:4px}
-        .pp-blk-val{font-size:13.5px;color:rgba(255,255,255,0.5);margin-bottom:4px}
-        .pp-blk-link{font-size:13px;color:#0078d4;text-decoration:none;cursor:pointer;background:none;border:none;font-family:Inter,sans-serif}
+        .pp-blk-val{font-size:13.5px;color:rgba(255,255,255,0.5)}
+        .pp-blk-link{font-size:13px;color:#0078d4;cursor:pointer;background:none;border:none;font-family:Inter,sans-serif;padding:0;margin-top:2px;display:inline}
         .pp-blk-link:hover{text-decoration:underline}
         .pp-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 2.5rem}
         .pp-divider{height:1px;background:rgba(255,255,255,0.07);margin:20px 0}
 
-        @media(max-width:900px){.pp-stats{grid-template-columns:1fr 1fr}.pp-add-panel{width:100%}.pp-detail-panel{width:100%}}
+        @media(max-width:900px){.pp-stats{grid-template-columns:1fr 1fr}.pp-steps-v{width:160px}.pp-g2{grid-template-columns:1fr}}
       `}</style>
 
       <div className="pp-page">
-        {/* Breadcrumb */}
         <div className="pp-bc">
           <span onClick={()=>navigate('/imoloc')}>Centre Imoloc</span>
           <span style={{color:'rgba(255,255,255,0.2)'}}>›</span>
@@ -415,7 +416,7 @@ export default function ImolocProprietaires() {
             {ic:'👤',lbl:'Total',val:proprietaires.length,col:'#0078d4'},
             {ic:'🏢',lbl:'Individuels',val:proprietaires.filter(p=>p.type_proprietaire==='individuel').length,col:'#6c63ff'},
             {ic:'🏭',lbl:'Societes',val:proprietaires.filter(p=>p.type_proprietaire==='societe').length,col:'#f59e0b'},
-            {ic:'✅',lbl:'Actifs',val:proprietaires.filter(p=>p.statut_compte==='actif').length,col:'#00c896'},
+            {ic:'⏳',lbl:'En attente',val:proprietaires.filter(p=>p.statut_lien==='en_attente_validation').length,col:'#f59e0b'},
           ].map((s,i)=>(
             <div key={i} className="pp-stat">
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
@@ -435,34 +436,26 @@ export default function ImolocProprietaires() {
           </button>
           <button className="pp-btn" onClick={initData}>🔄</button>
           <div className="pp-sep"/>
-          <button className="pp-btn pp-btn-g" onClick={exportCSV}>
-            📥 Exporter{selected.length>0&&` (${selected.length})`}
-          </button>
+          <button className="pp-btn pp-btn-g" onClick={exportCSV}>📥 Exporter{selected.length>0&&` (${selected.length})`}</button>
           {selected.length>0&&(
             <button className="pp-btn pp-btn-r" onClick={async()=>{
-              if(!confirm(`Dissocier ${selected.length} proprietaire(s) de l'agence ?`)) return
-              for(const id of selected){
-                await supabase.from('agence_proprietaires').delete().eq('proprietaire_id',id).eq('agence_id',agence?.id)
-              }
+              if(!confirm(`Dissocier ${selected.length} proprietaire(s) ?`)) return
+              for(const id of selected) await supabase.from('agence_proprietaires').delete().eq('proprietaire_id',id).eq('agence_id',agence?.id)
               toast.success(`${selected.length} dissociations effectuees`)
               setSelected([]); initData()
-            }}>
-              🔗 Dissocier ({selected.length})
-            </button>
+            }}>🔗 Dissocier ({selected.length})</button>
           )}
           <div className="pp-search">
             <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un proprietaire..."/>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher..."/>
             {search&&<button onClick={()=>setSearch('')} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:16,padding:0}}>×</button>}
           </div>
         </div>
 
-        {/* Barre selection */}
         {selected.length>0&&(
           <div className="pp-selbar">
-            <span className="pp-selbar-txt">{selected.length} proprietaire{selected.length>1?'s':''} selectionne{selected.length>1?'s':''}</span>
-            <button className="pp-btn pp-btn-g" style={{padding:'5px 11px',fontSize:12}} onClick={exportCSV}>Exporter</button>
-            <button onClick={()=>setSelected([])} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:20,padding:'0 4px',lineHeight:1}}>×</button>
+            <span style={{fontSize:13,color:'#4da6ff',fontWeight:500,flex:1}}>{selected.length} proprietaire{selected.length>1?'s':''} selectionne{selected.length>1?'s':''}</span>
+            <button onClick={()=>setSelected([])} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:20,padding:'0 4px'}}>×</button>
           </div>
         )}
 
@@ -470,26 +463,18 @@ export default function ImolocProprietaires() {
         <div className="pp-tw">
           <div className="pp-thead-bar">
             <div style={{display:'flex',alignItems:'center',gap:10}}>
-              <span style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>
-                {filtered.length} proprietaire{filtered.length!==1?'s':''}
-              </span>
+              <span style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{filtered.length} proprietaire{filtered.length!==1?'s':''}</span>
               <div className="pp-vtog">
-                <button className={`pp-vbtn ${viewMode==='normal'?'active':''}`} onClick={()=>setViewMode('normal')}>
-                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
-                  Normal
-                </button>
-                <button className={`pp-vbtn ${viewMode==='compact'?'active':''}`} onClick={()=>setViewMode('compact')}>
-                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3.75 9h16.5m-16.5 6.75h16.5"/></svg>
-                  Compact
-                </button>
+                {[['normal','Normal'],['compact','Compact']].map(([v,l])=>(
+                  <button key={v} className={`pp-vbtn ${viewMode===v?'active':''}`} onClick={()=>setViewMode(v)}>{l}</button>
+                ))}
               </div>
             </div>
             <button className="pp-btn" style={{padding:'5px 12px',fontSize:12}} onClick={()=>setShowColsPanel(true)}>
               <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z"/></svg>
-              Choisir les colonnes
+              Colonnes
             </button>
           </div>
-
           <div style={{overflowX:'auto'}}>
             <table className="pp-table">
               <thead>
@@ -500,20 +485,17 @@ export default function ImolocProprietaires() {
                       {selected.length>0&&selected.length<filtered.length&&<div style={{width:8,height:2,background:'#fff',borderRadius:1}}/>}
                     </div>
                   </th>
-                  <th style={{width:colWidths['displayName']||220,minWidth:120}}>
-                    Nom du proprietaire
-                    <div className="pp-rh" onMouseDown={e=>startResize(e,'displayName')}/>
-                  </th>
-                  {cols.includes('telephone')&&<th style={{width:colWidths['telephone']||150,minWidth:100}}>Telephone<div className="pp-rh" onMouseDown={e=>startResize(e,'telephone')}/></th>}
-                  {cols.includes('email')&&<th style={{width:colWidths['email']||200,minWidth:120}}>Email<div className="pp-rh" onMouseDown={e=>startResize(e,'email')}/></th>}
-                  {cols.includes('type_proprietaire')&&<th style={{width:colWidths['type_proprietaire']||120,minWidth:80}}>Type<div className="pp-rh" onMouseDown={e=>startResize(e,'type_proprietaire')}/></th>}
-                  {cols.includes('ville')&&<th style={{width:colWidths['ville']||120,minWidth:80}}>Ville<div className="pp-rh" onMouseDown={e=>startResize(e,'ville')}/></th>}
-                  {cols.includes('statut_fiscal')&&<th style={{width:colWidths['statut_fiscal']||130,minWidth:80}}>Statut fiscal<div className="pp-rh" onMouseDown={e=>startResize(e,'statut_fiscal')}/></th>}
-                  {cols.includes('ifu')&&<th style={{width:colWidths['ifu']||120,minWidth:80}}>IFU<div className="pp-rh" onMouseDown={e=>startResize(e,'ifu')}/></th>}
-                  {cols.includes('nationalite')&&<th style={{width:colWidths['nationalite']||120,minWidth:80}}>Nationalite<div className="pp-rh" onMouseDown={e=>startResize(e,'nationalite')}/></th>}
-                  {cols.includes('statut_compte')&&<th style={{width:colWidths['statut_compte']||120,minWidth:80}}>Statut<div className="pp-rh" onMouseDown={e=>startResize(e,'statut_compte')}/></th>}
-                  {cols.includes('biens')&&<th style={{width:colWidths['biens']||80,minWidth:60}}>Biens<div className="pp-rh" onMouseDown={e=>startResize(e,'biens')}/></th>}
-                  {cols.includes('created_at')&&<th style={{width:colWidths['created_at']||130,minWidth:100}}>Depuis le<div className="pp-rh" onMouseDown={e=>startResize(e,'created_at')}/></th>}
+                  <th style={{width:colWidths['displayName']||240,minWidth:140}}>Nom du proprietaire<div className="pp-rh" onMouseDown={e=>startResize(e,'displayName')}/></th>
+                  {cols.includes('telephone')&&<th style={{width:colWidths['telephone']||150}}>Telephone<div className="pp-rh" onMouseDown={e=>startResize(e,'telephone')}/></th>}
+                  {cols.includes('email')&&<th style={{width:colWidths['email']||200}}>Email<div className="pp-rh" onMouseDown={e=>startResize(e,'email')}/></th>}
+                  {cols.includes('type_proprietaire')&&<th style={{width:colWidths['type_proprietaire']||130}}>Type<div className="pp-rh" onMouseDown={e=>startResize(e,'type_proprietaire')}/></th>}
+                  {cols.includes('ville')&&<th style={{width:colWidths['ville']||120}}>Ville<div className="pp-rh" onMouseDown={e=>startResize(e,'ville')}/></th>}
+                  {cols.includes('statut_fiscal')&&<th style={{width:colWidths['statut_fiscal']||130}}>Statut fiscal<div className="pp-rh" onMouseDown={e=>startResize(e,'statut_fiscal')}/></th>}
+                  {cols.includes('ifu')&&<th style={{width:colWidths['ifu']||120}}>IFU<div className="pp-rh" onMouseDown={e=>startResize(e,'ifu')}/></th>}
+                  {cols.includes('nationalite')&&<th style={{width:colWidths['nationalite']||120}}>Nationalite<div className="pp-rh" onMouseDown={e=>startResize(e,'nationalite')}/></th>}
+                  {cols.includes('statut_lien')&&<th style={{width:colWidths['statut_lien']||160}}>Statut<div className="pp-rh" onMouseDown={e=>startResize(e,'statut_lien')}/></th>}
+                  {cols.includes('biens')&&<th style={{width:colWidths['biens']||80}}>Biens<div className="pp-rh" onMouseDown={e=>startResize(e,'biens')}/></th>}
+                  {cols.includes('created_at')&&<th style={{width:colWidths['created_at']||130}}>Depuis le<div className="pp-rh" onMouseDown={e=>startResize(e,'created_at')}/></th>}
                   <th style={{width:50}}/>
                 </tr>
               </thead>
@@ -535,7 +517,8 @@ export default function ImolocProprietaires() {
                 ):filtered.map((p,i)=>{
                   const isSel = selected.includes(p.id)
                   const col = getColor(i)
-                  const avSize = viewMode==='compact' ? 26 : 34
+                  const avSize = viewMode==='compact'?26:34
+                  const isPending = p.statut_lien === 'en_attente_validation'
                   return (
                     <tr key={p.id} className={isSel?'sel':''} onClick={()=>setSelectedProp(p)}>
                       <td onClick={e=>{e.stopPropagation();toggleSelect(p.id)}}>
@@ -549,8 +532,15 @@ export default function ImolocProprietaires() {
                             {getInitials(p)}
                           </div>
                           <div>
-                            <div style={{fontWeight:600,color:'#e6edf3',fontSize:viewMode==='compact'?12.5:13.5}}>
-                              {p.prenom} {p.nom}
+                            <div style={{display:'flex',alignItems:'center',gap:8}}>
+                              <span style={{fontWeight:600,color:'#e6edf3',fontSize:viewMode==='compact'?12.5:13.5}}>
+                                {p.prenom} {p.nom}
+                              </span>
+                              {isPending&&(
+                                <span style={{display:'inline-flex',alignItems:'center',gap:4,padding:'1px 8px',borderRadius:'100px',background:'rgba(245,158,11,0.12)',border:'1px solid rgba(245,158,11,0.25)',fontSize:11,fontWeight:600,color:'#f59e0b',whiteSpace:'nowrap'}}>
+                                  ⏳ En attente de validation
+                                </span>
+                              )}
                             </div>
                             {viewMode==='normal'&&<div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)',marginTop:1}}>
                               {p.type_proprietaire==='societe'?p.nom_entreprise||'Societe':'Individuel'}
@@ -560,33 +550,25 @@ export default function ImolocProprietaires() {
                       </td>
                       {cols.includes('telephone')&&<td style={{fontSize:12.5}}>{p.telephone||'—'}</td>}
                       {cols.includes('email')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{p.email||'—'}</td>}
-                      {cols.includes('type_proprietaire')&&(
-                        <td>
-                          <span className="pp-badge" style={{
-                            background:p.type_proprietaire==='societe'?'rgba(245,158,11,0.12)':'rgba(0,120,212,0.12)',
-                            color:p.type_proprietaire==='societe'?'#f59e0b':'#4da6ff',
-                            fontSize:11
-                          }}>
-                            {p.type_proprietaire==='societe'?'🏭 Societe':'👤 Individuel'}
-                          </span>
-                        </td>
-                      )}
+                      {cols.includes('type_proprietaire')&&<td>
+                        <span className="pp-badge" style={{background:p.type_proprietaire==='societe'?'rgba(245,158,11,0.12)':'rgba(0,120,212,0.12)',color:p.type_proprietaire==='societe'?'#f59e0b':'#4da6ff'}}>
+                          {p.type_proprietaire==='societe'?'🏭 Societe':'👤 Individuel'}
+                        </span>
+                      </td>}
                       {cols.includes('ville')&&<td style={{fontSize:12.5,color:'rgba(255,255,255,0.5)'}}>{p.ville||'—'}</td>}
-                      {cols.includes('statut_fiscal')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{p.statut_fiscal||'—'}</td>}
-                      {cols.includes('ifu')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{p.ifu||'—'}</td>}
-                      {cols.includes('nationalite')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{p.nationalite||'—'}</td>}
-                      {cols.includes('statut_compte')&&(
-                        <td>
-                          <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12}}>
-                            <span style={{width:7,height:7,borderRadius:'50%',background:p.statut_compte==='actif'?'#00c896':'#f59e0b'}}/>
-                            {p.statut_compte||'actif'}
-                          </span>
-                        </td>
-                      )}
+                      {cols.includes('statut_fiscal')&&<td style={{fontSize:12}}>{p.statut_fiscal||'—'}</td>}
+                      {cols.includes('ifu')&&<td style={{fontSize:12}}>{p.ifu||'—'}</td>}
+                      {cols.includes('nationalite')&&<td style={{fontSize:12}}>{p.nationalite||'—'}</td>}
+                      {cols.includes('statut_lien')&&<td>
+                        <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12,fontWeight:600}}>
+                          <span style={{width:7,height:7,borderRadius:'50%',background:isPending?'#f59e0b':p.statut_lien==='actif'?'#00c896':'#ef4444'}}/>
+                          {isPending?'En attente':p.statut_lien||'actif'}
+                        </span>
+                      </td>}
                       {cols.includes('biens')&&<td style={{fontSize:12.5,fontWeight:600,color:'#0078d4'}}>{p.nb_biens||0}</td>}
                       {cols.includes('created_at')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{p.created_at?new Date(p.created_at).toLocaleDateString('fr-FR'):'—'}</td>}
                       <td onClick={e=>e.stopPropagation()}>
-                        <button style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',padding:'5px 7px',borderRadius:5,fontSize:15,transition:'all 0.1s',lineHeight:1}}
+                        <button style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',padding:'5px 7px',borderRadius:5,fontSize:15,lineHeight:1}}
                           onMouseOver={e=>e.currentTarget.style.color='#e6edf3'}
                           onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.3)'}
                           onClick={()=>setSelectedProp(p)}>···</button>
@@ -607,7 +589,7 @@ export default function ImolocProprietaires() {
       {/* ══ PANEL COLONNES ══ */}
       {showColsPanel&&(
         <div className="pp-ov" onClick={e=>e.target===e.currentTarget&&setShowColsPanel(false)}>
-          <div className="pp-panel">
+          <div className="pp-panel pp-cols-panel">
             <div className="pp-ph">
               <span className="pp-ph-title">Choisir les colonnes</span>
               <button className="pp-cls" onClick={()=>setShowColsPanel(false)}>
@@ -615,11 +597,10 @@ export default function ImolocProprietaires() {
               </button>
             </div>
             <div className="pp-pb">
-              <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:16,lineHeight:1.6}}>Selectionnez les colonnes a afficher. Faites glisser les en-tetes du tableau pour les redimensionner.</div>
               {ALL_COLS.map(col=>(
                 <div key={col.key} className="pp-col-item">
-                  <span className={`pp-col-lbl ${col.disabled?'dis':''}`}>{col.label}</span>
-                  <div className={`pp-col-cb ${cols.includes(col.key)?'on':''} ${col.disabled?'dis':''}`}
+                  <span className="pp-col-lbl" style={{color:col.disabled?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.65)'}}>{col.label}</span>
+                  <div className={`pp-col-cb ${cols.includes(col.key)?'on':''}`} style={{opacity:col.disabled?0.4:1,cursor:col.disabled?'not-allowed':'pointer'}}
                     onClick={()=>{ if(col.disabled) return; setCols(c=>c.includes(col.key)?c.filter(x=>x!==col.key):[...c,col.key]) }}>
                     {cols.includes(col.key)&&<svg width="9" height="9" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
                   </div>
@@ -628,16 +609,16 @@ export default function ImolocProprietaires() {
             </div>
             <div className="pp-pf">
               <button className="pp-pfb pp-pfb-g" onClick={()=>{setCols(DEFAULT_COLS);setColWidths({})}}>Retablir</button>
-              <button className="pp-pfb pp-pfb-b" onClick={()=>setShowColsPanel(false)}>Enregistrer</button>
+              <button className="pp-pfb pp-pfb-b" onClick={()=>setShowColsPanel(false)}>OK</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ══ PANEL AJOUTER ══ */}
+      {/* ══ PANEL AJOUT — LARGE ══ */}
       {showAddPanel&&(
         <div className="pp-ov" onClick={e=>e.target===e.currentTarget&&(setShowAddPanel(false)||resetForm())}>
-          <div className={`pp-panel pp-add-panel`}>
+          <div className="pp-panel pp-add-panel">
             <div className="pp-ph">
               <span className="pp-ph-title">Ajouter un proprietaire</span>
               <button className="pp-cls" onClick={()=>{setShowAddPanel(false);resetForm()}}>
@@ -645,345 +626,393 @@ export default function ImolocProprietaires() {
               </button>
             </div>
 
-            {/* Steps */}
-            <div className="pp-steps">
-              {STEPS.map(s=>(
-                <div key={s.n} className={`pp-step ${step===s.n?'active':''}`} onClick={()=>addMode&&s.n>1&&setStep(s.n)}>
-                  <div className={`pp-step-n ${step===s.n?'active':step>s.n?'done':''}`}>
-                    {step>s.n?<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>:s.n}
-                  </div>
-                  <span className="pp-step-lbl">{s.label}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="pp-pb">
-              {/* ── Step 1: Recherche ── */}
-              {step===1&&(
-                <>
-                  <div style={{fontSize:15,fontWeight:600,color:'#e6edf3',marginBottom:6}}>Comment souhaitez-vous ajouter ce proprietaire ?</div>
-                  <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:24,lineHeight:1.7}}>
-                    Si le proprietaire a deja un compte Imoloc (depuis l'app mobile ou une autre agence), vous pouvez le retrouver et l'associer directement a votre agence.
-                  </div>
-
-                  <div className="pp-choice-row">
-                    <div className={`pp-choice ${addMode==='existing'?'on':''}`} onClick={()=>setAddMode('existing')}>
-                      <div className="pp-choice-ic">🔍</div>
-                      <div className="pp-choice-title">Proprietaire existant</div>
-                      <div className="pp-choice-desc">Il a deja un compte Imoloc. Recherchez-le par nom, email ou telephone.</div>
+            {/* Body avec steps vertical + contenu */}
+            <div className="pp-add-body">
+              {/* Steps verticaux */}
+              <div className="pp-steps-v">
+                {STEPS.map((s,i)=>(
+                  <div key={s.n} className={`pp-step-v ${step===s.n?'active':''} ${step>s.n?'done':''}`}
+                    onClick={()=>addMode&&s.n>1&&setStep(s.n)}>
+                    <div className={`pp-step-v-n ${step===s.n?'active':''} ${step>s.n?'done':''}`}>
+                      {step>s.n
+                        ?<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                        :s.n}
                     </div>
-                    <div className={`pp-choice ${addMode==='new'?'on':''}`} onClick={()=>{setAddMode('new');setStep(2)}}>
-                      <div className="pp-choice-ic">➕</div>
-                      <div className="pp-choice-title">Nouveau proprietaire</div>
-                      <div className="pp-choice-desc">Il n'a pas encore de compte. Saisissez ses informations pour creer son profil.</div>
+                    <div className="pp-step-v-info">
+                      <div className="pp-step-v-lbl">{s.label}</div>
+                      <div className="pp-step-v-desc">{s.desc}</div>
                     </div>
+                    {i < STEPS.length-1 && <div className="pp-step-v-line"/>}
                   </div>
+                ))}
+              </div>
 
-                  {addMode==='existing'&&(
-                    <>
-                      <div className="pp-field">
-                        <label className="pp-lbl">Rechercher par nom, email ou telephone</label>
-                        <input className="pp-inp" autoFocus
-                          value={searchExisting}
-                          onChange={e=>{setSearchExisting(e.target.value);searchExistingUsers(e.target.value)}}
-                          placeholder="Ex: Jean Dupont, jean@gmail.com, +229..."/>
+              {/* Contenu */}
+              <div className="pp-step-content">
+
+                {/* ── Step 1 ── */}
+                {step===1&&(
+                  <>
+                    <div className="pp-step-title">Comment ajouter ce proprietaire ?</div>
+                    <div className="pp-step-sub">Si le proprietaire a deja un compte Imoloc (depuis l'app mobile ou une autre agence), retrouvez-le et associez-le directement. Sinon, creez son profil.</div>
+
+                    <div className="pp-choice-row">
+                      <div className={`pp-choice ${addMode==='existing'?'on':''}`} onClick={()=>setAddMode('existing')}>
+                        <div className="pp-choice-ic">🔍</div>
+                        <div className="pp-choice-title">Proprietaire existant</div>
+                        <div className="pp-choice-desc">Il a deja un compte Imoloc. Recherchez-le par nom, email ou telephone.</div>
                       </div>
-                      {searching&&<div style={{fontSize:13,color:'rgba(255,255,255,0.4)',padding:'8px 0'}}>Recherche en cours...</div>}
-                      {searchResults.length===0&&searchExisting.length>=2&&!searching&&(
-                        <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',padding:'12px 0'}}>
-                          Aucun resultat. <span style={{color:'#4da6ff',cursor:'pointer'}} onClick={()=>{setAddMode('new');setStep(2)}}>Creer un nouveau proprietaire →</span>
+                      <div className={`pp-choice ${addMode==='new'?'on':''}`} onClick={()=>{setAddMode('new');setStep(2)}}>
+                        <div className="pp-choice-ic">➕</div>
+                        <div className="pp-choice-title">Nouveau proprietaire</div>
+                        <div className="pp-choice-desc">Il n'a pas encore de compte. Saisissez toutes ses informations.</div>
+                      </div>
+                    </div>
+
+                    {addMode==='existing'&&(
+                      <>
+                        <div className="pp-field">
+                          <label className="pp-lbl">Rechercher par nom, email ou telephone</label>
+                          <input className="pp-inp" autoFocus
+                            value={searchExisting}
+                            onChange={e=>{setSearchExisting(e.target.value);searchExistingUsers(e.target.value)}}
+                            placeholder="Ex: Jean Dupont, jean@gmail.com, +229..."/>
                         </div>
-                      )}
-                      <div style={{display:'flex',flexDirection:'column',gap:0}}>
+                        {searching&&<div style={{fontSize:13,color:'rgba(255,255,255,0.4)',padding:'8px 0'}}>Recherche en cours...</div>}
+                        {searchResults.length===0&&searchExisting.length>=2&&!searching&&(
+                          <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',padding:'12px 0'}}>
+                            Aucun resultat. <span style={{color:'#4da6ff',cursor:'pointer'}} onClick={()=>{setAddMode('new');setStep(2)}}>Creer un nouveau proprietaire →</span>
+                          </div>
+                        )}
+
                         {searchResults.map((u,i)=>(
-                          <div key={u.id} className="pp-sr-item" onClick={()=>linkExisting(u)}>
-                            <div style={{width:36,height:36,borderRadius:'50%',background:`linear-gradient(135deg,${getColor(i)},${getColor(i)}88)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0}}>
+                          <div key={u.id} className={`pp-sr-item ${selectedExisting?.id===u.id?'selected':''}`}
+                            onClick={()=>selectExistingUser(u)}>
+                            <div style={{width:42,height:42,borderRadius:'50%',background:`linear-gradient(135deg,${getColor(i)},${getColor(i)}88)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:700,color:'#fff',flexShrink:0}}>
                               {getInitials(u)}
                             </div>
                             <div style={{flex:1}}>
-                              <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:2}}>{u.prenom} {u.nom}</div>
-                              <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>{u.email||u.telephone||'Pas de contact'} · Role actuel: {u.role||'locataire'}</div>
+                              <div style={{fontSize:14.5,fontWeight:600,color:'#e6edf3',marginBottom:3}}>{u.prenom} {u.nom}</div>
+                              <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>{u.email||'Pas d'email'} · {u.telephone||'Pas de tel'}</div>
+                              <div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)',marginTop:2}}>Role actuel: {u.role||'Non defini'} · {u.ville||'Ville inconnue'}</div>
                             </div>
-                            <button style={{padding:'6px 14px',borderRadius:5,background:'rgba(0,120,212,0.1)',border:'1px solid rgba(0,120,212,0.25)',color:'#4da6ff',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter',flexShrink:0}}>
-                              Associer
-                            </button>
+                            {selectedExisting?.id===u.id
+                              ?<span style={{color:'#00c896',fontSize:20}}>✓</span>
+                              :<span style={{color:'rgba(255,255,255,0.2)',fontSize:20}}>○</span>}
                           </div>
                         ))}
-                      </div>
 
-                      {/* Paramètres commission */}
-                      {searchResults.length>0&&(
-                        <>
-                          <div className="pp-sec">Parametres de collaboration</div>
-                          <div className="pp-g2">
-                            <div>
-                              <label className="pp-lbl">Taux de commission (%)</label>
-                              <input className="pp-inp" type="number" min="0" max="100" step="0.5"
-                                value={form.taux_commission} onChange={e=>setF('taux_commission',e.target.value)}/>
+                        {/* Option import biens si proprietaire selectionne */}
+                        {selectedExisting&&(
+                          <>
+                            <div className={`pp-import-box ${importBiens?'on':''}`}>
+                              <div className="pp-cbk" onClick={()=>setImportBiens(!importBiens)}>
+                                <div className={`pp-cbk-box ${importBiens?'on':''}`}>
+                                  {importBiens&&<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
+                                </div>
+                                <div>
+                                  <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:2}}>Importer les biens et locataires associes</div>
+                                  <div style={{fontSize:12.5,color:'rgba(255,255,255,0.45)',lineHeight:1.6}}>
+                                    Ce proprietaire a peut-etre des biens et locataires actifs dans une autre agence. Une demande de transfert sera envoyee pour validation.
+                                  </div>
+                                </div>
+                              </div>
+
+                              {importBiens&&(
+                                <div style={{marginTop:16,padding:'14px 16px',borderRadius:8,background:'rgba(245,158,11,0.07)',border:'1px solid rgba(245,158,11,0.2)'}}>
+                                  <div style={{fontSize:13,fontWeight:600,color:'#f59e0b',marginBottom:8}}>⚠️ Ce qui va se passer :</div>
+                                  <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                                    {[
+                                      '1. Le proprietaire sera ajoute avec le statut "En attente de validation"',
+                                      '2. Un email de confirmation sera envoye au proprietaire',
+                                      '3. Une notification apparaitra dans son application mobile',
+                                      '4. Des que le proprietaire valide, ses biens et locataires seront transferes',
+                                      '5. L'ancienne agence sera notifiee du transfert',
+                                    ].map((txt,i)=>(
+                                      <div key={i} style={{fontSize:12.5,color:'rgba(255,255,255,0.55)',lineHeight:1.6}}>{txt}</div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                            <div>
-                              <label className="pp-lbl">Mode de commission</label>
-                              <select className="pp-inp" value={form.mode_commission} onChange={e=>setF('mode_commission',e.target.value)}>
-                                {['mensuel','annuel','journalier','custom'].map(m=>(
-                                  <option key={m} style={{background:'#161b22',color:'#e6edf3'}}>{m}</option>
-                                ))}
-                              </select>
+
+                            {/* Commission */}
+                            <div className="pp-sec">Parametres de collaboration</div>
+                            <div className="pp-g2">
+                              <div>
+                                <label className="pp-lbl">Taux de commission (%)</label>
+                                <input className="pp-inp" type="number" min="0" max="100" step="0.5" value={form.taux_commission} onChange={e=>setF('taux_commission',e.target.value)}/>
+                              </div>
+                              <div>
+                                <label className="pp-lbl">Mode de commission</label>
+                                <select className="pp-inp" value={form.mode_commission} onChange={e=>setF('mode_commission',e.target.value)}>
+                                  {['mensuel','annuel','journalier','custom'].map(m=>(
+                                    <option key={m} style={{background:'#161b22',color:'#e6edf3'}}>{m}</option>
+                                  ))}
+                                </select>
+                              </div>
                             </div>
-                          </div>
-                        </>
-                      )}
-                    </>
-                  )}
-                </>
-              )}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
 
-              {/* ── Step 2: Identité ── */}
-              {step===2&&(
-                <>
-                  <div className="pp-sec">Informations d'identite</div>
-                  <div className="pp-g2">
-                    <div>
-                      <label className="pp-lbl">Prenom <span style={{color:'#ef4444'}}>*</span></label>
-                      <input className="pp-inp" required value={form.prenom} onChange={e=>setF('prenom',e.target.value)} placeholder="Jean" autoFocus/>
-                    </div>
-                    <div>
-                      <label className="pp-lbl">Nom <span style={{color:'#ef4444'}}>*</span></label>
-                      <input className="pp-inp" required value={form.nom} onChange={e=>setF('nom',e.target.value)} placeholder="Dupont"/>
-                    </div>
-                  </div>
-                  <div className="pp-g2">
-                    <div>
-                      <label className="pp-lbl">Sexe</label>
-                      <select className="pp-inp" value={form.sexe} onChange={e=>setF('sexe',e.target.value)}>
-                        {[['H','Homme'],['F','Femme'],['Autre','Autre']].map(([v,l])=>(
-                          <option key={v} value={v} style={{background:'#161b22',color:'#e6edf3'}}>{l}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="pp-lbl">Date de naissance</label>
-                      <input className="pp-inp" type="date" value={form.date_naissance} onChange={e=>setF('date_naissance',e.target.value)}/>
-                    </div>
-                  </div>
-                  <div className="pp-g2">
-                    <div>
-                      <label className="pp-lbl">Lieu de naissance</label>
-                      <input className="pp-inp" value={form.lieu_naissance} onChange={e=>setF('lieu_naissance',e.target.value)} placeholder="Cotonou"/>
-                    </div>
-                    <div>
-                      <label className="pp-lbl">Nationalite</label>
-                      <input className="pp-inp" value={form.nationalite} onChange={e=>setF('nationalite',e.target.value)} placeholder="Beninoise"/>
-                    </div>
-                  </div>
-
-                  <div className="pp-sec">Type de proprietaire</div>
-                  <div className="pp-choice-row" style={{gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
-                    {[['individuel','👤','Individuel','Personne physique'],['societe','🏭','Societe','Personne morale/Entreprise']].map(([v,ic,lbl,desc])=>(
-                      <div key={v} className={`pp-choice ${form.type_proprietaire===v?'on':''}`} style={{padding:14}} onClick={()=>setF('type_proprietaire',v)}>
-                        <div style={{fontSize:24,marginBottom:6}}>{ic}</div>
-                        <div style={{fontSize:13.5,fontWeight:700,color:'#e6edf3',marginBottom:4}}>{lbl}</div>
-                        <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>{desc}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {form.type_proprietaire==='societe'&&(
+                {/* ── Step 2 : Identite ── */}
+                {step===2&&(
+                  <>
+                    <div className="pp-step-title">Informations d'identite</div>
+                    <div className="pp-step-sub">Renseignez les informations personnelles du proprietaire. Le prenom et le nom sont obligatoires.</div>
                     <div className="pp-g2">
                       <div>
-                        <label className="pp-lbl">Nom de l'entreprise</label>
-                        <input className="pp-inp" value={form.nom_entreprise} onChange={e=>setF('nom_entreprise',e.target.value)} placeholder="ACME SARL"/>
+                        <label className="pp-lbl">Prenom <span style={{color:'#ef4444'}}>*</span></label>
+                        <input className="pp-inp" required value={form.prenom} onChange={e=>setF('prenom',e.target.value)} placeholder="Jean" autoFocus/>
                       </div>
                       <div>
-                        <label className="pp-lbl">Registre de commerce</label>
-                        <input className="pp-inp" value={form.registre_commerce} onChange={e=>setF('registre_commerce',e.target.value)} placeholder="RC..."/>
+                        <label className="pp-lbl">Nom <span style={{color:'#ef4444'}}>*</span></label>
+                        <input className="pp-inp" required value={form.nom} onChange={e=>setF('nom',e.target.value)} placeholder="Dupont"/>
                       </div>
                     </div>
-                  )}
-                </>
-              )}
-
-              {/* ── Step 3: Contact ── */}
-              {step===3&&(
-                <>
-                  <div className="pp-sec">Coordonnees</div>
-                  <div className="pp-g2">
-                    <div>
-                      <label className="pp-lbl">Telephone principal <span style={{color:'#ef4444'}}>*</span></label>
-                      <input className="pp-inp" value={form.telephone} onChange={e=>setF('telephone',e.target.value)} placeholder="+229 XX XX XX XX"/>
-                    </div>
-                    <div>
-                      <label className="pp-lbl">Telephone secondaire</label>
-                      <input className="pp-inp" value={form.telephone2} onChange={e=>setF('telephone2',e.target.value)} placeholder="+229 XX XX XX XX"/>
-                    </div>
-                  </div>
-                  <div className="pp-field">
-                    <label className="pp-lbl">Email</label>
-                    <input className="pp-inp" type="email" value={form.email} onChange={e=>setF('email',e.target.value)} placeholder="jean@exemple.com"/>
-                  </div>
-
-                  <div className="pp-sec">Adresse</div>
-                  <div className="pp-g2">
-                    <div>
-                      <label className="pp-lbl">Pays</label>
-                      <select className="pp-inp" value={form.pays} onChange={e=>setF('pays',e.target.value)}>
-                        {["Benin","Togo","Cote d'Ivoire","Senegal","Cameroun","Mali","France","Belgique"].map(p=>(
-                          <option key={p} style={{background:'#161b22',color:'#e6edf3'}}>{p}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="pp-lbl">Ville</label>
-                      <input className="pp-inp" value={form.ville} onChange={e=>setF('ville',e.target.value)} placeholder="Cotonou"/>
-                    </div>
-                  </div>
-                  <div className="pp-g2">
-                    <div>
-                      <label className="pp-lbl">Quartier</label>
-                      <input className="pp-inp" value={form.quartier} onChange={e=>setF('quartier',e.target.value)} placeholder="Fidjrosse"/>
-                    </div>
-                    <div>
-                      <label className="pp-lbl">Rue / Precision</label>
-                      <input className="pp-inp" value={form.rue} onChange={e=>setF('rue',e.target.value)} placeholder="Rue 123..."/>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* ── Step 4: Pièces & Fiscal ── */}
-              {step===4&&(
-                <>
-                  <div className="pp-sec">Piece d'identite</div>
-                  <div className="pp-g2">
-                    <div>
-                      <label className="pp-lbl">Type de piece</label>
-                      <select className="pp-inp" value={form.type_piece} onChange={e=>setF('type_piece',e.target.value)}>
-                        {['CIP','Passeport','Carte consulaire','Permis de conduire'].map(t=>(
-                          <option key={t} style={{background:'#161b22',color:'#e6edf3'}}>{t}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="pp-lbl">Numero de piece</label>
-                      <input className="pp-inp" value={form.numero_piece} onChange={e=>setF('numero_piece',e.target.value)} placeholder="N° de la piece"/>
-                    </div>
-                  </div>
-                  <div className="pp-g2">
-                    <div>
-                      <label className="pp-lbl">Date de delivrance</label>
-                      <input className="pp-inp" type="date" value={form.date_delivrance_piece} onChange={e=>setF('date_delivrance_piece',e.target.value)}/>
-                    </div>
-                    <div>
-                      <label className="pp-lbl">Date d'expiration</label>
-                      <input className="pp-inp" type="date" value={form.date_expiration_piece} onChange={e=>setF('date_expiration_piece',e.target.value)}/>
-                    </div>
-                  </div>
-                  <div className="pp-field">
-                    <label className="pp-lbl">Pays de delivrance</label>
-                    <input className="pp-inp" value={form.pays_delivrance} onChange={e=>setF('pays_delivrance',e.target.value)} placeholder="Benin"/>
-                  </div>
-
-                  <div className="pp-sec">Informations fiscales</div>
-                  <div className="pp-g2">
-                    <div>
-                      <label className="pp-lbl">IFU (Identifiant Fiscal Unique)</label>
-                      <input className="pp-inp" value={form.ifu} onChange={e=>setF('ifu',e.target.value)} placeholder="IFU..."/>
-                    </div>
-                    <div>
-                      <label className="pp-lbl">Statut fiscal</label>
-                      <select className="pp-inp" value={form.statut_fiscal} onChange={e=>setF('statut_fiscal',e.target.value)}>
-                        {['Particulier','Entreprise'].map(s=>(
-                          <option key={s} style={{background:'#161b22',color:'#e6edf3'}}>{s}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="pp-sec">Parametres de collaboration</div>
-                  <div className="pp-g2">
-                    <div>
-                      <label className="pp-lbl">Taux de commission (%)</label>
-                      <input className="pp-inp" type="number" min="0" max="100" step="0.5" value={form.taux_commission} onChange={e=>setF('taux_commission',e.target.value)}/>
-                    </div>
-                    <div>
-                      <label className="pp-lbl">Mode</label>
-                      <select className="pp-inp" value={form.mode_commission} onChange={e=>setF('mode_commission',e.target.value)}>
-                        {['mensuel','annuel','journalier','custom'].map(m=>(
-                          <option key={m} style={{background:'#161b22',color:'#e6edf3'}}>{m}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="pp-field">
-                    <label className="pp-lbl">Note interne (visible uniquement par l'agence)</label>
-                    <textarea className="pp-inp" rows={3} value={form.note_interne} onChange={e=>setF('note_interne',e.target.value)} placeholder="Notes sur ce proprietaire..." style={{resize:'vertical',minHeight:80}}/>
-                  </div>
-                </>
-              )}
-
-              {/* ── Step 5: Compte ── */}
-              {step===5&&(
-                <>
-                  <div style={{padding:'16px 18px',borderRadius:10,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.18)',fontSize:13.5,color:'rgba(255,255,255,0.5)',lineHeight:1.7,marginBottom:22}}>
-                    ℹ️ Un compte permet au proprietaire de se connecter sur l'app mobile Imoloc pour consulter ses biens, paiements et documents. <strong style={{color:'rgba(255,255,255,0.7)'}}>Optionnel</strong> — vous pouvez l'ajouter plus tard.
-                  </div>
-
-                  <div className="pp-cbk" style={{marginBottom:20}} onClick={()=>setF('create_account',!form.create_account)}>
-                    <div className={`pp-cbk-box ${form.create_account?'on':''}`}>
-                      {form.create_account&&<svg width="9" height="9" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
-                    </div>
-                    <span style={{fontSize:14,color:'rgba(255,255,255,0.7)'}}>Creer un compte de connexion pour ce proprietaire</span>
-                  </div>
-
-                  {form.create_account&&(
-                    <>
-                      <div className="pp-field">
-                        <label className="pp-lbl">Email de connexion <span style={{color:'#ef4444'}}>*</span></label>
-                        <input className="pp-inp" type="email" value={form.email} onChange={e=>setF('email',e.target.value)} placeholder="jean@exemple.com"/>
+                    <div className="pp-g2">
+                      <div>
+                        <label className="pp-lbl">Sexe</label>
+                        <select className="pp-inp" value={form.sexe} onChange={e=>setF('sexe',e.target.value)}>
+                          {[['H','Homme'],['F','Femme'],['Autre','Autre']].map(([v,l])=>(
+                            <option key={v} value={v} style={{background:'#161b22',color:'#e6edf3'}}>{l}</option>
+                          ))}
+                        </select>
                       </div>
-                      <div className="pp-field">
-                        <label className="pp-lbl">Mot de passe temporaire <span style={{color:'#ef4444'}}>*</span></label>
-                        <input className="pp-inp" type="password" value={form.password} onChange={e=>setF('password',e.target.value)} placeholder="Min. 8 caracteres"/>
-                        <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:6}}>Le proprietaire devra changer son mot de passe a la premiere connexion.</div>
+                      <div>
+                        <label className="pp-lbl">Date de naissance</label>
+                        <input className="pp-inp" type="date" value={form.date_naissance} onChange={e=>setF('date_naissance',e.target.value)}/>
                       </div>
-                    </>
-                  )}
+                    </div>
+                    <div className="pp-g2">
+                      <div>
+                        <label className="pp-lbl">Lieu de naissance</label>
+                        <input className="pp-inp" value={form.lieu_naissance} onChange={e=>setF('lieu_naissance',e.target.value)} placeholder="Cotonou"/>
+                      </div>
+                      <div>
+                        <label className="pp-lbl">Nationalite</label>
+                        <input className="pp-inp" value={form.nationalite} onChange={e=>setF('nationalite',e.target.value)} placeholder="Beninoise"/>
+                      </div>
+                    </div>
+                    <div className="pp-sec">Type de proprietaire</div>
+                    <div className="pp-choice-row">
+                      {[['individuel','👤','Individuel','Personne physique'],['societe','🏭','Societe','Personne morale / Entreprise']].map(([v,ic,lbl,desc])=>(
+                        <div key={v} className={`pp-choice ${form.type_proprietaire===v?'on':''}`} style={{padding:16}} onClick={()=>setF('type_proprietaire',v)}>
+                          <div style={{fontSize:28,marginBottom:8}}>{ic}</div>
+                          <div style={{fontSize:14,fontWeight:700,color:'#e6edf3',marginBottom:4}}>{lbl}</div>
+                          <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>{desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {form.type_proprietaire==='societe'&&(
+                      <div className="pp-g2">
+                        <div>
+                          <label className="pp-lbl">Nom de l'entreprise</label>
+                          <input className="pp-inp" value={form.nom_entreprise} onChange={e=>setF('nom_entreprise',e.target.value)} placeholder="ACME SARL"/>
+                        </div>
+                        <div>
+                          <label className="pp-lbl">Registre de commerce</label>
+                          <input className="pp-inp" value={form.registre_commerce} onChange={e=>setF('registre_commerce',e.target.value)} placeholder="RC..."/>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
 
-                  <div className="pp-sec">Recapitulatif</div>
-                  <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:18}}>
-                    {[
-                      ['Prenom et nom', `${form.prenom} ${form.nom}`],
-                      ['Type', form.type_proprietaire==='societe'?`Societe — ${form.nom_entreprise}`:'Individuel'],
-                      ['Telephone', form.telephone||'—'],
-                      ['Email', form.email||'—'],
-                      ['Ville', form.ville||'—'],
-                      ['IFU', form.ifu||'—'],
-                      ['Commission', `${form.taux_commission}% ${form.mode_commission}`],
-                    ].map(([k,v])=>(
-                      <div key={k} style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-                        <span style={{fontSize:13,color:'rgba(255,255,255,0.4)',flexShrink:0,width:160}}>{k}</span>
-                        <span style={{fontSize:13.5,color:'#e6edf3',fontWeight:500,textAlign:'right'}}>{v}</span>
+                {/* ── Step 3 : Contact ── */}
+                {step===3&&(
+                  <>
+                    <div className="pp-step-title">Coordonnees et adresse</div>
+                    <div className="pp-step-sub">Renseignez les moyens de contact et l'adresse de residence du proprietaire.</div>
+                    <div className="pp-g2">
+                      <div>
+                        <label className="pp-lbl">Telephone principal <span style={{color:'#ef4444'}}>*</span></label>
+                        <input className="pp-inp" value={form.telephone} onChange={e=>setF('telephone',e.target.value)} placeholder="+229 XX XX XX XX"/>
                       </div>
-                    ))}
-                  </div>
-                </>
-              )}
+                      <div>
+                        <label className="pp-lbl">Telephone secondaire</label>
+                        <input className="pp-inp" value={form.telephone2} onChange={e=>setF('telephone2',e.target.value)} placeholder="+229 XX XX XX XX"/>
+                      </div>
+                    </div>
+                    <div className="pp-field">
+                      <label className="pp-lbl">Email</label>
+                      <input className="pp-inp" type="email" value={form.email} onChange={e=>setF('email',e.target.value)} placeholder="jean@exemple.com"/>
+                    </div>
+                    <div className="pp-sec">Adresse</div>
+                    <div className="pp-g2">
+                      <div>
+                        <label className="pp-lbl">Pays</label>
+                        <select className="pp-inp" value={form.pays} onChange={e=>setF('pays',e.target.value)}>
+                          {["Benin","Togo","Cote d'Ivoire","Senegal","Cameroun","Mali","France","Belgique"].map(p=>(
+                            <option key={p} style={{background:'#161b22',color:'#e6edf3'}}>{p}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="pp-lbl">Ville</label>
+                        <input className="pp-inp" value={form.ville} onChange={e=>setF('ville',e.target.value)} placeholder="Cotonou"/>
+                      </div>
+                    </div>
+                    <div className="pp-g2">
+                      <div>
+                        <label className="pp-lbl">Quartier</label>
+                        <input className="pp-inp" value={form.quartier} onChange={e=>setF('quartier',e.target.value)} placeholder="Fidjrosse"/>
+                      </div>
+                      <div>
+                        <label className="pp-lbl">Rue / Precision</label>
+                        <input className="pp-inp" value={form.rue} onChange={e=>setF('rue',e.target.value)} placeholder="Rue 123..."/>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* ── Step 4 : Pieces & Fiscal ── */}
+                {step===4&&(
+                  <>
+                    <div className="pp-step-title">Pieces d'identite & Fiscal</div>
+                    <div className="pp-step-sub">Ces informations sont importantes pour la conformite legale au Benin et la gestion des commissions.</div>
+                    <div className="pp-g2">
+                      <div>
+                        <label className="pp-lbl">Type de piece</label>
+                        <select className="pp-inp" value={form.type_piece} onChange={e=>setF('type_piece',e.target.value)}>
+                          {['CIP','Passeport','Carte consulaire','Permis de conduire'].map(t=>(
+                            <option key={t} style={{background:'#161b22',color:'#e6edf3'}}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="pp-lbl">Numero de piece</label>
+                        <input className="pp-inp" value={form.numero_piece} onChange={e=>setF('numero_piece',e.target.value)} placeholder="N° de la piece"/>
+                      </div>
+                    </div>
+                    <div className="pp-g2">
+                      <div>
+                        <label className="pp-lbl">Date de delivrance</label>
+                        <input className="pp-inp" type="date" value={form.date_delivrance_piece} onChange={e=>setF('date_delivrance_piece',e.target.value)}/>
+                      </div>
+                      <div>
+                        <label className="pp-lbl">Date d'expiration</label>
+                        <input className="pp-inp" type="date" value={form.date_expiration_piece} onChange={e=>setF('date_expiration_piece',e.target.value)}/>
+                      </div>
+                    </div>
+                    <div className="pp-field">
+                      <label className="pp-lbl">Pays de delivrance</label>
+                      <input className="pp-inp" value={form.pays_delivrance} onChange={e=>setF('pays_delivrance',e.target.value)} placeholder="Benin"/>
+                    </div>
+                    <div className="pp-sec">Informations fiscales</div>
+                    <div className="pp-g2">
+                      <div>
+                        <label className="pp-lbl">IFU (Identifiant Fiscal Unique)</label>
+                        <input className="pp-inp" value={form.ifu} onChange={e=>setF('ifu',e.target.value)} placeholder="IFU Benin..."/>
+                      </div>
+                      <div>
+                        <label className="pp-lbl">Statut fiscal</label>
+                        <select className="pp-inp" value={form.statut_fiscal} onChange={e=>setF('statut_fiscal',e.target.value)}>
+                          {['Particulier','Entreprise'].map(s=>(<option key={s} style={{background:'#161b22',color:'#e6edf3'}}>{s}</option>))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="pp-sec">Parametres de collaboration</div>
+                    <div className="pp-g2">
+                      <div>
+                        <label className="pp-lbl">Taux de commission (%)</label>
+                        <input className="pp-inp" type="number" min="0" max="100" step="0.5" value={form.taux_commission} onChange={e=>setF('taux_commission',e.target.value)}/>
+                      </div>
+                      <div>
+                        <label className="pp-lbl">Mode</label>
+                        <select className="pp-inp" value={form.mode_commission} onChange={e=>setF('mode_commission',e.target.value)}>
+                          {['mensuel','annuel','journalier','custom'].map(m=>(<option key={m} style={{background:'#161b22',color:'#e6edf3'}}>{m}</option>))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="pp-field">
+                      <label className="pp-lbl">Note interne</label>
+                      <textarea className="pp-inp" rows={3} value={form.note_interne} onChange={e=>setF('note_interne',e.target.value)} placeholder="Note visible uniquement par l'agence..." style={{resize:'vertical',minHeight:80}}/>
+                    </div>
+                  </>
+                )}
+
+                {/* ── Step 5 : Compte ── */}
+                {step===5&&(
+                  <>
+                    <div className="pp-step-title">Compte de connexion</div>
+                    <div className="pp-step-sub">Optionnel — Creez un compte pour que le proprietaire puisse acceder a l'application mobile Imoloc et consulter ses biens et paiements.</div>
+
+                    <div style={{padding:'16px 18px',borderRadius:10,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.15)',fontSize:13.5,color:'rgba(255,255,255,0.5)',lineHeight:1.7,marginBottom:24}}>
+                      ℹ️ Sans compte, le proprietaire n'aura pas acces a l'app mobile. Vous pourrez creer le compte plus tard depuis son profil.
+                    </div>
+
+                    <div className="pp-cbk" style={{marginBottom:24}} onClick={()=>setF('create_account',!form.create_account)}>
+                      <div className={`pp-cbk-box ${form.create_account?'on':''}`}>
+                        {form.create_account&&<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
+                      </div>
+                      <span style={{fontSize:14.5,color:'rgba(255,255,255,0.75)',fontWeight:500}}>Creer un compte de connexion pour ce proprietaire</span>
+                    </div>
+
+                    {form.create_account&&(
+                      <>
+                        <div className="pp-field">
+                          <label className="pp-lbl">Email de connexion <span style={{color:'#ef4444'}}>*</span></label>
+                          <input className="pp-inp" type="email" value={form.email} onChange={e=>setF('email',e.target.value)} placeholder="jean@exemple.com"/>
+                        </div>
+                        <div className="pp-field">
+                          <label className="pp-lbl">Mot de passe temporaire <span style={{color:'#ef4444'}}>*</span></label>
+                          <input className="pp-inp" type="password" value={form.password} onChange={e=>setF('password',e.target.value)} placeholder="Min. 8 caracteres"/>
+                          <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginTop:6}}>Le proprietaire pourra changer son mot de passe a la premiere connexion.</div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Recapitulatif */}
+                    <div className="pp-sec">Recapitulatif</div>
+                    <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,overflow:'hidden'}}>
+                      {[
+                        ['Identite', `${form.prenom} ${form.nom} (${form.sexe==='H'?'Homme':form.sexe==='F'?'Femme':'Autre'})`],
+                        ['Type', form.type_proprietaire==='societe'?`Societe — ${form.nom_entreprise||'N/A'}`:'Individuel'],
+                        ['Telephone', form.telephone||'—'],
+                        ['Email', form.email||'—'],
+                        ['Ville', `${form.ville}${form.quartier?`, ${form.quartier}`:''}`],
+                        ['Piece d'identite', `${form.type_piece}${form.numero_piece?` — ${form.numero_piece}`:''}`],
+                        ['IFU', form.ifu||'Non renseigne'],
+                        ['Commission', `${form.taux_commission}% / ${form.mode_commission}`],
+                        ['Compte app', form.create_account?'Oui — Compte cree':'Non — Sans compte pour l'instant'],
+                      ].map(([k,v],i,arr)=>(
+                        <div key={k} style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',padding:'10px 16px',borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'none'}}>
+                          <span style={{fontSize:13,color:'rgba(255,255,255,0.4)',flexShrink:0,width:160}}>{k}</span>
+                          <span style={{fontSize:13.5,color:'#e6edf3',fontWeight:500,textAlign:'right'}}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Footer */}
             <div className="pp-pf">
-              <button className="pp-pfb pp-pfb-g" onClick={()=>step>1?setStep(step-1):(setShowAddPanel(false)||resetForm())}>
+              <button className="pp-pfb pp-pfb-g" onClick={()=>{
+                if(step===1){ setShowAddPanel(false); resetForm() } else setStep(step-1)
+              }}>
                 {step===1?'Annuler':'Precedent'}
               </button>
-              {step<5?(
-                <button className="pp-pfb pp-pfb-b"
-                  disabled={step===2&&(!form.prenom||!form.nom)}
-                  onClick={()=>setStep(step+1)}
+              {addMode==='existing'&&step===1?(
+                <button className="pp-pfb pp-pfb-b" disabled={!selectedExisting||saving} onClick={linkExisting}
+                  style={{opacity:!selectedExisting?0.4:1}}>
+                  {saving?'Association...':importBiens?'Envoyer la demande de transfert':'Associer le proprietaire'}
+                </button>
+              ):step<5?(
+                <button className="pp-pfb pp-pfb-b" disabled={step===2&&(!form.prenom||!form.nom)} onClick={()=>setStep(step+1)}
                   style={{opacity:step===2&&(!form.prenom||!form.nom)?0.4:1}}>
-                  Suivant
+                  Suivant →
                 </button>
               ):(
-                <button className="pp-pfb pp-pfb-b" onClick={createAndLink} disabled={saving||!form.nom||!form.prenom}>
-                  {saving?'Ajout en cours...':'Ajouter le proprietaire'}
+                <button className="pp-pfb pp-pfb-b" onClick={createAndLink} disabled={saving||!form.nom||!form.prenom}
+                  style={{opacity:saving||!form.nom||!form.prenom?0.4:1}}>
+                  {saving?'Creation en cours...':'Ajouter le proprietaire'}
                 </button>
               )}
             </div>
@@ -991,27 +1020,33 @@ export default function ImolocProprietaires() {
         </div>
       )}
 
-      {/* ══ DRAWER DÉTAIL PROPRIÉTAIRE ══ */}
+      {/* ══ DRAWER DETAIL ══ */}
       {selectedProp&&(
         <div className="pp-ov" onClick={e=>e.target===e.currentTarget&&setSelectedProp(null)}>
-          <div className={`pp-panel pp-detail-panel`}>
+          <div className="pp-panel pp-detail-panel">
             <div className="pp-detail-head">
               <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:18}}>
                 <div style={{display:'flex',alignItems:'center',gap:14}}>
-                  <div className="pp-detail-av" style={{background:`linear-gradient(135deg,#0078d4,#0078d488)`}}>
+                  <div style={{width:60,height:60,borderRadius:'50%',background:'linear-gradient(135deg,#0078d4,#0078d488)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,fontWeight:800,color:'#fff',flexShrink:0}}>
                     {getInitials(selectedProp)}
                   </div>
                   <div>
-                    <div className="pp-detail-name">{selectedProp.prenom} {selectedProp.nom}</div>
-                    <div className="pp-detail-meta">{selectedProp.email||selectedProp.telephone||'Pas de contact'}</div>
-                    <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}>
-                      <span className="pp-badge" style={{background:'rgba(0,120,212,0.12)',color:'#4da6ff',fontSize:11}}>
+                    <div style={{fontSize:20,fontWeight:700,color:'#e6edf3',marginBottom:3}}>
+                      {selectedProp.prenom} {selectedProp.nom}
+                    </div>
+                    <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:8}}>
+                      {selectedProp.email||selectedProp.telephone||'Pas de contact'}
+                    </div>
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      <span style={{padding:'2px 9px',borderRadius:'100px',fontSize:11,fontWeight:600,background:'rgba(0,120,212,0.12)',color:'#4da6ff'}}>
                         {selectedProp.type_proprietaire==='societe'?'🏭 Societe':'👤 Individuel'}
                       </span>
-                      <span style={{display:'inline-flex',alignItems:'center',gap:5,padding:'2px 9px',borderRadius:'100px',fontSize:11,fontWeight:600,background:selectedProp.statut_compte==='actif'?'rgba(0,200,150,0.1)':'rgba(245,158,11,0.1)',color:selectedProp.statut_compte==='actif'?'#00c896':'#f59e0b'}}>
-                        <span style={{width:6,height:6,borderRadius:'50%',background:selectedProp.statut_compte==='actif'?'#00c896':'#f59e0b'}}/>
-                        {selectedProp.statut_compte||'actif'}
-                      </span>
+                      {selectedProp.statut_lien==='en_attente_validation'
+                        ?<span style={{padding:'2px 9px',borderRadius:'100px',fontSize:11,fontWeight:600,background:'rgba(245,158,11,0.12)',border:'1px solid rgba(245,158,11,0.25)',color:'#f59e0b'}}>⏳ En attente de validation</span>
+                        :<span style={{display:'inline-flex',alignItems:'center',gap:5,padding:'2px 9px',borderRadius:'100px',fontSize:11,fontWeight:600,background:'rgba(0,200,150,0.1)',color:'#00c896'}}>
+                          <span style={{width:6,height:6,borderRadius:'50%',background:'#00c896'}}/> Actif
+                        </span>
+                      }
                     </div>
                   </div>
                 </div>
@@ -1020,100 +1055,99 @@ export default function ImolocProprietaires() {
                 </button>
               </div>
 
-              {/* Actions rapides */}
-              <div style={{display:'flex',alignItems:'center',gap:20,marginBottom:20,flexWrap:'wrap'}}>
+              {/* Actions */}
+              <div style={{display:'flex',alignItems:'center',gap:20,marginBottom:18,flexWrap:'wrap'}}>
                 {[
-                  {ic:'🏢',lbl:"Voir les biens", action:()=>navigate('/imoloc/biens')},
-                  {ic:'📄',lbl:"Voir les baux", action:()=>navigate('/imoloc/baux')},
-                  {ic:'✏️',lbl:"Modifier", action:()=>{}},
-                  {ic:'🔗',lbl:"Dissocier", action:async()=>{
+                  {ic:'🏢',lbl:'Voir les biens',action:()=>navigate('/imoloc/biens')},
+                  {ic:'📄',lbl:'Voir les baux',action:()=>navigate('/imoloc/baux')},
+                  {ic:'✏️',lbl:'Modifier',action:()=>{}},
+                  {ic:'🔗',lbl:'Dissocier',action:async()=>{
                     if(!confirm('Dissocier ce proprietaire de votre agence ?')) return
                     await supabase.from('agence_proprietaires').delete().eq('proprietaire_id',selectedProp.id).eq('agence_id',agence?.id)
-                    toast.success('Proprietaire dissocie')
-                    setSelectedProp(null); initData()
+                    toast.success('Proprietaire dissocie'); setSelectedProp(null); initData()
                   }},
                 ].map((a,i)=>(
-                  <span key={i} style={{display:'flex',alignItems:'center',gap:7,fontSize:13,color:'rgba(255,255,255,0.7)',cursor:'pointer',transition:'color 0.15s'}}
+                  <span key={i} style={{display:'flex',alignItems:'center',gap:6,fontSize:13,color:'rgba(255,255,255,0.6)',cursor:'pointer',transition:'color 0.15s'}}
                     onClick={a.action}
                     onMouseEnter={e=>e.currentTarget.style.color='#e6edf3'}
-                    onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.7)'}>
+                    onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.6)'}>
                     {a.ic} {a.lbl}
                   </span>
                 ))}
               </div>
 
               <div className="pp-detail-tabs">
-                {['Profil','Biens','Documents','Paiements'].map(t=>(
-                  <button key={t} className={`pp-detail-tab ${t==='Profil'?'active':''}`}>
-                    {t}
-                  </button>
+                {['Profil','Biens','Documents','Paiements'].map((t,i)=>(
+                  <button key={t} className={`pp-detail-tab ${i===0?'active':''}`}>{t}</button>
                 ))}
               </div>
             </div>
 
             <div className="pp-pb">
-              {/* Grille 2 colonnes style Microsoft */}
-              <div className="pp-detail-grid" style={{marginBottom:28}}>
-                <div>
-                  <div className="pp-blk">
-                    <div className="pp-blk-lbl">Nom complet</div>
-                    <div className="pp-blk-val">{selectedProp.prenom} {selectedProp.nom}</div>
+              {selectedProp.statut_lien==='en_attente_validation'&&(
+                <div style={{padding:'14px 16px',borderRadius:10,background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.2)',marginBottom:20}}>
+                  <div style={{fontSize:13.5,fontWeight:600,color:'#f59e0b',marginBottom:6}}>⏳ Transfert en attente de validation</div>
+                  <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
+                    Un email de confirmation a ete envoye au proprietaire. Des qu'il accepte, ses biens et locataires seront automatiquement transferes vers votre agence.
                   </div>
-                  <div className="pp-blk">
-                    <div className="pp-blk-lbl">Telephone</div>
-                    <div className="pp-blk-val">{selectedProp.telephone||'—'}</div>
-                    {selectedProp.telephone2&&<div className="pp-blk-val">{selectedProp.telephone2}</div>}
-                  </div>
-                  <div className="pp-blk">
-                    <div className="pp-blk-lbl">Ville</div>
-                    <div className="pp-blk-val">{selectedProp.ville||'—'}{selectedProp.quartier&&`, ${selectedProp.quartier}`}</div>
-                  </div>
-                  <div className="pp-blk">
-                    <div className="pp-blk-lbl">IFU</div>
-                    <div className="pp-blk-val">{selectedProp.ifu||<span style={{fontStyle:'italic',color:'rgba(255,255,255,0.25)'}}>Non renseigne</span>}</div>
-                    {!selectedProp.ifu&&<button className="pp-blk-link">Ajouter l'IFU</button>}
+                  <div style={{display:'flex',gap:10,marginTop:12}}>
+                    <button style={{padding:'7px 14px',borderRadius:6,background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.3)',color:'#f59e0b',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
+                      Renvoyer l'email
+                    </button>
+                    <button style={{padding:'7px 14px',borderRadius:6,background:'rgba(239,68,68,0.07)',border:'1px solid rgba(239,68,68,0.2)',color:'#ef4444',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}
+                      onClick={async()=>{
+                        await supabase.from('agence_proprietaires').update({statut:'actif'}).eq('proprietaire_id',selectedProp.id).eq('agence_id',agence?.id)
+                        toast.success('Validation annulee'); setSelectedProp(null); initData()
+                      }}>
+                      Annuler la demande
+                    </button>
                   </div>
                 </div>
+              )}
+
+              <div className="pp-detail-grid">
                 <div>
-                  <div className="pp-blk">
-                    <div className="pp-blk-lbl">Email</div>
-                    <div className="pp-blk-val">{selectedProp.email||'—'}</div>
-                  </div>
-                  <div className="pp-blk">
-                    <div className="pp-blk-lbl">Nationalite</div>
-                    <div className="pp-blk-val">{selectedProp.nationalite||'—'}</div>
-                  </div>
-                  <div className="pp-blk">
-                    <div className="pp-blk-lbl">Statut fiscal</div>
-                    <div className="pp-blk-val">{selectedProp.statut_fiscal||'Particulier'}</div>
-                  </div>
-                  <div className="pp-blk">
-                    <div className="pp-blk-lbl">Piece d'identite</div>
-                    <div className="pp-blk-val">{selectedProp.type_piece||'—'} {selectedProp.numero_piece?`— ${selectedProp.numero_piece}`:''}</div>
-                    <button className="pp-blk-link">Gerer les documents</button>
-                  </div>
+                  {[
+                    ['Nom complet', `${selectedProp.prenom} ${selectedProp.nom}`],
+                    ['Telephone', selectedProp.telephone||'—'],
+                    ['Ville', `${selectedProp.ville||'—'}${selectedProp.quartier?`, ${selectedProp.quartier}`:''}`],
+                    ['IFU', selectedProp.ifu||null],
+                  ].map(([k,v])=>(
+                    <div key={k} className="pp-blk">
+                      <div className="pp-blk-lbl">{k}</div>
+                      {v?<div className="pp-blk-val">{v}</div>:<div style={{fontSize:13,fontStyle:'italic',color:'rgba(255,255,255,0.25)',marginBottom:2}}>Non renseigne</div>}
+                      {k==='IFU'&&!v&&<button className="pp-blk-link">Ajouter l'IFU</button>}
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  {[
+                    ['Email', selectedProp.email||'—'],
+                    ['Nationalite', selectedProp.nationalite||'—'],
+                    ['Statut fiscal', selectedProp.statut_fiscal||'Particulier'],
+                    ['Piece d'identite', selectedProp.type_piece?`${selectedProp.type_piece}${selectedProp.numero_piece?` — ${selectedProp.numero_piece}`:''}`:null],
+                  ].map(([k,v])=>(
+                    <div key={k} className="pp-blk">
+                      <div className="pp-blk-lbl">{k}</div>
+                      {v?<div className="pp-blk-val">{v}</div>:<div style={{fontSize:13,fontStyle:'italic',color:'rgba(255,255,255,0.25)'}}>Non renseigne</div>}
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div className="pp-divider"/>
 
-              <div style={{marginBottom:24}}>
-                <div style={{fontSize:14,fontWeight:700,color:'#e6edf3',marginBottom:16}}>Collaboration avec {agence?.nom}</div>
-                <div className="pp-detail-grid">
-                  <div>
-                    <div className="pp-blk">
-                      <div className="pp-blk-lbl">Commission</div>
-                      <div className="pp-blk-val">{selectedProp.taux_commission||10}% — {selectedProp.mode_commission||'mensuel'}</div>
-                      <button className="pp-blk-link">Modifier</button>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="pp-blk">
-                      <div className="pp-blk-lbl">Biens confies</div>
-                      <div className="pp-blk-val">{selectedProp.nb_biens||0} bien{(selectedProp.nb_biens||0)!==1?'s':''}</div>
-                      <button className="pp-blk-link" onClick={()=>navigate('/imoloc/biens')}>Voir les biens</button>
-                    </div>
-                  </div>
+              <div style={{fontSize:14,fontWeight:700,color:'#e6edf3',marginBottom:14}}>Collaboration — {agence?.nom}</div>
+              <div className="pp-detail-grid">
+                <div className="pp-blk">
+                  <div className="pp-blk-lbl">Commission</div>
+                  <div className="pp-blk-val">{selectedProp.taux_commission||10}% — {selectedProp.mode_commission||'mensuel'}</div>
+                  <button className="pp-blk-link">Modifier</button>
+                </div>
+                <div className="pp-blk">
+                  <div className="pp-blk-lbl">Biens confies</div>
+                  <div className="pp-blk-val">{selectedProp.nb_biens||0} bien{(selectedProp.nb_biens||0)!==1?'s':''}</div>
+                  <button className="pp-blk-link" onClick={()=>navigate('/imoloc/biens')}>Voir les biens</button>
                 </div>
               </div>
 
@@ -1122,7 +1156,7 @@ export default function ImolocProprietaires() {
                   <div className="pp-divider"/>
                   <div className="pp-blk">
                     <div className="pp-blk-lbl">Note interne</div>
-                    <div style={{fontSize:13.5,color:'rgba(255,255,255,0.5)',lineHeight:1.7,fontStyle:'italic'}}>
+                    <div style={{fontSize:13.5,color:'rgba(255,255,255,0.45)',lineHeight:1.7,fontStyle:'italic',padding:'10px 14px',background:'rgba(255,255,255,0.02)',borderRadius:8,border:'1px solid rgba(255,255,255,0.06)'}}>
                       {selectedProp.note_interne}
                     </div>
                   </div>
