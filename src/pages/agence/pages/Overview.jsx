@@ -492,6 +492,22 @@ export default function Overview() {
       {/* ══ VUE TABLEAU DE BORD ══ */}
       {viewMode === 'tableau' && (
         <>
+          <div style={{background:"linear-gradient(135deg,rgba(0,200,150,0.07),rgba(0,120,212,0.05))",border:"1px solid rgba(0,200,150,0.2)",borderRadius:12,padding:"20px 24px",marginBottom:20,cursor:"pointer",transition:"all 0.2s",display:"flex",alignItems:"center",justifyContent:"space-between"}}
+            onClick={()=>window.location.href="/agence/imoloc"}
+            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,0.3)"}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none"}}>
+            <div style={{display:"flex",alignItems:"center",gap:16}}>
+              <div style={{width:48,height:48,borderRadius:12,background:"rgba(0,200,150,0.15)",border:"1px solid rgba(0,200,150,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>🏢</div>
+              <div>
+                <div style={{fontSize:16,fontWeight:700,color:"#e6edf3",marginBottom:3}}>Centre Imoloc</div>
+                <div style={{fontSize:13,color:"rgba(255,255,255,0.45)"}}>Gerer vos biens, proprietaires, locataires, baux et paiements</div>
+              </div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8,color:"#00c896",fontSize:13.5,fontWeight:600,flexShrink:0}}>
+              Acceder
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </div>
+          </div>
           <div className="ov-grid3">
             <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Biens</span><button className="ov-card-more">···</button></div><div style={{fontSize:40,fontWeight:800,color:'#0078d4',letterSpacing:'-0.03em'}}>{stats.biens}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{bienOcc} occupés · {bienLib} libres</div><div className="ov-progress" style={{marginTop:12}}><div className="ov-progress-fill" style={{width:`${tauxOcc}%`,background:'#0078d4'}}/></div><Link to="/agence/biens" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Gérer les biens →</Link></div>
             <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Locataires</span><button className="ov-card-more">···</button></div><div style={{fontSize:40,fontWeight:800,color:'#6c63ff',letterSpacing:'-0.03em'}}>{stats.locataires}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{stats.retards} loyer{stats.retards>1?'s':''} en retard</div><Link to="/agence/locataires" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les locataires →</Link></div>

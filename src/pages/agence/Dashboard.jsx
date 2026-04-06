@@ -10,6 +10,7 @@ import Baux from './pages/Baux'
 import Utilisateurs from './pages/Utilisateurs'
 import Contacts from './pages/Contacts'
 import Nouveautes from './pages/Nouveautes'
+import ImolocCenter from './imoloc/ImolocCenter'
 import Organisation from './pages/Organisation'
 import Abonnement from './pages/Abonnement'
 import Securite from './pages/Securite'
@@ -88,6 +89,7 @@ export default function DashboardAgence() {
                 <Route path="utilisateurs" element={<Utilisateurs />} />
                 <Route path="utilisateurs/contacts" element={<Contacts />} />
                 <Route path="nouveautes" element={<Nouveautes />} />
+                <Route path="imoloc/*" element={<ImolocCenter />} />
                 <Route path="utilisateurs/contacts" element={<Utilisateurs />} />
                 <Route path="utilisateurs/invites" element={<Utilisateurs />} />
                 <Route path="utilisateurs/supprimes" element={<Utilisateurs />} />

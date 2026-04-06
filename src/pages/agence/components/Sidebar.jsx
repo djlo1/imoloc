@@ -48,6 +48,7 @@ const NAV = [
 ]
 
 const ADMIN_CENTERS = [
+  { label:'Centre Imoloc', path:'/agence/imoloc', icon:'🏢' },
   { label:'Baux', path:'/agence/baux', icon:'📄' },
   { label:'Rapports', path:'/agence/rapports', icon:'📊' },
   { label:'Maintenance', path:'/agence/maintenance', icon:'🔧' },
