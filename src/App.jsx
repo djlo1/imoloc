@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import ImolocApp from './pages/imoloc/ImolocApp'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './store/authStore'
