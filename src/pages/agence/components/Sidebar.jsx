@@ -184,10 +184,18 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
           {!collapsed && <div className="sb3-section">Centres d'administration</div>}
 
           {ADMIN_CENTERS.map((c,i) => (
-            <Link key={i} to={c.path} className={`sb3-admin ${isActive(c.path)?'active':''}`} onClick={onClose}>
-              <span style={{fontSize:14,flexShrink:0}}>{c.icon}</span>
-              {!collapsed && c.label}
-            </Link>
+            c.path === '/agence/imoloc'
+              ? <a key={i} href="/imoloc" target="_blank" rel="noopener noreferrer" className="sb3-admin" onClick={onClose}>
+                  <span style={{fontSize:14,flexShrink:0}}>{c.icon}</span>
+                  {!collapsed && <span style={{display:'flex',alignItems:'center',gap:6,flex:1}}>
+                    {c.label}
+                    <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{opacity:0.4,flexShrink:0}}><path strokeLinecap="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                  </span>}
+                </a>
+              : <Link key={i} to={c.path} className={`sb3-admin ${isActive(c.path)?'active':''}`} onClick={onClose}>
+                  <span style={{fontSize:14,flexShrink:0}}>{c.icon}</span>
+                  {!collapsed && c.label}
+                </Link>
           ))}
         </nav>
 

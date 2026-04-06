@@ -75,6 +75,7 @@ export default function App() {
       <Route path="/locataire/*" element={<PrivateRoute roles={['locataire']}><DashboardLocataire /></PrivateRoute>} />
       <Route path="/admin/*" element={<PrivateRoute roles={['super_admin']}><DashboardAdmin /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      <Route path="/imoloc/*" element={<ImolocApp />} />
+      </Routes>
   )
 }
