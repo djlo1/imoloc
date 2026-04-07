@@ -117,10 +117,35 @@ export default function ImolocProprietaires() {
     if (!term || term.length < 2) { setSearchResults([]); return }
     setSearching(true)
     try {
-      const { data } = await supabase.from('profiles')
+      // Recuperer les IDs deja dans cette agence pour les exclure
+      const { data:agenceUsers } = await supabase
+        .from('agence_proprietaires')
+        .select('proprietaire_id')
+        .eq('agence_id', agence?.id)
+      const excludeIds = (agenceUsers||[]).map(u => u.proprietaire_id)
+
+      // Recuperer aussi les membres de l'agence (agents, admins)
+      const { data:agenceMembers } = await supabase
+        .from('agence_users')
+        .select('user_id')
+        .eq('agence_id', agence?.id)
+      const memberIds = (agenceMembers||[]).map(u => u.user_id)
+
+      const allExclude = [...new Set([...excludeIds, ...memberIds])]
+
+      // Chercher uniquement proprietaires et locataires
+      let query = supabase.from('profiles')
         .select('*')
+        .in('role', ['proprietaire', 'locataire'])
         .or(`nom.ilike.%${term}%,prenom.ilike.%${term}%,email.ilike.%${term}%,telephone.ilike.%${term}%`)
-        .limit(10)
+        .limit(15)
+
+      // Exclure les utilisateurs deja dans cette agence
+      if (allExclude.length > 0) {
+        query = query.not('id', 'in', `(${allExclude.join(',')})`)
+      }
+
+      const { data } = await query
       setSearchResults(data || [])
     } catch(e) { console.error(e) }
     finally { setSearching(false) }
