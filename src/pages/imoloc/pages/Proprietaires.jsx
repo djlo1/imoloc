@@ -149,7 +149,7 @@ export default function ImolocProprietaires() {
       // Statut selon si import demande
       const statut = importBiens ? 'en_attente_validation' : 'actif'
       
-      // Lier a l'agence
+      // Lier a l agence
       const { error } = await supabase.from('agence_proprietaires').upsert({
         agence_id: agence.id,
         proprietaire_id: selectedExisting.id,
@@ -654,7 +654,7 @@ export default function ImolocProprietaires() {
                 {step===1&&(
                   <>
                     <div className="pp-step-title">Comment ajouter ce proprietaire ?</div>
-                    <div className="pp-step-sub">Si le proprietaire a deja un compte Imoloc (depuis l'app mobile ou une autre agence), retrouvez-le et associez-le directement. Sinon, creez son profil.</div>
+                    <div className="pp-step-sub">Si le proprietaire a deja un compte Imoloc (depuis l app mobile ou une autre agence), retrouvez-le et associez-le directement. Sinon, creez son profil.</div>
 
                     <div className="pp-choice-row">
                       <div className={`pp-choice ${addMode==='existing'?'on':''}`} onClick={()=>setAddMode('existing')}>
@@ -693,7 +693,7 @@ export default function ImolocProprietaires() {
                             </div>
                             <div style={{flex:1}}>
                               <div style={{fontSize:14.5,fontWeight:600,color:'#e6edf3',marginBottom:3}}>{u.prenom} {u.nom}</div>
-                              <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>{u.email||'Pas d'email'} · {u.telephone||'Pas de tel'}</div>
+                              <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>{u.email||"Pas d email"} · {u.telephone||'Pas de tel'}</div>
                               <div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)',marginTop:2}}>Role actuel: {u.role||'Non defini'} · {u.ville||'Ville inconnue'}</div>
                             </div>
                             {selectedExisting?.id===u.id
@@ -727,7 +727,7 @@ export default function ImolocProprietaires() {
                                       '2. Un email de confirmation sera envoye au proprietaire',
                                       '3. Une notification apparaitra dans son application mobile',
                                       '4. Des que le proprietaire valide, ses biens et locataires seront transferes',
-                                      '5. L'ancienne agence sera notifiee du transfert',
+                                      '5. L ancienne agence sera notifiee du transfert',
                                     ].map((txt,i)=>(
                                       <div key={i} style={{fontSize:12.5,color:'rgba(255,255,255,0.55)',lineHeight:1.6}}>{txt}</div>
                                     ))}
@@ -762,7 +762,7 @@ export default function ImolocProprietaires() {
                 {/* ── Step 2 : Identite ── */}
                 {step===2&&(
                   <>
-                    <div className="pp-step-title">Informations d'identite</div>
+                    <div className="pp-step-title">Informations d identite</div>
                     <div className="pp-step-sub">Renseignez les informations personnelles du proprietaire. Le prenom et le nom sont obligatoires.</div>
                     <div className="pp-g2">
                       <div>
@@ -873,7 +873,7 @@ export default function ImolocProprietaires() {
                 {/* ── Step 4 : Pieces & Fiscal ── */}
                 {step===4&&(
                   <>
-                    <div className="pp-step-title">Pieces d'identite & Fiscal</div>
+                    <div className="pp-step-title">Pieces d identite & Fiscal</div>
                     <div className="pp-step-sub">Ces informations sont importantes pour la conformite legale au Benin et la gestion des commissions.</div>
                     <div className="pp-g2">
                       <div>
@@ -895,7 +895,7 @@ export default function ImolocProprietaires() {
                         <input className="pp-inp" type="date" value={form.date_delivrance_piece} onChange={e=>setF('date_delivrance_piece',e.target.value)}/>
                       </div>
                       <div>
-                        <label className="pp-lbl">Date d'expiration</label>
+                        <label className="pp-lbl">Date d expiration</label>
                         <input className="pp-inp" type="date" value={form.date_expiration_piece} onChange={e=>setF('date_expiration_piece',e.target.value)}/>
                       </div>
                     </div>
@@ -931,7 +931,7 @@ export default function ImolocProprietaires() {
                     </div>
                     <div className="pp-field">
                       <label className="pp-lbl">Note interne</label>
-                      <textarea className="pp-inp" rows={3} value={form.note_interne} onChange={e=>setF('note_interne',e.target.value)} placeholder="Note visible uniquement par l'agence..." style={{resize:'vertical',minHeight:80}}/>
+                      <textarea className="pp-inp" rows={3} value={form.note_interne} onChange={e=>setF('note_interne',e.target.value)} placeholder="Note visible uniquement par l agence..." style={{resize:'vertical',minHeight:80}}/>
                     </div>
                   </>
                 )}
@@ -940,10 +940,10 @@ export default function ImolocProprietaires() {
                 {step===5&&(
                   <>
                     <div className="pp-step-title">Compte de connexion</div>
-                    <div className="pp-step-sub">Optionnel — Creez un compte pour que le proprietaire puisse acceder a l'application mobile Imoloc et consulter ses biens et paiements.</div>
+                    <div className="pp-step-sub">Optionnel — Creez un compte pour que le proprietaire puisse acceder a l application mobile Imoloc et consulter ses biens et paiements.</div>
 
                     <div style={{padding:'16px 18px',borderRadius:10,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.15)',fontSize:13.5,color:'rgba(255,255,255,0.5)',lineHeight:1.7,marginBottom:24}}>
-                      ℹ️ Sans compte, le proprietaire n'aura pas acces a l'app mobile. Vous pourrez creer le compte plus tard depuis son profil.
+                      ℹ️ Sans compte, le proprietaire n'aura pas acces a l app mobile. Vous pourrez creer le compte plus tard depuis son profil.
                     </div>
 
                     <div className="pp-cbk" style={{marginBottom:24}} onClick={()=>setF('create_account',!form.create_account)}>
@@ -976,10 +976,10 @@ export default function ImolocProprietaires() {
                         ['Telephone', form.telephone||'—'],
                         ['Email', form.email||'—'],
                         ['Ville', `${form.ville}${form.quartier?`, ${form.quartier}`:''}`],
-                        ['Piece d'identite', `${form.type_piece}${form.numero_piece?` — ${form.numero_piece}`:''}`],
+                        ['Piece d identite', `${form.type_piece}${form.numero_piece?` — ${form.numero_piece}`:''}`],
                         ['IFU', form.ifu||'Non renseigne'],
                         ['Commission', `${form.taux_commission}% / ${form.mode_commission}`],
-                        ['Compte app', form.create_account?'Oui — Compte cree':'Non — Sans compte pour l'instant'],
+                        ['Compte app', form.create_account?'Oui — Compte cree':'Non — Sans compte pour l instant'],
                       ].map(([k,v],i,arr)=>(
                         <div key={k} style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',padding:'10px 16px',borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'none'}}>
                           <span style={{fontSize:13,color:'rgba(255,255,255,0.4)',flexShrink:0,width:160}}>{k}</span>
@@ -1116,7 +1116,7 @@ export default function ImolocProprietaires() {
                     <div key={k} className="pp-blk">
                       <div className="pp-blk-lbl">{k}</div>
                       {v?<div className="pp-blk-val">{v}</div>:<div style={{fontSize:13,fontStyle:'italic',color:'rgba(255,255,255,0.25)',marginBottom:2}}>Non renseigne</div>}
-                      {k==='IFU'&&!v&&<button className="pp-blk-link">Ajouter l'IFU</button>}
+                      {k==='IFU'&&!v&&<button className="pp-blk-link">Ajouter l IFU</button>}
                     </div>
                   ))}
                 </div>
@@ -1125,7 +1125,7 @@ export default function ImolocProprietaires() {
                     ['Email', selectedProp.email||'—'],
                     ['Nationalite', selectedProp.nationalite||'—'],
                     ['Statut fiscal', selectedProp.statut_fiscal||'Particulier'],
-                    ['Piece d'identite', selectedProp.type_piece?`${selectedProp.type_piece}${selectedProp.numero_piece?` — ${selectedProp.numero_piece}`:''}`:null],
+                    ['Piece d identite', selectedProp.type_piece?`${selectedProp.type_piece}${selectedProp.numero_piece?` — ${selectedProp.numero_piece}`:''}`:null],
                   ].map(([k,v])=>(
                     <div key={k} className="pp-blk">
                       <div className="pp-blk-lbl">{k}</div>
