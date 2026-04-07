@@ -207,7 +207,11 @@ export default function ImolocProprietaires() {
     if (!agence?.id || !form.nom || !form.prenom) return
     setSaving(true)
     try {
+      // Generer un UUID pour le profil sans compte auth
+      const newId = crypto.randomUUID()
+
       const { data:pData, error:pErr } = await supabase.from('profiles').insert({
+        id: newId,
         nom: form.nom, prenom: form.prenom, email: form.email || null,
         telephone: form.telephone, role: 'proprietaire',
         sexe: form.sexe, nationalite: form.nationalite,
