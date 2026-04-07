@@ -165,7 +165,7 @@ export default function ImolocProprietaires() {
         await supabase.from('notifications').insert({
           profile_id: selectedExisting.id,
           titre: 'Demande de transfert d'agence',
-          message: `L'agence ${agence.nom} souhaite gerer vos biens et importer vos donnees. Veuillez confirmer cette demande.`,
+          message: `L agence ${agence.nom} souhaite gerer vos biens et importer vos donnees. Veuillez confirmer cette demande.`,
           type: 'transfert_agence',
           lien: '/mobile/transfert',
         })
