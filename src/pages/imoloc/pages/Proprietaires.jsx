@@ -117,36 +117,33 @@ export default function ImolocProprietaires() {
     if (!term || term.length < 2) { setSearchResults([]); return }
     setSearching(true)
     try {
-      // Recuperer les IDs deja dans cette agence pour les exclure
-      const { data:agenceUsers } = await supabase
+      // 1. IDs deja lies a cette agence
+      const { data:dejaProprios } = await supabase
         .from('agence_proprietaires')
         .select('proprietaire_id')
         .eq('agence_id', agence?.id)
-      const excludeIds = (agenceUsers||[]).map(u => u.proprietaire_id)
+      const dejaProprosIds = (dejaProprios||[]).map(u => u.proprietaire_id)
 
-      // Recuperer aussi les membres de l'agence (agents, admins)
-      const { data:agenceMembers } = await supabase
+      // 2. IDs des membres de l agence (agents, admins, etc)
+      const { data:membres } = await supabase
         .from('agence_users')
         .select('user_id')
         .eq('agence_id', agence?.id)
-      const memberIds = (agenceMembers||[]).map(u => u.user_id)
+      const membresIds = (membres||[]).map(u => u.user_id)
 
-      const allExclude = [...new Set([...excludeIds, ...memberIds])]
+      // 3. Chercher UNIQUEMENT role proprietaire ou locataire
+      // Exclure: deja dans l agence + membres de l agence
+      const toExclude = [...new Set([...dejaProprosIds, ...membresIds])]
 
-      // Chercher uniquement proprietaires et locataires
-      let query = supabase.from('profiles')
-        .select('*')
+      const { data:results } = await supabase.from('profiles')
+        .select('id, nom, prenom, email, telephone, role, ville, type_proprietaire, statut_compte')
         .in('role', ['proprietaire', 'locataire'])
         .or(`nom.ilike.%${term}%,prenom.ilike.%${term}%,email.ilike.%${term}%,telephone.ilike.%${term}%`)
-        .limit(15)
+        .limit(20)
 
-      // Exclure les utilisateurs deja dans cette agence
-      if (allExclude.length > 0) {
-        query = query.not('id', 'in', `(${allExclude.join(',')})`)
-      }
-
-      const { data } = await query
-      setSearchResults(data || [])
+      // Filtrer cote client pour exclure les IDs
+      const filtered = (results||[]).filter(u => !toExclude.includes(u.id))
+      setSearchResults(filtered)
     } catch(e) { console.error(e) }
     finally { setSearching(false) }
   }
