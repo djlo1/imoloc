@@ -4,23 +4,34 @@ import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
 
-// ─── Constants ────────────────────────────────────────────
-const TYPES = ['Appartement','Villa','Studio','Duplex','Maison','Bureau','Local commercial','Terrain','Entrepot','Parking']
+// ─── Constants — alignees avec les enums Supabase ─────────
+// type_bien enum: appartement, maison, villa, studio, bureau, entrepot, local_commercial, terrain, parking, hotel, autre
+const TYPES = [
+  { val:'appartement',     label:'Appartement'      },
+  { val:'maison',          label:'Maison'           },
+  { val:'villa',           label:'Villa'            },
+  { val:'studio',          label:'Studio'           },
+  { val:'bureau',          label:'Bureau'           },
+  { val:'entrepot',        label:'Entrepot'         },
+  { val:'local_commercial',label:'Local commercial' },
+  { val:'terrain',         label:'Terrain'          },
+  { val:'parking',         label:'Parking'          },
+  { val:'hotel',           label:'Hotel'            },
+  { val:'autre',           label:'Autre'            },
+]
 const TYPE_ICONS = {
-  'Appartement':'🏠','Villa':'🏡','Studio':'🛋️','Duplex':'🏘️',
-  'Maison':'🏠','Bureau':'🏢','Local commercial':'🏪',
-  'Terrain':'🌿','Entrepot':'🏭','Parking':'🅿️',
+  appartement:'🏠', maison:'🏠', villa:'🏡', studio:'🛋️',
+  bureau:'🏢', entrepot:'🏭', local_commercial:'🏪',
+  terrain:'🌿', parking:'🅿️', hotel:'🏨', autre:'🏗️',
 }
+// statut_bien enum: disponible, occupe, maintenance, renovation, reserve, hors_service
 const STATUT_CFG = {
-  // Valeurs de l'enum statut_bien en base de donnees
-  disponible:  { color:'#00c896', bg:'rgba(0,200,150,0.12)',  label:'Disponible',  dot:'#00c896' },
-  loue:        { color:'#0078d4', bg:'rgba(0,120,212,0.12)',  label:'Loue',        dot:'#0078d4' },
-  maintenance: { color:'#f59e0b', bg:'rgba(245,158,11,0.12)', label:'Maintenance', dot:'#f59e0b' },
-  reserve:     { color:'#6c63ff', bg:'rgba(108,99,255,0.12)', label:'Reserve',     dot:'#6c63ff' },
-  indisponible:{ color:'#ef4444', bg:'rgba(239,68,68,0.12)',  label:'Indisponible',dot:'#ef4444' },
-  // Aliases legacy (agence/pages/Biens.jsx historique)
-  libre:       { color:'#00c896', bg:'rgba(0,200,150,0.12)',  label:'Libre',       dot:'#00c896' },
-  occupe:      { color:'#0078d4', bg:'rgba(0,120,212,0.12)',  label:'Occupe',      dot:'#0078d4' },
+  disponible:   { color:'#00c896', bg:'rgba(0,200,150,0.12)',  label:'Disponible',   dot:'#00c896' },
+  occupe:       { color:'#0078d4', bg:'rgba(0,120,212,0.12)',  label:'Occupe',       dot:'#0078d4' },
+  maintenance:  { color:'#f59e0b', bg:'rgba(245,158,11,0.12)', label:'Maintenance',  dot:'#f59e0b' },
+  renovation:   { color:'#8b5cf6', bg:'rgba(139,92,246,0.12)', label:'Renovation',   dot:'#8b5cf6' },
+  reserve:      { color:'#6c63ff', bg:'rgba(108,99,255,0.12)', label:'Reserve',      dot:'#6c63ff' },
+  hors_service: { color:'#ef4444', bg:'rgba(239,68,68,0.12)',  label:'Hors service', dot:'#ef4444' },
 }
 
 const ALL_COLS = [
@@ -73,7 +84,7 @@ export default function ImolocBiens() {
   const [selectedProp, setSelectedProp]   = useState(null)
 
   const [form, setForm] = useState({
-    nom:'', type:'Appartement', statut:'disponible',
+    nom:'', type:'appartement', statut:'disponible',
     adresse:'', ville:'Cotonou', quartier:'',
     superficie:'', loyer:'',
     nb_pieces:'', nb_chambres:'', nb_sdb:'',
@@ -88,8 +99,8 @@ export default function ImolocBiens() {
   // Lire le filtre statut depuis l'URL (/biens/libres, /biens/occupes, etc.)
   useEffect(() => {
     const seg = location.pathname.split('/').pop()
-    if (['libres','occupes','maintenance'].includes(seg)) {
-      const map = { libres:'libre', occupes:'occupe', maintenance:'maintenance' }
+    if (['libres','occupes','maintenance','renovation','reserves'].includes(seg)) {
+      const map = { libres:'disponible', occupes:'occupe', maintenance:'maintenance', renovation:'renovation', reserves:'reserve' }
       setFilterStatut(map[seg])
     } else {
       setFilterStatut('tous')
@@ -169,20 +180,23 @@ export default function ImolocBiens() {
     setSaving(true)
     try {
       const { error } = await supabase.from('biens').insert({
-        nom:           form.nom,
-        type:          form.type,
-        statut:        form.statut,
-        adresse:       form.adresse     || null,
-        ville:         form.ville       || null,
-        quartier:      form.quartier    || null,
-        superficie:    form.superficie  ? Number(form.superficie)  : null,
-        loyer:         form.loyer       ? Number(form.loyer)       : null,
-        nombre_pieces:      form.nb_pieces   ? Number(form.nb_pieces)   : null,
-        nombre_chambres:    form.nb_chambres ? Number(form.nb_chambres) : null,
-        nombre_salles_bain: form.nb_sdb      ? Number(form.nb_sdb)      : null,
-        description:   form.description || null,
-        agence_id:     agence.id,
-        proprietaire_id: selectedProp?.id || null,
+        nom:              form.nom,
+        type_bien:        form.type,           // enum type_bien (valeur lowercase)
+        type:             form.type,           // colonne compat text
+        statut:           form.statut,         // enum statut_bien
+        adresse:          form.adresse         || null,
+        ville:            form.ville           || null,
+        quartier:         form.quartier        || null,
+        superficie:       form.superficie      ? Number(form.superficie)  : null,
+        superficie_totale:form.superficie      ? Number(form.superficie)  : null,
+        loyer:            form.loyer           ? Number(form.loyer)       : null,
+        loyer_mensuel:    form.loyer           ? Number(form.loyer)       : null,
+        nombre_pieces:    form.nb_pieces       ? Number(form.nb_pieces)   : null,
+        nombre_chambres:  form.nb_chambres     ? Number(form.nb_chambres) : null,
+        nombre_salles_bain: form.nb_sdb        ? Number(form.nb_sdb)      : null,
+        description:      form.description     || null,
+        agence_id:        agence.id,
+        proprietaire_id:  selectedProp?.id     || null,
       })
       if (error) throw error
       toast.success(form.nom + ' ajoute avec succes !')
@@ -206,7 +220,7 @@ export default function ImolocBiens() {
     setStep(1)
     setSelectedProp(null)
     setPropSearch('')
-    setForm({ nom:'', type:'Appartement', statut:'disponible', adresse:'', ville:'Cotonou', quartier:'', superficie:'', loyer:'', nb_pieces:'', nb_chambres:'', nb_sdb:'', description:'' })
+    setForm({ nom:'', type:'appartement', statut:'disponible', adresse:'', ville:'Cotonou', quartier:'', superficie:'', loyer:'', nb_pieces:'', nb_chambres:'', nb_sdb:'', description:'' })
   }
 
   // Filtrages
@@ -225,11 +239,10 @@ export default function ImolocBiens() {
 
   const stats = {
     total:       biens.length,
-    // Compatibilite double enum: disponible/libre = vacant, loue/occupe = occupe
-    libres:      biens.filter(b=>b.statut==='disponible'||b.statut==='libre').length,
-    occupes:     biens.filter(b=>b.statut==='loue'||b.statut==='occupe').length,
-    maintenance: biens.filter(b=>b.statut==='maintenance').length,
-    revenus:     biens.filter(b=>b.statut==='loue'||b.statut==='occupe').reduce((a,b)=>a+(b.loyer||b.loyer_mensuel||0),0),
+    libres:      biens.filter(b=>b.statut==='disponible').length,
+    occupes:     biens.filter(b=>b.statut==='occupe').length,
+    maintenance: biens.filter(b=>b.statut==='maintenance'||b.statut==='renovation').length,
+    revenus:     biens.filter(b=>b.statut==='occupe').reduce((a,b)=>a+(b.loyer_mensuel||b.loyer||0),0),
   }
 
   const exportCSV = () => {
@@ -448,15 +461,16 @@ export default function ImolocBiens() {
           </div>
         </div>
 
-        {/* Filtres statut — aligne avec enum statut_bien */}
+        {/* Filtres statut — valeurs exactes de l'enum statut_bien */}
         <div className="pb-ftabs">
           {[
-            ['tous',        'Tous'],
-            ['disponible',  'Disponibles'],
-            ['loue',        'Loues'],
-            ['maintenance', 'Maintenance'],
-            ['reserve',     'Reserves'],
-            ['indisponible','Indisponibles'],
+            ['tous',         'Tous'],
+            ['disponible',   'Disponibles'],
+            ['occupe',       'Occupes'],
+            ['maintenance',  'Maintenance'],
+            ['renovation',   'Renovation'],
+            ['reserve',      'Reserves'],
+            ['hors_service', 'Hors service'],
           ].map(([v,l])=>(
             <button key={v} className={`pb-ftab ${filterStatut===v?'active':''}`} onClick={()=>setFilterStatut(v)}>{l}</button>
           ))}
@@ -526,7 +540,7 @@ export default function ImolocBiens() {
                   </td></tr>
                 ):filtered.map((b)=>{
                   const isSel = selected.includes(b.id)
-                  const ic    = TYPE_ICONS[b.type] || '🏠'
+                  const ic    = TYPE_ICONS[b.type_bien] || TYPE_ICONS[b.type] || '🏠'
                   const avH   = viewMode==='compact' ? 26 : 32
                   return (
                     <tr key={b.id} className={isSel?'sel':''} onClick={()=>{setSelectedBien(b);setDetailTab('infos')}}>
@@ -650,9 +664,9 @@ export default function ImolocBiens() {
                   <div className="pb-sec">Type de bien</div>
                   <div className="pb-type-grid">
                     {TYPES.map(t=>(
-                      <div key={t} className={`pb-type-item ${form.type===t?'on':''}`} onClick={()=>setF('type',t)}>
-                        <div className="pb-type-ic-lg">{TYPE_ICONS[t]||'🏠'}</div>
-                        <div className="pb-type-lbl">{t}</div>
+                      <div key={t.val} className={`pb-type-item ${form.type===t.val?'on':''}`} onClick={()=>setF('type',t.val)}>
+                        <div className="pb-type-ic-lg">{TYPE_ICONS[t.val]||'🏠'}</div>
+                        <div className="pb-type-lbl">{t.label}</div>
                       </div>
                     ))}
                   </div>
@@ -787,7 +801,7 @@ export default function ImolocBiens() {
                   <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,overflow:'hidden'}}>
                     {[
                       ['Nom',          form.nom],
-                      ['Type',         TYPE_ICONS[form.type]+' '+form.type],
+                      ['Type',         TYPE_ICONS[form.type]+' '+(TYPES.find(t=>t.val===form.type)?.label||form.type)],
                       ['Statut',       STATUT_CFG[form.statut]?.label || form.statut],
                       ['Adresse',      form.adresse?`${form.adresse}${form.quartier?', '+form.quartier:''}, ${form.ville}`:form.ville||'—'],
                       ['Superficie',   form.superficie?form.superficie+' m²':'—'],
@@ -837,7 +851,7 @@ export default function ImolocBiens() {
               <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:18}}>
                 <div style={{display:'flex',alignItems:'center',gap:14}}>
                   <div style={{width:56,height:56,borderRadius:12,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,flexShrink:0}}>
-                    {TYPE_ICONS[selectedBien.type]||'🏠'}
+                    {TYPE_ICONS[selectedBien.type_bien] || TYPE_ICONS[selectedBien.type] || '🏠'}
                   </div>
                   <div>
                     <div style={{fontSize:19,fontWeight:700,color:'#e6edf3',marginBottom:3}}>{selectedBien.nom}</div>
