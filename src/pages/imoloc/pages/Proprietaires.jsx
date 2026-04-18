@@ -258,67 +258,47 @@ export default function ImolocProprietaires() {
     if (!agence?.id || !form.nom || !form.prenom) return
     setSaving(true)
     try {
-      // 1. Creer un enregistrement profiles avec les donnees etendues
-      const profileId = crypto.randomUUID()
-      const { error:profErr } = await supabase.from('profiles').insert({
-        id: profileId,
-        nom: form.nom, prenom: form.prenom, email: form.email || null,
-        telephone: form.telephone, role: 'proprietaire',
-        sexe: form.sexe, nationalite: form.nationalite,
-        date_naissance: form.date_naissance || null,
-        lieu_naissance: form.lieu_naissance || null,
-        telephone2: form.telephone2 || null,
-        ville: form.ville, quartier: form.quartier || null,
-        pays: form.pays,
-        type_piece: form.type_piece || null,
-        numero_piece: form.numero_piece || null,
-        ifu: form.ifu || null, statut_fiscal: form.statut_fiscal,
-        type_proprietaire: form.type_proprietaire,
-        nom_entreprise: form.nom_entreprise || null,
-        registre_commerce: form.registre_commerce || null,
-        note_interne: form.note_interne || null,
-        statut_compte: form.statut_compte,
-      })
-      if (profErr) console.warn('Profile warning:', profErr.message)
+      const { data:propData, error:propErr } = await supabase
+        .from('proprietaires')
+        .insert({
+          nom:                form.nom,
+          prenom:             form.prenom,
+          email:              form.email          || null,
+          telephone:          form.telephone      || null,
+          adresse:            form.adresse        || null,
+          ville:              form.ville          || null,
+          pays:               form.pays           || 'Benin',
+          piece_identite_type:form.type_piece     || null,
+          piece_identite_num: form.numero_piece   || null,
+        })
+        .select()
+        .single()
+      if (propErr) throw new Error('Erreur proprietaires: ' + propErr.message + ' [' + propErr.code + ']')
 
-      // 2. Creer l enregistrement proprietaires (table principale)
-      // agence_proprietaires.proprietaire_id -> proprietaires.id
-      const { data:propData, error:propErr } = await supabase.from('proprietaires').insert({
-        nom: form.nom,
-        prenom: form.prenom,
-        email: form.email || null,
-        telephone: form.telephone || null,
-        adresse: form.adresse || null,
-        ville: form.ville || null,
-        pays: form.pays || 'Benin',
-        piece_identite_type: form.type_piece || null,
-        piece_identite_num: form.numero_piece || null,
-        profile_id: !profErr ? profileId : null,
-      }).select().single()
-      if (propErr) throw propErr
+      const { error:linkErr } = await supabase
+        .from('agence_proprietaires')
+        .insert({ agence_id:agence.id, proprietaire_id:propData.id, statut:'actif' })
+      if (linkErr) throw new Error('Erreur lien agence: ' + linkErr.message + ' [' + linkErr.code + ']')
 
-      // 3. Lier a l agence
-      const { error:linkErr } = await supabase.from('agence_proprietaires').insert({
-        agence_id: agence.id,
-        proprietaire_id: propData.id,
-        statut: 'actif',
-      })
-      if (linkErr) throw linkErr
-
-      // 4. Commission -> table partenariats (pas dans agence_proprietaires)
-      await supabase.from('partenariats').insert({
-        agence_id: agence.id,
-        proprietaire_id: propData.id,
-        taux_commission: parseFloat(form.taux_commission) || 10,
-        mode_commission: form.mode_commission || 'mensuel',
-        actif: true,
-      })
+      const { error:partErr } = await supabase
+        .from('partenariats')
+        .insert({
+          agence_id:      agence.id,
+          proprietaire_id:propData.id,
+          taux_commission:parseFloat(form.taux_commission) || 10,
+          mode_commission:form.mode_commission || 'mensuel',
+          actif:          true,
+        })
+      if (partErr) console.warn('[partenariat]', partErr.message)
 
       toast.success(form.prenom + ' ' + form.nom + ' ajoute comme proprietaire !')
       setShowAddPanel(false)
       resetForm()
       initData()
-    } catch(e) { toast.error(e.message || 'Erreur') }
+    } catch(e) {
+      console.error('[createAndLink]', e)
+      toast.error(e.message || 'Erreur creation proprietaire')
+    }
     finally { setSaving(false) }
   }
 
