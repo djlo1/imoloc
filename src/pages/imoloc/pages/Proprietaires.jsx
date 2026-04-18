@@ -45,6 +45,7 @@ export default function ImolocProprietaires() {
   const [showColsPanel, setShowColsPanel] = useState(false)
   const [showAddPanel, setShowAddPanel] = useState(false)
   const [selectedProp, setSelectedProp] = useState(null)
+  const [detailTab, setDetailTab] = useState('profil')
   const [step, setStep] = useState(1)
   const [searchExisting, setSearchExisting] = useState('')
   const [searchResults, setSearchResults] = useState([])
@@ -86,13 +87,25 @@ export default function ImolocProprietaires() {
           .from('agence_proprietaires')
           .select('*, profiles(*)')
           .eq('agence_id', ag.id)
+        // Compter les biens reels par proprietaire
+        const propIds = (links||[]).map(l=>l.profiles?.id).filter(Boolean)
+        let biensCountMap = {}
+        if (propIds.length > 0) {
+          const { data:biensRows } = await supabase
+            .from('biens')
+            .select('proprietaire_id')
+            .in('proprietaire_id', propIds)
+          ;(biensRows||[]).forEach(b => {
+            biensCountMap[b.proprietaire_id] = (biensCountMap[b.proprietaire_id]||0)+1
+          })
+        }
         setProprietaires((links||[]).map(l=>({
           ...l.profiles,
           link_id: l.id,
           statut_lien: l.statut,
           taux_commission: l.taux_commission,
           mode_commission: l.mode_commission,
-          nb_biens: 0,
+          nb_biens: biensCountMap[l.profiles?.id] || 0,
         })))
       }
     } catch(e) { console.error(e) }
@@ -150,14 +163,12 @@ export default function ImolocProprietaires() {
 
   const selectExistingUser = async (u) => {
     setSelectedExisting(u)
-    // Compter les biens et locataires lies
     try {
-      const [b, l] = await Promise.all([
+      const [b] = await Promise.all([
         supabase.from('biens').select('id', {count:'exact'}).eq('proprietaire_id', u.id),
-        supabase.from('locataires').select('id', {count:'exact'}).eq('agence_id', agence?.id),
       ])
       setExistingBiensCount(b.count || 0)
-      setExistingLocatairesCount(l.count || 0)
+      setExistingLocatairesCount(0)
     } catch(e) { console.error(e) }
   }
 
@@ -1048,7 +1059,7 @@ export default function ImolocProprietaires() {
 
       {/* ══ DRAWER DETAIL ══ */}
       {selectedProp&&(
-        <div className="pp-ov" onClick={e=>e.target===e.currentTarget&&setSelectedProp(null)}>
+        <div className="pp-ov" onClick={e=>e.target===e.currentTarget&&(setSelectedProp(null)||setDetailTab('profil'))}>
           <div className="pp-panel pp-detail-panel">
             <div className="pp-detail-head">
               <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:18}}>
@@ -1076,7 +1087,7 @@ export default function ImolocProprietaires() {
                     </div>
                   </div>
                 </div>
-                <button className="pp-cls" onClick={()=>setSelectedProp(null)}>
+                <button className="pp-cls" onClick={()=>{setSelectedProp(null);setDetailTab('profil')}}>
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -1103,13 +1114,15 @@ export default function ImolocProprietaires() {
               </div>
 
               <div className="pp-detail-tabs">
-                {['Profil','Biens','Documents','Paiements'].map((t,i)=>(
-                  <button key={t} className={`pp-detail-tab ${i===0?'active':''}`}>{t}</button>
+                {[['profil','Profil'],['biens','Biens'],['documents','Documents'],['paiements','Paiements']].map(([k,l])=>(
+                  <button key={k} className={`pp-detail-tab ${detailTab===k?'active':''}`} onClick={()=>setDetailTab(k)}>{l}</button>
                 ))}
               </div>
             </div>
 
             <div className="pp-pb">
+              {/* ── Tab Profil ── */}
+              {detailTab==='profil'&&(<>
               {selectedProp.statut_lien==='en_attente_validation'&&(
                 <div style={{padding:'14px 16px',borderRadius:10,background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.2)',marginBottom:20}}>
                   <div style={{fontSize:13.5,fontWeight:600,color:'#f59e0b',marginBottom:6}}>⏳ Transfert en attente de validation</div>
@@ -1187,6 +1200,36 @@ export default function ImolocProprietaires() {
                     </div>
                   </div>
                 </>
+              )}
+              </>)}
+
+              {/* ── Tab Biens ── */}
+              {detailTab==='biens'&&(
+                <div style={{textAlign:'center',padding:'60px 20px',color:'rgba(255,255,255,0.25)'}}>
+                  <div style={{fontSize:36,marginBottom:14,opacity:0.4}}>🏢</div>
+                  <div style={{fontSize:15,fontWeight:600,marginBottom:8,color:'rgba(255,255,255,0.35)'}}>
+                    {selectedProp.nb_biens||0} bien{(selectedProp.nb_biens||0)!==1?'s':''} confie{(selectedProp.nb_biens||0)!==1?'s':''}
+                  </div>
+                  <button className="pp-btn pp-btn-p" style={{margin:'0 auto'}} onClick={()=>navigate('/imoloc/biens')}>
+                    Voir les biens
+                  </button>
+                </div>
+              )}
+
+              {/* ── Tab Documents ── */}
+              {detailTab==='documents'&&(
+                <div style={{textAlign:'center',padding:'60px 20px',color:'rgba(255,255,255,0.25)'}}>
+                  <div style={{fontSize:36,marginBottom:14,opacity:0.4}}>📁</div>
+                  <div style={{fontSize:14,color:'rgba(255,255,255,0.3)'}}>Module documents en cours de developpement</div>
+                </div>
+              )}
+
+              {/* ── Tab Paiements ── */}
+              {detailTab==='paiements'&&(
+                <div style={{textAlign:'center',padding:'60px 20px',color:'rgba(255,255,255,0.25)'}}>
+                  <div style={{fontSize:36,marginBottom:14,opacity:0.4}}>💰</div>
+                  <div style={{fontSize:14,color:'rgba(255,255,255,0.3)'}}>Module paiements en cours de developpement</div>
+                </div>
               )}
             </div>
           </div>
