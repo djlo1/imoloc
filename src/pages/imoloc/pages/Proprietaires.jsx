@@ -83,12 +83,24 @@ export default function ImolocProprietaires() {
       const ag = agList?.find(a=>a.profile_id===user.id) || agList?.[0]
       setAgence(ag)
       if (ag?.id) {
+        // JOIN : agence_proprietaires -> proprietaires -> profiles (donnees etendues)
+        const selectQuery = 'id, statut, proprietaires(id, nom, prenom, email, telephone, ville, adresse, pays, piece_identite_type, piece_identite_num, created_at, profile_id, profiles(sexe, nationalite, date_naissance, lieu_naissance, ifu, statut_fiscal, type_proprietaire, nom_entreprise, registre_commerce, note_interne, telephone2, quartier))'
         const { data:links } = await supabase
           .from('agence_proprietaires')
-          .select('*, profiles(*)')
+          .select(selectQuery)
           .eq('agence_id', ag.id)
-        // Compter les biens reels par proprietaire
-        const propIds = (links||[]).map(l=>l.profiles?.id).filter(Boolean)
+
+        // Partenariats pour taux/mode commission (pas dans agence_proprietaires)
+        const { data:parts } = await supabase
+          .from('partenariats')
+          .select('proprietaire_id, taux_commission, mode_commission')
+          .eq('agence_id', ag.id)
+          .eq('actif', true)
+        const partsMap = {}
+        ;(parts||[]).forEach(p => { partsMap[p.proprietaire_id] = p })
+
+        // Compter les biens par proprietaire_id (-> proprietaires.id)
+        const propIds = (links||[]).map(l=>l.proprietaires?.id).filter(Boolean)
         let biensCountMap = {}
         if (propIds.length > 0) {
           const { data:biensRows } = await supabase
@@ -99,14 +111,48 @@ export default function ImolocProprietaires() {
             biensCountMap[b.proprietaire_id] = (biensCountMap[b.proprietaire_id]||0)+1
           })
         }
-        setProprietaires((links||[]).map(l=>({
-          ...l.profiles,
-          link_id: l.id,
-          statut_lien: l.statut,
-          taux_commission: l.taux_commission,
-          mode_commission: l.mode_commission,
-          nb_biens: biensCountMap[l.profiles?.id] || 0,
-        })))
+
+        setProprietaires((links||[]).map(l => {
+          const prop   = l.proprietaires || {}
+          const profil = prop.profiles   || {}
+          const part   = partsMap[prop.id] || {}
+          return {
+            // Base (table proprietaires)
+            id:                prop.id,
+            profile_id:        prop.profile_id,
+            nom:               prop.nom,
+            prenom:            prop.prenom,
+            email:             prop.email,
+            telephone:         prop.telephone,
+            ville:             prop.ville,
+            adresse:           prop.adresse,
+            pays:              prop.pays,
+            type_piece:        prop.piece_identite_type,
+            numero_piece:      prop.piece_identite_num,
+            created_at:        prop.created_at,
+            // Etendu (table profiles via profile_id)
+            sexe:              profil.sexe,
+            nationalite:       profil.nationalite,
+            date_naissance:    profil.date_naissance,
+            lieu_naissance:    profil.lieu_naissance,
+            telephone2:        profil.telephone2,
+            quartier:          profil.quartier,
+            ifu:               profil.ifu,
+            statut_fiscal:     profil.statut_fiscal,
+            type_proprietaire: profil.type_proprietaire || 'individuel',
+            nom_entreprise:    profil.nom_entreprise,
+            registre_commerce: profil.registre_commerce,
+            note_interne:      profil.note_interne,
+            // Lien agence
+            link_id:           l.id,
+            statut_lien:       l.statut,
+            // Commission (table partenariats)
+            taux_commission:   part.taux_commission || 10,
+            mode_commission:   part.mode_commission || 'mensuel',
+            // Stats
+            nb_biens:          biensCountMap[prop.id] || 0,
+          }
+        }))
       }
     } catch(e) { console.error(e) }
     finally { setLoading(false) }
@@ -130,32 +176,22 @@ export default function ImolocProprietaires() {
     if (!term || term.length < 2) { setSearchResults([]); return }
     setSearching(true)
     try {
-      // 1. IDs deja lies a cette agence
-      const { data:dejaProprios } = await supabase
+      // IDs de proprietaires deja lies a cette agence
+      const { data:dejaLies } = await supabase
         .from('agence_proprietaires')
         .select('proprietaire_id')
         .eq('agence_id', agence?.id)
-      const dejaProprosIds = (dejaProprios||[]).map(u => u.proprietaire_id)
+      const dejaIds = (dejaLies||[]).map(u => u.proprietaire_id)
 
-      // 2. IDs des membres de l agence (agents, admins, etc)
-      const { data:membres } = await supabase
-        .from('agence_users')
-        .select('user_id')
-        .eq('agence_id', agence?.id)
-      const membresIds = (membres||[]).map(u => u.user_id)
-
-      // 3. Chercher UNIQUEMENT role proprietaire ou locataire
-      // Exclure: deja dans l agence + membres de l agence
-      const toExclude = [...new Set([...dejaProprosIds, ...membresIds])]
-
-      const { data:results } = await supabase.from('profiles')
-        .select('id, nom, prenom, email, telephone, role, ville, type_proprietaire, statut_compte')
-        .in('role', ['proprietaire', 'locataire'])
-        .or(`nom.ilike.%${term}%,prenom.ilike.%${term}%,email.ilike.%${term}%,telephone.ilike.%${term}%`)
+      // Chercher dans la table proprietaires (agence_proprietaires.proprietaire_id -> proprietaires.id)
+      const { data:results } = await supabase
+        .from('proprietaires')
+        .select('id, nom, prenom, email, telephone, ville')
+        .or('nom.ilike.%' + term + '%,prenom.ilike.%' + term + '%,email.ilike.%' + term + '%,telephone.ilike.%' + term + '%')
         .limit(20)
 
-      // Filtrer cote client pour exclure les IDs
-      const filtered = (results||[]).filter(u => !toExclude.includes(u.id))
+      // Exclure ceux deja lies
+      const filtered = (results||[]).filter(u => !dejaIds.includes(u.id))
       setSearchResults(filtered)
     } catch(e) { console.error(e) }
     finally { setSearching(false) }
@@ -164,10 +200,12 @@ export default function ImolocProprietaires() {
   const selectExistingUser = async (u) => {
     setSelectedExisting(u)
     try {
-      const [b] = await Promise.all([
-        supabase.from('biens').select('id', {count:'exact'}).eq('proprietaire_id', u.id),
-      ])
-      setExistingBiensCount(b.count || 0)
+      // u.id est un proprietaires.id, biens.proprietaire_id -> proprietaires.id
+      const { count } = await supabase
+        .from('biens')
+        .select('id', { count:'exact', head:true })
+        .eq('proprietaire_id', u.id)
+      setExistingBiensCount(count || 0)
       setExistingLocatairesCount(0)
     } catch(e) { console.error(e) }
   }
@@ -176,37 +214,39 @@ export default function ImolocProprietaires() {
     if (!agence?.id || !selectedExisting) return
     setSaving(true)
     try {
-      // Mettre a jour le role
-      await supabase.from('profiles').update({ role:'proprietaire' }).eq('id', selectedExisting.id)
-      
-      // Statut selon si import demande
       const statut = importBiens ? 'en_attente_validation' : 'actif'
-      
-      // Lier a l agence
-      const { error } = await supabase.from('agence_proprietaires').upsert({
+
+      // selectedExisting est un enregistrement de la table proprietaires
+      // agence_proprietaires.proprietaire_id -> proprietaires.id
+      const { error:linkErr } = await supabase.from('agence_proprietaires').insert({
         agence_id: agence.id,
         proprietaire_id: selectedExisting.id,
         statut,
-        taux_commission: parseFloat(form.taux_commission) || 10,
-        mode_commission: form.mode_commission,
-      }, { onConflict: 'agence_id,proprietaire_id' })
-      if (error) throw error
+      })
+      if (linkErr && !linkErr.message.includes('duplicate')) throw linkErr
 
-      // Si import demande, envoyer notification/email
-      if (importBiens) {
-        // Creer une notification pour le proprietaire
+      // Commission -> table partenariats (taux/mode n'existe pas dans agence_proprietaires)
+      await supabase.from('partenariats').insert({
+        agence_id: agence.id,
+        proprietaire_id: selectedExisting.id,
+        taux_commission: parseFloat(form.taux_commission) || 10,
+        mode_commission: form.mode_commission || 'mensuel',
+        actif: true,
+      })
+
+      if (importBiens && selectedExisting.profile_id) {
         await supabase.from('notifications').insert({
-          profile_id: selectedExisting.id,
-          titre: "Demande de transfert d'agence",
-          message: `L agence ${agence.nom} souhaite gerer vos biens et importer vos donnees. Veuillez confirmer cette demande.`,
+          profile_id: selectedExisting.profile_id,
+          titre: 'Demande de transfert agence',
+          message: 'L agence ' + (agence.nom||'') + ' souhaite gerer vos biens. Veuillez confirmer.',
           type: 'transfert_agence',
           lien: '/mobile/transfert',
         })
-        toast.success(`Demande envoyee a ${selectedExisting.prenom} ${selectedExisting.nom} — En attente de validation`)
+        toast.success('Demande envoyee a ' + (selectedExisting.prenom||'') + ' ' + (selectedExisting.nom||'') + ' — En attente')
       } else {
-        toast.success(`${selectedExisting.prenom} ${selectedExisting.nom} associe comme proprietaire !`)
+        toast.success((selectedExisting.prenom||'') + ' ' + (selectedExisting.nom||'') + ' associe comme proprietaire !')
       }
-      
+
       setShowAddPanel(false)
       resetForm()
       initData()
@@ -218,44 +258,67 @@ export default function ImolocProprietaires() {
     if (!agence?.id || !form.nom || !form.prenom) return
     setSaving(true)
     try {
-      // Generer un UUID pour le profil sans compte auth
-      const newId = crypto.randomUUID()
-
-      const { data:pData, error:pErr } = await supabase.from('profiles').insert({
-        id: newId,
+      // 1. Creer un enregistrement profiles avec les donnees etendues
+      const profileId = crypto.randomUUID()
+      const { error:profErr } = await supabase.from('profiles').insert({
+        id: profileId,
         nom: form.nom, prenom: form.prenom, email: form.email || null,
         telephone: form.telephone, role: 'proprietaire',
         sexe: form.sexe, nationalite: form.nationalite,
         date_naissance: form.date_naissance || null,
-        lieu_naissance: form.lieu_naissance,
-        telephone2: form.telephone2,
-        ville: form.ville, quartier: form.quartier,
-        rue: form.rue, pays: form.pays,
-        type_piece: form.type_piece, numero_piece: form.numero_piece,
-        date_delivrance_piece: form.date_delivrance_piece || null,
-        date_expiration_piece: form.date_expiration_piece || null,
-        pays_delivrance: form.pays_delivrance,
-        ifu: form.ifu, statut_fiscal: form.statut_fiscal,
+        lieu_naissance: form.lieu_naissance || null,
+        telephone2: form.telephone2 || null,
+        ville: form.ville, quartier: form.quartier || null,
+        pays: form.pays,
+        type_piece: form.type_piece || null,
+        numero_piece: form.numero_piece || null,
+        ifu: form.ifu || null, statut_fiscal: form.statut_fiscal,
         type_proprietaire: form.type_proprietaire,
-        nom_entreprise: form.nom_entreprise,
-        registre_commerce: form.registre_commerce,
-        note_interne: form.note_interne,
+        nom_entreprise: form.nom_entreprise || null,
+        registre_commerce: form.registre_commerce || null,
+        note_interne: form.note_interne || null,
         statut_compte: form.statut_compte,
-      }).select().single()
-      if (pErr) throw pErr
-
-      await supabase.from('agence_proprietaires').insert({
-        agence_id: agence.id,
-        proprietaire_id: pData.id,
-        statut: 'actif',
-        taux_commission: parseFloat(form.taux_commission) || 10,
-        mode_commission: form.mode_commission,
       })
-      toast.success(`${form.prenom} ${form.nom} ajoute comme proprietaire !`)
+      if (profErr) console.warn('Profile warning:', profErr.message)
+
+      // 2. Creer l enregistrement proprietaires (table principale)
+      // agence_proprietaires.proprietaire_id -> proprietaires.id
+      const { data:propData, error:propErr } = await supabase.from('proprietaires').insert({
+        nom: form.nom,
+        prenom: form.prenom,
+        email: form.email || null,
+        telephone: form.telephone || null,
+        adresse: form.adresse || null,
+        ville: form.ville || null,
+        pays: form.pays || 'Benin',
+        piece_identite_type: form.type_piece || null,
+        piece_identite_num: form.numero_piece || null,
+        profile_id: !profErr ? profileId : null,
+      }).select().single()
+      if (propErr) throw propErr
+
+      // 3. Lier a l agence
+      const { error:linkErr } = await supabase.from('agence_proprietaires').insert({
+        agence_id: agence.id,
+        proprietaire_id: propData.id,
+        statut: 'actif',
+      })
+      if (linkErr) throw linkErr
+
+      // 4. Commission -> table partenariats (pas dans agence_proprietaires)
+      await supabase.from('partenariats').insert({
+        agence_id: agence.id,
+        proprietaire_id: propData.id,
+        taux_commission: parseFloat(form.taux_commission) || 10,
+        mode_commission: form.mode_commission || 'mensuel',
+        actif: true,
+      })
+
+      toast.success(form.prenom + ' ' + form.nom + ' ajoute comme proprietaire !')
       setShowAddPanel(false)
       resetForm()
       initData()
-    } catch(e) { toast.error(e.message || "Erreur") }
+    } catch(e) { toast.error(e.message || 'Erreur') }
     finally { setSaving(false) }
   }
 
