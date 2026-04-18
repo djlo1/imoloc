@@ -12,10 +12,15 @@ const TYPE_ICONS = {
   'Terrain':'🌿','Entrepot':'🏭','Parking':'🅿️',
 }
 const STATUT_CFG = {
-  libre:       { color:'#00c896', bg:'rgba(0,200,150,0.12)',  label:'Libre',       dot:'#00c896' },
-  occupe:      { color:'#0078d4', bg:'rgba(0,120,212,0.12)',  label:'Occupe',      dot:'#0078d4' },
+  // Valeurs de l'enum statut_bien en base de donnees
+  disponible:  { color:'#00c896', bg:'rgba(0,200,150,0.12)',  label:'Disponible',  dot:'#00c896' },
+  loue:        { color:'#0078d4', bg:'rgba(0,120,212,0.12)',  label:'Loue',        dot:'#0078d4' },
   maintenance: { color:'#f59e0b', bg:'rgba(245,158,11,0.12)', label:'Maintenance', dot:'#f59e0b' },
   reserve:     { color:'#6c63ff', bg:'rgba(108,99,255,0.12)', label:'Reserve',     dot:'#6c63ff' },
+  indisponible:{ color:'#ef4444', bg:'rgba(239,68,68,0.12)',  label:'Indisponible',dot:'#ef4444' },
+  // Aliases legacy (agence/pages/Biens.jsx historique)
+  libre:       { color:'#00c896', bg:'rgba(0,200,150,0.12)',  label:'Libre',       dot:'#00c896' },
+  occupe:      { color:'#0078d4', bg:'rgba(0,120,212,0.12)',  label:'Occupe',      dot:'#0078d4' },
 }
 
 const ALL_COLS = [
@@ -68,7 +73,7 @@ export default function ImolocBiens() {
   const [selectedProp, setSelectedProp]   = useState(null)
 
   const [form, setForm] = useState({
-    nom:'', type:'Appartement', statut:'libre',
+    nom:'', type:'Appartement', statut:'disponible',
     adresse:'', ville:'Cotonou', quartier:'',
     superficie:'', loyer:'',
     nb_pieces:'', nb_chambres:'', nb_sdb:'',
@@ -110,19 +115,20 @@ export default function ImolocBiens() {
         .order('created_at', { ascending: false })
 
       // Proprietaires lies a l'agence
+      // agence_proprietaires.proprietaire_id -> proprietaires.id (table separee)
       const { data:linksData } = await supabase
         .from('agence_proprietaires')
-        .select('proprietaire_id, statut, taux_commission, profiles(*)')
+        .select('proprietaire_id, proprietaires(id, nom, prenom, telephone, email, ville)')
         .eq('agence_id', ag.id)
         .eq('statut', 'actif')
-      const propsList = (linksData||[]).map(l=>({ ...l.profiles }))
+      const propsList = (linksData||[]).map(l => l.proprietaires).filter(Boolean)
       setProprietaires(propsList)
 
-      // Map proprietaires par id
+      // Map par proprietaires.id (= biens.proprietaire_id)
       const propsMap = {}
       propsList.forEach(p => { propsMap[p.id] = p })
 
-      // Baux actifs par bien
+      // Baux actifs par bien (enum statut_bail: 'actif')
       const { data:bauxData } = await supabase
         .from('baux')
         .select('bien_id')
@@ -171,9 +177,9 @@ export default function ImolocBiens() {
         quartier:      form.quartier    || null,
         superficie:    form.superficie  ? Number(form.superficie)  : null,
         loyer:         form.loyer       ? Number(form.loyer)       : null,
-        nb_pieces:     form.nb_pieces   ? Number(form.nb_pieces)   : null,
-        nb_chambres:   form.nb_chambres ? Number(form.nb_chambres) : null,
-        nb_sdb:        form.nb_sdb      ? Number(form.nb_sdb)      : null,
+        nombre_pieces:      form.nb_pieces   ? Number(form.nb_pieces)   : null,
+        nombre_chambres:    form.nb_chambres ? Number(form.nb_chambres) : null,
+        nombre_salles_bain: form.nb_sdb      ? Number(form.nb_sdb)      : null,
         description:   form.description || null,
         agence_id:     agence.id,
         proprietaire_id: selectedProp?.id || null,
@@ -200,7 +206,7 @@ export default function ImolocBiens() {
     setStep(1)
     setSelectedProp(null)
     setPropSearch('')
-    setForm({ nom:'', type:'Appartement', statut:'libre', adresse:'', ville:'Cotonou', quartier:'', superficie:'', loyer:'', nb_pieces:'', nb_chambres:'', nb_sdb:'', description:'' })
+    setForm({ nom:'', type:'Appartement', statut:'disponible', adresse:'', ville:'Cotonou', quartier:'', superficie:'', loyer:'', nb_pieces:'', nb_chambres:'', nb_sdb:'', description:'' })
   }
 
   // Filtrages
@@ -219,10 +225,11 @@ export default function ImolocBiens() {
 
   const stats = {
     total:       biens.length,
-    libres:      biens.filter(b=>b.statut==='libre').length,
-    occupes:     biens.filter(b=>b.statut==='occupe').length,
+    // Compatibilite double enum: disponible/libre = vacant, loue/occupe = occupe
+    libres:      biens.filter(b=>b.statut==='disponible'||b.statut==='libre').length,
+    occupes:     biens.filter(b=>b.statut==='loue'||b.statut==='occupe').length,
     maintenance: biens.filter(b=>b.statut==='maintenance').length,
-    revenus:     biens.filter(b=>b.statut==='occupe').reduce((a,b)=>a+(b.loyer||0),0),
+    revenus:     biens.filter(b=>b.statut==='loue'||b.statut==='occupe').reduce((a,b)=>a+(b.loyer||b.loyer_mensuel||0),0),
   }
 
   const exportCSV = () => {
@@ -441,9 +448,16 @@ export default function ImolocBiens() {
           </div>
         </div>
 
-        {/* Filtres statut */}
+        {/* Filtres statut — aligne avec enum statut_bien */}
         <div className="pb-ftabs">
-          {[['tous','Tous'],['libre','Libres'],['occupe','Occupes'],['maintenance','Maintenance'],['reserve','Reserves']].map(([v,l])=>(
+          {[
+            ['tous',        'Tous'],
+            ['disponible',  'Disponibles'],
+            ['loue',        'Loues'],
+            ['maintenance', 'Maintenance'],
+            ['reserve',     'Reserves'],
+            ['indisponible','Indisponibles'],
+          ].map(([v,l])=>(
             <button key={v} className={`pb-ftab ${filterStatut===v?'active':''}`} onClick={()=>setFilterStatut(v)}>{l}</button>
           ))}
         </div>
@@ -644,14 +658,23 @@ export default function ImolocBiens() {
                   </div>
                   <div className="pb-sec">Statut actuel</div>
                   <div className="pb-statut-row">
-                    {Object.entries(STATUT_CFG).map(([k,cfg])=>(
-                      <div key={k} className={`pb-statut-pill ${form.statut===k?'on':''}`}
-                        style={form.statut===k?{borderColor:cfg.color,background:cfg.bg,color:cfg.color}:{}}
-                        onClick={()=>setF('statut',k)}>
-                        <span style={{width:7,height:7,borderRadius:'50%',background:cfg.dot,flexShrink:0}}/>
-                        {cfg.label}
-                      </div>
-                    ))}
+                    {[
+                      ['disponible',  'Disponible'],
+                      ['loue',        'Loue'],
+                      ['maintenance', 'Maintenance'],
+                      ['reserve',     'Reserve'],
+                      ['indisponible','Indisponible'],
+                    ].map(([k,lbl])=>{
+                      const cfg = STATUT_CFG[k] || STATUT_CFG.disponible
+                      return (
+                        <div key={k} className={`pb-statut-pill ${form.statut===k?'on':''}`}
+                          style={form.statut===k?{borderColor:cfg.color,background:cfg.bg,color:cfg.color}:{}}
+                          onClick={()=>setF('statut',k)}>
+                          <span style={{width:7,height:7,borderRadius:'50%',background:cfg.dot,flexShrink:0}}/>
+                          {lbl}
+                        </div>
+                      )
+                    })}
                   </div>
                 </>)}
 
@@ -875,7 +898,7 @@ export default function ImolocBiens() {
                         ['Type',      selectedBien.type],
                         ['Ville',     `${selectedBien.ville||'—'}${selectedBien.quartier?`, ${selectedBien.quartier}`:''}` ],
                         ['Superficie',selectedBien.superficie!=null?selectedBien.superficie+' m²':null],
-                        ['Pieces',    selectedBien.nb_pieces!=null?selectedBien.nb_pieces+' pieces':null],
+                        ['Pieces',    selectedBien.nombre_pieces!=null?selectedBien.nombre_pieces+' pieces':selectedBien.nb_pieces!=null?selectedBien.nb_pieces+' pieces':null],
                       ].map(([k,v])=>(
                         <div key={k} className="pb-blk">
                           <div className="pb-blk-lbl">{k}</div>
