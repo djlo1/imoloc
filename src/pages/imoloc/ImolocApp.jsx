@@ -363,7 +363,7 @@ export default function ImolocApp() {
               <Route path="proprietaires/*" element={<Proprietaires />} />
               <Route path="biens/*" element={<Biens />} />
               <Route path="locataires/*" element={<Soon title="Locataires" icon="👥"/>} />
-              <Route path="baux/*" element={<Soon title="Baux et Contrats" icon="📄"/>} />
+              <Route path="baux/*" element={<Baux />} />
               <Route path="paiements/*" element={<Soon title="Paiements" icon="💰"/>} />
               <Route path="loci/*" element={<Soon title="Loci IA" icon="✨"/>} />
               <Route path="maintenance/*" element={<Soon title="Maintenance" icon="🔧"/>} />
