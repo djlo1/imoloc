@@ -42,6 +42,7 @@ export default function ImolocBaux() {
   const [paiements,setPaiements] = useState([])
   const [contrat,setContrat]     = useState(null)
   const [editMode,setEditMode]     = useState(false)
+  const [contratOuvert,setContratOuvert] = useState(false)
   const editableRef = useRef(null)
 
    // HTML du contrat genere
@@ -136,8 +137,9 @@ export default function ImolocBaux() {
       setEditMode(false)
       // Sauvegarder en DB
       if (bail?.id) {
-        await supabase.from('baux').update({contrat_html:html}).eq('id',bail.id)
-        setSelBail(prev=>prev?{...prev,contrat_html:html}:prev)
+        const now = new Date().toISOString()
+        await supabase.from('baux').update({contrat_html:html,contrat_date:now,contrat_statut:'brouillon'}).eq('id',bail.id)
+        setSelBail(prev=>prev?{...prev,contrat_html:html,contrat_date:now,contrat_statut:'brouillon'}:prev)
       }
     } catch(e){ setContrat('<p style="color:#ef4444">Erreur generation: '+e.message+'</p>') }
     finally{ setLoadingContrat(false) }
@@ -454,7 +456,7 @@ export default function ImolocBaux() {
                   const fin=b.date_fin?new Date(b.date_fin):null
                   const exp=b.statut==='actif'&&fin&&fin<=in30&&fin>=now
                   return(
-                    <tr key={b.id} onClick={()=>{setSelBail(b);setTab('infos');setContrat(b.contrat_html||null);setModeleActif(null);setEditMode(false);loadPaiements(b.id)}}>
+                    <tr key={b.id} onClick={()=>{setSelBail(b);setTab('infos');setContrat(b.contrat_html||null);setModeleActif(null);setEditMode(false);setContratOuvert(false);loadPaiements(b.id)}}>
                       <td><div style={{fontWeight:600,color:'#e6edf3',fontSize:13}}>{b.titre||b.biens?.nom||'—'}</div><div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>{b.biens?.nom||'—'} · {b.biens?.ville||'—'}</div></td>
                       <td style={{fontSize:12.5}}>{b.locataires?.prenom||''} {b.locataires?.nom||'—'}</td>
                       <td style={{fontSize:13,fontWeight:600,color:'#0078d4'}}>{fmt(b.loyer_mensuel)} FCFA</td>
@@ -691,87 +693,149 @@ export default function ImolocBaux() {
                 <div>
                   {loadingContrat?(
                     <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.3)'}}>Generation du contrat...</div>
-                  ):contrat?(
+                  ):!contratOuvert?(
+                    /* ── VUE LISTE ── */
                     <div>
-                      <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap',alignItems:'center'}}>
-                        <button className='bx-btn bx-btn-p' onClick={()=>exporterPDF(selBail)}>PDF</button>
-                        <button className={'bx-btn'+(editMode?' bx-btn-y':'')} onClick={()=>{
-                          if (editMode && editableRef.current) {
-                            setContrat(editableRef.current.innerHTML)
-                          }
-                          setEditMode(m=>!m)
-                        }}>{editMode?'Apercu':'Editer'}</button>
-                        {editMode&&<button className='bx-btn bx-btn-g' onClick={async()=>{
-                          const html = editableRef.current ? editableRef.current.innerHTML : contrat
-                          setContrat(html)
-                          if (selBail?.id) {
-                            await supabase.from('baux').update({contrat_html:html}).eq('id',selBail.id)
-                            setSelBail(prev=>prev?{...prev,contrat_html:html}:prev)
-                          }
-                          toast.success('Contrat sauvegarde !')
-                        }}>Sauvegarder</button>}
-                        <button className='bx-btn' onClick={()=>{setContrat(null);setEditMode(false);genererContrat(selBail)}}>Regenerer</button>
-                        {modeleActif&&<div style={{fontSize:11,color:'rgba(255,255,255,0.3)',marginLeft:'auto'}}>Modele : {modeleActif.nom}</div>}
-                      </div>
-                      {editMode?(
-                        <div style={{border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,overflow:'hidden',background:'#fff'}}>
-                          <div style={{background:'#1e2430',padding:'6px 10px',display:'flex',gap:4,borderBottom:'1px solid rgba(255,255,255,0.08)',flexWrap:'wrap',alignItems:'center'}}>
-                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:4}}>Texte</span>
-                            {[['bold','<b>G</b>','Gras'],['italic','<i>I</i>','Italique'],['underline','<u>U</u>','Souligne'],['strikeThrough','<s>S</s>','Barre']].map(([cmd,lbl,title])=>(
-                              <button key={cmd} title={title} onMouseDown={e=>{e.preventDefault();document.execCommand(cmd)}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:12,color:'#e6edf3',minWidth:28,textAlign:'center'}} dangerouslySetInnerHTML={{__html:lbl}}/>
-                            ))}
-                            <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
-                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:2}}>Titre</span>
-                            {[['h1','H1'],['h2','H2'],['h3','H3'],['p','P']].map(([tag,lbl])=>(
-                              <button key={tag} onMouseDown={e=>{e.preventDefault();document.execCommand('formatBlock',false,tag)}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3',fontWeight:tag==='h1'||tag==='h2'?700:400}}>{lbl}</button>
-                            ))}
-                            <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
-                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:2}}>Listes</span>
-                            <button title="Liste a puces" onMouseDown={e=>{e.preventDefault();document.execCommand('insertUnorderedList')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>• Liste</button>
-                            <button title="Liste numerotee" onMouseDown={e=>{e.preventDefault();document.execCommand('insertOrderedList')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>1. Liste</button>
-                            <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
-                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:2}}>Alignement</span>
-                            {[['justifyLeft','◀'],['justifyCenter','■'],['justifyRight','▶'],['justifyFull','≡']].map(([cmd,lbl])=>(
-                              <button key={cmd} title={cmd} onMouseDown={e=>{e.preventDefault();document.execCommand(cmd)}} style={{padding:'3px 7px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>{lbl}</button>
-                            ))}
-                            <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
-                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:2}}>Indentation</span>
-                            <button onMouseDown={e=>{e.preventDefault();document.execCommand('indent')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>→</button>
-                            <button onMouseDown={e=>{e.preventDefault();document.execCommand('outdent')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>←</button>
-                            <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
-                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:2}}>Couleur</span>
-                            {['#000000','#0078d4','#c0392b','#2d6a4f','#b8860b'].map(col=>(
-                              <div key={col} onMouseDown={e=>{e.preventDefault();document.execCommand('foreColor',false,col)}} style={{width:18,height:18,borderRadius:3,background:col,cursor:'pointer',border:'2px solid rgba(255,255,255,0.2)',flexShrink:0}}/>
-                            ))}
-                            <div style={{marginLeft:'auto'}}>
-                              <button onMouseDown={e=>{e.preventDefault();document.execCommand('removeFormat')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(239,68,68,0.3)',background:'rgba(239,68,68,0.08)',cursor:'pointer',fontSize:11,color:'#ef4444'}}>Reset</button>
+                      {contrat?(
+                        <div>
+                          {/* Item contrat */}
+                          <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,marginBottom:12,cursor:'pointer',transition:'all 0.15s'}}
+                            onClick={()=>{setContratOuvert(true);setEditMode(false);loadModeleActif().then(m=>setModeleActif(m))}}
+                            onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(0,120,212,0.4)'}
+                            onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.08)'}>
+                            <div style={{width:42,height:48,background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:6,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                              <div style={{fontSize:16}}>📄</div>
+                              <div style={{fontSize:7,fontWeight:700,color:'#ef4444',letterSpacing:0.5}}>PDF</div>
                             </div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:13.5,fontWeight:600,color:'#e6edf3',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                                Contrat_{(selBail?.biens?.nom||'bail').replace(/\s+/g,'_')}_{(selBail?.locataires?.nom||'').replace(/\s+/g,'_')}.pdf
+                              </div>
+                              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                <span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>
+                                  {selBail?.contrat_date ? new Date(selBail.contrat_date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}) : 'Date inconnue'}
+                                </span>
+                                <span style={{width:3,height:3,borderRadius:'50%',background:'rgba(255,255,255,0.2)'}}/>
+                                <span style={{fontSize:11,padding:'1px 7px',borderRadius:100,fontWeight:600,
+                                  background: selBail?.contrat_statut==='signe'||selBail?.contrat_statut==='valide' ? 'rgba(0,200,150,0.1)' : 'rgba(245,158,11,0.1)',
+                                  color: selBail?.contrat_statut==='signe'||selBail?.contrat_statut==='valide' ? '#00c896' : '#f59e0b',
+                                  border: `1px solid ${selBail?.contrat_statut==='signe'||selBail?.contrat_statut==='valide' ? 'rgba(0,200,150,0.2)' : 'rgba(245,158,11,0.2)'}`
+                                }}>{selBail?.contrat_statut==='signe'?'Signe':selBail?.contrat_statut==='valide'?'Valide':'Brouillon'}</span>
+                              </div>
+                            </div>
+                            <button className='bx-btn' style={{padding:'7px 10px',flexShrink:0}} title="Telecharger PDF"
+                              onClick={e=>{e.stopPropagation();exporterPDF(selBail)}}>⬇</button>
                           </div>
-                          <div
-                            ref={el=>{
-                              editableRef.current=el
-                              if(el && !el.dataset.init){
-                                el.dataset.init='1'
-                                el.innerHTML=contrat||''
-                                setTimeout(()=>el.focus(),50)
-                              }
-                            }}
-                            contentEditable
-                            suppressContentEditableWarning
-                            style={{minHeight:350,padding:'16px 20px',background:'#fff',color:'#333',fontSize:13.5,lineHeight:1.9,outline:'none',fontFamily:'Arial,sans-serif'}}
-                          />
+                          <button className='bx-btn' style={{width:'100%',justifyContent:'center',fontSize:12}} onClick={()=>{setContrat(null);genererContrat(selBail)}}>+ Regenerer un nouveau contrat</button>
                         </div>
                       ):(
-                        <div style={{background:'#f5f5f5',borderRadius:8,overflow:'hidden',maxHeight:460,overflowY:'auto'}}>
-                          <div style={{transform:'scale(0.72)',transformOrigin:'top left',width:'138.8%',minHeight:400,background:'#fff',padding:'20px 32px',fontFamily:'Arial',fontSize:13.5,lineHeight:1.9,color:'#333'}} dangerouslySetInnerHTML={{__html:contrat}}/>
+                        <div style={{textAlign:'center',padding:'40px 20px',border:'1px dashed rgba(255,255,255,0.08)',borderRadius:10}}>
+                          <div style={{fontSize:32,marginBottom:12,opacity:0.3}}>📄</div>
+                          <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Aucun contrat genere</div>
+                          <div style={{fontSize:13,color:'rgba(255,255,255,0.25)',marginBottom:20}}>Generez le contrat a partir du modele actif de votre organisation</div>
+                          <button className='bx-btn bx-btn-p' style={{margin:'0 auto'}} onClick={()=>genererContrat(selBail)}>Generer le contrat</button>
                         </div>
                       )}
                     </div>
                   ):(
-                    <div style={{textAlign:'center',padding:'40px 20px'}}>
-                      <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:12}}>Contrat de bail</div>
-                      <div style={{fontSize:13,color:'rgba(255,255,255,0.25)',marginBottom:20}}>Generez le contrat a partir du modele actif de votre organisation</div>
-                      <button className='bx-btn bx-btn-p' style={{margin:'0 auto'}} onClick={()=>genererContrat(selBail)}>Generer le contrat</button>
+                    /* ── VUE DETAIL ── */
+                    <div>
+                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14}}>
+                        <button className='bx-btn' style={{padding:'5px 10px',fontSize:12}} onClick={()=>{setContratOuvert(false);setEditMode(false)}}>← Retour</button>
+                        <span style={{fontSize:12,color:'rgba(255,255,255,0.4)',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                          Contrat_{(selBail?.biens?.nom||'bail').replace(/\s+/g,'_')}
+                        </span>
+                        <button className='bx-btn bx-btn-p' style={{padding:'5px 10px',fontSize:12}} onClick={()=>exporterPDF(selBail)}>⬇ PDF</button>
+                      </div>
+
+                      {selBail?.contrat_statut==='signe'||selBail?.contrat_statut==='valide'?(
+                        /* Contrat signe : lecture seule */
+                        <div>
+                          <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',background:'rgba(0,200,150,0.06)',border:'1px solid rgba(0,200,150,0.15)',borderRadius:8,marginBottom:14}}>
+                            <span style={{fontSize:13}}>✅</span>
+                            <div>
+                              <div style={{fontSize:13,fontWeight:600,color:'#00c896'}}>Contrat {selBail.contrat_statut==='signe'?'signe':'valide'}</div>
+                              <div style={{fontSize:11,color:'rgba(255,255,255,0.35)'}}>Ce contrat est finalise et ne peut plus etre modifie</div>
+                            </div>
+                          </div>
+                          <div style={{background:'#f5f5f5',borderRadius:8,overflow:'hidden',maxHeight:460,overflowY:'auto',marginBottom:14}}>
+                            <div style={{transform:'scale(0.72)',transformOrigin:'top left',width:'138.8%',background:'#fff',padding:'20px 32px',fontFamily:'Arial',fontSize:13.5,lineHeight:1.9,color:'#333'}} dangerouslySetInnerHTML={{__html:contrat}}/>
+                          </div>
+                          <button className='bx-btn bx-btn-p' style={{width:'100%',justifyContent:'center'}} onClick={()=>{setContrat(null);setContratOuvert(false);genererContrat(selBail)}}>
+                            Generer un nouveau contrat a partir de celui-ci
+                          </button>
+                        </div>
+                      ):(
+                        /* Contrat brouillon : modifiable */
+                        <div>
+                          <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap',alignItems:'center'}}>
+                            <button className={'bx-btn'+(editMode?' bx-btn-y':'')} onClick={()=>{
+                              if (editMode && editableRef.current) setContrat(editableRef.current.innerHTML)
+                              setEditMode(m=>!m)
+                            }}>{editMode?'Apercu':'Modifier'}</button>
+                            {editMode&&<button className='bx-btn bx-btn-g' onClick={async()=>{
+                              const html = editableRef.current ? editableRef.current.innerHTML : contrat
+                              setContrat(html)
+                              if (selBail?.id) {
+                                await supabase.from('baux').update({contrat_html:html}).eq('id',selBail.id)
+                                setSelBail(prev=>prev?{...prev,contrat_html:html}:prev)
+                              }
+                              toast.success('Contrat sauvegarde !')
+                            }}>Sauvegarder</button>}
+                            <button className='bx-btn' onClick={()=>{setContrat(null);setContratOuvert(false);genererContrat(selBail)}}>Regenerer</button>
+                            {!editMode&&<button className='bx-btn bx-btn-g' style={{marginLeft:'auto'}} onClick={async()=>{
+                              if(!confirm('Marquer ce contrat comme signe ?')) return
+                              await supabase.from('baux').update({contrat_statut:'signe'}).eq('id',selBail.id)
+                              setSelBail(prev=>prev?{...prev,contrat_statut:'signe'}:prev)
+                              toast.success('Contrat marque comme signe !')
+                            }}>Marquer comme signe</button>}
+                            {modeleActif&&<div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>Modele : {modeleActif.nom}</div>}
+                          </div>
+                          {editMode?(
+                            <div style={{border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,overflow:'hidden',background:'#fff'}}>
+                              <div style={{background:'#1e2430',padding:'6px 10px',display:'flex',gap:4,borderBottom:'1px solid rgba(255,255,255,0.08)',flexWrap:'wrap',alignItems:'center'}}>
+                                <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:4}}>Texte</span>
+                                {[['bold','<b>G</b>','Gras'],['italic','<i>I</i>','Italique'],['underline','<u>U</u>','Souligne'],['strikeThrough','<s>S</s>','Barre']].map(([cmd,lbl,title])=>(
+                                  <button key={cmd} title={title} onMouseDown={e=>{e.preventDefault();document.execCommand(cmd)}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:12,color:'#e6edf3',minWidth:28,textAlign:'center'}} dangerouslySetInnerHTML={{__html:lbl}}/>
+                                ))}
+                                <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
+                                {[['h1','H1'],['h2','H2'],['h3','H3'],['p','P']].map(([tag,lbl])=>(
+                                  <button key={tag} onMouseDown={e=>{e.preventDefault();document.execCommand('formatBlock',false,tag)}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3',fontWeight:tag==='h1'||tag==='h2'?700:400}}>{lbl}</button>
+                                ))}
+                                <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
+                                <button onMouseDown={e=>{e.preventDefault();document.execCommand('insertUnorderedList')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>• Liste</button>
+                                <button onMouseDown={e=>{e.preventDefault();document.execCommand('insertOrderedList')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>1. Liste</button>
+                                <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
+                                {[['justifyLeft','◀'],['justifyCenter','■'],['justifyRight','▶']].map(([cmd,lbl])=>(
+                                  <button key={cmd} onMouseDown={e=>{e.preventDefault();document.execCommand(cmd)}} style={{padding:'3px 7px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>{lbl}</button>
+                                ))}
+                                <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
+                                {['#000000','#0078d4','#c0392b','#2d6a4f','#b8860b'].map(col=>(
+                                  <div key={col} onMouseDown={e=>{e.preventDefault();document.execCommand('foreColor',false,col)}} style={{width:18,height:18,borderRadius:3,background:col,cursor:'pointer',border:'2px solid rgba(255,255,255,0.2)',flexShrink:0}}/>
+                                ))}
+                                <button onMouseDown={e=>{e.preventDefault();document.execCommand('removeFormat')}} style={{marginLeft:'auto',padding:'3px 8px',borderRadius:4,border:'1px solid rgba(239,68,68,0.3)',background:'rgba(239,68,68,0.08)',cursor:'pointer',fontSize:11,color:'#ef4444'}}>Reset</button>
+                              </div>
+                              <div
+                                ref={el=>{
+                                  editableRef.current=el
+                                  if(el && !el.dataset.init){
+                                    el.dataset.init='1'
+                                    el.innerHTML=contrat||''
+                                    setTimeout(()=>el.focus(),50)
+                                  }
+                                }}
+                                contentEditable
+                                suppressContentEditableWarning
+                                style={{minHeight:350,padding:'16px 20px',background:'#fff',color:'#333',fontSize:13.5,lineHeight:1.9,outline:'none',fontFamily:'Arial,sans-serif'}}
+                              />
+                            </div>
+                          ):(
+                            <div style={{background:'#f5f5f5',borderRadius:8,overflow:'hidden',maxHeight:460,overflowY:'auto'}}>
+                              <div style={{transform:'scale(0.72)',transformOrigin:'top left',width:'138.8%',background:'#fff',padding:'20px 32px',fontFamily:'Arial',fontSize:13.5,lineHeight:1.9,color:'#333'}} dangerouslySetInnerHTML={{__html:contrat}}/>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
