@@ -531,7 +531,7 @@ export default function Locataires() {
                               <span style={{fontSize:13.5,fontWeight:600,color:'#e6edf3'}}>{loc.prenom} {loc.nom}</span>
                               <Badge statut={loc.statut_global||'actif'}/>
                             </div>
-                            <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',display:'flex',gap:10'}}>
+                            <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',display:'flex',gap:10}}>
                               <span>{loc.telephone||''}</span>
                               {loc.email&&<span>· {loc.email}</span>}
                               {loc.profession&&<span>· {loc.profession}</span>}
