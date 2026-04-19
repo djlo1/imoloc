@@ -44,15 +44,7 @@ export default function ImolocBaux() {
   const [editMode,setEditMode]     = useState(false)
   const editableRef = useRef(null)
 
-  useEffect(()=>{
-    if (!editMode) return
-    setTimeout(()=>{
-      const el = editableRef.current
-      if (!el || !contrat) return
-      el.innerHTML = contrat
-      el.focus()
-    }, 150)
-  },[editMode]) // eslint-disable-line   // HTML du contrat genere
+   // HTML du contrat genere
   const [loadingContrat,setLoadingContrat] = useState(false)
   const [modeleActif,setModeleActif] = useState(null)
   const [biens,setBiens]         = useState([])
@@ -756,7 +748,14 @@ export default function ImolocBaux() {
                             </div>
                           </div>
                           <div
-                            ref={editableRef}
+                            ref={el=>{
+                              editableRef.current=el
+                              if(el && !el.dataset.init){
+                                el.dataset.init='1'
+                                el.innerHTML=contrat||''
+                                setTimeout(()=>el.focus(),50)
+                              }
+                            }}
                             contentEditable
                             suppressContentEditableWarning
                             style={{minHeight:350,padding:'16px 20px',background:'#fff',color:'#333',fontSize:13.5,lineHeight:1.9,outline:'none',fontFamily:'Arial,sans-serif'}}
