@@ -1,418 +1,594 @@
-import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../../../lib/supabase'
-import { useAuthStore } from '../../../store/authStore'
-import toast from 'react-hot-toast'
+import { useState, useEffect, useRef } from "react"
+import { supabase } from "../../../lib/supabase"
+import toast from "react-hot-toast"
+
+const TEMPLATES = [
+  {
+    id:"moderne", name:"Moderne", cat:"Contemporain",
+    desc:"Bandeau colore en haut, texte blanc, design actuel",
+    color:"#0078d4",
+  },
+  {
+    id:"classique_fr", name:"Classique Francais", cat:"Formel",
+    desc:"Style notaire francais, sobre, caracteres serifs",
+    color:"#2c3e50",
+  },
+  {
+    id:"business_us", name:"Business Americain", cat:"Legal US",
+    desc:"Style contrat americain, structure et formalisme",
+    color:"#1a1a2e",
+  },
+  {
+    id:"europeen", name:"Europeen", cat:"International",
+    desc:"Standard europeen, discret et tres professionnel",
+    color:"#003366",
+  },
+  {
+    id:"standard", name:"Standard", cat:"General",
+    desc:"Simple, clair, universel et tres lisible",
+    color:"#555555",
+  },
+  {
+    id:"minimal", name:"Minimaliste", cat:"Epure",
+    desc:"Design epure, ligne fine, le strict essentiel",
+    color:"#222222",
+  },
+  {
+    id:"corporate", name:"Corporate", cat:"Business",
+    desc:"Header sombre, style grands groupes internationaux",
+    color:"#1b2a4a",
+  },
+  {
+    id:"elegant", name:"Elegant Premium", cat:"Luxe",
+    desc:"Or et noir, prestige et standing eleve",
+    color:"#b8860b",
+  },
+  {
+    id:"benin", name:"Standard Benin", cat:"Local",
+    desc:"Conforme aux usages immobiliers beninois",
+    color:"#008751",
+  },
+  {
+    id:"profes", name:"Professionnel", cat:"Business",
+    desc:"Marine et argente, tres professionnel et serieux",
+    color:"#1f3a5f",
+  },
+  {
+    id:"colore", name:"Colore Moderne", cat:"Design",
+    desc:"Couleurs vives, bandeau diagonal, tres impactant",
+    color:"#e74c3c",
+  },
+  {
+    id:"vierge", name:"Page Vierge", cat:"Personnalise",
+    desc:"Partir de zero avec une page blanche",
+    color:"#aaaaaa",
+  },
+]
+
+function renderThumb(tpl, logo) {
+  const col = tpl.color
+  const thumbs = {
+    moderne: `<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden"><div style="background:${col};height:28%;padding:4px 6px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:3px">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;background:rgba(255,255,255,0.35);border-radius:2px"></div>`}<div style="color:#fff;font-weight:700;font-size:6px">DJLOTECH SOCIETY</div></div><div style="text-align:right"><div style="height:2px;width:22px;background:rgba(255,255,255,0.5);margin-bottom:1px"></div><div style="height:2px;width:16px;background:rgba(255,255,255,0.35);margin-left:6px"></div></div></div><div style="height:2px;background:${col}33"></div><div style="padding:4px 5px"><div style="text-align:center;margin:2px 0"><span style="font-size:5px;font-weight:700;color:${col};border-bottom:1px solid ${col};padding-bottom:1px;letter-spacing:.5px">CONTRAT DE BAIL</span></div><div style="margin-top:3px">${[80,100,90,70,95,60].map(w=>`<div style="height:1.5px;background:#e5e5e5;border-radius:1px;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
+    classique_fr: `<div style="background:#fff;height:100%;font-family:Georgia,serif;overflow:hidden;padding:5px"><div style="border:1.5px solid ${col};padding:4px;height:calc(100% - 10px)"><div style="border-bottom:1px solid ${col};padding-bottom:3px;margin-bottom:3px;display:flex;align-items:center;justify-content:space-between">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;border:1px solid ${col};border-radius:1px"></div>`}<div style="text-align:center;flex:1"><div style="font-size:6.5px;font-weight:700;color:${col}">AGENCE IMMO</div><div style="font-size:5px;color:#666;font-style:italic">notaire agree</div></div><div style="font-size:5px;color:#777;text-align:right;line-height:1.4"><div>+229 XX XX</div><div>mail@ag.com</div></div></div><div style="text-align:center;margin:2px 0"><div style="font-size:5.5px;font-weight:700;color:${col};font-family:Georgia,serif;letter-spacing:.5px">CONTRAT DE BAIL</div><div style="width:20px;height:1px;background:${col};margin:1px auto"></div></div><div style="margin-top:2px">${[90,80,100,70].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
+    business_us: `<div style="background:#fff;height:100%;font-family:'Times New Roman',serif;overflow:hidden"><div style="background:${col};height:6px"></div><div style="padding:4px 5px"><div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:3px;border-bottom:2px solid ${col};margin-bottom:3px">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:30px;height:10px;background:#e0e0e0;border-radius:1px"></div>`}<div style="text-align:right"><div style="font-size:7px;font-weight:700;color:${col}">IMMO AGENCY LLC</div><div style="font-size:4.5px;color:#666;line-height:1.4">123 Cotonou St | +229 XX</div></div></div><div style="text-align:center;margin:2px 0;padding:2px;border:1px solid ${col}"><div style="font-size:5.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${col}">LEASE AGREEMENT</div></div><div style="margin-top:2px">${[100,85,95,75].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
+    europeen: `<div style="background:#fff;height:100%;font-family:Palatino,serif;overflow:hidden;padding:4px"><div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px;padding-bottom:3px;border-bottom:1px solid ${col};margin-bottom:3px">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;border-radius:50%;background:#e8e8e8;border:1px solid ${col}"></div>`}<div style="text-align:center"><div style="font-size:6.5px;font-weight:700;color:${col}">AGENCE IMMO SARL</div><div style="height:1px;background:${col}44;margin:1px 0"></div><div style="font-size:4.5px;color:#888;letter-spacing:.3px">GESTION IMMOBILIERE</div></div><div style="font-size:4.5px;color:#777;text-align:right;line-height:1.5"><div>+229 XX XX</div><div>Cotonou</div></div></div><div style="text-align:center;margin:2px 0"><div style="font-size:5.5px;font-weight:700;color:${col};letter-spacing:.5px">CONTRAT DE BAIL IMMOBILIER</div></div><div style="margin-top:2px">${[85,100,75,90].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div>`,
+    standard: `<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden;padding:4px"><div style="display:flex;align-items:center;gap:4px;padding-bottom:3px;margin-bottom:3px;border-bottom:2px solid ${col}">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;background:#e0e0e0;border-radius:2px"></div>`}<div><div style="font-size:6.5px;font-weight:700;color:#222">AGENCE IMMO</div><div style="font-size:4.5px;color:#888">contact@agence.com | Cotonou</div></div></div><div style="margin:2px 0"><div style="font-size:6px;font-weight:700;color:${col}">CONTRAT DE BAIL</div></div><div style="margin-top:2px">${[100,90,80,95,70].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div>`,
+    minimal: `<div style="background:#fff;height:100%;font-family:Helvetica,Arial;overflow:hidden;padding:5px"><div style="display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:2px;border-bottom:1px solid #222;margin-bottom:4px">${logo ? `<img src="${logo}" style="height:12px;width:auto"/>` : `<div style="font-size:7px;font-weight:700;color:#111">AGENCE</div>`}<div style="text-align:right;font-size:4.5px;color:#999;line-height:1.5"><div>+229 XX XX</div><div>mail@ag.bj</div></div></div><div style="margin:3px 0"><div style="font-size:5.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:#333">Contrat de bail</div><div style="width:12px;height:1px;background:#222;margin-top:1px"></div></div><div style="margin-top:3px">${[100,85,95,70].map(w=>`<div style="height:1px;background:#ebebeb;margin-bottom:2px;width:${w}%"></div>`).join("")}</div></div>`,
+    corporate: `<div style="background:#fff;height:100%;font-family:Calibri,Arial;overflow:hidden"><div style="background:${col};padding:5px 6px;display:flex;align-items:center;justify-content:space-between">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:30px;height:10px;background:rgba(255,255,255,0.15);border-radius:1px"></div>`}<div style="text-align:right"><div style="font-size:6px;font-weight:700;color:#fff">AGENCE IMMO</div><div style="font-size:4.5px;color:rgba(255,255,255,0.6)">SINCE 2020</div></div></div><div style="height:3px;background:${col}66"></div><div style="padding:4px 5px"><div style="background:${col}11;border-left:2px solid ${col};padding:2px 4px;margin-bottom:3px"><div style="font-size:5.5px;font-weight:700;color:${col};letter-spacing:.5px">CONTRAT DE BAIL</div></div><div>${[100,85,95,70,80].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
+    elegant: `<div style="background:#1a1a1a;height:100%;font-family:Georgia,serif;overflow:hidden"><div style="border-bottom:1px solid ${col};padding:5px 6px;display:flex;align-items:center;justify-content:space-between">${logo ? `<img src="${logo}" style="height:14px;width:auto;filter:brightness(1.5)"/>` : `<div style="width:14px;height:14px;border:1px solid ${col};border-radius:50%"></div>`}<div style="text-align:center;flex:1"><div style="font-size:7px;font-weight:700;color:${col};letter-spacing:1px">ELITE IMMOBILIER</div><div style="font-size:4px;color:#888;letter-spacing:2px">PRESTIGE & EXCELLENCE</div></div><div style="text-align:right;font-size:4.5px;color:#888"><div>+229 XX XX</div></div></div><div style="padding:4px 5px"><div style="text-align:center;margin:2px 0;border:1px solid ${col};padding:2px"><div style="font-size:5.5px;font-weight:700;color:${col};letter-spacing:.8px">CONTRAT DE BAIL</div></div><div style="margin-top:2px">${[100,85,95,70].map(w=>`<div style="height:1.5px;background:#333;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
+    benin: `<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden"><div style="background:${col};height:4px"></div><div style="padding:4px 5px"><div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid ${col};padding-bottom:3px;margin-bottom:2px">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;background:#e0e0e0;border-radius:50%"></div>`}<div style="text-align:center"><div style="font-size:6.5px;font-weight:700;color:${col}">AGENCE IMMO BENIN</div><div style="font-size:4.5px;color:#888">Agree MEHU - IFU: XXXXXX</div></div><div style="width:18px;height:10px;background:repeating-linear-gradient(0deg,#008751 0,#008751 3px,#fcd116 3px,#fcd116 6px,#e8112d 6px,#e8112d 9px);border-radius:1px"></div></div><div style="text-align:center;font-size:5.5px;font-weight:700;color:${col};letter-spacing:.5px;margin:2px 0">CONTRAT DE BAIL</div><div>${[90,100,80,70].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
+    profes: `<div style="background:#fff;height:100%;font-family:Calibri,Arial;overflow:hidden"><div style="background:${col};padding:5px 6px"><div style="display:flex;align-items:center;gap:4px">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:2px"></div>`}<div style="flex:1"><div style="font-size:6.5px;font-weight:700;color:#fff">AGENCE PROFESSIONNELLE</div></div><div style="background:rgba(255,255,255,0.15);padding:1px 3px;border-radius:1px"><div style="font-size:4px;color:rgba(255,255,255,0.7)">CERTIFIE ISO</div></div></div></div><div style="height:2px;background:linear-gradient(to right,${col},#aaa)"></div><div style="padding:4px 5px"><div style="border-left:2px solid ${col};padding-left:3px;margin-bottom:2px"><div style="font-size:6px;font-weight:700;color:${col}">CONTRAT DE BAIL</div></div><div>${[100,85,90,75].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
+    colore: `<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden"><div style="background:linear-gradient(135deg,${col} 0%,${col}aa 50%,#ff6b6b 100%);padding:6px;display:flex;align-items:center;justify-content:space-between">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:20px;height:14px;background:rgba(255,255,255,0.3);border-radius:2px"></div>`}<div style="text-align:center"><div style="font-size:6.5px;font-weight:700;color:#fff">AGENCE IMMO</div></div><div style="width:8px;height:8px;background:rgba(255,255,255,0.4);border-radius:50%"></div></div><div style="padding:4px 5px"><div style="text-align:center;margin:2px 0"><div style="background:${col};color:#fff;font-size:5.5px;font-weight:700;display:inline-block;padding:1px 6px;border-radius:8px;letter-spacing:.5px">CONTRAT DE BAIL</div></div><div style="margin-top:2px">${[100,85,95,70].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
+    vierge: `<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden;padding:5px;border:1.5px dashed #ccc"><div style="text-align:center;margin-top:15px"><div style="font-size:20px;color:#ddd">+</div><div style="font-size:6px;color:#ccc;margin-top:2px">Page vierge</div><div style="font-size:5px;color:#ddd">Personnaliser librement</div></div></div>`,
+  }
+  return thumbs[tpl.id] || thumbs.moderne
+}
+
+function renderFull(tpl, e, content) {
+  const col = e.couleur_principale || tpl.color || "#0078d4"
+  const logo = e.logo_url || ""
+  const nom = e.nom_agence || "Agence Immobiliere"
+  const slogan = e.slogan || ""
+  const adr = e.adresse || ""
+  const tel = e.telephone || ""
+  const mail = e.email || ""
+  const web = e.site_web || ""
+  const pied = e.pied_page || ""
+  const font = tpl.font || "Arial, sans-serif"
+  const logoHtml = logo ? `<img src="${logo}" style="height:${e.taille_logo || 60}px;width:auto;object-fit:contain"/>` : ""
+  const contacts = [tel,mail,web].filter(Boolean).map(x=>`<div>${x}</div>`).join("")
+
+  const headers = {
+    moderne: `
+      <div style="background:${col};padding:22px 32px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:14px">${logoHtml}<div><div style="font-size:22px;font-weight:700;color:#fff">${nom}</div>${slogan?`<div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:2px">${slogan}</div>`:""}</div></div>
+        <div style="text-align:right;font-size:12px;color:rgba(255,255,255,0.9);line-height:1.9">${contacts}</div>
+      </div>
+      ${adr?`<div style="background:${col}22;padding:7px 32px;font-size:11.5px;color:#555;border-bottom:2px solid ${col}">${adr}</div>`:""}
+    `,
+    classique_fr: `
+      <div style="margin:24px 28px 0;border:2px solid ${col}">
+        <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid ${col}44">
+          ${logoHtml}
+          <div style="text-align:center"><div style="font-size:20px;font-weight:700;color:${col};font-family:Georgia,serif">${nom}</div>${slogan?`<div style="font-size:12px;color:#666;font-style:italic;margin-top:2px">${slogan}</div>`:""}</div>
+          <div style="text-align:right;font-size:11px;color:#555;line-height:1.9">${contacts}</div>
+        </div>
+        ${adr?`<div style="padding:7px 20px;text-align:center;font-size:11px;color:#666">${adr}</div>`:""}
+      </div>
+    `,
+    business_us: `
+      <div style="border-top:6px solid ${col}">
+        <div style="padding:18px 32px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid ${col}">
+          <div style="display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:20px;font-weight:700;color:${col}">${nom}</div>${adr?`<div style="font-size:11px;color:#777;margin-top:2px">${adr}</div>`:""}</div></div>
+          <div style="text-align:right;font-size:11px;color:#555;line-height:1.9">${contacts}</div>
+        </div>
+      </div>
+    `,
+    europeen: `
+      <div style="padding:20px 32px">
+        <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;padding-bottom:14px;border-bottom:1px solid ${col}">
+          ${logoHtml}
+          <div style="text-align:center"><div style="font-size:20px;font-weight:700;color:${col};font-family:Palatino,serif">${nom}</div>${slogan?`<div style="font-size:11px;color:#888;letter-spacing:1px;margin-top:3px;text-transform:uppercase">${slogan}</div>`:""}</div>
+          <div style="text-align:right;font-size:11px;color:#666;line-height:1.9">${contacts}${adr?`<div style="color:#999">${adr}</div>`:""}</div>
+        </div>
+      </div>
+    `,
+    standard: `
+      <div style="padding:18px 32px;border-bottom:2px solid ${col};display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:20px;font-weight:700;color:#222">${nom}</div>${slogan?`<div style="font-size:11px;color:#888;margin-top:2px">${slogan}</div>`:""}</div></div>
+        <div style="text-align:right;font-size:11px;color:#666;line-height:1.9">${contacts}${adr?`<div>${adr}</div>`:""}</div>
+      </div>
+    `,
+    minimal: `
+      <div style="padding:24px 40px 16px;display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #222">
+        <div style="display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:18px;font-weight:600;color:#111">${nom}</div>${slogan?`<div style="font-size:11px;color:#aaa;margin-top:2px">${slogan}</div>`:""}</div></div>
+        <div style="text-align:right;font-size:11px;color:#aaa;line-height:1.9">${contacts}${adr?`<div>${adr}</div>`:""}</div>
+      </div>
+    `,
+    corporate: `
+      <div style="background:${col}">
+        <div style="padding:18px 32px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:20px;font-weight:700;color:#fff">${nom}</div>${slogan?`<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px">${slogan}</div>`:""}</div></div>
+          <div style="text-align:right;font-size:11px;color:rgba(255,255,255,0.7);line-height:1.9">${contacts}</div>
+        </div>
+      </div>
+      <div style="height:3px;background:linear-gradient(to right,${col}99,transparent)"></div>
+      ${adr?`<div style="padding:6px 32px;font-size:11px;color:#888">${adr}</div>`:""}
+    `,
+    elegant: `
+      <div style="background:#1a1a1a;padding:22px 32px;border-bottom:1px solid ${col};display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:14px">${logoHtml}<div><div style="font-size:20px;font-weight:700;color:${col};font-family:Georgia,serif;letter-spacing:1px">${nom.toUpperCase()}</div>${slogan?`<div style="font-size:10px;color:#888;letter-spacing:2px;margin-top:3px;text-transform:uppercase">${slogan}</div>`:""}</div></div>
+        <div style="text-align:right;font-size:11px;color:#888;line-height:1.9">${contacts}</div>
+      </div>
+      ${adr?`<div style="background:#111;padding:6px 32px;font-size:11px;color:#666">${adr}</div>`:""}
+    `,
+    benin: `
+      <div>
+        <div style="background:${col};height:5px"></div>
+        <div style="padding:16px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid ${col}">
+          ${logoHtml}
+          <div style="text-align:center"><div style="font-size:20px;font-weight:700;color:${col}">${nom}</div>${slogan?`<div style="font-size:11px;color:#888;margin-top:2px">${slogan}</div>`:""}<div style="font-size:10px;color:#aaa;margin-top:2px">Agence agree - MEHU Benin</div></div>
+          <div style="text-align:center"><div style="width:24px;height:40px;background:repeating-linear-gradient(0deg,#008751 0,#008751 13px,#fcd116 13px,#fcd116 26px,#e8112d 26px,#e8112d 40px);border-radius:2px"></div></div>
+        </div>
+        ${adr?`<div style="padding:6px 32px;font-size:11px;color:#666;text-align:center">${adr} | ${tel}</div>`:""}
+      </div>
+    `,
+    profes: `
+      <div style="background:${col}">
+        <div style="padding:18px 32px;display:flex;align-items:center;gap:14px">${logoHtml}<div style="flex:1"><div style="font-size:20px;font-weight:700;color:#fff">${nom}</div>${slogan?`<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px">${slogan}</div>`:""}</div><div style="text-align:right;font-size:11px;color:rgba(255,255,255,0.8);line-height:1.9">${contacts}</div></div>
+      </div>
+      <div style="height:2px;background:linear-gradient(to right,${col},#aaa,transparent)"></div>
+      ${adr?`<div style="padding:6px 32px;font-size:11px;color:#888">${adr}</div>`:""}
+    `,
+    colore: `
+      <div style="background:linear-gradient(135deg,${col} 0%,${col}cc 60%,#ff6b6b 100%);padding:22px 32px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:14px">${logoHtml}<div><div style="font-size:22px;font-weight:700;color:#fff">${nom}</div>${slogan?`<div style="font-size:11px;color:rgba(255,255,255,0.85);margin-top:2px">${slogan}</div>`:""}</div></div>
+        <div style="text-align:right;font-size:11px;color:rgba(255,255,255,0.9);line-height:1.9">${contacts}</div>
+      </div>
+      ${adr?`<div style="padding:7px 32px;font-size:11px;color:#666;background:${col}11">${adr}</div>`:""}
+    `,
+    none: ``,
+  }
+
+  const titles = {
+    moderne: `<div style="text-align:center;margin:24px 0 32px"><div style="font-size:17px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${col};border-bottom:2px solid ${col};display:inline-block;padding-bottom:6px">CONTRAT DE BAIL</div></div>`,
+    classique_fr: `<div style="text-align:center;margin:28px 0 24px"><div style="font-size:18px;font-weight:700;font-family:Georgia,serif;color:#333;letter-spacing:1px">CONTRAT DE BAIL IMMOBILIER</div><div style="width:80px;height:2px;background:${col};margin:10px auto"></div></div>`,
+    business_us: `<div style="background:${col}11;border:1px solid ${col}33;padding:14px 32px;margin:20px 32px;text-align:center"><div style="font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${col}">RESIDENTIAL LEASE AGREEMENT</div></div>`,
+    europeen: `<div style="text-align:center;margin:22px 0"><div style="font-size:16px;font-weight:700;color:${col};font-family:Palatino,serif;letter-spacing:1px">CONTRAT DE BAIL IMMOBILIER</div><div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-top:8px"><div style="flex:1;height:1px;background:${col}44;max-width:60px"></div><div style="width:6px;height:6px;border-radius:50%;background:${col}"></div><div style="flex:1;height:1px;background:${col}44;max-width:60px"></div></div></div>`,
+    standard: `<div style="margin:20px 0 24px"><div style="font-size:16px;font-weight:700;color:${col};border-left:3px solid ${col};padding-left:12px">CONTRAT DE BAIL</div></div>`,
+    minimal: `<div style="margin:28px 0 20px"><div style="font-size:15px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#222">Contrat de bail</div><div style="width:28px;height:2px;background:${col};margin-top:6px"></div></div>`,
+    corporate: `<div style="background:${col}11;border-left:3px solid ${col};padding:12px 20px;margin:20px 0 24px"><div style="font-size:16px;font-weight:700;letter-spacing:1px;color:${col}">CONTRAT DE BAIL</div></div>`,
+    elegant: `<div style="text-align:center;margin:28px 0;border:1px solid ${col};padding:14px;margin:24px 32px"><div style="font-size:16px;font-weight:700;color:${col};letter-spacing:3px;font-family:Georgia,serif">CONTRAT DE BAIL IMMOBILIER</div></div>`,
+    benin: `<div style="text-align:center;margin:20px 0"><div style="font-size:16px;font-weight:700;color:${col};text-transform:uppercase;letter-spacing:1px">CONTRAT DE BAIL</div><div style="font-size:11px;color:#888;margin-top:4px">Conforme au droit immobilier beninois</div><div style="width:60px;height:2px;background:${col};margin:8px auto"></div></div>`,
+    profes: `<div style="border-left:4px solid ${col};padding:10px 16px;margin:20px 0 24px;background:${col}08"><div style="font-size:16px;font-weight:700;color:${col};letter-spacing:1px">CONTRAT DE BAIL PROFESSIONNEL</div></div>`,
+    colore: `<div style="text-align:center;margin:20px 0 28px"><div style="background:${col};color:#fff;display:inline-block;padding:8px 24px;border-radius:20px;font-size:15px;font-weight:700;letter-spacing:1.5px">CONTRAT DE BAIL</div></div>`,
+    none: `<div style="text-align:center;margin:40px 0 32px"><div style="font-size:18px;font-weight:700;color:#333;letter-spacing:1px">CONTRAT DE BAIL</div><div style="width:60px;height:2px;background:#333;margin:8px auto"></div></div>`,
+  }
+
+  const header = headers[tpl.id] || headers.moderne
+  const title = titles[tpl.id] || titles.moderne
+  const bg = tpl.id === "elegant" ? "#fff" : "#fff"
+  const padding = tpl.id === "classique_fr" || tpl.id === "business_us" ? "20px 32px" : "20px 32px"
+
+  return `<div style="font-family:${font};background:${bg};min-height:297mm;color:#333">
+    ${header}
+    <div style="padding:${padding}">
+      ${title}
+      <div style="font-size:13.5px;line-height:1.9;color:#333">${content || "<p style=\"color:#bbb;font-style:italic\">Contenu du bail a saisir dans l editeur...</p>"}</div>
+    </div>
+    ${pied ? `<div style="padding:12px 32px;border-top:1px solid ${tpl.id==="elegant"?"#333":"#eee"};display:flex;justify-content:space-between;font-size:10px;color:${tpl.id==="elegant"?"#666":"#aaa"};margin-top:40px"><span>${nom}</span><span>${pied}</span><span>Page 1 / 1</span></div>` : ""}
+  </div>`
+}
 
 export default function ModelesDocuments() {
-  const { profile } = useAuthStore()
-  const [agence, setAgence]   = useState(null)
-  const [params, setParams]   = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving]   = useState(false)
-  const [tab, setTab]         = useState('entete')
-  const [uploadingLogo, setUploadingLogo] = useState(false)
-  const logoRef = useRef(null)
+  const [agence, setAgence]         = useState(null)
+  const [loading, setLoading]       = useState(true)
+  const [saving, setSaving]         = useState(false)
+  const [view, setView]             = useState("gallery")
+  const [selTpl, setSelTpl]         = useState("moderne")
+  const [bailContent, setBailContent] = useState("")
+  const [quillReady, setQuillReady] = useState(false)
+  const [logoUploading, setLogoUploading] = useState(false)
+  const quillRef    = useRef(null)
+  const logoInputRef= useRef(null)
 
   const [entete, setEntete] = useState({
-    logo_url: '',
-    nom_agence: '',
-    slogan: '',
-    adresse: '',
-    telephone: '',
-    email: '',
-    site_web: '',
-    couleur_principale: '#0078d4',
-    couleur_secondaire: '#00c896',
-    pied_page: '',
-    afficher_logo: true,
-    afficher_slogan: true,
-    afficher_site: true,
-    taille_logo: '80',
-    style_entete: 'moderne',
+    logo_url:"", nom_agence:"", slogan:"", adresse:"",
+    telephone:"", email:"", site_web:"",
+    couleur_principale:"#0078d4",
+    pied_page:"", taille_logo:"70",
   })
   const setE = (k,v) => setEntete(f=>({...f,[k]:v}))
 
-  useEffect(()=>{ initData() },[]) // eslint-disable-line
+  useEffect(()=>{ initData() },[])
+
+  useEffect(()=>{
+    if (view !== "editor") return
+    loadQuill()
+  },[view])
 
   const initData = async () => {
     setLoading(true)
     try {
       const { data:{ user } } = await supabase.auth.getUser()
-      const { data:agList }   = await supabase.from('agences').select('*')
-      const ag = agList?.find(a=>a.profile_id===user.id)||agList?.[0]
+      const { data:agList }   = await supabase.from("agences").select("*")
+      const ag = agList?.find(a=>a.profile_id===user.id) || agList?.[0]
       setAgence(ag)
       if (!ag?.id) return
-
-      const { data:p } = await supabase
-        .from('parametres_organisation')
-        .select('*')
-        .eq('agence_id', ag.id)
-        .single()
-
-      if (p) {
-        setParams(p)
-        const e = p.modele_entete || {}
+      const { data:p } = await supabase.from("parametres_organisation").select("*").eq("agence_id",ag.id).single()
+      if (p?.modele_entete) {
+        const e = p.modele_entete
         setEntete(prev=>({
           ...prev,
-          logo_url:          ag.logo_url || e.logo_url || '',
-          nom_agence:        ag.nom || '',
-          slogan:            e.slogan || '',
-          adresse:           ag.adresse || e.adresse || '',
-          telephone:         ag.telephone || e.telephone || '',
-          email:             ag.email || e.email || '',
-          site_web:          ag.site_web || e.site_web || '',
-          couleur_principale:e.couleur_principale || p.couleur_principale || '#0078d4',
-          couleur_secondaire:e.couleur_secondaire || '#00c896',
-          pied_page:         e.pied_page || '',
-          afficher_logo:     e.afficher_logo !== false,
-          afficher_slogan:   e.afficher_slogan !== false,
-          afficher_site:     e.afficher_site !== false,
-          taille_logo:       e.taille_logo || '80',
-          style_entete:      e.style_entete || 'moderne',
+          logo_url:          e.logo_url || ag.logo_url || "",
+          nom_agence:        ag.nom || "",
+          slogan:            e.slogan || "",
+          adresse:           e.adresse || ag.adresse || "",
+          telephone:         e.telephone || ag.telephone || "",
+          email:             e.email || ag.email || "",
+          site_web:          e.site_web || ag.site_web || "",
+          couleur_principale:e.couleur_principale || p.couleur_principale || "#0078d4",
+          pied_page:         e.pied_page || "",
+          taille_logo:       e.taille_logo || "70",
         }))
+        if (e.selected_template) setSelTpl(e.selected_template)
+        if (e.bail_content) setBailContent(e.bail_content)
+      } else {
+        setEntete(prev=>({...prev, nom_agence:ag.nom||"", adresse:ag.adresse||"", telephone:ag.telephone||"", email:ag.email||"", site_web:ag.site_web||""}))
       }
     } catch(e){ console.error(e) }
     finally{ setLoading(false) }
   }
 
-  const uploadLogo = async (file) => {
-    if (!file || !agence?.id) return
-    setUploadingLogo(true)
-    try {
-      const ext  = file.name.split('.').pop()
-      const path = 'logos/agence_'+agence.id+'.'+ext
-      const { error:upErr } = await supabase.storage
-        .from('documents')
-        .upload(path, file, { upsert:true, contentType:file.type })
-      if (upErr) throw upErr
-
-      const { data:{ publicUrl } } = supabase.storage
-        .from('documents')
-        .getPublicUrl(path)
-
-      await supabase.from('agences').update({ logo_url:publicUrl }).eq('id', agence.id)
-      setE('logo_url', publicUrl)
-      toast.success('Logo uploade avec succes !')
-    } catch(e){ toast.error('Erreur upload: '+e.message) }
-    finally{ setUploadingLogo(false) }
+  const loadQuill = () => {
+    if (window.Quill) { initQuill(); return }
+    if (!document.querySelector("#quill-css")) {
+      const link = document.createElement("link")
+      link.id = "quill-css"
+      link.rel = "stylesheet"
+      link.href = "https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css"
+      document.head.appendChild(link)
+    }
+    const script = document.createElement("script")
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"
+    script.onload = () => initQuill()
+    document.head.appendChild(script)
   }
 
-  const saveEntete = async () => {
+  const initQuill = () => {
+    setTimeout(()=>{
+      const el = document.getElementById("quill-editor-zone")
+      if (!el || quillRef.current) return
+      quillRef.current = new window.Quill(el, {
+        theme:"snow",
+        placeholder:"Redigez le contenu du bail ici...",
+        modules:{
+          toolbar:[
+            [{ header:[1,2,3,4,false] }],
+            [{ font:[] }],
+            [{ size:["small",false,"large","huge"] }],
+            ["bold","italic","underline","strike"],
+            [{ color:[] },{ background:[] }],
+            [{ align:[] }],
+            [{ list:"ordered" },{ list:"bullet" }],
+            [{ indent:"-1" },{ indent:"+1" }],
+            ["blockquote","code-block"],
+            ["link","clean"],
+            [{ script:"sub" },{ script:"super" }],
+          ]
+        }
+      })
+      if (bailContent) quillRef.current.clipboard.dangerouslyPasteHTML(bailContent)
+      quillRef.current.on("text-change",()=>{
+        setBailContent(quillRef.current.root.innerHTML)
+      })
+      setQuillReady(true)
+    },300)
+  }
+
+  const handleLogoUpload = (file) => {
+    if (!file) return
+    if (file.size > 2*1024*1024) { toast.error("Logo trop lourd (max 2MB)"); return }
+    setLogoUploading(true)
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setE("logo_url", ev.target.result)
+      setLogoUploading(false)
+      toast.success("Logo charge !")
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const saveModele = async () => {
     if (!agence?.id) return
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from('parametres_organisation')
-        .upsert({
-          agence_id:       agence.id,
-          modele_entete:   entete,
-          couleur_principale: entete.couleur_principale,
-          updated_at:      new Date().toISOString(),
-        }, { onConflict:'agence_id' })
+      const data = { ...entete, selected_template:selTpl, bail_content:bailContent }
+      const { error } = await supabase.from("parametres_organisation").upsert({
+        agence_id:agence.id,
+        modele_entete:data,
+        couleur_principale:entete.couleur_principale,
+        updated_at:new Date().toISOString(),
+      },{ onConflict:"agence_id" })
       if (error) throw error
-      // Mettre a jour aussi agences
-      await supabase.from('agences').update({
-        adresse:  entete.adresse,
-        telephone:entete.telephone,
-        email:    entete.email,
-        site_web: entete.site_web,
-      }).eq('id', agence.id)
-      toast.success('Modele sauvegarde !')
+      toast.success("Modele sauvegarde !")
     } catch(e){ toast.error(e.message) }
     finally{ setSaving(false) }
   }
 
-  // Preview HTML du document
-  const renderPreview = () => {
-    const col = entete.couleur_principale
-    const col2= entete.couleur_secondaire
-    const isMod = entete.style_entete === 'moderne'
-    const isClass = entete.style_entete === 'classique'
-    const logoSize = parseInt(entete.taille_logo)||80
+  const currentTpl = TEMPLATES.find(t=>t.id===selTpl) || TEMPLATES[0]
 
-    if (isMod) return `
-      <div style="font-family:Arial,sans-serif;background:#fff;min-height:297mm;padding:0;color:#222">
-        <div style="background:${col};padding:24px 32px;display:flex;align-items:center;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:16px">
-            ${entete.afficher_logo && entete.logo_url ? `<img src="${entete.logo_url}" style="height:${logoSize}px;width:auto;object-fit:contain;border-radius:4px;background:#fff;padding:4px"/>` : ''}
-            <div>
-              <div style="font-size:22px;font-weight:700;color:#fff">${entete.nom_agence||'Nom agence'}</div>
-              ${entete.afficher_slogan && entete.slogan ? `<div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:2px">${entete.slogan}</div>` : ''}
-            </div>
-          </div>
-          <div style="text-align:right;font-size:12px;color:rgba(255,255,255,0.9);line-height:1.8">
-            ${entete.telephone ? `<div>${entete.telephone}</div>` : ''}
-            ${entete.email ? `<div>${entete.email}</div>` : ''}
-            ${entete.afficher_site && entete.site_web ? `<div>${entete.site_web}</div>` : ''}
-          </div>
-        </div>
-        ${entete.adresse ? `<div style="background:${col}22;padding:8px 32px;font-size:12px;color:#555;border-bottom:2px solid ${col}">${entete.adresse}</div>` : ''}
-        <div style="padding:32px 32px 20px">
-          <div style="text-align:center;margin:20px 0 32px">
-            <div style="font-size:18px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${col};border-bottom:2px solid ${col};display:inline-block;padding-bottom:6px">CONTRAT DE BAIL</div>
-          </div>
-          <p style="color:#888;font-size:13px;line-height:1.8">Le contenu du bail apparaitra ici apres edition...</p>
-        </div>
-        ${entete.pied_page ? `
-          <div style="position:absolute;bottom:0;left:0;right:0;padding:12px 32px;border-top:2px solid ${col};display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#888">
-            <span>${entete.nom_agence}</span>
-            <span>${entete.pied_page}</span>
-            <span>Page 1</span>
-          </div>
-        ` : ''}
-      </div>
-    `
-
-    if (isClass) return `
-      <div style="font-family:Georgia,serif;background:#fff;min-height:297mm;padding:32px;color:#222">
-        <div style="border:2px solid ${col};padding:20px;margin-bottom:24px">
-          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid ${col};padding-bottom:16px;margin-bottom:16px">
-            ${entete.afficher_logo && entete.logo_url ? `<img src="${entete.logo_url}" style="height:${logoSize}px;width:auto;object-fit:contain"/>` : '<div></div>'}
-            <div style="text-align:center">
-              <div style="font-size:20px;font-weight:700;color:${col}">${entete.nom_agence||'Nom agence'}</div>
-              ${entete.afficher_slogan && entete.slogan ? `<div style="font-size:12px;color:#666;font-style:italic;margin-top:3px">${entete.slogan}</div>` : ''}
-            </div>
-            <div style="text-align:right;font-size:11px;color:#555;line-height:1.9">
-              ${entete.telephone ? `<div>${entete.telephone}</div>` : ''}
-              ${entete.email ? `<div>${entete.email}</div>` : ''}
-              ${entete.afficher_site && entete.site_web ? `<div>${entete.site_web}</div>` : ''}
-            </div>
-          </div>
-          ${entete.adresse ? `<div style="text-align:center;font-size:12px;color:#666">${entete.adresse}</div>` : ''}
-        </div>
-        <div style="text-align:center;margin:24px 0">
-          <div style="font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:3px;color:${col}">CONTRAT DE BAIL</div>
-          <div style="width:60px;height:2px;background:${col};margin:8px auto 0"></div>
-        </div>
-        <p style="color:#888;font-size:13px;font-style:italic;line-height:1.8;margin-top:24px">Le contenu du bail apparaitra ici apres edition...</p>
-        ${entete.pied_page ? `<div style="margin-top:40px;padding-top:12px;border-top:1px solid #ccc;text-align:center;font-size:11px;color:#888">${entete.pied_page}</div>` : ''}
-      </div>
-    `
-
-    // Minimaliste
-    return `
-      <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;min-height:297mm;padding:40px;color:#222">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid #eee">
-          <div style="display:flex;align-items:center;gap:14px">
-            ${entete.afficher_logo && entete.logo_url ? `<img src="${entete.logo_url}" style="height:${logoSize}px;width:auto;object-fit:contain"/>` : ''}
-            <div>
-              <div style="font-size:18px;font-weight:600;color:#111">${entete.nom_agence||'Nom agence'}</div>
-              ${entete.afficher_slogan && entete.slogan ? `<div style="font-size:12px;color:#999;margin-top:2px">${entete.slogan}</div>` : ''}
-            </div>
-          </div>
-          <div style="text-align:right;font-size:12px;color:#666;line-height:2">
-            ${entete.adresse ? `<div>${entete.adresse}</div>` : ''}
-            ${entete.telephone ? `<div>${entete.telephone}</div>` : ''}
-            ${entete.email ? `<div>${entete.email}</div>` : ''}
-            ${entete.afficher_site && entete.site_web ? `<div style="color:${col}">${entete.site_web}</div>` : ''}
-          </div>
-        </div>
-        <div style="margin:28px 0;text-align:center">
-          <div style="font-size:15px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#333">Contrat de bail</div>
-          <div style="width:32px;height:2px;background:${col};margin:8px auto 0"></div>
-        </div>
-        <p style="color:#aaa;font-size:13px;line-height:1.9;margin-top:24px">Le contenu du bail apparaitra ici apres edition...</p>
-        ${entete.pied_page ? `<div style="margin-top:40px;padding-top:10px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:10px;color:#bbb"><span>${entete.nom_agence}</span><span>${entete.pied_page}</span><span>Page 1</span></div>` : ''}
-      </div>
-    `
-  }
-
-  if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:400,color:'rgba(255,255,255,0.3)'}}>Chargement...</div>
+  if (loading) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:400,color:"rgba(255,255,255,0.3)"}}>Chargement...</div>
 
   return (
     <>
       <style>{`
-        .md-page{display:flex;flex-direction:column;gap:0;height:100%}
-        .md-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
-        .md-title{font-size:22px;font-weight:700;color:#e6edf3;letter-spacing:-0.02em}
-        .md-sub{font-size:13.5px;color:rgba(255,255,255,0.4);margin-top:3px}
-        .md-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:5px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:Inter,sans-serif;transition:all 0.15s}
-        .md-btn:hover{background:rgba(255,255,255,0.09);color:#e6edf3}
+        .md-root{display:flex;flex-direction:column;gap:0;min-height:100%}
+        .md-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+        .md-h1{font-size:22px;font-weight:700;color:#e6edf3;letter-spacing:-0.02em;margin-bottom:3px}
+        .md-sub{font-size:13px;color:rgba(255,255,255,0.4)}
+        .md-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:5px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:Inter,sans-serif;transition:all 0.15s;white-space:nowrap}
+        .md-btn:hover:not(:disabled){background:rgba(255,255,255,0.09);color:#e6edf3}
         .md-btn-p{background:#0078d4;border-color:#0078d4;color:#fff}.md-btn-p:hover{background:#006cc1}
-        .md-tabs{display:flex;gap:2px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:3px;margin-bottom:24px;width:fit-content}
+        .md-btn-g{background:rgba(0,200,150,0.08);border-color:rgba(0,200,150,0.22);color:#00c896}
+        .md-tabs{display:flex;gap:2px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:3px;margin-bottom:20px;width:fit-content}
         .md-tab{padding:7px 18px;border-radius:5px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.45);transition:all 0.15s}
-        .md-tab.active{background:rgba(255,255,255,0.1);color:#e6edf3}
-        .md-body{display:grid;grid-template-columns:400px 1fr;gap:24px;flex:1}
-        .md-form{display:flex;flex-direction:column;gap:16px;overflow-y:auto;padding-right:4px}
-        .md-form::-webkit-scrollbar{width:4px}.md-form::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
-        .md-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:18px 20px}
-        .md-card-title{font-size:13px;font-weight:700;color:#e6edf3;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-        .md-lbl{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);margin-bottom:6px}
-        .md-inp{width:100%;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-family:Inter,sans-serif;font-size:13.5px;color:#e6edf3;outline:none;transition:border-color 0.15s;color-scheme:dark;box-sizing:border-box}
+        .md-tab.on{background:rgba(255,255,255,0.1);color:#e6edf3}
+        .md-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+        .md-tcard{background:rgba(255,255,255,0.02);border:1.5px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;cursor:pointer;transition:all 0.2s}
+        .md-tcard:hover{border-color:rgba(0,120,212,0.35);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+        .md-tcard.on{border-color:#0078d4;box-shadow:0 0 0 2px rgba(0,120,212,0.2)}
+        .md-tthumb{height:120px;overflow:hidden;background:#f5f5f5;position:relative}
+        .md-tinfo{padding:10px 12px}
+        .md-tname{font-size:13px;font-weight:600;color:#e6edf3;margin-bottom:2px}
+        .md-tcat{font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em}
+        .md-tdesc{font-size:11.5px;color:rgba(255,255,255,0.4);line-height:1.5;margin-bottom:8px}
+        .md-tuse{width:100%;padding:7px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:#0078d4;color:#fff;font-family:Inter,sans-serif;transition:background 0.15s}
+        .md-tuse:hover{background:#006cc1}
+        .md-editor-wrap{display:grid;grid-template-columns:280px 1fr 380px;gap:16px;align-items:start}
+        .md-settings{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden}
+        .md-shead{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);font-size:13px;font-weight:600;color:#e6edf3}
+        .md-sbody{padding:14px 16px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 200px);overflow-y:auto}
+        .md-sbody::-webkit-scrollbar{width:3px}.md-sbody::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+        .md-lbl{display:block;font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.45);margin-bottom:5px}
+        .md-inp{width:100%;padding:7px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;font-family:Inter,sans-serif;font-size:13px;color:#e6edf3;outline:none;transition:border-color 0.15s;color-scheme:dark;box-sizing:border-box}
         .md-inp:focus{border-color:#0078d4}
-        .md-fld{margin-bottom:12px}
-        .md-g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-        .md-toggle{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-        .md-toggle:last-child{border-bottom:none}
-        .md-toggle-lbl{font-size:13px;color:rgba(255,255,255,0.6)}
-        .md-sw{width:34px;height:18px;border-radius:9px;background:rgba(255,255,255,0.1);transition:background 0.2s;position:relative;cursor:pointer;flex-shrink:0}
-        .md-sw.on{background:#0078d4}
-        .md-sw-dot{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left 0.2s}
-        .md-sw.on .md-sw-dot{left:18px}
-        .md-preview{background:#f5f5f5;border-radius:10px;overflow:hidden;position:sticky;top:0}
-        .md-prev-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.07)}
-        .md-prev-title{font-size:12px;font-weight:600;color:rgba(255,255,255,0.5)}
-        .md-prev-body{height:600px;overflow-y:auto;overflow-x:hidden}
-        .md-logo-zone{border:2px dashed rgba(255,255,255,0.15);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.02)}
+        .md-logo-zone{border:2px dashed rgba(255,255,255,0.12);border-radius:7px;padding:14px;text-align:center;cursor:pointer;transition:all 0.2s}
         .md-logo-zone:hover{border-color:rgba(0,120,212,0.4);background:rgba(0,120,212,0.04)}
-        .md-style-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-        .md-style-item{padding:10px;border-radius:7px;border:1.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);cursor:pointer;text-align:center;transition:all 0.15s}
-        .md-style-item:hover{border-color:rgba(0,120,212,0.3)}
-        .md-style-item.on{border-color:#0078d4;background:rgba(0,120,212,0.08)}
-        .md-style-ic{font-size:22px;margin-bottom:5px}
-        .md-style-lbl{font-size:11.5px;color:rgba(255,255,255,0.55)}
-        .md-style-item.on .md-style-lbl{color:#e6edf3}
-        @media(max-width:1100px){.md-body{grid-template-columns:1fr}}
+        .md-editor-panel{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;min-height:600px}
+        .md-ehead{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between}
+        .md-vars{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.07)}
+        .md-var{padding:3px 9px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.25);color:#a78bfa;cursor:pointer;font-family:monospace}
+        .md-var:hover{background:rgba(108,99,255,0.2)}
+        .md-preview-panel{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;position:sticky;top:16px}
+        .md-prev-head{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between}
+        .md-prev-body{height:calc(100vh - 240px);overflow-y:auto;background:#f5f5f5}
+        #quill-editor-zone{min-height:450px}
+        .ql-toolbar.ql-snow{background:rgba(255,255,255,0.03);border:none;border-bottom:1px solid rgba(255,255,255,0.07)!important;padding:8px 12px}
+        .ql-container.ql-snow{border:none!important;font-size:14px;color:#333}
+        .ql-editor{min-height:420px;padding:16px 20px}
+        .ql-toolbar .ql-stroke{stroke:rgba(255,255,255,0.5)!important}
+        .ql-toolbar .ql-fill{fill:rgba(255,255,255,0.5)!important}
+        .ql-toolbar .ql-picker-label{color:rgba(255,255,255,0.5)!important}
+        .ql-toolbar button:hover .ql-stroke{stroke:#fff!important}
+        .ql-toolbar .ql-active .ql-stroke{stroke:#0078d4!important}
+        @media(max-width:1200px){.md-editor-wrap{grid-template-columns:240px 1fr}}
+        @media(max-width:900px){.md-editor-wrap{grid-template-columns:1fr}.md-preview-panel{display:none}.md-gallery{grid-template-columns:repeat(2,1fr)}}
       `}</style>
 
-      <div className="md-page">
-        <div className="md-header">
+      <div className="md-root">
+        <div className="md-topbar">
           <div>
-            <div className="md-title">Modeles de Documents</div>
-            <div className="md-sub">Configurez l entete de vos bails, quittances et factures</div>
+            <div className="md-h1">Modeles de Documents</div>
+            <div className="md-sub">Personnalisez vos contrats de bail et factures</div>
           </div>
-          <button className="md-btn md-btn-p" disabled={saving} onClick={saveEntete}>
-            {saving ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
-          </button>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            {view==="editor"&&<button className="md-btn" onClick={()=>setView("gallery")}>Changer de modele</button>}
+            <button className="md-btn md-btn-p" disabled={saving} onClick={saveModele}>{saving?"Sauvegarde...":"Sauvegarder"}</button>
+          </div>
         </div>
 
         <div className="md-tabs">
-          {[['entete','Entete et logo'],['clauses','Clauses par defaut'],['factures','Modele facture']].map(([k,l])=>(
-            <button key={k} className={'md-tab'+(tab===k?' active':'')} onClick={()=>setTab(k)}>{l}</button>
+          {[["gallery","Galerie de modeles"],["editor","Editeur"]].map(([k,l])=>(
+            <button key={k} className={"md-tab"+(view===k?" on":"")} onClick={()=>setView(k)}>{l}</button>
           ))}
         </div>
 
-        {tab === 'entete' && (
-          <div className="md-body">
-            {/* Formulaire */}
-            <div className="md-form">
-
-              {/* Logo */}
-              <div className="md-card">
-                <div className="md-card-title">Logo de l agence</div>
-                {entete.logo_url ? (
-                  <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:12}}>
-                    <img src={entete.logo_url} alt="Logo" style={{height:60,width:'auto',objectFit:'contain',borderRadius:6,background:'rgba(255,255,255,0.05)',padding:6,border:'1px solid rgba(255,255,255,0.1)'}}/>
-                    <div>
-                      <div style={{fontSize:13,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Logo actuel</div>
-                      <button className="md-btn" style={{fontSize:11,padding:'4px 10px'}} onClick={()=>logoRef.current?.click()}>Changer</button>
-                    </div>
+        {view==="gallery"&&(
+          <>
+            <div style={{marginBottom:16,padding:"12px 16px",borderRadius:8,background:"rgba(0,120,212,0.07)",border:"1px solid rgba(0,120,212,0.15)",fontSize:13,color:"rgba(255,255,255,0.5)"}}>
+              Selectionnez un modele puis cliquez <strong style={{color:"#4da6ff"}}>Utiliser ce modele</strong> pour acceder a l editeur. Modele actuel : <strong style={{color:"#e6edf3"}}>{currentTpl.name}</strong>
+            </div>
+            <div className="md-gallery">
+              {TEMPLATES.map(tpl=>(
+                <div key={tpl.id} className={"md-tcard"+(selTpl===tpl.id?" on":"")}>
+                  <div className="md-tthumb" onClick={()=>setSelTpl(tpl.id)}>
+                    <div style={{transform:"scale(1)",transformOrigin:"top left",width:"100%",height:"100%"}} dangerouslySetInnerHTML={{__html:renderThumb(tpl,entete.logo_url)}}/>
                   </div>
-                ) : (
-                  <div className="md-logo-zone" onClick={()=>logoRef.current?.click()}>
-                    <div style={{fontSize:28,marginBottom:8,opacity:0.4}}>🖼️</div>
-                    <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.5)',marginBottom:4}}>{uploadingLogo ? 'Upload en cours...' : 'Cliquer pour uploader le logo'}</div>
-                    <div style={{fontSize:12,color:'rgba(255,255,255,0.25)'}}>PNG, JPG, SVG — max 2MB</div>
-                  </div>
-                )}
-                <input ref={logoRef} type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files[0]&&uploadLogo(e.target.files[0])}/>
-                <div style={{marginTop:12}}>
-                  <label className="md-lbl">Taille du logo (px)</label>
-                  <input className="md-inp" type="range" min="40" max="150" value={entete.taille_logo} onChange={e=>setE('taille_logo',e.target.value)} style={{padding:0,border:'none',background:'none',cursor:'pointer'}}/>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',textAlign:'right'}}>{entete.taille_logo}px</div>
-                </div>
-              </div>
-
-              {/* Style */}
-              <div className="md-card">
-                <div className="md-card-title">Style de l entete</div>
-                <div className="md-style-grid">
-                  {[['moderne','Moderne','Fond colore + texte blanc'],['classique','Classique','Bordure + mise en page formelle'],['minimaliste','Minimaliste','Epure et professionnel']].map(([v,l,d])=>(
-                    <div key={v} className={'md-style-item'+(entete.style_entete===v?' on':'')} onClick={()=>setE('style_entete',v)}>
-                      <div className="md-style-ic">{v==='moderne'?'🎨':v==='classique'?'📜':'⚪'}</div>
-                      <div style={{fontSize:12,fontWeight:600,color:entete.style_entete===v?'#e6edf3':'rgba(255,255,255,0.5)',marginBottom:3}}>{l}</div>
-                      <div style={{fontSize:10.5,color:'rgba(255,255,255,0.25)',lineHeight:1.4}}>{d}</div>
+                  <div className="md-tinfo">
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
+                      <span className="md-tname">{tpl.name}</span>
+                      {selTpl===tpl.id&&<span style={{fontSize:10,padding:"1px 6px",borderRadius:"100px",background:"rgba(0,120,212,0.2)",color:"#4da6ff",fontWeight:700}}>ACTUEL</span>}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Couleurs */}
-              <div className="md-card">
-                <div className="md-card-title">Couleurs</div>
-                <div className="md-g2">
-                  <div>
-                    <label className="md-lbl">Couleur principale</label>
-                    <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                      <input type="color" value={entete.couleur_principale} onChange={e=>setE('couleur_principale',e.target.value)} style={{width:40,height:36,padding:2,borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'none',cursor:'pointer'}}/>
-                      <input className="md-inp" value={entete.couleur_principale} onChange={e=>setE('couleur_principale',e.target.value)} style={{flex:1,fontFamily:'monospace',fontSize:12}}/>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="md-lbl">Couleur secondaire</label>
-                    <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                      <input type="color" value={entete.couleur_secondaire} onChange={e=>setE('couleur_secondaire',e.target.value)} style={{width:40,height:36,padding:2,borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'none',cursor:'pointer'}}/>
-                      <input className="md-inp" value={entete.couleur_secondaire} onChange={e=>setE('couleur_secondaire',e.target.value)} style={{flex:1,fontFamily:'monospace',fontSize:12}}/>
-                    </div>
+                    <div className="md-tcat">{tpl.cat}</div>
+                    <div className="md-tdesc">{tpl.desc}</div>
+                    <button className="md-tuse" onClick={()=>{setSelTpl(tpl.id);setView("editor")}}>
+                      {selTpl===tpl.id?"Editer ce modele":"Utiliser ce modele"}
+                    </button>
                   </div>
                 </div>
-              </div>
+              ))}
+            </div>
+          </>
+        )}
 
-              {/* Infos agence */}
-              <div className="md-card">
-                <div className="md-card-title">Informations de l agence</div>
-                <div className="md-fld"><label className="md-lbl">Nom agence</label><input className="md-inp" value={entete.nom_agence} onChange={e=>setE('nom_agence',e.target.value)} placeholder="DJLOTECH Society"/></div>
-                <div className="md-fld"><label className="md-lbl">Slogan / Sous-titre</label><input className="md-inp" value={entete.slogan} onChange={e=>setE('slogan',e.target.value)} placeholder="Votre partenaire de confiance"/></div>
-                <div className="md-fld"><label className="md-lbl">Adresse complete</label><input className="md-inp" value={entete.adresse} onChange={e=>setE('adresse',e.target.value)} placeholder="Cotonou, Benin"/></div>
-                <div className="md-g2">
-                  <div><label className="md-lbl">Telephone</label><input className="md-inp" value={entete.telephone} onChange={e=>setE('telephone',e.target.value)} placeholder="+229 XX XX XX XX"/></div>
-                  <div><label className="md-lbl">Email</label><input className="md-inp" value={entete.email} onChange={e=>setE('email',e.target.value)} placeholder="contact@agence.com"/></div>
-                </div>
-                <div className="md-fld"><label className="md-lbl">Site web</label><input className="md-inp" value={entete.site_web} onChange={e=>setE('site_web',e.target.value)} placeholder="www.agence.com"/></div>
-                <div className="md-fld"><label className="md-lbl">Pied de page</label><input className="md-inp" value={entete.pied_page} onChange={e=>setE('pied_page',e.target.value)} placeholder="RC: 12345 | IFU: 9876543 | Agree MEHU"/></div>
-              </div>
+        {view==="editor"&&(
+          <div className="md-editor-wrap">
 
-              {/* Options affichage */}
-              <div className="md-card">
-                <div className="md-card-title">Options d'affichage</div>
-                {[
-                  ['afficher_logo', 'Afficher le logo'],
-                  ['afficher_slogan', 'Afficher le slogan'],
-                  ['afficher_site', 'Afficher le site web'],
-                ].map(([k,l])=>(
-                  <div key={k} className="md-toggle">
-                    <span className="md-toggle-lbl">{l}</span>
-                    <div className={'md-sw'+(entete[k]?' on':'')} onClick={()=>setE(k,!entete[k])}>
-                      <div className="md-sw-dot"/>
+            {/* Panel gauche: Parametres */}
+            <div className="md-settings">
+              <div className="md-shead">Parametres du modele</div>
+              <div className="md-sbody">
+                {/* Logo */}
+                <div>
+                  <label className="md-lbl">Logo</label>
+                  {entete.logo_url?(
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                      <img src={entete.logo_url} alt="" style={{height:44,width:"auto",objectFit:"contain",borderRadius:5,background:"rgba(255,255,255,0.05)",padding:4,border:"1px solid rgba(255,255,255,0.1)"}}/>
+                      <div>
+                        <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:4}}>Logo charge</div>
+                        <button className="md-btn" style={{fontSize:11,padding:"3px 8px"}} onClick={()=>logoInputRef.current?.click()}>{logoUploading?"Chargement...":"Changer"}</button>
+                        <button className="md-btn" style={{fontSize:11,padding:"3px 8px",marginLeft:4,color:"#ef4444"}} onClick={()=>setE("logo_url","")}>Supprimer</button>
+                      </div>
                     </div>
+                  ):(
+                    <div className="md-logo-zone" onClick={()=>logoInputRef.current?.click()}>
+                      <div style={{fontSize:22,marginBottom:4,opacity:0.4}}>+</div>
+                      <div style={{fontSize:12,color:"rgba(255,255,255,0.4)"}}>{logoUploading?"Chargement...":"Cliquer pour uploader"}</div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,0.2)"}}>PNG JPG SVG max 2MB</div>
+                    </div>
+                  )}
+                  <input ref={logoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>e.target.files[0]&&handleLogoUpload(e.target.files[0])}/>
+                </div>
+
+                {/* Couleur */}
+                <div>
+                  <label className="md-lbl">Couleur principale</label>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    <input type="color" value={entete.couleur_principale} onChange={e=>setE("couleur_principale",e.target.value)} style={{width:36,height:32,padding:2,borderRadius:5,border:"1px solid rgba(255,255,255,0.1)",background:"none",cursor:"pointer"}}/>
+                    <input className="md-inp" value={entete.couleur_principale} onChange={e=>setE("couleur_principale",e.target.value)} style={{flex:1,fontFamily:"monospace",fontSize:12}}/>
+                  </div>
+                  <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap"}}>
+                    {["#0078d4","#2c3e50","#e74c3c","#27ae60","#8e44ad","#e67e22","#b8860b","#1b2a4a","#008751","#1f3a5f"].map(c=>(
+                      <div key={c} onClick={()=>setE("couleur_principale",c)} style={{width:18,height:18,borderRadius:3,background:c,cursor:"pointer",border:entete.couleur_principale===c?"2px solid #fff":"2px solid transparent",transition:"transform 0.1s"}}/>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Taille logo */}
+                <div>
+                  <label className="md-lbl">Taille logo : {entete.taille_logo}px</label>
+                  <input type="range" min="30" max="120" value={entete.taille_logo} onChange={e=>setE("taille_logo",e.target.value)} style={{width:"100%",cursor:"pointer",accentColor:"#0078d4"}}/>
+                </div>
+
+                {/* Infos */}
+                {[["nom_agence","Nom agence"],["slogan","Slogan"],["adresse","Adresse"],["telephone","Telephone"],["email","Email"],["site_web","Site web"],["pied_page","Pied de page"]].map(([k,l])=>(
+                  <div key={k}>
+                    <label className="md-lbl">{l}</label>
+                    <input className="md-inp" value={entete[k]} onChange={e=>setE(k,e.target.value)}/>
                   </div>
                 ))}
-              </div>
 
+                {/* Changer modele */}
+                <div>
+                  <label className="md-lbl">Modele actuel</label>
+                  <select className="md-inp" value={selTpl} onChange={e=>{ setSelTpl(e.target.value); if(quillRef.current){ quillRef.current=null; setQuillReady(false); setTimeout(()=>initQuill(),100) } }}>
+                    {TEMPLATES.map(t=><option key={t.id} value={t.id} style={{background:"#161b22"}}>{t.name}</option>)}
+                  </select>
+                </div>
+              </div>
             </div>
 
-            {/* Preview */}
-            <div className="md-preview">
+            {/* Panel centre: Editeur Quill */}
+            <div className="md-editor-panel">
+              <div className="md-ehead">
+                <span style={{fontSize:13,fontWeight:600,color:"#e6edf3"}}>Contenu du bail</span>
+                <div style={{display:"flex",gap:6}}>
+                  {!quillReady&&<span style={{fontSize:12,color:"rgba(255,255,255,0.3)"}}>Chargement editeur...</span>}
+                  <button className="md-btn md-btn-g" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>{if(quillRef.current){quillRef.current.clipboard.dangerouslyPasteHTML(getDefaultContent());setBailContent(getDefaultContent())}}}>
+                    Contenu par defaut
+                  </button>
+                </div>
+              </div>
+              <div className="md-vars">
+                <span style={{fontSize:11,color:"rgba(255,255,255,0.3)",marginRight:4}}>Variables :</span>
+                {["{{locataire.nom}}","{{proprietaire.nom}}","{{bien.adresse}}","{{loyer}}","{{date_debut}}","{{date_fin}}","{{caution}}"].map(v=>(
+                  <span key={v} className="md-var" onClick={()=>{if(quillRef.current){const range=quillRef.current.getSelection();quillRef.current.insertText(range?range.index:0,v)}}}>{v}</span>
+                ))}
+              </div>
+              <div id="quill-editor-zone" style={{background:"#fff"}}/>
+            </div>
+
+            {/* Panel droit: Preview */}
+            <div className="md-preview-panel">
               <div className="md-prev-head">
-                <span className="md-prev-title">Apercu en temps reel</span>
-                <span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>Format A4</span>
+                <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.5)"}}>Apercu A4</span>
+                <span style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>{currentTpl.name}</span>
               </div>
               <div className="md-prev-body">
-                <div
-                  style={{transform:'scale(0.7)',transformOrigin:'top left',width:'142.8%',minHeight:400}}
-                  dangerouslySetInnerHTML={{__html: renderPreview()}}
-                />
+                <div style={{transform:"scale(0.55)",transformOrigin:"top left",width:"181.8%"}} dangerouslySetInnerHTML={{__html:renderFull(currentTpl,entete,bailContent)}}/>
               </div>
             </div>
-          </div>
-        )}
-
-        {tab === 'clauses' && (
-          <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:32,textAlign:'center'}}>
-            <div style={{fontSize:28,marginBottom:12,opacity:0.3}}>📜</div>
-            <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Clauses par defaut</div>
-            <div style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Configurez les clauses pre-remplies selon le type de bail — disponible avec l editeur de bail</div>
-          </div>
-        )}
-
-        {tab === 'factures' && (
-          <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:32,textAlign:'center'}}>
-            <div style={{fontSize:28,marginBottom:12,opacity:0.3}}>🧾</div>
-            <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Modele Facture</div>
-            <div style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Utilise le meme entete. La personnalisation specifique des factures sera disponible prochainement.</div>
           </div>
         )}
       </div>
     </>
   )
+}
+
+function getDefaultContent() {
+  return `<h2>ENTRE LES SOUSSIGNES</h2>
+<p><strong>Le Bailleur :</strong> {{proprietaire.nom}}, ci-apres denomme le Bailleur</p>
+<p><strong>Le Locataire :</strong> {{locataire.nom}}, ci-apres denomme le Locataire</p>
+<h2>IL A ETE CONVENU CE QUI SUIT</h2>
+<h3>Article 1 - OBJET</h3>
+<p>Le Bailleur loue au Locataire les locaux situes a : <strong>{{bien.adresse}}</strong></p>
+<h3>Article 2 - DUREE</h3>
+<p>Le present bail est consenti pour une duree de {{duree_mois}} mois, prenant effet le <strong>{{date_debut}}</strong> et se terminant le <strong>{{date_fin}}</strong>.</p>
+<h3>Article 3 - LOYER</h3>
+<p>Le loyer mensuel est fixe a la somme de <strong>{{loyer}} FCFA</strong> payable le premier de chaque mois.</p>
+<h3>Article 4 - DEPOT DE GARANTIE</h3>
+<p>Il est verse a la signature du present bail un depot de garantie de <strong>{{caution}} FCFA</strong>.</p>
+<h3>Article 5 - OBLIGATIONS DU LOCATAIRE</h3>
+<p>Le Locataire s engage a : user paisiblement des locaux, payer le loyer aux echeances convenues, maintenir les locaux en bon etat d entretien, ne pas sous-louer sans accord ecrit du Bailleur.</p>
+<h3>Article 6 - OBLIGATIONS DU BAILLEUR</h3>
+<p>Le Bailleur s engage a : delivrer un logement en bon etat, assurer la jouissance paisible, effectuer les reparations necessaires.</p>
+<h3>Article 7 - RESILIATION</h3>
+<p>En cas de resiliation anticipee, un preavis de {{delai_preavis}} jours devra etre respecte.</p>
+<br/>
+<p>Fait a ____________, le ____________</p>
+<br/>
+<p><strong>Signature du Bailleur</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Signature du Locataire</strong></p>
+<br/><br/><br/>
+<p>_________________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _________________________</p>`
 }
