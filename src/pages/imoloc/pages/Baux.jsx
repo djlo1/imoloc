@@ -41,7 +41,8 @@ export default function ImolocBaux() {
   const [saving,setSaving]       = useState(false)
   const [paiements,setPaiements] = useState([])
   const [contrat,setContrat]     = useState(null)
-  const [editMode,setEditMode]     = useState(false)   // HTML du contrat genere
+  const [editMode,setEditMode]     = useState(false)
+  const editableRef = useRef(null)   // HTML du contrat genere
   const [loadingContrat,setLoadingContrat] = useState(false)
   const [modeleActif,setModeleActif] = useState(null)
   const [biens,setBiens]         = useState([])
@@ -684,7 +685,16 @@ export default function ImolocBaux() {
                     <div>
                       <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap',alignItems:'center'}}>
                         <button className='bx-btn bx-btn-p' onClick={()=>exporterPDF(selBail)}>PDF</button>
-                        <button className={'bx-btn'+(editMode?' bx-btn-y':'')} onClick={()=>setEditMode(m=>!m)}>{editMode?'Apercu':'Editer'}</button>
+                        <button className={'bx-btn'+(editMode?' bx-btn-y':'')} onClick={()=>{
+                          if (editMode && editableRef.current) {
+                            setContrat(editableRef.current.innerHTML)
+                          }
+                          setEditMode(m=>!m)
+                        }}>{editMode?'Apercu':'Editer'}</button>
+                        {editMode&&<button className='bx-btn bx-btn-g' onClick={()=>{
+                          if (editableRef.current) setContrat(editableRef.current.innerHTML)
+                          toast.success('Contenu sauvegarde !')
+                        }}>Sauvegarder</button>}
                         <button className='bx-btn' onClick={()=>{setContrat(null);setEditMode(false);genererContrat(selBail)}}>Regenerer</button>
                         {modeleActif&&<div style={{fontSize:11,color:'rgba(255,255,255,0.3)',marginLeft:'auto'}}>Modele : {modeleActif.nom}</div>}
                       </div>
@@ -723,10 +733,9 @@ export default function ImolocBaux() {
                             </div>
                           </div>
                           <div
+                            ref={editableRef}
                             contentEditable
                             suppressContentEditableWarning
-                            onInput={e=>setContrat(e.currentTarget.innerHTML)}
-                            dangerouslySetInnerHTML={{__html:contrat||''}}
                             style={{minHeight:350,padding:'16px 20px',background:'#fff',color:'#333',fontSize:13.5,lineHeight:1.9,outline:'none',fontFamily:'Arial,sans-serif'}}
                           />
                         </div>
