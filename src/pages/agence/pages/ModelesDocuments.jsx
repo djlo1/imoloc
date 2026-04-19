@@ -3,86 +3,52 @@ import { supabase } from "../../../lib/supabase"
 import toast from "react-hot-toast"
 
 const TEMPLATES = [
-  {
-    id:"moderne", name:"Moderne", cat:"Contemporain",
-    desc:"Bandeau colore en haut, texte blanc, design actuel",
-    color:"#0078d4",
-  },
-  {
-    id:"classique_fr", name:"Classique Francais", cat:"Formel",
-    desc:"Style notaire francais, sobre, caracteres serifs",
-    color:"#2c3e50",
-  },
-  {
-    id:"business_us", name:"Business Americain", cat:"Legal US",
-    desc:"Style contrat americain, structure et formalisme",
-    color:"#1a1a2e",
-  },
-  {
-    id:"europeen", name:"Europeen", cat:"International",
-    desc:"Standard europeen, discret et tres professionnel",
-    color:"#003366",
-  },
-  {
-    id:"standard", name:"Standard", cat:"General",
-    desc:"Simple, clair, universel et tres lisible",
-    color:"#555555",
-  },
-  {
-    id:"minimal", name:"Minimaliste", cat:"Epure",
-    desc:"Design epure, ligne fine, le strict essentiel",
-    color:"#222222",
-  },
-  {
-    id:"corporate", name:"Corporate", cat:"Business",
-    desc:"Header sombre, style grands groupes internationaux",
-    color:"#1b2a4a",
-  },
-  {
-    id:"elegant", name:"Elegant Premium", cat:"Luxe",
-    desc:"Or et noir, prestige et standing eleve",
-    color:"#b8860b",
-  },
-  {
-    id:"benin", name:"Standard Benin", cat:"Local",
-    desc:"Conforme aux usages immobiliers beninois",
-    color:"#008751",
-  },
-  {
-    id:"profes", name:"Professionnel", cat:"Business",
-    desc:"Marine et argente, tres professionnel et serieux",
-    color:"#1f3a5f",
-  },
-  {
-    id:"colore", name:"Colore Moderne", cat:"Design",
-    desc:"Couleurs vives, bandeau diagonal, tres impactant",
-    color:"#e74c3c",
-  },
-  {
-    id:"vierge", name:"Page Vierge", cat:"Personnalise",
-    desc:"Partir de zero avec une page blanche",
-    color:"#aaaaaa",
-  },
+  { id:"moderne",     name:"Moderne Bleu",     cat:"Contemporain", color:"#0078d4", desc:"Bandeau colore, texte blanc, design actuel" },
+  { id:"qc_officiel", name:"Officiel Quebec",  cat:"Formulaire",   color:"#006994", desc:"Style formulaire officiel, sections colorees" },
+  { id:"lettre_fr",   name:"Lettre Francaise", cat:"Courrier Pro", color:"#2d6a4f", desc:"Mise en page lettre francaise, sobre et elegant" },
+  { id:"legal_us",    name:"Legal US Corners", cat:"Legal US",     color:"#1b2a4a", desc:"Coins decores bleu marine, tres structure" },
+  { id:"wonder",      name:"Corporate Violet", cat:"Corporate",    color:"#6b21a8", desc:"Accent violet, barre pied, style tech" },
+  { id:"classique",   name:"Classique Formel", cat:"Formel",       color:"#2c3e50", desc:"Encadrement double, serifs, tres academique" },
+  { id:"europeen",    name:"Europeen Premium", cat:"International",color:"#003366", desc:"Grille 3 colonnes, ornement central" },
+  { id:"djlotech",    name:"DJLOTECH Premium", cat:"Business",     color:"#0f4c81", desc:"Header degrade, ligne or, tres pro" },
+  { id:"elegant",     name:"Elegant Or Noir",  cat:"Luxe",         color:"#b8860b", desc:"Fond sombre, or, prestige et standing" },
+  { id:"benin",       name:"Standard Benin",   cat:"Local",        color:"#008751", desc:"Drapeau, agence agreee MEHU, droit local" },
+  { id:"minimal",     name:"Minimaliste Pur",  cat:"Epure",        color:"#222222", desc:"Ligne fine, espaces blancs, epure total" },
+  { id:"vierge",      name:"Page Vierge",      cat:"Libre",        color:"#aaaaaa", desc:"Partir de zero, page entierement libre" },
 ]
 
-function renderThumb(tpl, logo) {
-  const col = tpl.color
-  const thumbs = {
-    moderne: `<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden"><div style="background:${col};height:28%;padding:4px 6px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:3px">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;background:rgba(255,255,255,0.35);border-radius:2px"></div>`}<div style="color:#fff;font-weight:700;font-size:6px">DJLOTECH SOCIETY</div></div><div style="text-align:right"><div style="height:2px;width:22px;background:rgba(255,255,255,0.5);margin-bottom:1px"></div><div style="height:2px;width:16px;background:rgba(255,255,255,0.35);margin-left:6px"></div></div></div><div style="height:2px;background:${col}33"></div><div style="padding:4px 5px"><div style="text-align:center;margin:2px 0"><span style="font-size:5px;font-weight:700;color:${col};border-bottom:1px solid ${col};padding-bottom:1px;letter-spacing:.5px">CONTRAT DE BAIL</span></div><div style="margin-top:3px">${[80,100,90,70,95,60].map(w=>`<div style="height:1.5px;background:#e5e5e5;border-radius:1px;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
-    classique_fr: `<div style="background:#fff;height:100%;font-family:Georgia,serif;overflow:hidden;padding:5px"><div style="border:1.5px solid ${col};padding:4px;height:calc(100% - 10px)"><div style="border-bottom:1px solid ${col};padding-bottom:3px;margin-bottom:3px;display:flex;align-items:center;justify-content:space-between">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;border:1px solid ${col};border-radius:1px"></div>`}<div style="text-align:center;flex:1"><div style="font-size:6.5px;font-weight:700;color:${col}">AGENCE IMMO</div><div style="font-size:5px;color:#666;font-style:italic">notaire agree</div></div><div style="font-size:5px;color:#777;text-align:right;line-height:1.4"><div>+229 XX XX</div><div>mail@ag.com</div></div></div><div style="text-align:center;margin:2px 0"><div style="font-size:5.5px;font-weight:700;color:${col};font-family:Georgia,serif;letter-spacing:.5px">CONTRAT DE BAIL</div><div style="width:20px;height:1px;background:${col};margin:1px auto"></div></div><div style="margin-top:2px">${[90,80,100,70].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
-    business_us: `<div style="background:#fff;height:100%;font-family:'Times New Roman',serif;overflow:hidden"><div style="background:${col};height:6px"></div><div style="padding:4px 5px"><div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:3px;border-bottom:2px solid ${col};margin-bottom:3px">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:30px;height:10px;background:#e0e0e0;border-radius:1px"></div>`}<div style="text-align:right"><div style="font-size:7px;font-weight:700;color:${col}">IMMO AGENCY LLC</div><div style="font-size:4.5px;color:#666;line-height:1.4">123 Cotonou St | +229 XX</div></div></div><div style="text-align:center;margin:2px 0;padding:2px;border:1px solid ${col}"><div style="font-size:5.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${col}">LEASE AGREEMENT</div></div><div style="margin-top:2px">${[100,85,95,75].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
-    europeen: `<div style="background:#fff;height:100%;font-family:Palatino,serif;overflow:hidden;padding:4px"><div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px;padding-bottom:3px;border-bottom:1px solid ${col};margin-bottom:3px">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;border-radius:50%;background:#e8e8e8;border:1px solid ${col}"></div>`}<div style="text-align:center"><div style="font-size:6.5px;font-weight:700;color:${col}">AGENCE IMMO SARL</div><div style="height:1px;background:${col}44;margin:1px 0"></div><div style="font-size:4.5px;color:#888;letter-spacing:.3px">GESTION IMMOBILIERE</div></div><div style="font-size:4.5px;color:#777;text-align:right;line-height:1.5"><div>+229 XX XX</div><div>Cotonou</div></div></div><div style="text-align:center;margin:2px 0"><div style="font-size:5.5px;font-weight:700;color:${col};letter-spacing:.5px">CONTRAT DE BAIL IMMOBILIER</div></div><div style="margin-top:2px">${[85,100,75,90].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div>`,
-    standard: `<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden;padding:4px"><div style="display:flex;align-items:center;gap:4px;padding-bottom:3px;margin-bottom:3px;border-bottom:2px solid ${col}">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;background:#e0e0e0;border-radius:2px"></div>`}<div><div style="font-size:6.5px;font-weight:700;color:#222">AGENCE IMMO</div><div style="font-size:4.5px;color:#888">contact@agence.com | Cotonou</div></div></div><div style="margin:2px 0"><div style="font-size:6px;font-weight:700;color:${col}">CONTRAT DE BAIL</div></div><div style="margin-top:2px">${[100,90,80,95,70].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div>`,
-    minimal: `<div style="background:#fff;height:100%;font-family:Helvetica,Arial;overflow:hidden;padding:5px"><div style="display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:2px;border-bottom:1px solid #222;margin-bottom:4px">${logo ? `<img src="${logo}" style="height:12px;width:auto"/>` : `<div style="font-size:7px;font-weight:700;color:#111">AGENCE</div>`}<div style="text-align:right;font-size:4.5px;color:#999;line-height:1.5"><div>+229 XX XX</div><div>mail@ag.bj</div></div></div><div style="margin:3px 0"><div style="font-size:5.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:#333">Contrat de bail</div><div style="width:12px;height:1px;background:#222;margin-top:1px"></div></div><div style="margin-top:3px">${[100,85,95,70].map(w=>`<div style="height:1px;background:#ebebeb;margin-bottom:2px;width:${w}%"></div>`).join("")}</div></div>`,
-    corporate: `<div style="background:#fff;height:100%;font-family:Calibri,Arial;overflow:hidden"><div style="background:${col};padding:5px 6px;display:flex;align-items:center;justify-content:space-between">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:30px;height:10px;background:rgba(255,255,255,0.15);border-radius:1px"></div>`}<div style="text-align:right"><div style="font-size:6px;font-weight:700;color:#fff">AGENCE IMMO</div><div style="font-size:4.5px;color:rgba(255,255,255,0.6)">SINCE 2020</div></div></div><div style="height:3px;background:${col}66"></div><div style="padding:4px 5px"><div style="background:${col}11;border-left:2px solid ${col};padding:2px 4px;margin-bottom:3px"><div style="font-size:5.5px;font-weight:700;color:${col};letter-spacing:.5px">CONTRAT DE BAIL</div></div><div>${[100,85,95,70,80].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
-    elegant: `<div style="background:#1a1a1a;height:100%;font-family:Georgia,serif;overflow:hidden"><div style="border-bottom:1px solid ${col};padding:5px 6px;display:flex;align-items:center;justify-content:space-between">${logo ? `<img src="${logo}" style="height:14px;width:auto;filter:brightness(1.5)"/>` : `<div style="width:14px;height:14px;border:1px solid ${col};border-radius:50%"></div>`}<div style="text-align:center;flex:1"><div style="font-size:7px;font-weight:700;color:${col};letter-spacing:1px">ELITE IMMOBILIER</div><div style="font-size:4px;color:#888;letter-spacing:2px">PRESTIGE & EXCELLENCE</div></div><div style="text-align:right;font-size:4.5px;color:#888"><div>+229 XX XX</div></div></div><div style="padding:4px 5px"><div style="text-align:center;margin:2px 0;border:1px solid ${col};padding:2px"><div style="font-size:5.5px;font-weight:700;color:${col};letter-spacing:.8px">CONTRAT DE BAIL</div></div><div style="margin-top:2px">${[100,85,95,70].map(w=>`<div style="height:1.5px;background:#333;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
-    benin: `<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden"><div style="background:${col};height:4px"></div><div style="padding:4px 5px"><div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid ${col};padding-bottom:3px;margin-bottom:2px">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;background:#e0e0e0;border-radius:50%"></div>`}<div style="text-align:center"><div style="font-size:6.5px;font-weight:700;color:${col}">AGENCE IMMO BENIN</div><div style="font-size:4.5px;color:#888">Agree MEHU - IFU: XXXXXX</div></div><div style="width:18px;height:10px;background:repeating-linear-gradient(0deg,#008751 0,#008751 3px,#fcd116 3px,#fcd116 6px,#e8112d 6px,#e8112d 9px);border-radius:1px"></div></div><div style="text-align:center;font-size:5.5px;font-weight:700;color:${col};letter-spacing:.5px;margin:2px 0">CONTRAT DE BAIL</div><div>${[90,100,80,70].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
-    profes: `<div style="background:#fff;height:100%;font-family:Calibri,Arial;overflow:hidden"><div style="background:${col};padding:5px 6px"><div style="display:flex;align-items:center;gap:4px">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:2px"></div>`}<div style="flex:1"><div style="font-size:6.5px;font-weight:700;color:#fff">AGENCE PROFESSIONNELLE</div></div><div style="background:rgba(255,255,255,0.15);padding:1px 3px;border-radius:1px"><div style="font-size:4px;color:rgba(255,255,255,0.7)">CERTIFIE ISO</div></div></div></div><div style="height:2px;background:linear-gradient(to right,${col},#aaa)"></div><div style="padding:4px 5px"><div style="border-left:2px solid ${col};padding-left:3px;margin-bottom:2px"><div style="font-size:6px;font-weight:700;color:${col}">CONTRAT DE BAIL</div></div><div>${[100,85,90,75].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
-    colore: `<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden"><div style="background:linear-gradient(135deg,${col} 0%,${col}aa 50%,#ff6b6b 100%);padding:6px;display:flex;align-items:center;justify-content:space-between">${logo ? `<img src="${logo}" style="height:14px;width:auto"/>` : `<div style="width:20px;height:14px;background:rgba(255,255,255,0.3);border-radius:2px"></div>`}<div style="text-align:center"><div style="font-size:6.5px;font-weight:700;color:#fff">AGENCE IMMO</div></div><div style="width:8px;height:8px;background:rgba(255,255,255,0.4);border-radius:50%"></div></div><div style="padding:4px 5px"><div style="text-align:center;margin:2px 0"><div style="background:${col};color:#fff;font-size:5.5px;font-weight:700;display:inline-block;padding:1px 6px;border-radius:8px;letter-spacing:.5px">CONTRAT DE BAIL</div></div><div style="margin-top:2px">${[100,85,95,70].map(w=>`<div style="height:1.5px;background:#e5e5e5;margin-bottom:1.5px;width:${w}%"></div>`).join("")}</div></div></div>`,
-    vierge: `<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden;padding:5px;border:1.5px dashed #ccc"><div style="text-align:center;margin-top:15px"><div style="font-size:20px;color:#ddd">+</div><div style="font-size:6px;color:#ccc;margin-top:2px">Page vierge</div><div style="font-size:5px;color:#ddd">Personnaliser librement</div></div></div>`,
-  }
-  return thumbs[tpl.id] || thumbs.moderne
+function renderThumb(tpl, logo, entete) {
+  const col = (entete && entete.couleur_principale) || tpl.color
+  const nom = (entete && entete.nom_agence) || "AGENCE"
+  const L = logo ? '<img src="'+logo+'" style="height:12px;width:auto;object-fit:contain"/>' : '<div style="width:18px;height:10px;background:'+col+'44;border-radius:1px"></div>'
+  const lines = (n,ww,cl)=>{ cl=cl||"#e0e0e0"; return Array.from({length:n},(_,i)=>'<div style="height:1.5px;background:'+cl+';margin-bottom:2px;width:'+ww[i%ww.length]+'%"></div>').join("") }
+
+  if (tpl.id === "qc_officiel") return '<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden"><div style="background:'+col+';padding:3px 6px;display:flex;align-items:center;justify-content:space-between">'+L+'<div style="text-align:right"><span style="color:#fff;font-size:8px;font-weight:900">BAIL</span></div></div><div style="background:#ffd700;padding:2px 6px"><span style="font-size:4px;font-weight:700;color:#333">FORMULAIRE OBLIGATOIRE EN DOUBLE EXEMPLAIRE</span></div><div style="padding:3px 5px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px"><div style="border:1px solid #ccc;padding:2px"><span style="font-size:4px;font-weight:700;color:'+col+'">A LOCATEUR</span>'+lines(2,[100,100],"#ccc")+'</div><div style="border:1px solid #ccc;padding:2px"><span style="font-size:4px;font-weight:700;color:'+col+'">ET LOCATAIRE</span>'+lines(2,[100,100],"#ccc")+'</div></div><div style="border:1px solid #ccc;padding:2px"><span style="font-size:4px;font-weight:700;color:'+col+'">B DESCRIPTION</span>'+lines(1,[100],"#ccc")+'</div></div></div>'
+
+  if (tpl.id === "lettre_fr") return '<div style="background:#fff;height:100%;font-family:Georgia,serif;overflow:hidden;padding:5px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><div style="font-size:4.5px;color:#555;line-height:1.6"><div style="font-weight:700;color:#222">'+nom+'</div><div>Cotonou, Benin</div><div>+229 XX XX</div></div>'+L+'</div><div style="text-align:right;margin-bottom:3px;font-size:4.5px;color:#555"><div style="font-weight:700;color:#222">DESTINATAIRE</div><div>Adresse</div></div><div style="margin-bottom:3px;font-size:4.5px;color:'+col+'">Objet: Contrat de bail</div>'+lines(4,[100,100,85,70],"#ddd")+'<div style="border-top:1px solid '+col+';margin-top:3px;padding-top:2px;display:flex;justify-content:space-between"><span style="font-size:4px;color:#aaa">Tel</span><span style="font-size:4px;color:#aaa">Email</span></div></div>'
+
+  if (tpl.id === "legal_us") return '<div style="background:#fff;height:100%;font-family:serif;overflow:hidden;position:relative"><div style="position:absolute;top:0;left:0;width:0;height:0;border-style:solid;border-width:28px 28px 0 0;border-color:'+col+' transparent transparent transparent"></div><div style="position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 28px 28px 0;border-color:transparent '+col+' transparent transparent"></div><div style="padding:5px 7px;text-align:center;margin-top:4px">'+L+'<div style="font-size:6.5px;font-weight:900;color:'+col+';margin:3px 0">LEASE AGREEMENT</div><div style="width:30px;height:1.5px;background:'+col+';margin:0 auto 3px"></div></div><div style="padding:0 5px">'+lines(5,[100,88,95,72,85])+'</div><div style="position:absolute;bottom:0;left:0;width:0;height:0;border-style:solid;border-width:18px 0 0 18px;border-color:transparent transparent transparent '+col+'"></div><div style="position:absolute;bottom:0;right:0;width:0;height:0;border-style:solid;border-width:0 0 18px 18px;border-color:transparent transparent '+col+' transparent"></div></div>'
+
+  if (tpl.id === "wonder") return '<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden"><div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;border-bottom:2px solid '+col+'">'+L+'<div style="text-align:right;font-size:4px;color:#666"><div>+229 XX</div><div>mail</div></div></div><div style="padding:4px 6px"><div style="border-left:3px solid '+col+';padding-left:4px;margin-bottom:3px"><div style="font-size:6px;font-weight:700;color:'+col+'">CONTRAT DE BAIL</div></div>'+lines(5,[100,85,92,70,88])+'</div><div style="position:absolute;bottom:0;left:0;right:0;background:'+col+';padding:2px 5px;display:flex;justify-content:space-between"><span style="font-size:3.5px;color:rgba(255,255,255,0.8)">'+nom+'</span><span style="font-size:3.5px;color:rgba(255,255,255,0.5)">Page 1</span></div></div>'
+
+  if (tpl.id === "djlotech") return '<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden"><div style="background:linear-gradient(135deg,'+col+' 0%,#1565c0 100%);padding:5px 7px;display:flex;align-items:center;justify-content:space-between">'+L+'<div style="text-align:right"><div style="color:#fff;font-weight:700;font-size:5.5px">'+nom+'</div><div style="color:rgba(255,255,255,0.7);font-size:4px">Gestion Immo</div></div></div><div style="height:2px;background:linear-gradient(to right,'+col+',#ffd700)"></div><div style="padding:3px 5px"><div style="background:'+col+'11;border-left:2px solid '+col+';padding:2px 3px;margin-bottom:2px"><div style="font-size:5px;font-weight:700;color:'+col+'">CONTRAT DE BAIL</div></div>'+lines(4,[100,85,92,70])+'</div></div>'
+
+  if (tpl.id === "elegant") return '<div style="background:#1a1a1a;height:100%;font-family:Georgia,serif;overflow:hidden"><div style="border-bottom:1px solid '+col+';padding:5px 6px;display:flex;align-items:center;justify-content:space-between">'+L+'<div style="text-align:center;flex:1"><div style="font-size:6px;font-weight:700;color:'+col+';letter-spacing:1px">'+nom+'</div></div></div><div style="padding:4px 5px"><div style="text-align:center;border:1px solid '+col+';padding:2px;margin-bottom:3px"><div style="font-size:5px;font-weight:700;color:'+col+'">CONTRAT DE BAIL</div></div>'+lines(4,[100,85,95,70],"#333")+'</div></div>'
+
+  if (tpl.id === "benin") return '<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden"><div style="background:'+col+';height:4px"></div><div style="padding:4px 5px;border-bottom:2px solid '+col+';display:flex;align-items:center;justify-content:space-between">'+L+'<div style="text-align:center"><div style="font-size:6px;font-weight:700;color:'+col+'">'+nom+'</div><div style="font-size:3.5px;color:#888">Agree MEHU Benin</div></div><div style="width:16px;height:26px;background:repeating-linear-gradient(0deg,#008751 0,#008751 8px,#fcd116 8px,#fcd116 16px,#e8112d 16px,#e8112d 24px);border-radius:1px"></div></div><div style="padding:2px 5px;text-align:center"><div style="font-size:5.5px;font-weight:700;color:'+col+'">CONTRAT DE BAIL</div></div>'+lines(3,[90,100,80])+'</div>'
+
+  if (tpl.id === "vierge") return '<div style="background:#fff;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;border:1.5px dashed #ccc;padding:5px"><div style="font-size:22px;color:#ddd;margin-bottom:3px">+</div><div style="font-size:5.5px;color:#bbb;font-weight:600">Page vierge</div></div>'
+
+  if (tpl.id === "classique") return '<div style="background:#fff;height:100%;font-family:Georgia,serif;overflow:hidden;padding:4px"><div style="border:2px solid '+col+';padding:4px;height:calc(100% - 10px)"><div style="border-bottom:1px solid '+col+'44;padding-bottom:2px;margin-bottom:2px;display:flex;align-items:center;justify-content:space-between">'+L+'<div style="font-size:6px;font-weight:700;color:'+col+';text-align:center">'+nom+'</div><div style="font-size:4px;color:#777">Tel</div></div><div style="text-align:center;margin:2px 0"><div style="font-size:5.5px;font-weight:700;color:'+col+'">CONTRAT DE BAIL</div></div>'+lines(4,[90,100,75,85])+'</div></div>'
+
+  if (tpl.id === "europeen") return '<div style="background:#fff;height:100%;font-family:Palatino,serif;overflow:hidden;padding:4px"><div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:3px;border-bottom:1px solid '+col+';padding-bottom:2px;margin-bottom:2px">'+L+'<div style="text-align:center"><div style="font-size:6px;font-weight:700;color:'+col+'">'+nom+'</div></div><div style="font-size:4px;color:#777">Tel</div></div><div style="text-align:center;margin:2px 0"><div style="font-size:5px;font-weight:700;color:'+col+'">CONTRAT DE BAIL</div><div style="display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px"><div style="width:12px;height:0.5px;background:'+col+'66"></div><div style="width:3px;height:3px;border-radius:50%;background:'+col+'"></div><div style="width:12px;height:0.5px;background:'+col+'66"></div></div></div>'+lines(4,[85,100,75,90])+'</div>'
+
+  if (tpl.id === "lettre_fr") return '<div style="background:#fff;height:100%;font-family:Georgia;overflow:hidden;padding:5px"></div>'
+
+  // moderne par defaut
+  return '<div style="background:#fff;height:100%;font-family:Arial;overflow:hidden"><div style="background:'+col+';padding:5px 7px;display:flex;align-items:center;justify-content:space-between">'+L+'<div style="font-size:6px;font-weight:700;color:#fff">'+nom+'</div></div><div style="padding:5px 6px"><div style="text-align:center;margin:2px 0"><span style="font-size:5.5px;font-weight:700;color:'+col+';border-bottom:1px solid '+col+'">CONTRAT DE BAIL</span></div>'+lines(5,[100,85,92,70,95])+'</div></div>'
 }
+
 
 function renderFull(tpl, e, content) {
   const col = e.couleur_principale || tpl.color || "#0078d4"
