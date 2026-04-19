@@ -40,7 +40,8 @@ export default function ImolocBaux() {
   const [step,setStep]           = useState(1)
   const [saving,setSaving]       = useState(false)
   const [paiements,setPaiements] = useState([])
-  const [contrat,setContrat]     = useState(null)   // HTML du contrat genere
+  const [contrat,setContrat]     = useState(null)
+  const [editMode,setEditMode]     = useState(false)   // HTML du contrat genere
   const [loadingContrat,setLoadingContrat] = useState(false)
   const [modeleActif,setModeleActif] = useState(null)
   const [biens,setBiens]         = useState([])
@@ -102,6 +103,25 @@ export default function ImolocBaux() {
     } catch(e){ return null }
   }
 
+  const initQuillContrat = (html) => {
+    setTimeout(()=>{
+      const el = document.getElementById('contrat-quill-zone')
+      if (!el) return
+      if (contratQuillRef.current) { el.innerHTML=''; contratQuillRef.current=null }
+      if (!window.Quill) return
+      contratQuillRef.current = new window.Quill(el, {
+        theme:'snow',
+        modules:{toolbar:[[{header:[1,2,3,false]}],['bold','italic','underline'],
+          [{color:[]},{background:[]}],[{align:[]}],
+          [{list:'ordered'},{list:'bullet'}],['clean']]}
+      })
+      if (html) contratQuillRef.current.clipboard.dangerouslyPasteHTML(html)
+      contratQuillRef.current.on('text-change',()=>{
+        setContrat(contratQuillRef.current.root.innerHTML)
+      })
+    },300)
+  }
+
   const genererContrat = async (bail) => {
     setLoadingContrat(true)
     setContrat(null)
@@ -128,6 +148,7 @@ export default function ImolocBaux() {
       let html = rawContent
       Object.entries(vars).forEach(([k,v])=>{ html = html.replaceAll(k,`<strong>${v}</strong>`) })
       setContrat(html)
+      setEditMode(false)
     } catch(e){ setContrat('<p style="color:#ef4444">Erreur generation: '+e.message+'</p>') }
     finally{ setLoadingContrat(false) }
   }
@@ -443,7 +464,7 @@ export default function ImolocBaux() {
                   const fin=b.date_fin?new Date(b.date_fin):null
                   const exp=b.statut==='actif'&&fin&&fin<=in30&&fin>=now
                   return(
-                    <tr key={b.id} onClick={()=>{setSelBail(b);setTab('infos');setContrat(null);setModeleActif(null);loadPaiements(b.id)}}>
+                    <tr key={b.id} onClick={()=>{setSelBail(b);setTab('infos');setContrat(null);setModeleActif(null);setEditMode(false);loadPaiements(b.id)}}>
                       <td><div style={{fontWeight:600,color:'#e6edf3',fontSize:13}}>{b.titre||b.biens?.nom||'—'}</div><div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>{b.biens?.nom||'—'} · {b.biens?.ville||'—'}</div></td>
                       <td style={{fontSize:12.5}}>{b.locataires?.prenom||''} {b.locataires?.nom||'—'}</td>
                       <td style={{fontSize:13,fontWeight:600,color:'#0078d4'}}>{fmt(b.loyer_mensuel)} FCFA</td>
@@ -679,15 +700,31 @@ export default function ImolocBaux() {
                     <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.3)'}}>Generation du contrat...</div>
                   ):contrat?(
                     <div>
-                      <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
-                        <button className='bx-btn bx-btn-p' onClick={()=>exporterPDF(selBail)}>Telecharger PDF</button>
-                        <button className='bx-btn' onClick={()=>{setContrat(null);genererContrat(selBail)}}>Regenerer</button>
-                        {!modeleActif&&<div style={{fontSize:12,color:'#ef4444',display:'flex',alignItems:'center'}}>Aucun modele actif</div>}
-                        {modeleActif&&<div style={{fontSize:12,color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center'}}>Modele : {modeleActif.nom}</div>}
+                      <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap',alignItems:'center'}}>
+                        <button className='bx-btn bx-btn-p' onClick={()=>exporterPDF(selBail)}>PDF</button>
+                        <button className={'bx-btn'+(editMode?' bx-btn-y':'')} onClick={()=>{
+                          if (!editMode) {
+                            setEditMode(true)
+                            if (!window.Quill) {
+                              const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js';
+                              s.onload=()=>initQuillContrat(contrat);document.head.appendChild(s)
+                              if (!document.querySelector('#quill-css2')){const l=document.createElement('link');l.id='quill-css2';l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css';document.head.appendChild(l)}
+                            } else { setTimeout(()=>initQuillContrat(contrat),100) }
+                          } else { setEditMode(false) }
+                        }}>{editMode?'Apercu':'Editer'}</button>
+                        <button className='bx-btn' onClick={()=>{setContrat(null);setEditMode(false);genererContrat(selBail)}}>Regenerer</button>
+                        {modeleActif&&<div style={{fontSize:11,color:'rgba(255,255,255,0.3)',marginLeft:'auto'}}>Modele : {modeleActif.nom}</div>}
                       </div>
-                      <div style={{background:'#f5f5f5',borderRadius:8,overflow:'hidden',maxHeight:500,overflowY:'auto'}}>
-                        <div style={{transform:'scale(0.7)',transformOrigin:'top left',width:'142.8%',minHeight:400,background:'#fff',padding:'20px 32px',fontFamily:'Arial',fontSize:13.5,lineHeight:1.9,color:'#333'}} dangerouslySetInnerHTML={{__html:contrat}}/>
-                      </div>
+                      {editMode?(
+                        <div style={{border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,overflow:'hidden'}}>
+                          <style>{`.ql-toolbar.ql-snow{background:rgba(255,255,255,0.04);border:none;border-bottom:1px solid rgba(255,255,255,0.1)!important}.ql-container.ql-snow{border:none!important}.ql-editor{min-height:320px;background:#fff;color:#333;font-size:13px}.ql-toolbar .ql-stroke{stroke:rgba(255,255,255,0.5)!important}.ql-toolbar .ql-fill{fill:rgba(255,255,255,0.5)!important}.ql-toolbar .ql-picker-label{color:rgba(255,255,255,0.5)!important}`}</style>
+                          <div id='contrat-quill-zone' style={{background:'#fff'}}/>
+                        </div>
+                      ):(
+                        <div style={{background:'#f5f5f5',borderRadius:8,overflow:'hidden',maxHeight:460,overflowY:'auto'}}>
+                          <div style={{transform:'scale(0.72)',transformOrigin:'top left',width:'138.8%',minHeight:400,background:'#fff',padding:'20px 32px',fontFamily:'Arial',fontSize:13.5,lineHeight:1.9,color:'#333'}} dangerouslySetInnerHTML={{__html:contrat}}/>
+                        </div>
+                      )}
                     </div>
                   ):(
                     <div style={{textAlign:'center',padding:'40px 20px'}}>
