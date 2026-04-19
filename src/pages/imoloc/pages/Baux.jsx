@@ -40,6 +40,9 @@ export default function ImolocBaux() {
   const [step,setStep]           = useState(1)
   const [saving,setSaving]       = useState(false)
   const [paiements,setPaiements] = useState([])
+  const [contrat,setContrat]     = useState(null)   // HTML du contrat genere
+  const [loadingContrat,setLoadingContrat] = useState(false)
+  const [modeleActif,setModeleActif] = useState(null)
   const [biens,setBiens]         = useState([])
   const [locs,setLocs]           = useState([])
   const [bienSearch,setBSrch]    = useState('')
@@ -84,6 +87,88 @@ export default function ImolocBaux() {
       setLocs(lo||[])
     } catch(e){console.error(e)}
     finally{setLoading(false)}
+  }
+
+  const loadModeleActif = async () => {
+    try {
+      const {data:{user}} = await supabase.auth.getUser()
+      const {data:agList} = await supabase.from('agences').select('*')
+      const ag = agList?.find(a=>a.profile_id===user.id)||agList?.[0]
+      if (!ag?.id) return null
+      const {data:p} = await supabase.from('parametres_organisation').select('*').eq('agence_id',ag.id).single()
+      if (!p?.mes_modeles||!p.modele_actif_id) return null
+      const modele = p.mes_modeles.find(m=>m.id===p.modele_actif_id)
+      return modele||null
+    } catch(e){ return null }
+  }
+
+  const genererContrat = async (bail) => {
+    setLoadingContrat(true)
+    setContrat(null)
+    try {
+      const modele = await loadModeleActif()
+      setModeleActif(modele)
+      if (!modele) {
+        setContrat('<p style="color:#ef4444;text-align:center;padding:40px">Aucun modele actif. Allez dans Admin Center → Parametres → Modeles de Documents pour activer un modele.</p>')
+        return
+      }
+      const rawContent = modele.content || ''
+      const vars = {
+        '{{locataire.nom}}':   `${bail.locataires?.prenom||''} ${bail.locataires?.nom||''}`.trim(),
+        '{{proprietaire.nom}}':bail.proprietaires?.nom ? `${bail.proprietaires.prenom||''} ${bail.proprietaires.nom}`.trim() : '—',
+        '{{bien.adresse}}':    bail.biens?.nom ? `${bail.biens.nom}, ${bail.biens?.ville||''}`.trim() : '—',
+        '{{loyer}}':           bail.loyer_mensuel ? Number(bail.loyer_mensuel).toLocaleString('fr-FR') : '—',
+        '{{caution}}':         bail.caution ? Number(bail.caution).toLocaleString('fr-FR') : '—',
+        '{{date_debut}}':      bail.date_debut ? new Date(bail.date_debut).toLocaleDateString('fr-FR') : '—',
+        '{{date_fin}}':        bail.date_fin ? new Date(bail.date_fin).toLocaleDateString('fr-FR') : 'Indefinie',
+        '{{duree_mois}}':      String(bail.duree_mois||'—'),
+        '{{bien.type}}':       bail.biens?.type||bail.biens?.type_bien||'—',
+        '{{devise}}':          bail.devise||'FCFA',
+      }
+      let html = rawContent
+      Object.entries(vars).forEach(([k,v])=>{ html = html.replaceAll(k,`<strong>${v}</strong>`) })
+      setContrat(html)
+    } catch(e){ setContrat('<p style="color:#ef4444">Erreur generation: '+e.message+'</p>') }
+    finally{ setLoadingContrat(false) }
+  }
+
+  const exporterPDF = async (bail) => {
+    if (!contrat || !modeleActif) return
+    // Charger html2pdf si pas deja charge
+    if (!window.html2pdf) {
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script')
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+        s.onload=res; s.onerror=rej
+        document.head.appendChild(s)
+      })
+    }
+    const col  = modeleActif.couleur||'#0078d4'
+    const nom  = modeleActif.nom_agence||'Agence'
+    const logo = modeleActif.logo_url||''
+    const sz   = parseInt(modeleActif.taille_logo)||65
+    const pied = modeleActif.pied_page||''
+    const adr  = modeleActif.adresse||''
+    const tel  = modeleActif.telephone||''
+    const mail = modeleActif.email||''
+    const sl   = modeleActif.slogan||''
+    const L    = logo ? `<img src="${logo}" style="height:${sz}px;width:auto;object-fit:contain"/>` : ''
+    const cts  = [tel,mail].filter(Boolean).map(x=>`<div>${x}</div>`).join('')
+    const foot = pied ? `<div style="padding:10px 32px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:40px"><span>${nom}</span><span>${pied}</span><span>Page 1/1</span></div>` : ''
+    const header = `<div style="background:${col};padding:20px 32px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:14px">${L}<div><div style="font-size:20px;font-weight:700;color:#fff">${nom}</div>${sl?`<div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:2px">${sl}</div>`:''}</div></div><div style="text-align:right;font-size:12px;color:rgba(255,255,255,0.9);line-height:1.9">${cts}</div></div>${adr?`<div style="background:${col}22;padding:7px 32px;font-size:11px;color:#555;border-bottom:2px solid ${col}">${adr}</div>`:''}`
+    const titleHtml = `<div style="text-align:center;margin:28px 0 32px"><div style="font-size:18px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${col};border-bottom:2px solid ${col};display:inline-block;padding-bottom:6px">CONTRAT DE BAIL</div></div>`
+    const fullHtml = `<div style="font-family:Arial,sans-serif;background:#fff;color:#333">${header}${titleHtml}<div style="padding:20px 32px;font-size:13.5px;line-height:1.9">${contrat}</div>${foot}</div>`
+    const el = document.createElement('div')
+    el.innerHTML = fullHtml
+    document.body.appendChild(el)
+    const filename = 'Bail_'+((bail.biens?.nom||'contrat').replace(/\s+/g,'_'))+'_'+(bail.locataires?.nom||'').replace(/\s+/g,'_')+'.pdf'
+    await window.html2pdf().set({
+      margin:0, filename, image:{type:'jpeg',quality:0.98},
+      html2canvas:{scale:2,useCORS:true},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+    }).from(el).save()
+    document.body.removeChild(el)
+    toast.success('PDF telecharge !')
   }
 
   const loadPaiements = async (id) => {
@@ -358,7 +443,7 @@ export default function ImolocBaux() {
                   const fin=b.date_fin?new Date(b.date_fin):null
                   const exp=b.statut==='actif'&&fin&&fin<=in30&&fin>=now
                   return(
-                    <tr key={b.id} onClick={()=>{setSelBail(b);setTab('infos');loadPaiements(b.id)}}>
+                    <tr key={b.id} onClick={()=>{setSelBail(b);setTab('infos');setContrat(null);setModeleActif(null);loadPaiements(b.id)}}>
                       <td><div style={{fontWeight:600,color:'#e6edf3',fontSize:13}}>{b.titre||b.biens?.nom||'—'}</div><div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>{b.biens?.nom||'—'} · {b.biens?.ville||'—'}</div></td>
                       <td style={{fontSize:12.5}}>{b.locataires?.prenom||''} {b.locataires?.nom||'—'}</td>
                       <td style={{fontSize:13,fontWeight:600,color:'#0078d4'}}>{fmt(b.loyer_mensuel)} FCFA</td>
@@ -561,8 +646,8 @@ export default function ImolocBaux() {
                 {selBail.statut!=='resilie'&&selBail.etape!=='archive'&&<button className="bx-btn bx-btn-r" onClick={()=>resilierBail(selBail)}>Resilier</button>}
               </div>
               <div style={{display:'flex'}}>
-                {[['infos','Informations'],['paiements','Paiements'],['edl','Etat des lieux']].map(([k,l])=>(
-                  <button key={k} className={'bx-dtab'+(detailTab===k?' active':'')} onClick={()=>setTab(k)}>{l}</button>
+                {[['infos','Informations'],['paiements','Paiements'],['contrat','Contrat'],['edl','Etat des lieux']].map(([k,l])=>(
+                  <button key={k} className={'bx-dtab'+(detailTab===k?' active':'')} onClick={()=>{setTab(k);if(k==='contrat'&&!contrat&&selBail)genererContrat(selBail)}}>{l}</button>
                 ))}
               </div>
             </div>
@@ -587,6 +672,31 @@ export default function ImolocBaux() {
                   </div>
                 )})}
                 </>
+              )}
+              {detailTab==='contrat'&&(
+                <div>
+                  {loadingContrat?(
+                    <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.3)'}}>Generation du contrat...</div>
+                  ):contrat?(
+                    <div>
+                      <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+                        <button className='bx-btn bx-btn-p' onClick={()=>exporterPDF(selBail)}>Telecharger PDF</button>
+                        <button className='bx-btn' onClick={()=>{setContrat(null);genererContrat(selBail)}}>Regenerer</button>
+                        {!modeleActif&&<div style={{fontSize:12,color:'#ef4444',display:'flex',alignItems:'center'}}>Aucun modele actif</div>}
+                        {modeleActif&&<div style={{fontSize:12,color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center'}}>Modele : {modeleActif.nom}</div>}
+                      </div>
+                      <div style={{background:'#f5f5f5',borderRadius:8,overflow:'hidden',maxHeight:500,overflowY:'auto'}}>
+                        <div style={{transform:'scale(0.7)',transformOrigin:'top left',width:'142.8%',minHeight:400,background:'#fff',padding:'20px 32px',fontFamily:'Arial',fontSize:13.5,lineHeight:1.9,color:'#333'}} dangerouslySetInnerHTML={{__html:contrat}}/>
+                      </div>
+                    </div>
+                  ):(
+                    <div style={{textAlign:'center',padding:'40px 20px'}}>
+                      <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:12}}>Contrat de bail</div>
+                      <div style={{fontSize:13,color:'rgba(255,255,255,0.25)',marginBottom:20}}>Generez le contrat a partir du modele actif de votre organisation</div>
+                      <button className='bx-btn bx-btn-p' style={{margin:'0 auto'}} onClick={()=>genererContrat(selBail)}>Generer le contrat</button>
+                    </div>
+                  )}
+                </div>
               )}
               {detailTab==='edl'&&(
                 <div style={{textAlign:'center',padding:'60px 20px'}}><div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Etat des lieux</div><div style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Module etat des lieux — Phase 2C.</div></div>
