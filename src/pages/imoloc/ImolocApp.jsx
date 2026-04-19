@@ -10,6 +10,7 @@ import Proprietaires from './pages/Proprietaires'
 import Biens from './pages/Biens'
 import Locataires from './pages/Locataires'
 import Baux from './pages/Baux'
+import Paiements from './pages/Paiements'
 
 const Soon = ({ title, icon }) => (
   <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:400,gap:16}}>
@@ -366,7 +367,7 @@ export default function ImolocApp() {
               <Route path="biens/*" element={<Biens />} />
               <Route path="locataires/*" element={<Locataires />} />
               <Route path="baux/*" element={<Baux />} />
-              <Route path="paiements/*" element={<Soon title="Paiements" icon="💰"/>} />
+              <Route path="paiements/*" element={<Paiements />} />
               <Route path="loci/*" element={<Soon title="Loci IA" icon="✨"/>} />
               <Route path="maintenance/*" element={<Soon title="Maintenance" icon="🔧"/>} />
               <Route path="etats-lieux/*" element={<Soon title="Etats des lieux" icon="📋"/>} />
