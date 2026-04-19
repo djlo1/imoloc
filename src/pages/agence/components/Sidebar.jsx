@@ -43,6 +43,7 @@ const NAV = [
       { label:'Sécurité', path:'/agence/securite' },
       { label:'Applications intégrées', path:'/agence/integrations' },
       { label:'Notifications', path:'/agence/parametres' },
+      { label:'Modeles de documents', path:'/agence/modeles' },
     ]
   },
 ]

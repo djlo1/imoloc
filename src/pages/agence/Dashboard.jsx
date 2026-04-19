@@ -18,6 +18,7 @@ import Parametres from './pages/Parametres'
 import Rapports from './pages/Rapports'
 import Integrations from './pages/Integrations'
 import Loci from './pages/Loci'
+import ModelesDocuments from './pages/ModelesDocuments'
 
 export default function DashboardAgence() {
   const [collapsed, setCollapsed] = useState(false)
@@ -89,6 +90,7 @@ export default function DashboardAgence() {
                 <Route path="utilisateurs" element={<Utilisateurs />} />
                 <Route path="utilisateurs/contacts" element={<Contacts />} />
                 <Route path="nouveautes" element={<Nouveautes />} />
+                <Route path="modeles" element={<ModelesDocuments />} />
                 <Route path="imoloc/*" element={<ImolocCenter />} />
                 <Route path="utilisateurs/contacts" element={<Utilisateurs />} />
                 <Route path="utilisateurs/invites" element={<Utilisateurs />} />
