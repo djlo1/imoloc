@@ -103,6 +103,12 @@ export default function ImolocBaux() {
     } catch(e){ return null }
   }
 
+  useEffect(()=>{
+    if (editMode && contrat) {
+      initQuillContrat(contrat)
+    }
+  },[editMode]) // eslint-disable-line
+
   const initQuillContrat = (html) => {
     setTimeout(()=>{
       const el = document.getElementById('contrat-quill-zone')
@@ -704,8 +710,7 @@ export default function ImolocBaux() {
                         <button className='bx-btn bx-btn-p' onClick={()=>exporterPDF(selBail)}>PDF</button>
                         <button className={'bx-btn'+(editMode?' bx-btn-y':'')} onClick={()=>{
                           if (!editMode) {
-                            setEditMode(true)
-                            const doInit = () => initQuillContrat(contrat)
+                            // Precharger Quill si necessaire
                             if (!window.Quill) {
                               if (!document.querySelector('#quill-css2')){
                                 const l=document.createElement('link');l.id='quill-css2';l.rel='stylesheet'
@@ -714,10 +719,10 @@ export default function ImolocBaux() {
                               }
                               const s=document.createElement('script')
                               s.src='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js'
-                              s.onload=()=>setTimeout(doInit,200)
+                              s.onload=()=>setEditMode(true)
                               document.head.appendChild(s)
                             } else {
-                              setTimeout(doInit,200)
+                              setEditMode(true)
                             }
                           } else {
                             setEditMode(false)
