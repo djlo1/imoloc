@@ -132,6 +132,11 @@ export default function ImolocBaux() {
       Object.entries(vars).forEach(([k,v])=>{ html = html.replaceAll(k,`<strong>${v}</strong>`) })
       setContrat(html)
       setEditMode(false)
+      // Sauvegarder en DB
+      if (bail?.id) {
+        await supabase.from('baux').update({contrat_html:html}).eq('id',bail.id)
+        setSelBail(prev=>prev?{...prev,contrat_html:html}:prev)
+      }
     } catch(e){ setContrat('<p style="color:#ef4444">Erreur generation: '+e.message+'</p>') }
     finally{ setLoadingContrat(false) }
   }
@@ -447,7 +452,7 @@ export default function ImolocBaux() {
                   const fin=b.date_fin?new Date(b.date_fin):null
                   const exp=b.statut==='actif'&&fin&&fin<=in30&&fin>=now
                   return(
-                    <tr key={b.id} onClick={()=>{setSelBail(b);setTab('infos');setContrat(null);setModeleActif(null);setEditMode(false);loadPaiements(b.id)}}>
+                    <tr key={b.id} onClick={()=>{setSelBail(b);setTab('infos');setContrat(b.contrat_html||null);setModeleActif(null);setEditMode(false);loadPaiements(b.id)}}>
                       <td><div style={{fontWeight:600,color:'#e6edf3',fontSize:13}}>{b.titre||b.biens?.nom||'—'}</div><div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>{b.biens?.nom||'—'} · {b.biens?.ville||'—'}</div></td>
                       <td style={{fontSize:12.5}}>{b.locataires?.prenom||''} {b.locataires?.nom||'—'}</td>
                       <td style={{fontSize:13,fontWeight:600,color:'#0078d4'}}>{fmt(b.loyer_mensuel)} FCFA</td>
@@ -651,7 +656,10 @@ export default function ImolocBaux() {
               </div>
               <div style={{display:'flex'}}>
                 {[['infos','Informations'],['paiements','Paiements'],['contrat','Contrat'],['edl','Etat des lieux']].map(([k,l])=>(
-                  <button key={k} className={'bx-dtab'+(detailTab===k?' active':'')} onClick={()=>{setTab(k);if(k==='contrat'&&!contrat&&selBail)genererContrat(selBail)}}>{l}</button>
+                  <button key={k} className={'bx-dtab'+(detailTab===k?' active':'')} onClick={()=>{setTab(k);if(k==='contrat'&&selBail){
+              if(selBail.contrat_html){setContrat(selBail.contrat_html);loadModeleActif().then(m=>setModeleActif(m))}
+              else genererContrat(selBail)
+            }}}>{l}</button>
                 ))}
               </div>
             </div>
@@ -691,9 +699,14 @@ export default function ImolocBaux() {
                           }
                           setEditMode(m=>!m)
                         }}>{editMode?'Apercu':'Editer'}</button>
-                        {editMode&&<button className='bx-btn bx-btn-g' onClick={()=>{
-                          if (editableRef.current) setContrat(editableRef.current.innerHTML)
-                          toast.success('Contenu sauvegarde !')
+                        {editMode&&<button className='bx-btn bx-btn-g' onClick={async()=>{
+                          const html = editableRef.current ? editableRef.current.innerHTML : contrat
+                          setContrat(html)
+                          if (selBail?.id) {
+                            await supabase.from('baux').update({contrat_html:html}).eq('id',selBail.id)
+                            setSelBail(prev=>prev?{...prev,contrat_html:html}:prev)
+                          }
+                          toast.success('Contrat sauvegarde !')
                         }}>Sauvegarder</button>}
                         <button className='bx-btn' onClick={()=>{setContrat(null);setEditMode(false);genererContrat(selBail)}}>Regenerer</button>
                         {modeleActif&&<div style={{fontSize:11,color:'rgba(255,255,255,0.3)',marginLeft:'auto'}}>Modele : {modeleActif.nom}</div>}
