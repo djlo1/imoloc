@@ -705,12 +705,23 @@ export default function ImolocBaux() {
                         <button className={'bx-btn'+(editMode?' bx-btn-y':'')} onClick={()=>{
                           if (!editMode) {
                             setEditMode(true)
+                            const doInit = () => initQuillContrat(contrat)
                             if (!window.Quill) {
-                              const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js';
-                              s.onload=()=>initQuillContrat(contrat);document.head.appendChild(s)
-                              if (!document.querySelector('#quill-css2')){const l=document.createElement('link');l.id='quill-css2';l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css';document.head.appendChild(l)}
-                            } else { setTimeout(()=>initQuillContrat(contrat),100) }
-                          } else { setEditMode(false) }
+                              if (!document.querySelector('#quill-css2')){
+                                const l=document.createElement('link');l.id='quill-css2';l.rel='stylesheet'
+                                l.href='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css'
+                                document.head.appendChild(l)
+                              }
+                              const s=document.createElement('script')
+                              s.src='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js'
+                              s.onload=()=>setTimeout(doInit,200)
+                              document.head.appendChild(s)
+                            } else {
+                              setTimeout(doInit,200)
+                            }
+                          } else {
+                            setEditMode(false)
+                          }
                         }}>{editMode?'Apercu':'Editer'}</button>
                         <button className='bx-btn' onClick={()=>{setContrat(null);setEditMode(false);genererContrat(selBail)}}>Regenerer</button>
                         {modeleActif&&<div style={{fontSize:11,color:'rgba(255,255,255,0.3)',marginLeft:'auto'}}>Modele : {modeleActif.nom}</div>}
