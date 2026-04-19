@@ -423,6 +423,7 @@ export default function ModelesDocuments() {
   const [bailContent, setBailContent] = useState("")
   const [quillReady, setQuillReady]   = useState(false)
   const [logoUploading, setLogoUploading] = useState(false)
+  const [editorKey, setEditorKey] = useState(0)
   const quillRef     = useRef(null)
   const logoInputRef = useRef(null)
 
@@ -435,7 +436,7 @@ export default function ModelesDocuments() {
   const setE = (k,v) => setEntete(f=>({...f,[k]:v}))
 
   useEffect(()=>{ initData() },[])
-  useEffect(()=>{ if (view==="editor"){ quillRef.current=null; setQuillReady(false); setTimeout(()=>loadQuill(),50) } },[view,selTpl])
+  useEffect(()=>{ if (view==="editor") loadQuill() },[view,editorKey])
 
   const initData = async () => {
     setLoading(true)
@@ -613,7 +614,7 @@ export default function ModelesDocuments() {
                     {selTpl===tpl.id&&<span style={{fontSize:9,padding:"1px 5px",borderRadius:"100px",background:"rgba(0,120,212,0.2)",color:"#4da6ff",fontWeight:700}}>ACTUEL</span>}
                   </div>
                   <div className="md-tcat">{tpl.cat}</div>
-                  <button className={"md-tuse"+(selTpl===tpl.id?" current":"")} onClick={()=>{setSelTpl(tpl.id);quillRef.current=null;setQuillReady(false);setView("editor")}}>
+                  <button className={"md-tuse"+(selTpl===tpl.id?" current":"")} onClick={()=>{quillRef.current=null;setQuillReady(false);setSelTpl(tpl.id);setEditorKey(k=>k+1);setView("editor")}}>
                     {selTpl===tpl.id?"Editer ce modele":"Utiliser ce modele"}
                   </button>
                 </div>
@@ -674,7 +675,7 @@ export default function ModelesDocuments() {
               </div>
             </div>
 
-            <div className="md-editor-panel">
+            <div key={editorKey} className="md-editor-panel">
               <div className="md-ehead">
                 <span style={{fontSize:13,fontWeight:600,color:"#e6edf3"}}>Contenu du bail — {currentTpl.name}</span>
                 <button className="md-btn" style={{fontSize:11,padding:"4px 10px",color:"#00c896",borderColor:"rgba(0,200,150,0.2)",background:"rgba(0,200,150,0.06)"}}
