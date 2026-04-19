@@ -435,7 +435,7 @@ export default function ModelesDocuments() {
   const setE = (k,v) => setEntete(f=>({...f,[k]:v}))
 
   useEffect(()=>{ initData() },[])
-  useEffect(()=>{ if (view==="editor") loadQuill() },[view])
+  useEffect(()=>{ if (view==="editor"){ quillRef.current=null; setQuillReady(false); setTimeout(()=>loadQuill(),50) } },[view,selTpl])
 
   const initData = async () => {
     setLoading(true)
@@ -605,7 +605,7 @@ export default function ModelesDocuments() {
             {TEMPLATES.map(tpl=>(
               <div key={tpl.id} className={"md-tcard"+(selTpl===tpl.id?" on":"")}>
                 <div className="md-tthumb" onClick={()=>setSelTpl(tpl.id)}
-                  dangerouslySetInnerHTML={{__html:mkThumb(tpl.id,entete.couleur_principale||tpl.color,entete.nom_agence||"AGENCE",entete.logo_url)}}
+                  dangerouslySetInnerHTML={{__html:mkThumb(tpl.id,tpl.color,"AGENCE","")}}
                 />
                 <div className="md-tinfo">
                   <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
