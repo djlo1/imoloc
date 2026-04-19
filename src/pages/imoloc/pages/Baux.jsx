@@ -42,7 +42,17 @@ export default function ImolocBaux() {
   const [paiements,setPaiements] = useState([])
   const [contrat,setContrat]     = useState(null)
   const [editMode,setEditMode]     = useState(false)
-  const editableRef = useRef(null)   // HTML du contrat genere
+  const editableRef = useRef(null)
+
+  useEffect(()=>{
+    if (!editMode) return
+    setTimeout(()=>{
+      const el = editableRef.current
+      if (!el || !contrat) return
+      el.innerHTML = contrat
+      el.focus()
+    }, 150)
+  },[editMode]) // eslint-disable-line   // HTML du contrat genere
   const [loadingContrat,setLoadingContrat] = useState(false)
   const [modeleActif,setModeleActif] = useState(null)
   const [biens,setBiens]         = useState([])
