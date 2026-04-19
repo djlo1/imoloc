@@ -115,7 +115,7 @@ export default function Locataires() {
       garant_nom:loc.garant_nom||'', garant_telephone:loc.garant_telephone||'',
       garant_relation:loc.garant_relation||'', garant_cin:loc.garant_cin||'',
     }))
-    setStep(2)
+    setStep(5) // Locataire existant -> direct recapitulatif
   }
 
   const ajouterLocataire = async () => {
@@ -152,8 +152,14 @@ export default function Locataires() {
       // Lier a l agence
       const {error:lienErr} = await supabase.from('agence_locataires').upsert({
         agence_id: agence.id, locataire_id: locId, statut:'actif',
-      },{onConflict:'agence_id,locataire_id'})
-      if (lienErr) throw lienErr
+      },{onConflict:'agence_id,locataire_id',ignoreDuplicates:false})
+      if (lienErr) {
+        // Fallback: insert simple si upsert echoue
+        const {error:lienErr2} = await supabase.from('agence_locataires').insert({
+          agence_id: agence.id, locataire_id: locId, statut:'actif',
+        })
+        if (lienErr2 && !lienErr2.message.includes('duplicate')) throw lienErr2
+      }
 
       toast.success('Locataire ajoute !')
       resetAdd()
@@ -258,6 +264,22 @@ export default function Locataires() {
             <button className="lc-btn" onClick={exportCSV}>Export CSV</button>
             <button className="lc-btn lc-btn-p" onClick={()=>setShowAdd(true)}>+ Ajouter un locataire</button>
           </div>
+        </div>
+
+        {/* ── OVERVIEW ── */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:12,marginBottom:20}}>
+          {[
+            {label:'Total locataires', val:locataires.length, color:'#4da6ff'},
+            {label:'Actifs', val:locataires.filter(l=>l.statut_global==='actif'||!l.statut_global).length, color:'#00c896'},
+            {label:'Avec bail actif', val:locataires.filter(l=>l.baux_actifs>0).length, color:'#f59e0b'},
+            {label:'Inactifs', val:locataires.filter(l=>l.statut_global==='inactif').length, color:'#8b949e'},
+            {label:'Blacklistes', val:locataires.filter(l=>l.statut_global==='blackliste').length, color:'#ef4444'},
+          ].map(({label,val,color})=>(
+            <div key={label} style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'14px 18px'}}>
+              <div style={{fontSize:26,fontWeight:700,color,marginBottom:3}}>{val}</div>
+              <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>{label}</div>
+            </div>
+          ))}
         </div>
 
         {/* ── FILTRES ── */}
