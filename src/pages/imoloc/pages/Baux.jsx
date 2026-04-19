@@ -633,7 +633,7 @@ export default function ImolocBaux() {
 
       {selBail&&!showWorkflow&&!showRenew&&(
         <div className="bx-ov" onClick={e=>e.target===e.currentTarget&&setSelBail(null)}>
-          <div className="bx-panel" style={{width:'min(640px,96vw)'}}>
+          <div className="bx-panel" style={{width:'min(900px,96vw)'}}>
             <div style={{padding:'24px 28px 0',borderBottom:'1px solid rgba(255,255,255,0.07)',flexShrink:0}}>
               <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:16}}>
                 <div>
@@ -690,15 +690,37 @@ export default function ImolocBaux() {
                       </div>
                       {editMode?(
                         <div style={{border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,overflow:'hidden',background:'#fff'}}>
-                          <div style={{background:'#f0f0f0',padding:'6px 10px',display:'flex',gap:6,borderBottom:'1px solid #ddd',flexWrap:'wrap'}}>
-                            {[['bold','G'],['italic','I'],['underline','U']].map(([cmd,lbl])=>(
-                              <button key={cmd} onMouseDown={e=>{e.preventDefault();document.execCommand(cmd)}} style={{padding:'3px 9px',borderRadius:4,border:'1px solid #ccc',background:'#fff',cursor:'pointer',fontWeight:cmd==='bold'?700:400,fontStyle:cmd==='italic'?'italic':'normal',textDecoration:cmd==='underline'?'underline':'none',fontSize:13}}>{lbl}</button>
+                          <div style={{background:'#1e2430',padding:'6px 10px',display:'flex',gap:4,borderBottom:'1px solid rgba(255,255,255,0.08)',flexWrap:'wrap',alignItems:'center'}}>
+                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:4}}>Texte</span>
+                            {[['bold','<b>G</b>','Gras'],['italic','<i>I</i>','Italique'],['underline','<u>U</u>','Souligne'],['strikeThrough','<s>S</s>','Barre']].map(([cmd,lbl,title])=>(
+                              <button key={cmd} title={title} onMouseDown={e=>{e.preventDefault();document.execCommand(cmd)}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:12,color:'#e6edf3',minWidth:28,textAlign:'center'}} dangerouslySetInnerHTML={{__html:lbl}}/>
                             ))}
-                            {[['h2','H2'],['h3','H3'],['p','P']].map(([tag,lbl])=>(
-                              <button key={tag} onMouseDown={e=>{e.preventDefault();document.execCommand('formatBlock',false,tag)}} style={{padding:'3px 9px',borderRadius:4,border:'1px solid #ccc',background:'#fff',cursor:'pointer',fontSize:12}}>{lbl}</button>
+                            <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
+                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:2}}>Titre</span>
+                            {[['h1','H1'],['h2','H2'],['h3','H3'],['p','P']].map(([tag,lbl])=>(
+                              <button key={tag} onMouseDown={e=>{e.preventDefault();document.execCommand('formatBlock',false,tag)}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3',fontWeight:tag==='h1'||tag==='h2'?700:400}}>{lbl}</button>
                             ))}
-                            <button onMouseDown={e=>{e.preventDefault();document.execCommand('insertUnorderedList')}} style={{padding:'3px 9px',borderRadius:4,border:'1px solid #ccc',background:'#fff',cursor:'pointer',fontSize:12}}>Liste</button>
-                            <button onMouseDown={e=>{e.preventDefault();document.execCommand('removeFormat')}} style={{padding:'3px 9px',borderRadius:4,border:'1px solid #ccc',background:'#fff',cursor:'pointer',fontSize:12,color:'#888'}}>Reset</button>
+                            <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
+                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:2}}>Listes</span>
+                            <button title="Liste a puces" onMouseDown={e=>{e.preventDefault();document.execCommand('insertUnorderedList')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>• Liste</button>
+                            <button title="Liste numerotee" onMouseDown={e=>{e.preventDefault();document.execCommand('insertOrderedList')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>1. Liste</button>
+                            <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
+                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:2}}>Alignement</span>
+                            {[['justifyLeft','◀'],['justifyCenter','■'],['justifyRight','▶'],['justifyFull','≡']].map(([cmd,lbl])=>(
+                              <button key={cmd} title={cmd} onMouseDown={e=>{e.preventDefault();document.execCommand(cmd)}} style={{padding:'3px 7px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>{lbl}</button>
+                            ))}
+                            <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
+                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:2}}>Indentation</span>
+                            <button onMouseDown={e=>{e.preventDefault();document.execCommand('indent')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>→</button>
+                            <button onMouseDown={e=>{e.preventDefault();document.execCommand('outdent')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:11,color:'#e6edf3'}}>←</button>
+                            <div style={{width:1,height:18,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
+                            <span style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginRight:2}}>Couleur</span>
+                            {['#000000','#0078d4','#c0392b','#2d6a4f','#b8860b'].map(col=>(
+                              <div key={col} onMouseDown={e=>{e.preventDefault();document.execCommand('foreColor',false,col)}} style={{width:18,height:18,borderRadius:3,background:col,cursor:'pointer',border:'2px solid rgba(255,255,255,0.2)',flexShrink:0}}/>
+                            ))}
+                            <div style={{marginLeft:'auto'}}>
+                              <button onMouseDown={e=>{e.preventDefault();document.execCommand('removeFormat')}} style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(239,68,68,0.3)',background:'rgba(239,68,68,0.08)',cursor:'pointer',fontSize:11,color:'#ef4444'}}>Reset</button>
+                            </div>
                           </div>
                           <div
                             contentEditable
