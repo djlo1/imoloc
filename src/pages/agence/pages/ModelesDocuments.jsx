@@ -613,7 +613,7 @@ export default function ModelesDocuments() {
                     {selTpl===tpl.id&&<span style={{fontSize:9,padding:"1px 5px",borderRadius:"100px",background:"rgba(0,120,212,0.2)",color:"#4da6ff",fontWeight:700}}>ACTUEL</span>}
                   </div>
                   <div className="md-tcat">{tpl.cat}</div>
-                  <button className={"md-tuse"+(selTpl===tpl.id?" current":"")} onClick={()=>{setSelTpl(tpl.id);setView("editor")}}>
+                  <button className={"md-tuse"+(selTpl===tpl.id?" current":"")} onClick={()=>{setSelTpl(tpl.id);quillRef.current=null;setQuillReady(false);setView("editor")}}>
                     {selTpl===tpl.id?"Editer ce modele":"Utiliser ce modele"}
                   </button>
                 </div>
