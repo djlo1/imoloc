@@ -103,30 +103,6 @@ export default function ImolocBaux() {
     } catch(e){ return null }
   }
 
-  useEffect(()=>{
-    if (editMode && contrat) {
-      initQuillContrat(contrat)
-    }
-  },[editMode]) // eslint-disable-line
-
-  const initQuillContrat = (html) => {
-    setTimeout(()=>{
-      const el = document.getElementById('contrat-quill-zone')
-      if (!el) return
-      if (contratQuillRef.current) { el.innerHTML=''; contratQuillRef.current=null }
-      if (!window.Quill) return
-      contratQuillRef.current = new window.Quill(el, {
-        theme:'snow',
-        modules:{toolbar:[[{header:[1,2,3,false]}],['bold','italic','underline'],
-          [{color:[]},{background:[]}],[{align:[]}],
-          [{list:'ordered'},{list:'bullet'}],['clean']]}
-      })
-      if (html) contratQuillRef.current.clipboard.dangerouslyPasteHTML(html)
-      contratQuillRef.current.on('text-change',()=>{
-        setContrat(contratQuillRef.current.root.innerHTML)
-      })
-    },300)
-  }
 
   const genererContrat = async (bail) => {
     setLoadingContrat(true)
@@ -708,33 +684,29 @@ export default function ImolocBaux() {
                     <div>
                       <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap',alignItems:'center'}}>
                         <button className='bx-btn bx-btn-p' onClick={()=>exporterPDF(selBail)}>PDF</button>
-                        <button className={'bx-btn'+(editMode?' bx-btn-y':'')} onClick={()=>{
-                          if (!editMode) {
-                            // Precharger Quill si necessaire
-                            if (!window.Quill) {
-                              if (!document.querySelector('#quill-css2')){
-                                const l=document.createElement('link');l.id='quill-css2';l.rel='stylesheet'
-                                l.href='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css'
-                                document.head.appendChild(l)
-                              }
-                              const s=document.createElement('script')
-                              s.src='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js'
-                              s.onload=()=>setEditMode(true)
-                              document.head.appendChild(s)
-                            } else {
-                              setEditMode(true)
-                            }
-                          } else {
-                            setEditMode(false)
-                          }
-                        }}>{editMode?'Apercu':'Editer'}</button>
+                        <button className={'bx-btn'+(editMode?' bx-btn-y':'')} onClick={()=>setEditMode(m=>!m)}>{editMode?'Apercu':'Editer'}</button>
                         <button className='bx-btn' onClick={()=>{setContrat(null);setEditMode(false);genererContrat(selBail)}}>Regenerer</button>
                         {modeleActif&&<div style={{fontSize:11,color:'rgba(255,255,255,0.3)',marginLeft:'auto'}}>Modele : {modeleActif.nom}</div>}
                       </div>
                       {editMode?(
-                        <div style={{border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,overflow:'hidden'}}>
-                          <style>{`.ql-toolbar.ql-snow{background:rgba(255,255,255,0.04);border:none;border-bottom:1px solid rgba(255,255,255,0.1)!important}.ql-container.ql-snow{border:none!important}.ql-editor{min-height:320px;background:#fff;color:#333;font-size:13px}.ql-toolbar .ql-stroke{stroke:rgba(255,255,255,0.5)!important}.ql-toolbar .ql-fill{fill:rgba(255,255,255,0.5)!important}.ql-toolbar .ql-picker-label{color:rgba(255,255,255,0.5)!important}`}</style>
-                          <div id='contrat-quill-zone' style={{background:'#fff'}}/>
+                        <div style={{border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,overflow:'hidden',background:'#fff'}}>
+                          <div style={{background:'#f0f0f0',padding:'6px 10px',display:'flex',gap:6,borderBottom:'1px solid #ddd',flexWrap:'wrap'}}>
+                            {[['bold','G'],['italic','I'],['underline','U']].map(([cmd,lbl])=>(
+                              <button key={cmd} onMouseDown={e=>{e.preventDefault();document.execCommand(cmd)}} style={{padding:'3px 9px',borderRadius:4,border:'1px solid #ccc',background:'#fff',cursor:'pointer',fontWeight:cmd==='bold'?700:400,fontStyle:cmd==='italic'?'italic':'normal',textDecoration:cmd==='underline'?'underline':'none',fontSize:13}}>{lbl}</button>
+                            ))}
+                            {[['h2','H2'],['h3','H3'],['p','P']].map(([tag,lbl])=>(
+                              <button key={tag} onMouseDown={e=>{e.preventDefault();document.execCommand('formatBlock',false,tag)}} style={{padding:'3px 9px',borderRadius:4,border:'1px solid #ccc',background:'#fff',cursor:'pointer',fontSize:12}}>{lbl}</button>
+                            ))}
+                            <button onMouseDown={e=>{e.preventDefault();document.execCommand('insertUnorderedList')}} style={{padding:'3px 9px',borderRadius:4,border:'1px solid #ccc',background:'#fff',cursor:'pointer',fontSize:12}}>Liste</button>
+                            <button onMouseDown={e=>{e.preventDefault();document.execCommand('removeFormat')}} style={{padding:'3px 9px',borderRadius:4,border:'1px solid #ccc',background:'#fff',cursor:'pointer',fontSize:12,color:'#888'}}>Reset</button>
+                          </div>
+                          <div
+                            contentEditable
+                            suppressContentEditableWarning
+                            onInput={e=>setContrat(e.currentTarget.innerHTML)}
+                            dangerouslySetInnerHTML={{__html:contrat||''}}
+                            style={{minHeight:350,padding:'16px 20px',background:'#fff',color:'#333',fontSize:13.5,lineHeight:1.9,outline:'none',fontFamily:'Arial,sans-serif'}}
+                          />
                         </div>
                       ):(
                         <div style={{background:'#f5f5f5',borderRadius:8,overflow:'hidden',maxHeight:460,overflowY:'auto'}}>
