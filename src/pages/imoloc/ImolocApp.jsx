@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 // ── Pages ─────────────────────────────────────────────────
 import ImolocDashboard from './pages/ImolocDashboard'
 import Maintenance from './pages/Maintenance'
+import EtatsDesLieux from './pages/EtatsDesLieux'
 import Proprietaires from './pages/Proprietaires'
 import Biens from './pages/Biens'
 import Locataires from './pages/Locataires'
@@ -371,7 +372,7 @@ export default function ImolocApp() {
               <Route path="paiements/*" element={<Paiements />} />
               <Route path="loci/*" element={<Soon title="Loci IA" icon="✨"/>} />
               <Route path="maintenance/*" element={<Maintenance />} />
-              <Route path="etats-lieux/*" element={<Soon title="Etats des lieux" icon="📋"/>} />
+              <Route path="etats-lieux/*" element={<EtatsDesLieux />} />
               <Route path="rapports/*" element={<Soon title="Rapports" icon="📊"/>} />
             </Routes>
           </div>
