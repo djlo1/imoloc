@@ -433,7 +433,7 @@ export default function EtatsDesLieux() {
                   ].map(([k,v])=>(<div key={k}><span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{k}: </span><span style={{fontSize:12.5,color:'#e6edf3'}}>{v}</span></div>))}
                 </div>
               </div>
-              <div style={{display:'flex',gap:8,justifyContent:'space-between'}}><button style={btnBase} onClick={()=>setStep(2)}>Retour</button><button style={{...btnP,opacity:saving?0.6:1}} disabled={saving} onClick={creerEdl}>{saving?'Creation...':'Creer l etat des lieux}</button></div>
+              <div style={{display:'flex',gap:8,justifyContent:'space-between'}}><button style={btnBase} onClick={()=>setStep(2)}>Retour</button><button style={{...btnP,opacity:saving?0.6:1}} disabled={saving} onClick={creerEdl}>{saving?'Creation...':'Creer l etat des lieux'}</button></div>
             </div>)}
           </div>
         </div>
