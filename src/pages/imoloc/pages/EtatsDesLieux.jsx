@@ -247,7 +247,7 @@ export default function EtatsDesLieux() {
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)',fontSize:12.5,color:'#4da6ff'}}>{nbPieces} piece{nbPieces!==1?'s':''}</td>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}><Badge val={e.statut||'en_cours'} cfg={STATUT_CFG}/></td>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
-                      <div style={{display:'flex',gap:4'}}>
+                      <div style={{display:'flex',gap:4}}>
                         <span style={{fontSize:10,padding:'2px 7px',borderRadius:100,background:e.signe_proprietaire?'rgba(0,200,150,0.1)':'rgba(255,255,255,0.05)',color:e.signe_proprietaire?'#00c896':'rgba(255,255,255,0.3)',border:`1px solid ${e.signe_proprietaire?'rgba(0,200,150,0.25)':'rgba(255,255,255,0.08)'}`}}>Proprio</span>
                         <span style={{fontSize:10,padding:'2px 7px',borderRadius:100,background:e.signe_locataire?'rgba(0,200,150,0.1)':'rgba(255,255,255,0.05)',color:e.signe_locataire?'#00c896':'rgba(255,255,255,0.3)',border:`1px solid ${e.signe_locataire?'rgba(0,200,150,0.25)':'rgba(255,255,255,0.08)'}`}}>Locataire</span>
                       </div>
@@ -269,7 +269,7 @@ export default function EtatsDesLieux() {
               <div style={{flex:1}}>
                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
                   <span style={{fontSize:22}}>{(TYPE_CFG[sel.type]||TYPE_CFG.entree).icon}</span>
-                  <div style={{fontSize:16,fontWeight:700,color:'#e6edf3'}}>Etat des lieux d\'{(TYPE_CFG[sel.type]||TYPE_CFG.entree).label.toLowerCase()}</div>
+                  <div style={{fontSize:16,fontWeight:700,color:'#e6edf3'}}>Etat des lieux d&apos;{(TYPE_CFG[sel.type]||TYPE_CFG.entree).label.toLowerCase()}</div>
                 </div>
                 <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
                   <Badge val={sel.statut||'en_cours'} cfg={STATUT_CFG}/>
@@ -401,7 +401,7 @@ export default function EtatsDesLieux() {
                       <input type="checkbox" checked={p.present} onChange={e=>updatePiece(i,'present',e.target.checked)} style={{cursor:'pointer',width:16,height:16,accentColor:'#0078d4'}}/>
                       <span style={{fontSize:13.5,fontWeight:600,color:'#e6edf3',flex:1}}>{p.nom}</span>
                       {p.present&&(
-                        <div style={{display:'flex',gap:4'}}>
+                        <div style={{display:'flex',gap:4}}>
                           {Object.entries(ETAT_CFG).map(([k,v])=>(
                             <button key={k} onClick={()=>updatePiece(i,'etat',k)} style={{padding:'3px 8px',borderRadius:100,fontSize:10.5,fontWeight:600,cursor:'pointer',border:`1px solid ${p.etat===k?v.color:'rgba(255,255,255,0.1)'}`,background:p.etat===k?v.color+'22':'transparent',color:p.etat===k?v.color:'rgba(255,255,255,0.3)',transition:'all 0.1s'}}>{v.label}</button>
                           ))}
@@ -420,7 +420,7 @@ export default function EtatsDesLieux() {
               <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:16,marginBottom:18}}>
                 <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
                   <span style={{fontSize:28}}>{(TYPE_CFG[form.type]||TYPE_CFG.entree).icon}</span>
-                  <div><div style={{fontSize:15,fontWeight:700,color:'#e6edf3'}}>Etat des lieux d\'{(TYPE_CFG[form.type]||TYPE_CFG.entree).label.toLowerCase()}</div><Badge val="en_cours" cfg={STATUT_CFG}/></div>
+                  <div><div style={{fontSize:15,fontWeight:700,color:'#e6edf3'}}>Etat des lieux d&apos;{(TYPE_CFG[form.type]||TYPE_CFG.entree).label.toLowerCase()}</div><Badge val="en_cours" cfg={STATUT_CFG}/></div>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
                   {[
@@ -433,7 +433,7 @@ export default function EtatsDesLieux() {
                   ].map(([k,v])=>(<div key={k}><span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{k}: </span><span style={{fontSize:12.5,color:'#e6edf3'}}>{v}</span></div>))}
                 </div>
               </div>
-              <div style={{display:'flex',gap:8,justifyContent:'space-between'}}><button style={btnBase} onClick={()=>setStep(2)}>Retour</button><button style={{...btnP,opacity:saving?0.6:1}} disabled={saving} onClick={creerEdl}>{saving?'Creation...':'Creer l etat des lieux'}</button></div>
+              <div style={{display:'flex',gap:8,justifyContent:'space-between'}}><button style={btnBase} onClick={()=>setStep(2)}>Retour</button><button style={{...btnP,opacity:saving?0.6:1}} disabled={saving} onClick={creerEdl}>{saving?'Creation...':'Creer l etat des lieux}</button></div>
             </div>)}
           </div>
         </div>
