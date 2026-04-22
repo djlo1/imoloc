@@ -374,7 +374,7 @@ export default function ImolocApp() {
               <Route path="loci/*" element={<Soon title="Loci IA" icon="✨"/>} />
               <Route path="maintenance/*" element={<Maintenance />} />
               <Route path="etats-lieux/*" element={<EtatsDesLieux />} />
-              <Route path="rapports/*" element={<Rapports />} />} />
+              <Route path="rapports/*" element={<Rapports />} />
             </Routes>
           </div>
         </div>
