@@ -727,9 +727,12 @@ export default function ImolocBaux() {
                               </div>
                             </div>
                             <button className='bx-btn' style={{padding:'7px 10px',flexShrink:0}} title="Telecharger PDF"
-                              onClick={e=>{e.stopPropagation();exporterPDF(selBail)}}>⬇</button>
-                            <button className='bx-btn bx-btn-g' style={{padding:'7px 10px',flexShrink:0,fontSize:11}} onClick={e=>{e.stopPropagation();setSigConfig({signataire_nom:selBail?.locataires?.nom?`${selBail.locataires.prenom||''} ${selBail.locataires.nom}`:'Locataire',signataire_role:'locataire',signataire_email:selBail?.locataires?.email||''});setShowSigModal(true)}}>Signer Locataire</button>
-                            <button className='bx-btn' style={{padding:'7px 10px',flexShrink:0,fontSize:11,color:'#4da6ff',borderColor:'rgba(0,120,212,0.3)'}} onClick={e=>{e.stopPropagation();setSigConfig({signataire_nom:selBail?.proprietaires?.nom?`${selBail.proprietaires.prenom||''} ${selBail.proprietaires.nom}`:'Proprietaire',signataire_role:'proprietaire',signataire_email:selBail?.proprietaires?.email||''});setShowSigModal(true)}}>Signer Proprietaire</button>
+                              onClick={e=>{e.stopPropagation();exporterPDF(selBail)}}>⬇ PDF</button>
+                        </div>
+                        <div style={{display:'flex',gap:8,marginTop:10}}>
+                          <button className='bx-btn bx-btn-g' style={{fontSize:12,padding:'6px 14px'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.locataires?.nom?`${selBail.locataires.prenom||''} ${selBail.locataires.nom}`:'Locataire',signataire_role:'locataire',signataire_email:selBail?.locataires?.email||''});setShowSigModal(true)}}>✍ Signature Locataire</button>
+                          <button className='bx-btn' style={{fontSize:12,padding:'6px 14px',color:'#4da6ff',borderColor:'rgba(0,120,212,0.3)'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.proprietaires?.nom?`${selBail.proprietaires.prenom||''} ${selBail.proprietaires.nom}`:'Proprietaire',signataire_role:'proprietaire',signataire_email:selBail?.proprietaires?.email||''});setShowSigModal(true)}}>✍ Signature Proprietaire</button>
+                          <button className='bx-btn' style={{fontSize:12,padding:'6px 14px'}} onClick={()=>{setContrat(null);genererContrat(selBail)}}>↺ Regenerer</button>
                           </div>
                           <button className='bx-btn' style={{width:'100%',justifyContent:'center',fontSize:12}} onClick={()=>{setContrat(null);genererContrat(selBail)}}>+ Regenerer un nouveau contrat</button>
                         </div>
