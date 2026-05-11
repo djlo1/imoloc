@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
+import SignatureModal from '../../../components/SignatureModal'
 
 const STATUT_CFG = {
   en_attente:{ color:'#f59e0b', bg:'rgba(245,158,11,0.12)', label:'En attente', dot:'#f59e0b' },
@@ -42,6 +43,8 @@ export default function ImolocBaux() {
   const [paiements,setPaiements] = useState([])
   const [contrat,setContrat]     = useState(null)
   const [editMode,setEditMode]     = useState(false)
+  const [showSigModal,setShowSigModal] = useState(false)
+  const [sigConfig,setSigConfig]       = useState({})
   const [contratOuvert,setContratOuvert] = useState(false)
   const editableRef = useRef(null)
 
@@ -846,6 +849,23 @@ export default function ImolocBaux() {
             </div>
           </div>
         </div>
+      )}
+    </>
+  )
+  return (
+    <>
+      {showSigModal && agence && selBail && (
+        <SignatureModal
+          isOpen={showSigModal}
+          onClose={()=>setShowSigModal(false)}
+          document_type="bail"
+          document_id={selBail.id}
+          agence_id={agence?.id}
+          signataire_nom={sigConfig.signataire_nom}
+          signataire_role={sigConfig.signataire_role}
+          signataire_email={sigConfig.signataire_email}
+          onSigned={()=>toast.success('Signature enregistree !')}
+        />
       )}
     </>
   )
