@@ -801,6 +801,8 @@ export default function ImolocBaux() {
                               setSelBail(prev=>prev?{...prev,contrat_statut:'signe'}:prev)
                               toast.success('Contrat marque comme signe !')
                             }}>Marquer comme signe</button>}
+                            <button className='bx-btn bx-btn-g' style={{fontSize:11,padding:'5px 12px'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.locataires?.nom?`${selBail.locataires.prenom||''} ${selBail.locataires.nom}`:'Locataire',signataire_role:'locataire'});setShowSigModal(true)}}>✍ Locataire</button>
+                            <button className='bx-btn' style={{fontSize:11,padding:'5px 12px',color:'#4da6ff',borderColor:'rgba(0,120,212,0.3)'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.proprietaires?.nom?`${selBail.proprietaires.prenom||''} ${selBail.proprietaires.nom}`:'Proprietaire',signataire_role:'proprietaire'});setShowSigModal(true)}}>✍ Proprietaire</button>
                             {modeleActif&&<div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>Modele : {modeleActif.nom}</div>}
                           </div>
                           {editMode?(
