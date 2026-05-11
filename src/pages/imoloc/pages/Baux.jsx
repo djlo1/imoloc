@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 import SignatureModal from '../../../components/SignatureModal'
+import SignaturePanel from '../../../components/SignaturePanel'
 
 const STATUT_CFG = {
   en_attente:{ color:'#f59e0b', bg:'rgba(245,158,11,0.12)', label:'En attente', dot:'#f59e0b' },
@@ -792,8 +793,6 @@ export default function ImolocBaux() {
                             }}>Sauvegarder</button>}
                             <button className='bx-btn' onClick={()=>{setContrat(null);setContratOuvert(false);genererContrat(selBail)}}>Regenerer</button>
                             {!editMode&&<>
-                            <button className='bx-btn bx-btn-g' style={{fontSize:11}} onClick={()=>{setSigConfig({signataire_nom:selBail?.locataires?.nom?`${selBail.locataires.prenom||''} ${selBail.locataires.nom}`:'Locataire',signataire_role:'locataire'});setShowSigModal(true)}}>Signer Locataire</button>
-                            <button className='bx-btn' style={{fontSize:11,color:'#4da6ff',borderColor:'rgba(0,120,212,0.3)'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.proprietaires?.nom?`${selBail.proprietaires.prenom||''} ${selBail.proprietaires.nom}`:'Proprietaire',signataire_role:'proprietaire'});setShowSigModal(true)}}>Signer Proprio</button>
                           </>}
                           {!editMode&&<button className='bx-btn bx-btn-g' style={{marginLeft:'auto'}} onClick={async()=>{
                               if(!confirm('Marquer ce contrat comme signe ?')) return
@@ -850,6 +849,11 @@ export default function ImolocBaux() {
                           )}
                         </div>
                       )}
+                      {/* Panel signatures */}
+                      <div style={{marginTop:16,borderTop:'1px solid rgba(255,255,255,0.07)',paddingTop:16}}>
+                        <div style={{fontSize:13,fontWeight:600,color:'#e6edf3',marginBottom:12}}>Signatures du contrat</div>
+                        <SignaturePanel bail={selBail} agence={agence} onUpdate={()=>setContrat(prev=>prev)}/>
+                      </div>
                     </div>
                   )}
                 </div>
