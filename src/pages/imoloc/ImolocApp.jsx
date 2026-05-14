@@ -9,6 +9,7 @@ import ImolocDashboard from './pages/ImolocDashboard'
 import Maintenance from './pages/Maintenance'
 import EtatsDesLieux from './pages/EtatsDesLieux'
 import Rapports from './pages/Rapports'
+import BailDetail from './pages/BailDetail'
 import Proprietaires from './pages/Proprietaires'
 import Biens from './pages/Biens'
 import Locataires from './pages/Locataires'
@@ -369,6 +370,7 @@ export default function ImolocApp() {
               <Route path="proprietaires/*" element={<Proprietaires />} />
               <Route path="biens/*" element={<Biens />} />
               <Route path="locataires/*" element={<Locataires />} />
+              <Route path="baux/:id" element={<BailDetail />} />
               <Route path="baux/*" element={<Baux />} />
               <Route path="paiements/*" element={<Paiements />} />
               <Route path="loci/*" element={<Soon title="Loci IA" icon="✨"/>} />
