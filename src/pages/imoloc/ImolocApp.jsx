@@ -259,11 +259,6 @@ export default function ImolocApp() {
               Loci IA
             </button>
 
-            {/* Langue */}
-            <button onClick={()=>{ const nl = lang==='fr'?'en':'fr'; changeLanguage(nl); setLang(nl) }}
-              style={{display:'inline-flex',alignItems:'center',gap:5,padding:'5px 10px',borderRadius:5,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.6)',cursor:'pointer',fontSize:12,fontWeight:600,fontFamily:'Inter,sans-serif'}}>
-              {lang==='fr'?'🇫🇷 FR':'🇬🇧 EN'}
-            </button>
             {/* Notifications */}
             <NotificationsPanel userId={profile?.id} agenceId={agence?.id}/>
 

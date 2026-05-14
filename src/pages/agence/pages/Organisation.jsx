@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
+import { changeLanguage } from '../../../i18n'
 import toast from 'react-hot-toast'
 
 export default function Organisation() {
-  const [form, setForm] = useState({ nom:'', email:'', telephone:'', ville:'', pays:'Bénin', adresse:'', site_web:'' })
+  const [form, setForm] = useState({ nom:'', email:'', telephone:'', ville:'', pays:'Bénin', adresse:'', site_web:'', langue:'fr' })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [agenceId, setAgenceId] = useState(null)
@@ -13,7 +14,12 @@ export default function Organisation() {
     const init = async () => {
       const { data:{user} } = await supabase.auth.getUser()
       const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
-      if (ag) { setAgenceId(ag.id); setForm({ nom:ag.nom||'', email:ag.email||'', telephone:ag.telephone||'', ville:ag.ville||'', pays:ag.pays||'Bénin', adresse:ag.adresse||'', site_web:ag.site_web||'' }) }
+      if (ag) {
+        setAgenceId(ag.id)
+        setForm({ nom:ag.nom||'', email:ag.email||'', telephone:ag.telephone||'', ville:ag.ville||'', pays:ag.pays||'Bénin', adresse:ag.adresse||'', site_web:ag.site_web||'' })
+        const { data:po } = await supabase.from('parametres_organisation').select('langue').eq('agence_id',ag.id).single()
+        if (po?.langue) setForm(f=>({...f,langue:po.langue}))
+      }
       setLoading(false)
     }
     init()
@@ -22,9 +28,12 @@ export default function Organisation() {
   const handleSave = async (e) => {
     e.preventDefault()
     setSaving(true)
-    const { error } = await supabase.from('agences').update(form).eq('id', agenceId)
-    if (error) toast.error(error.message)
-    else toast.success('Informations sauvegardées !')
+    const { langue, ...agenceForm } = form
+    const { error } = await supabase.from('agences').update(agenceForm).eq('id', agenceId)
+    if (error) { toast.error(error.message); setSaving(false); return }
+    await supabase.from('parametres_organisation').upsert({ agence_id:agenceId, langue }, { onConflict:'agence_id' })
+    changeLanguage(langue)
+    toast.success('Informations sauvegardées !')
     setSaving(false)
   }
 
@@ -68,7 +77,22 @@ export default function Organisation() {
             <div className="form-field"><label className="form-lbl">Pays</label><input className="form-input" value={form.pays} onChange={e=>set('pays',e.target.value)}/></div>
           </div>
         </div>
-        <button type="submit" className="pg-btn pg-btn-blue" disabled={saving}>{saving ? 'Sauvegarde...' : 'Sauvegarder'}</button>
+        <div className="org-card">
+        <div className="org-card-title">🌐 Langue par défaut de l organisation</div>
+        <div style={{display:'flex',gap:10}}>
+          {[['fr','🇫🇷 Français'],['en','🇬🇧 English']].map(([val,label])=>(
+            <div key={val} onClick={()=>set('langue',val)} style={{flex:1,padding:'14px',borderRadius:8,border:`2px solid ${form.langue===val?'#0078d4':'rgba(255,255,255,0.1)'}`,background:form.langue===val?'rgba(0,120,212,0.08)':'rgba(255,255,255,0.02)',cursor:'pointer',textAlign:'center',transition:'all 0.15s'}}>
+              <div style={{fontSize:22,marginBottom:6}}>{label.split(' ')[0]}</div>
+              <div style={{fontSize:13,fontWeight:600,color:form.langue===val?'#4da6ff':'rgba(255,255,255,0.5)'}}>{label.split(' ')[1]}</div>
+              {form.langue===val&&<div style={{fontSize:11,color:'#0078d4',marginTop:4}}>Langue active</div>}
+            </div>
+          ))}
+        </div>
+        <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginTop:12}}>
+          Cette langue sera appliquée par défaut pour tous les collaborateurs de l organisation. Chaque utilisateur peut la modifier dans son profil.
+        </div>
+      </div>
+      <button type="submit" className="pg-btn pg-btn-blue" disabled={saving}>{saving ? 'Sauvegarde...' : 'Sauvegarder'}</button>
       </form>
     </>
   )
