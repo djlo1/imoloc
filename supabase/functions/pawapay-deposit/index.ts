@@ -9,11 +9,11 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   try {
-    const { amount, currency, phone, correspondent, agence_id, plan_id, description } = await req.json()
+    const { amount, currency, phone, correspondent, agence_id, plan_id } = await req.json()
 
-    if (!amount || !phone || !correspondent || !agence_id) {
-      return new Response(JSON.stringify({ error: 'Parametres manquants' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    if (!amount || !phone || !correspondent) {
+      return new Response(JSON.stringify({ success: false, error: 'Parametres manquants' }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
@@ -21,7 +21,6 @@ serve(async (req) => {
     const PAWAPAY_URL = Deno.env.get('PAWAPAY_BASE_URL') || 'https://api.sandbox.pawapay.io'
     const depositId = crypto.randomUUID()
 
-    // Format correct PawaPay v2
     const payload = {
       depositId,
       amount: String(amount),
@@ -29,11 +28,13 @@ serve(async (req) => {
       payer: {
         type: 'MMO',
         accountDetails: {
-          phoneNumber: phone.replace(/\s/g, ''),
+          phoneNumber: String(phone).replace(/\s/g, ''),
           provider: correspondent
         }
-      },
+      }
     }
+
+    console.log('Calling PawaPay with:', JSON.stringify(payload))
 
     const pawapayResp = await fetch(`${PAWAPAY_URL}/v2/deposits`, {
       method: 'POST',
@@ -47,42 +48,49 @@ serve(async (req) => {
     const pawapayData = await pawapayResp.json()
     console.log('PawaPay response:', JSON.stringify(pawapayData))
 
-    if (pawapayData.status === 'REJECTED') {
+    // Toujours retourner 200 - le frontend gere le statut
+    if (pawapayData.status === 'REJECTED' || pawapayData.status === 'FAILED') {
       return new Response(JSON.stringify({
-        error: pawapayData.failureReason?.failureMessage || 'Paiement rejete',
-        details: pawapayData
-      }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        success: false,
+        error: pawapayData.failureReason?.failureMessage || 'Paiement rejete par l operateur',
+        code: pawapayData.failureReason?.failureCode,
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Sauvegarder la transaction
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    await supabase.from('pawapay_transactions').upsert({
-      deposit_id: depositId,
-      agence_id,
-      plan_id,
-      amount: parseFloat(amount),
-      currency: currency || 'XOF',
-      phone,
-      correspondent,
-      statut: 'INITIATED',
-      pawapay_status: pawapayData.status,
-      created_at: new Date().toISOString(),
-    })
+    // Sauvegarder en DB si possible
+    if (agence_id && agence_id !== 'test') {
+      try {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        )
+        await supabase.from('pawapay_transactions').insert({
+          deposit_id: depositId,
+          agence_id,
+          plan_id,
+          amount: parseFloat(amount),
+          currency: currency || 'XOF',
+          phone: String(phone),
+          correspondent,
+          statut: 'INITIATED',
+          pawapay_status: pawapayData.status,
+        })
+      } catch(dbErr) {
+        console.error('DB save error (non-fatal):', dbErr)
+      }
+    }
 
     return new Response(JSON.stringify({
+      success: true,
       depositId,
       status: pawapayData.status,
       message: 'Demande envoyee. Approuvez sur votre telephone.',
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (err) {
-    console.error('Error:', err)
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    console.error('Fatal error:', err)
+    return new Response(JSON.stringify({ success: false, error: err.message }), {
+      status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 })

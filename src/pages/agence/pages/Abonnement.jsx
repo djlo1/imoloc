@@ -104,10 +104,10 @@ export default function Abonnement() {
           correspondent: payForm.correspondent,
           agence_id: agence?.id,
           plan_id: selectedPlan.id,
-          description: 'Imoloc ' + selectedPlan.nom + ' - ' + (periode === 'mois' ? '1 mois' : '1 an'),
         }
       })
-      if (error || data?.error) { toast.error(data?.error || error.message); setPayStatus('failed'); setPaying(null); return }
+      if (error) { toast.error('Erreur reseau: ' + error.message); setPayStatus('failed'); setPaying(null); return }
+      if (!data?.success) { toast.error(data?.error || 'Paiement rejete'); setPayStatus('failed'); setPaying(null); return }
       setDepositId(data.depositId)
       toast.success('Demande envoyee ! Approuvez sur votre telephone.')
       pollStatus(data.depositId)
