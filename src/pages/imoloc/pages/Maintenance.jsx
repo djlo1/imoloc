@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
+import { notifierNouveauTicket } from '../../../lib/notifications'
 
 const TYPE_CFG = {
   plomberie:    { icon:'🔧', color:'#0078d4', label:'Plomberie' },
@@ -96,6 +97,7 @@ export default function Maintenance() {
       })
       if(error) throw error
       toast.success('Ticket cree !')
+      notifierNouveauTicket({ agence_id:agence?.id, titre_ticket:form.titre, bien_nom:biens.find(b=>b.id===form.bien_id)?.nom||'', priorite:form.priorite })
       resetAdd()
       await initData()
     } catch(e){toast.error(e.message)}

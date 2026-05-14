@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 import SignaturePanel from '../../../components/SignaturePanel'
+import { notifierPaiementRecu, notifierBailSigne } from '../../../lib/notifications'
 
 const STATUT_BAIL = {
   en_attente:{ color:'#f59e0b', bg:'rgba(245,158,11,0.12)', label:'En attente' },
@@ -78,6 +79,7 @@ export default function BailDetail() {
         reference_transaction:payForm.reference,
       })
       toast.success('Paiement enregistre !')
+      notifierPaiementRecu({ agence_id:agence?.id, montant:payForm.montant, devise:bail?.devise||'FCFA', bien_nom:bail?.biens?.nom, locataire_nom:bail?.locataires?bail.locataires.prenom+' '+bail.locataires.nom:'' })
       setShowPay(false)
       setPayForm({ montant:'', mode:'Mobile Money', operateur:'', reference:'' })
       const { data:p } = await supabase.from('paiements').select('*').eq('bail_id',id).order('date_echeance',{ascending:false})
@@ -288,7 +290,7 @@ export default function BailDetail() {
                   <button style={{ ...bB, fontSize:12, padding:'5px 12px', color:editMode?'#f59e0b':'rgba(255,255,255,0.6)' }} onClick={()=>setEditMode(m=>!m)}>{editMode?'Apercu':'Modifier'}</button>
                   {editMode && <button style={{ ...bG, fontSize:12, padding:'5px 12px' }} onClick={async()=>{const html=editableRef.current?editableRef.current.innerHTML:contrat;setContrat(html);await supabase.from('baux').update({contrat_html:html}).eq('id',id);toast.success('Sauvegarde !')}}>Sauvegarder</button>}
                   <button style={{ ...bB, fontSize:12, padding:'5px 12px' }} onClick={()=>{setContrat(null);setContratOuvert(false);genererContrat()}}>Regenerer</button>
-                  {!editMode && bail.contrat_statut!=='signe' && <button style={{ ...bG, fontSize:12, padding:'5px 12px' }} onClick={async()=>{if(!confirm('Marquer comme signe ?'))return;await supabase.from('baux').update({contrat_statut:'signe'}).eq('id',id);setBail(p=>p?{...p,contrat_statut:'signe'}:p);toast.success('Signe !')}}>Marquer signe</button>}
+                  {!editMode && bail.contrat_statut!=='signe' && <button style={{ ...bG, fontSize:12, padding:'5px 12px' }} onClick={async()=>{if(!confirm('Marquer comme signe ?'))return;await supabase.from('baux').update({contrat_statut:'signe'}).eq('id',id);setBail(p=>p?{...p,contrat_statut:'signe'}:p);toast.success('Signe !');notifierBailSigne({agence_id:agence?.id,bien_nom:bail?.biens?.nom,locataire_nom:bail?.locataires?bail.locataires.prenom+' '+bail.locataires.nom:''})}}>Marquer signe</button>}
                   {modeleActif && <span style={{ fontSize:11, color:'rgba(255,255,255,0.3)', marginLeft:'auto' }}>Modele : {modeleActif.nom}</span>}
                 </div>
                 {editMode ? (
