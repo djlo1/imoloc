@@ -3,47 +3,52 @@ import { supabase } from '../../../lib/supabase'
 import { changeLanguage } from '../../../i18n'
 import toast from 'react-hot-toast'
 
-const SERVICES = [
-  { id:'modeles',        icon:'📄', title:'Modeles de documents',    desc:'Gerez vos templates de bail, factures et quittances. Personnalisez avec votre logo et couleurs.',           path:'/agence/modeles' },
-  { id:'notifications',  icon:'🔔', title:'Notifications',           desc:'Configurez les alertes email et push pour les paiements, baux et evenements importants.',                  path:'/agence/notifications' },
-  { id:'integrations',   icon:'🔗', title:'Applications integrees',  desc:'Connectez des applications tierces a votre espace Imoloc (FedaPay, Stripe, et plus).',                    path:'/agence/integrations' },
-  { id:'loci',           icon:'✨', title:'Loci IA',                  desc:'Parametrez l assistant IA pour votre organisation. Redigez, analysez et automatisez vos taches.',          path:null },
-  { id:'nouveautes',     icon:'🆕', title:'Nouveautes',               desc:'Consultez les dernieres fonctionnalites et mises a jour de la plateforme Imoloc.',                         path:'/agence/nouveautes' },
+const TABS = [
+  { id:'services',  label:'Services' },
+  { id:'securite',  label:'Securite et confidentialite' },
+  { id:'profil',    label:'Profil de l organisation' },
 ]
 
-const SECURITE = [
-  { id:'mfa',            icon:'🔐', title:'Authentification a deux facteurs', desc:'Renforcez la securite des comptes de votre organisation avec la verification en deux etapes.',    path:'/agence/securite' },
-  { id:'sessions',       icon:'⏱️', title:'Sessions et appareils',            desc:'Gerez les sessions actives et les appareils connectes a votre organisation.',                     path:'/agence/securite' },
-  { id:'mdp',            icon:'🔑', title:'Politique de mot de passe',        desc:'Definissez les regles de complexite et d expiration des mots de passe pour vos utilisateurs.',   path:'/agence/securite' },
-  { id:'acces',          icon:'👥', title:'Controle d acces',                 desc:'Gerez les roles et permissions de chaque collaborateur dans votre organisation.',                 path:'/agence/utilisateurs' },
-]
-
-const PROFIL_ITEMS = [
-  { id:'informations',   icon:'🏢', title:'Informations de l organisation',   desc:'Nom, email, telephone, adresse, ville, pays et site web de votre organisation.' },
-  { id:'langue',         icon:'🌐', title:'Langue par defaut',                 desc:'Definissez la langue par defaut pour tous les collaborateurs de votre organisation.' },
-  { id:'devise',         icon:'💱', title:'Devise et fuseau horaire',          desc:'Configurez la devise utilisee et le fuseau horaire de votre organisation.' },
-  { id:'charte',         icon:'🎨', title:'Charte graphique',                  desc:'Logo, couleur principale et identite visuelle de votre organisation.' },
-]
-
-function PanelItem({ icon, title, desc, onClick, badge }) {
-  return (
-    <div onClick={onClick} style={{ display:'flex', alignItems:'center', gap:16, padding:'14px 20px', borderBottom:'1px solid rgba(255,255,255,0.05)', cursor:onClick?'pointer':'default', transition:'background 0.15s' }}
-      onMouseEnter={e=>{ if(onClick) e.currentTarget.style.background='rgba(255,255,255,0.03)' }}
-      onMouseLeave={e=>{ e.currentTarget.style.background='transparent' }}>
-      <div style={{ width:38, height:38, borderRadius:8, background:'rgba(0,120,212,0.1)', border:'1px solid rgba(0,120,212,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{icon}</div>
-      <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ fontSize:14, fontWeight:600, color:'#e6edf3', marginBottom:2 }}>{title}</div>
-        <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', lineHeight:1.5 }}>{desc}</div>
-      </div>
-      {badge && <span style={{ fontSize:11, padding:'2px 8px', borderRadius:100, background:'rgba(0,120,212,0.1)', color:'#4da6ff', border:'1px solid rgba(0,120,212,0.2)', flexShrink:0 }}>{badge}</span>}
-      {onClick && <svg width="16" height="16" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" viewBox="0 0 24 24" style={{ flexShrink:0 }}><path strokeLinecap="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>}
-    </div>
-  )
+const ITEMS = {
+  services: [
+    { icon:'📄', color:'#0078d4', title:'Modeles de documents',   desc:'Gerez vos templates de bail, factures et quittances. Personnalisez avec votre logo et couleurs.', action:'modeles' },
+    { icon:'🔔', color:'#0078d4', title:'Notifications',          desc:'Configurez les alertes email et push pour les paiements, baux et evenements importants.', action:'notifications' },
+    { icon:'🔗', color:'#0078d4', title:'Applications integrees', desc:'Connectez des applications tierces a votre espace Imoloc (FedaPay, Stripe, et plus).', action:'integrations' },
+    { icon:'✨', color:'#6c63ff', title:'Loci IA',                desc:'Parametrez l assistant IA. Redigez, analysez et automatisez vos taches immobilieres.', action:'loci' },
+    { icon:'🆕', color:'#0078d4', title:'Nouveautes',             desc:'Consultez les dernieres fonctionnalites et mises a jour de la plateforme Imoloc.', action:'nouveautes' },
+    { icon:'📊', color:'#0078d4', title:'Rapports et analyses',   desc:'Configurez vos rapports automatiques et tableaux de bord analytiques.', action:'rapports' },
+    { icon:'📱', color:'#00c896', title:'Application mobile',     desc:'Gerez les acces de l application mobile pour vos proprietaires et locataires.', action:null },
+    { icon:'📧', color:'#0078d4', title:'Modeles d emails',       desc:'Personnalisez les emails automatiques envoyes par Imoloc a vos locataires.', action:null },
+  ],
+  securite: [
+    { icon:'🔐', color:'#ef4444', title:'Authentification a deux facteurs', desc:'Renforcez la securite des comptes avec la verification en deux etapes obligatoire.', action:'securite' },
+    { icon:'📱', color:'#f59e0b', title:'Sessions et appareils',            desc:'Gerez les sessions actives et les appareils connectes a votre organisation.', action:'securite' },
+    { icon:'🔑', color:'#f59e0b', title:'Politique de mot de passe',        desc:'Definissez les regles de complexite et la duree d expiration des mots de passe.', action:'securite' },
+    { icon:'👥', color:'#0078d4', title:'Roles et permissions',             desc:'Controllez precisement ce que chaque collaborateur peut voir et faire.', action:'utilisateurs' },
+    { icon:'🛡️', color:'#ef4444', title:'Acces conditionnel',               desc:'Definissez des regles d acces selon la localisation ou l appareil utilise.', action:null },
+    { icon:'📋', color:'#8b5cf6', title:'Journal d activite',               desc:'Consultez l historique complet des actions effectuees dans votre organisation.', action:null },
+    { icon:'🔒', color:'#ef4444', title:'Chiffrement des donnees',          desc:'Toutes les donnees sont chiffrees en transit et au repos avec AES-256.', action:null },
+    { icon:'⚠️', color:'#f59e0b', title:'Alertes de securite',              desc:'Recevez des notifications en cas d activite suspecte sur votre compte.', action:null },
+    { icon:'🌍', color:'#0078d4', title:'Connexions autorisees',            desc:'Limitez les connexions a certains pays ou plages d adresses IP.', action:null },
+    { icon:'🗑️', color:'#ef4444', title:'Suppression des donnees',          desc:'Gerez la retention et la suppression des donnees conformement au RGPD.', action:null },
+  ],
+  profil: [
+    { icon:'🏢', color:'#0078d4', title:'Informations de l organisation',   desc:'Nom, email, telephone, adresse, ville, pays et site web de votre organisation.', action:'informations' },
+    { icon:'🌐', color:'#00c896', title:'Langue par defaut',                 desc:'Definissez la langue de l interface pour tous les collaborateurs.', action:'langue' },
+    { icon:'💱', color:'#f59e0b', title:'Devise et fuseau horaire',          desc:'Configurez la devise et le fuseau horaire utilises dans votre organisation.', action:'devise' },
+    { icon:'🎨', color:'#8b5cf6', title:'Charte graphique',                  desc:'Logo, couleur principale et identite visuelle de votre organisation.', action:'charte' },
+    { icon:'📍', color:'#ef4444', title:'Localisation',                      desc:'Adresse principale, ville et pays de votre organisation.', action:'informations' },
+    { icon:'📞', color:'#0078d4', title:'Coordonnees de contact',            desc:'Numero de telephone, email de contact et site web public.', action:'informations' },
+    { icon:'📄', color:'#0078d4', title:'Mentions legales',                  desc:'Configurez les mentions legales et politique de confidentialite.', action:null },
+    { icon:'🤝', color:'#00c896', title:'Partenaires et integrateurs',       desc:'Gerez les acces partenaires et les relations B2B de votre organisation.', action:null },
+    { icon:'💼', color:'#6c63ff', title:'Informations fiscales',             desc:'IFU, registre de commerce et statut fiscal de votre organisation.', action:null },
+  ],
 }
 
 export default function Organisation() {
-  const [tab, setTab]       = useState('profil')
+  const [tab, setTab]       = useState('services')
   const [panel, setPanel]   = useState(null)
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [agenceId, setAgenceId] = useState(null)
@@ -58,7 +63,7 @@ export default function Organisation() {
     if (ag) {
       setAgenceId(ag.id)
       setForm(f=>({ ...f, nom:ag.nom||'', email:ag.email||'', telephone:ag.telephone||'', ville:ag.ville||'', pays:ag.pays||'Benin', adresse:ag.adresse||'', site_web:ag.site_web||'' }))
-      const { data:po } = await supabase.from('parametres_organisation').select('langue,devise,fuseau_horaire,couleur_principale').eq('agence_id',ag.id).single()
+      const { data:po } = await supabase.from('parametres_organisation').select('langue,devise,fuseau_horaire').eq('agence_id',ag.id).single()
       if (po) setForm(f=>({ ...f, langue:po.langue||'fr', devise:po.devise||'FCFA', fuseau:po.fuseau_horaire||'Africa/Porto-Novo' }))
     }
     setLoading(false)
@@ -70,8 +75,7 @@ export default function Organisation() {
     const { error } = await supabase.from('agences').update(agForm).eq('id', agenceId)
     if (error) { toast.error(error.message); setSaving(false); return }
     toast.success('Informations sauvegardees !')
-    setPanel(null)
-    setSaving(false)
+    setPanel(null); setSaving(false)
   }
 
   const saveLangue = async () => {
@@ -79,21 +83,37 @@ export default function Organisation() {
     await supabase.from('parametres_organisation').upsert({ agence_id:agenceId, langue:form.langue }, { onConflict:'agence_id' })
     changeLanguage(form.langue)
     toast.success('Langue mise a jour !')
-    setPanel(null)
-    setSaving(false)
+    setPanel(null); setSaving(false)
   }
 
   const saveDevise = async () => {
     setSaving(true)
     await supabase.from('parametres_organisation').upsert({ agence_id:agenceId, devise:form.devise, fuseau_horaire:form.fuseau }, { onConflict:'agence_id' })
-    toast.success('Devise et fuseau sauvegardes !')
-    setPanel(null)
-    setSaving(false)
+    toast.success('Parametres sauvegardes !')
+    setPanel(null); setSaving(false)
   }
 
-  const inp = { width:'100%', padding:'9px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:7, fontFamily:'Inter,sans-serif', fontSize:13.5, color:'#e6edf3', outline:'none', colorScheme:'dark', boxSizing:'border-box', transition:'border-color 0.15s' }
-  const lbl = { display:'block', fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.45)', marginBottom:6, textTransform:'uppercase', letterSpacing:'0.05em' }
-  const bB = { display:'inline-flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:6, fontSize:13, fontWeight:500, cursor:'pointer', border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.04)', color:'rgba(255,255,255,0.6)', fontFamily:'Inter,sans-serif', transition:'all 0.15s' }
+  const handleAction = (item) => {
+    if (!item.action) return
+    if (['securite','utilisateurs','integrations','rapports','nouveautes','loci','notifications'].includes(item.action)) {
+      window.location.href = '/agence/' + item.action
+    } else {
+      setPanel(item.action)
+    }
+  }
+
+  const getBadge = (action) => {
+    if (action === 'langue') return form.langue === 'fr' ? 'Francais' : 'English'
+    if (action === 'devise') return form.devise
+    return null
+  }
+
+  const items = ITEMS[tab] || []
+  const filtered = search ? items.filter(i => i.title.toLowerCase().includes(search.toLowerCase()) || i.desc.toLowerCase().includes(search.toLowerCase())) : items
+
+  const inp = { width:'100%', padding:'9px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:6, fontFamily:'Inter,sans-serif', fontSize:13.5, color:'#e6edf3', outline:'none', colorScheme:'dark', boxSizing:'border-box' }
+  const lbl = { display:'block', fontSize:11.5, fontWeight:600, color:'rgba(255,255,255,0.4)', marginBottom:6, textTransform:'uppercase', letterSpacing:'0.05em' }
+  const bB = { display:'inline-flex', alignItems:'center', gap:6, padding:'7px 16px', borderRadius:5, fontSize:13, fontWeight:500, cursor:'pointer', border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.04)', color:'rgba(255,255,255,0.6)', fontFamily:'Inter,sans-serif' }
   const bP = { ...bB, background:'#0078d4', borderColor:'#0078d4', color:'#fff' }
 
   if (loading) return <div style={{ padding:60, textAlign:'center', color:'rgba(255,255,255,0.3)' }}>Chargement...</div>
@@ -101,107 +121,122 @@ export default function Organisation() {
   return (
     <>
       <style>{`
-        .org-tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.4);border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap}
-        .org-tab.on{color:#e6edf3;border-bottom-color:#0078d4}
-        .org-tab:hover:not(.on){color:rgba(255,255,255,0.7)}
-        .org-inp:focus{border-color:#0078d4 !important}
+        .ms-tab{padding:12px 16px;font-size:13px;font-weight:400;cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.5);transition:all 0.15s;white-space:nowrap;margin-bottom:-1px}
+        .ms-tab:hover{color:rgba(255,255,255,0.8);border-bottom-color:rgba(255,255,255,0.2)}
+        .ms-tab.on{color:#e6edf3;font-weight:600;border-bottom-color:#0078d4}
+        .ms-row{display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background 0.1s;gap:24px}
+        .ms-row:hover{background:rgba(255,255,255,0.03)}
+        .ms-row:last-child{border-bottom:none}
+        .ms-title{font-size:13.5px;font-weight:400;color:#4da6ff;text-decoration:none}
+        .ms-title:hover{text-decoration:underline}
+        .ms-desc{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.5}
+        .ms-icon{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+        .ms-search{padding:6px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);borderRadius:4px;color:#e6edf3;font-family:Inter,sans-serif;font-size:13px;outline:none;width:220px}
+        .panel-overlay{position:fixed;top:0;right:0;height:100vh;width:min(480px,90vw);background:#161b22;border-left:1px solid rgba(255,255,255,0.08);z-index:200;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,0.4)}
       `}</style>
 
-      <div style={{ maxWidth:900, margin:'0 auto' }}>
-        <div style={{ marginBottom:24 }}>
-          <div style={{ fontSize:24, fontWeight:700, color:'#e6edf3', letterSpacing:'-0.02em', marginBottom:4 }}>Parametres de l organisation</div>
-          <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)' }}>Configurez votre organisation, la securite et les services Imoloc</div>
-        </div>
+      <div style={{ maxWidth:960, margin:'0 auto' }}>
+        {/* HEADER */}
+        <div style={{ marginBottom:0 }}>
+          <div style={{ fontSize:22, fontWeight:700, color:'#e6edf3', letterSpacing:'-0.01em', marginBottom:20 }}>Parametres de l organisation</div>
 
-        {/* TABS */}
-        <div style={{ display:'flex', gap:0, borderBottom:'1px solid rgba(255,255,255,0.08)', marginBottom:24 }}>
-          {[['services','Services'],['securite','Securite et confidentialite'],['profil','Profil de l organisation']].map(([k,l])=>(
-            <button key={k} className={'org-tab'+(tab===k?' on':'')} onClick={()=>{setTab(k);setPanel(null)}}>{l}</button>
-          ))}
-        </div>
-
-        {/* LISTE ITEMS */}
-        <div style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, overflow:'hidden' }}>
-          <div style={{ padding:'10px 20px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <span style={{ fontSize:12, color:'rgba(255,255,255,0.35)', fontWeight:500 }}>
-              {tab==='services'?SERVICES.length:tab==='securite'?SECURITE.length:PROFIL_ITEMS.length} element{(tab==='services'?SERVICES.length:tab==='securite'?SECURITE.length:PROFIL_ITEMS.length)>1?'s':''}
-            </span>
+          {/* TABS */}
+          <div style={{ display:'flex', gap:0, borderBottom:'1px solid rgba(255,255,255,0.08)', marginBottom:0 }}>
+            {TABS.map(t => (
+              <button key={t.id} className={'ms-tab'+(tab===t.id?' on':'')} onClick={()=>{setTab(t.id);setPanel(null);setSearch('')}}>{t.label}</button>
+            ))}
           </div>
-
-          {tab==='services' && SERVICES.map(s=>(
-            <PanelItem key={s.id} icon={s.icon} title={s.title} desc={s.desc} onClick={()=>s.path?window.open(s.path,'_self'):null} badge={s.id==='loci'?'IA':null}/>
-          ))}
-
-          {tab==='securite' && SECURITE.map(s=>(
-            <PanelItem key={s.id} icon={s.icon} title={s.title} desc={s.desc} onClick={()=>setPanel(s.id)}/>
-          ))}
-
-          {tab==='profil' && PROFIL_ITEMS.map(s=>(
-            <PanelItem key={s.id} icon={s.icon} title={s.title} desc={s.desc} onClick={()=>setPanel(s.id)}
-              badge={s.id==='langue'?(form.langue==='fr'?'Francais':'English'):s.id==='devise'?form.devise:null}/>
-          ))}
         </div>
 
-        {/* PANELS DETAIL */}
+        {/* TOOLBAR */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 20px', borderBottom:'1px solid rgba(255,255,255,0.06)', background:'rgba(255,255,255,0.01)' }}>
+          <span style={{ fontSize:13, color:'rgba(255,255,255,0.35)' }}>{filtered.length} element{filtered.length > 1 ? 's' : ''}</span>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <input className="ms-search" style={{ padding:'6px 10px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:4, color:'#e6edf3', fontFamily:'Inter,sans-serif', fontSize:13, outline:'none', width:220 }} placeholder="Rechercher dans tous les parametres..." value={search} onChange={e=>setSearch(e.target.value)}/>
+          </div>
+        </div>
+
+        {/* TABLE HEADER */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', padding:'8px 20px', borderBottom:'1px solid rgba(255,255,255,0.08)', gap:24 }}>
+          <div style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.06em', display:'flex', alignItems:'center', gap:4 }}>
+            Nom <span style={{ fontSize:10 }}>↑</span>
+          </div>
+          <div style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.06em' }}>Description</div>
+        </div>
+
+        {/* ROWS */}
+        <div style={{ background:'rgba(255,255,255,0.01)' }}>
+          {filtered.map((item, i) => {
+            const badge = getBadge(item.action)
+            return (
+              <div key={i} className="ms-row" onClick={()=>handleAction(item)}>
+                {/* COL 1 : icon + title + badge */}
+                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                  <div className="ms-icon" style={{ background: item.color + '18', border: '1px solid ' + item.color + '33' }}>
+                    {item.icon}
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <span className="ms-title">{item.title}</span>
+                    {badge && <span style={{ fontSize:10.5, padding:'1px 7px', borderRadius:100, background:'rgba(0,120,212,0.1)', color:'#4da6ff', border:'1px solid rgba(0,120,212,0.2)', fontWeight:500 }}>{badge}</span>}
+                  </div>
+                </div>
+                {/* COL 2 : description */}
+                <div className="ms-desc">{item.desc}</div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* PANEL LATERAL */}
         {panel && (
-          <div style={{ marginTop:20, background:'rgba(255,255,255,0.02)', border:'1px solid rgba(0,120,212,0.25)', borderRadius:10, padding:24 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-              <div style={{ fontSize:16, fontWeight:700, color:'#e6edf3' }}>
+          <div className="panel-overlay">
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid rgba(255,255,255,0.07)' }}>
+              <div style={{ fontSize:16, fontWeight:600, color:'#e6edf3' }}>
                 {panel==='informations'&&'Informations de l organisation'}
                 {panel==='langue'&&'Langue par defaut'}
                 {panel==='devise'&&'Devise et fuseau horaire'}
                 {panel==='charte'&&'Charte graphique'}
-                {(panel==='mfa'||panel==='sessions'||panel==='mdp'||panel==='acces')&&'Parametres de securite'}
               </div>
-              <button onClick={()=>setPanel(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.4)', fontSize:20 }}>x</button>
+              <button onClick={()=>setPanel(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.4)', fontSize:22, lineHeight:1, padding:'2px 6px' }}>x</button>
             </div>
+            <div style={{ flex:1, overflowY:'auto', padding:'20px' }}>
 
-            {/* Informations */}
-            {panel==='informations' && (
-              <div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:16 }}>
-                  {[['nom','Nom de l organisation'],['email','Email'],['telephone','Telephone'],['ville','Ville'],['pays','Pays'],['adresse','Adresse'],['site_web','Site web']].map(([k,l])=>(
-                    <div key={k} style={k==='adresse'||k==='site_web'?{gridColumn:'1/-1'}:{}}>
-                      <label style={lbl}>{l}</label>
-                      <input className="org-inp" style={inp} value={form[k]||''} onChange={e=>set(k,e.target.value)}/>
-                    </div>
-                  ))}
+              {panel==='informations' && (
+                <div>
+                  <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', marginBottom:20, lineHeight:1.6 }}>Mettez a jour les informations de contact et d identification de votre organisation.</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                    {[['nom','Nom de l organisation'],['email','Email'],['telephone','Telephone'],['adresse','Adresse'],['ville','Ville'],['pays','Pays'],['site_web','Site web']].map(([k,l])=>(
+                      <div key={k}>
+                        <label style={lbl}>{l}</label>
+                        <input style={inp} value={form[k]||''} onChange={e=>set(k,e.target.value)}/>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-                  <button style={bB} onClick={()=>setPanel(null)}>Annuler</button>
-                  <button style={{ ...bP, opacity:saving?0.6:1 }} disabled={saving} onClick={saveInfos}>{saving?'Sauvegarde...':'Sauvegarder'}</button>
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* Langue */}
-            {panel==='langue' && (
-              <div>
-                <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginBottom:16 }}>
-                  Cette langue sera appliquee par defaut pour tous les collaborateurs. Chaque utilisateur peut la modifier dans son profil personnel.
+              {panel==='langue' && (
+                <div>
+                  <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', marginBottom:20, lineHeight:1.6 }}>Choisissez la langue par defaut pour tous les collaborateurs. Chaque utilisateur peut la modifier individuellement dans son profil.</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                    {[['fr','🇫🇷','Francais','Langue par defaut'],['en','🇬🇧','English','Default language']].map(([val,flag,name,sub])=>(
+                      <div key={val} onClick={()=>set('langue',val)} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:8, border:`1.5px solid ${form.langue===val?'#0078d4':'rgba(255,255,255,0.08)'}`, background:form.langue===val?'rgba(0,120,212,0.06)':'rgba(255,255,255,0.02)', cursor:'pointer', transition:'all 0.15s' }}>
+                        <span style={{ fontSize:28 }}>{flag}</span>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:14, fontWeight:600, color: form.langue===val?'#4da6ff':'#e6edf3', marginBottom:2 }}>{name}</div>
+                          <div style={{ fontSize:12, color:'rgba(255,255,255,0.35)' }}>{sub}</div>
+                        </div>
+                        {form.langue===val && <div style={{ width:18, height:18, borderRadius:'50%', background:'#0078d4', display:'flex', alignItems:'center', justifyContent:'center' }}><span style={{ color:'#fff', fontSize:11 }}>✓</span></div>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:20 }}>
-                  {[['fr','🇫🇷','Francais','Langue officielle'],['en','🇬🇧','English','Official language']].map(([val,flag,name,sub])=>(
-                    <div key={val} onClick={()=>set('langue',val)} style={{ padding:'20px', borderRadius:10, border:`2px solid ${form.langue===val?'#0078d4':'rgba(255,255,255,0.1)'}`, background:form.langue===val?'rgba(0,120,212,0.08)':'rgba(255,255,255,0.02)', cursor:'pointer', textAlign:'center', transition:'all 0.15s' }}>
-                      <div style={{ fontSize:36, marginBottom:10 }}>{flag}</div>
-                      <div style={{ fontSize:15, fontWeight:700, color:form.langue===val?'#4da6ff':'#e6edf3', marginBottom:4 }}>{name}</div>
-                      <div style={{ fontSize:12, color:'rgba(255,255,255,0.35)' }}>{sub}</div>
-                      {form.langue===val && <div style={{ marginTop:8, fontSize:11, color:'#0078d4', fontWeight:600 }}>Langue active</div>}
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-                  <button style={bB} onClick={()=>setPanel(null)}>Annuler</button>
-                  <button style={{ ...bP, opacity:saving?0.6:1 }} disabled={saving} onClick={saveLangue}>{saving?'Sauvegarde...':'Appliquer'}</button>
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* Devise */}
-            {panel==='devise' && (
-              <div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:16 }}>
-                  <div>
+              {panel==='devise' && (
+                <div>
+                  <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', marginBottom:20, lineHeight:1.6 }}>La devise et le fuseau horaire s appliquent a toute l organisation.</div>
+                  <div style={{ marginBottom:16 }}>
                     <label style={lbl}>Devise</label>
                     <select style={{ ...inp, cursor:'pointer', background:'rgba(20,27,40,0.95)' }} value={form.devise} onChange={e=>set('devise',e.target.value)}>
                       {[['FCFA','FCFA — Franc CFA'],['USD','USD — Dollar americain'],['EUR','EUR — Euro'],['GBP','GBP — Livre sterling'],['MAD','MAD — Dirham marocain'],['NGN','NGN — Naira nigerien']].map(([v,l])=><option key={v} value={v} style={{ background:'#161b22' }}>{l}</option>)}
@@ -210,33 +245,27 @@ export default function Organisation() {
                   <div>
                     <label style={lbl}>Fuseau horaire</label>
                     <select style={{ ...inp, cursor:'pointer', background:'rgba(20,27,40,0.95)' }} value={form.fuseau} onChange={e=>set('fuseau',e.target.value)}>
-                      {[['Africa/Porto-Novo','Africa/Porto-Novo (UTC+1)'],['Africa/Abidjan','Africa/Abidjan (UTC+0)'],['Africa/Lagos','Africa/Lagos (UTC+1)'],['Europe/Paris','Europe/Paris (UTC+1/2)'],['America/New_York','America/New_York (UTC-5/4)'],['Asia/Dubai','Asia/Dubai (UTC+4)']].map(([v,l])=><option key={v} value={v} style={{ background:'#161b22' }}>{l}</option>)}
+                      {[['Africa/Porto-Novo','Africa/Porto-Novo (UTC+1)'],['Africa/Abidjan','Africa/Abidjan (UTC+0)'],['Africa/Lagos','Africa/Lagos (UTC+1)'],['Africa/Dakar','Africa/Dakar (UTC+0)'],['Europe/Paris','Europe/Paris (UTC+1/2)'],['America/New_York','America/New_York (UTC-5)']].map(([v,l])=><option key={v} value={v} style={{ background:'#161b22' }}>{l}</option>)}
                     </select>
                   </div>
                 </div>
-                <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-                  <button style={bB} onClick={()=>setPanel(null)}>Annuler</button>
-                  <button style={{ ...bP, opacity:saving?0.6:1 }} disabled={saving} onClick={saveDevise}>{saving?'Sauvegarde...':'Sauvegarder'}</button>
+              )}
+
+              {panel==='charte' && (
+                <div>
+                  <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', marginBottom:20, lineHeight:1.6 }}>La charte graphique (logo, couleurs) se configure dans vos modeles de documents.</div>
+                  <button style={{ ...bP, width:'100%', justifyContent:'center' }} onClick={()=>window.location.href='/agence/modeles'}>Aller aux modeles de documents</button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Charte graphique */}
-            {panel==='charte' && (
-              <div style={{ textAlign:'center', padding:'30px 20px' }}>
-                <div style={{ fontSize:28, marginBottom:12, opacity:0.4 }}>🎨</div>
-                <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginBottom:8 }}>Charte graphique</div>
-                <div style={{ fontSize:12, color:'rgba(255,255,255,0.25)', marginBottom:16 }}>Gerez votre logo et couleurs dans Modeles de documents</div>
-                <button style={{ ...bP, margin:'0 auto' }} onClick={()=>window.open('/agence/modeles','_self')}>Aller aux modeles</button>
-              </div>
-            )}
-
-            {/* Securite */}
-            {(panel==='mfa'||panel==='sessions'||panel==='mdp'||panel==='acces') && (
-              <div style={{ textAlign:'center', padding:'30px 20px' }}>
-                <div style={{ fontSize:28, marginBottom:12, opacity:0.4 }}>🔐</div>
-                <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginBottom:16 }}>Parametres de securite disponibles dans l espace Securite</div>
-                <button style={{ ...bP, margin:'0 auto' }} onClick={()=>window.open('/agence/securite','_self')}>Aller a la Securite</button>
+            {/* FOOTER PANEL */}
+            {['informations','langue','devise'].includes(panel) && (
+              <div style={{ padding:'14px 20px', borderTop:'1px solid rgba(255,255,255,0.07)', display:'flex', gap:8, justifyContent:'flex-end' }}>
+                <button style={bB} onClick={()=>setPanel(null)}>Annuler</button>
+                <button style={{ ...bP, opacity:saving?0.6:1 }} disabled={saving} onClick={panel==='informations'?saveInfos:panel==='langue'?saveLangue:saveDevise}>
+                  {saving?'Sauvegarde...':'Enregistrer'}
+                </button>
               </div>
             )}
           </div>
