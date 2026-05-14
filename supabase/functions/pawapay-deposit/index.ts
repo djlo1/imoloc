@@ -8,7 +8,6 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
-
   try {
     const { amount, currency, phone, correspondent, agence_id, plan_id, description } = await req.json()
 
@@ -20,22 +19,20 @@ serve(async (req) => {
 
     const PAWAPAY_TOKEN = Deno.env.get('PAWAPAY_API_TOKEN')
     const PAWAPAY_URL = Deno.env.get('PAWAPAY_BASE_URL') || 'https://api.sandbox.pawapay.io'
-
-    // Generer un ID unique pour ce depot
     const depositId = crypto.randomUUID()
 
-    // Appel API PawaPay
+    // Format correct PawaPay v2
     const payload = {
       depositId,
       amount: String(amount),
       currency: currency || 'XOF',
-      correspondent,
       payer: {
-        type: 'MSISDN',
-        address: { value: phone }
+        type: 'MMO',
+        accountDetails: {
+          phoneNumber: phone.replace(/\s/g, ''),
+          provider: correspondent
+        }
       },
-      customerTimestamp: new Date().toISOString(),
-      statementDescription: description || 'Abonnement Imoloc',
     }
 
     const pawapayResp = await fetch(`${PAWAPAY_URL}/v2/deposits`, {
@@ -48,15 +45,16 @@ serve(async (req) => {
     })
 
     const pawapayData = await pawapayResp.json()
+    console.log('PawaPay response:', JSON.stringify(pawapayData))
 
-    if (!pawapayResp.ok) {
-      console.error('PawaPay error:', pawapayData)
-      return new Response(JSON.stringify({ error: 'Erreur PawaPay', details: pawapayData }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+    if (pawapayData.status === 'REJECTED') {
+      return new Response(JSON.stringify({
+        error: pawapayData.failureReason?.failureMessage || 'Paiement rejete',
+        details: pawapayData
+      }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Sauvegarder la transaction en DB
+    // Sauvegarder la transaction
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -78,7 +76,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       depositId,
       status: pawapayData.status,
-      message: 'Demande de paiement envoyee. Approuvez sur votre telephone.',
+      message: 'Demande envoyee. Approuvez sur votre telephone.',
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (err) {
