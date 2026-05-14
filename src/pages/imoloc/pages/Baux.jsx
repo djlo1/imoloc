@@ -460,7 +460,7 @@ export default function ImolocBaux() {
                   const fin=b.date_fin?new Date(b.date_fin):null
                   const exp=b.statut==='actif'&&fin&&fin<=in30&&fin>=now
                   return(
-                    <tr key={b.id} onClick={()=>{setSelBail(b);setTab('infos');setContrat(b.contrat_html||null);setModeleActif(null);setEditMode(false);setContratOuvert(false);loadPaiements(b.id)}}>
+                    <tr key={b.id} onClick={()=>navigate('/imoloc/baux/'+b.id)}>
                       <td><div style={{fontWeight:600,color:'#e6edf3',fontSize:13}}>{b.titre||b.biens?.nom||'—'}</div><div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>{b.biens?.nom||'—'} · {b.biens?.ville||'—'}</div></td>
                       <td style={{fontSize:12.5}}>{b.locataires?.prenom||''} {b.locataires?.nom||'—'}</td>
                       <td style={{fontSize:13,fontWeight:600,color:'#0078d4'}}>{fmt(b.loyer_mensuel)} FCFA</td>
@@ -468,7 +468,7 @@ export default function ImolocBaux() {
                       <td><span style={{fontSize:12,color:exp?'#f59e0b':'rgba(255,255,255,0.5)'}}>{b.date_fin?new Date(b.date_fin).toLocaleDateString('fr-FR'):'Indef.'}{exp&&' !'}</span></td>
                       <td><SBadge s={b.statut}/></td>
                       <td><EBadge e={b.etape}/></td>
-                      <td><button style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',padding:'5px 7px',fontSize:15}} onMouseOver={e=>e.currentTarget.style.color='#e6edf3'} onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.3)'} onClick={e=>{e.stopPropagation();setSelBail(b);setTab('infos');loadPaiements(b.id)}}>...</button></td>
+                      <td><button style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',padding:'5px 7px',fontSize:15}} onMouseOver={e=>e.currentTarget.style.color='#e6edf3'} onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.3)'} onClick={e=>{e.stopPropagation();navigate('/imoloc/baux/'+b.id)}}>...</button></td>
                     </tr>
                   )
                 })}
