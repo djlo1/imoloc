@@ -63,49 +63,82 @@ export default function Abonnement() {
     return allPlans.find(p => p.id === abonnement.plan) || null
   }
 
-  const souscirePlan = async (plan) => {
+  const [showPayModal, setShowPayModal] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState(null)
+  const [payForm, setPayForm] = useState({ phone: '', correspondent: 'MTN_MOMO_BEN' })
+  const [payStatus, setPayStatus] = useState(null) // null | 'pending' | 'success' | 'failed'
+  const [depositId, setDepositId] = useState(null)
+
+  const CORRESPONDENTS = [
+    { id: 'MTN_MOMO_BEN', label: 'MTN Mobile Money', pays: 'Benin', icon: '📱', color: '#f59e0b' },
+    { id: 'MOOV_BEN', label: 'Moov Money', pays: 'Benin', icon: '📱', color: '#0078d4' },
+    { id: 'MTN_MOMO_TGO', label: 'MTN Mobile Money', pays: 'Togo', icon: '📱', color: '#f59e0b' },
+    { id: 'MOOV_TGO', label: 'Moov Money', pays: 'Togo', icon: '📱', color: '#0078d4' },
+    { id: 'ORANGE_MON_SEN', label: 'Orange Money', pays: 'Senegal', icon: '📱', color: '#f97316' },
+    { id: 'WAVE_SEN', label: 'Wave', pays: 'Senegal', icon: '📱', color: '#00c896' },
+  ]
+
+  const souscirePlan = (plan) => {
     if (!plan.prix_mois_fcfa) {
       toast('Contactez-nous pour l offre Enterprise : contact@imoloc.lt', { icon: '📧' })
       return
     }
-    setPaying(plan.id)
+    setSelectedPlan(plan)
+    setPayStatus(null)
+    setDepositId(null)
+    setPayForm({ phone: '', correspondent: 'MTN_MOMO_BEN' })
+    setShowPayModal(true)
+  }
+
+  const lancerPaiement = async () => {
+    if (!payForm.phone || payForm.phone.length < 8) { toast.error('Numero de telephone invalide'); return }
+    setPaying(selectedPlan.id)
+    setPayStatus('pending')
     try {
-      const montant = periode === 'mois' ? plan.prix_mois_fcfa : plan.prix_an_fcfa * 12
-      if (!window.FedaPay) {
-        await new Promise((res, rej) => {
-          const s = document.createElement('script')
-          s.src = 'https://cdn.fedapay.com/checkout.js?v=1.1.7'
-          s.onload = res; s.onerror = rej
-          document.head.appendChild(s)
-        })
-      }
-      window.FedaPay.init({
-        public_key: 'pk_sandbox_YOUR_KEY',
-        transaction: { amount: montant, description: 'Imoloc ' + plan.nom + ' - ' + (periode === 'mois' ? '1 mois' : '1 an') },
-        customer: { email: agence?.email || '', lastname: agence?.nom || '' },
-        onComplete: async (resp) => {
-          if (resp.reason === window.FedaPay.CHECKOUT_COMPLETED) {
-            await supabase.from('abonnements').upsert({
-              agence_id: agence.id, plan: plan.id, statut: 'actif',
-              date_debut: new Date().toISOString().split('T')[0],
-              prix_mensuel: plan.prix_mois_fcfa,
-              reference_paiement: resp.transaction?.reference || '',
-            }, { onConflict: 'agence_id' })
-            await supabase.from('factures').insert({
-              agence_id: agence.id,
-              numero: 'IMO-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-4),
-              montant, devise: 'FCFA', statut: 'paye',
-              date_paiement: new Date().toISOString(),
-              details: { plan: plan.nom, periode },
-            })
-            toast.success('Abonnement active ! Merci.')
-            init()
-            setTab('plan')
-          }
-          setPaying(null)
+      const montant = periode === 'mois' ? selectedPlan.prix_mois_fcfa : selectedPlan.prix_an_fcfa * 12
+      const { data, error } = await supabase.functions.invoke('pawapay-deposit', {
+        body: {
+          amount: montant,
+          currency: 'XOF',
+          phone: payForm.phone.replace(/\s/g, ''),
+          correspondent: payForm.correspondent,
+          agence_id: agence?.id,
+          plan_id: selectedPlan.id,
+          description: 'Imoloc ' + selectedPlan.nom + ' - ' + (periode === 'mois' ? '1 mois' : '1 an'),
         }
-      }).open()
-    } catch(e) { toast.error('Erreur paiement: ' + e.message); setPaying(null) }
+      })
+      if (error || data?.error) { toast.error(data?.error || error.message); setPayStatus('failed'); setPaying(null); return }
+      setDepositId(data.depositId)
+      toast.success('Demande envoyee ! Approuvez sur votre telephone.')
+      pollStatus(data.depositId)
+    } catch(e) { toast.error(e.message); setPayStatus('failed'); setPaying(null) }
+  }
+
+  const pollStatus = async (depId) => {
+    let attempts = 0
+    const interval = setInterval(async () => {
+      attempts++
+      try {
+        const { data } = await supabase.functions.invoke('pawapay-status', { body: { depositId: depId } })
+        if (data?.status === 'COMPLETED') {
+          clearInterval(interval)
+          setPayStatus('success')
+          setPaying(null)
+          toast.success('Paiement confirme ! Abonnement active.')
+          setTimeout(() => { setShowPayModal(false); init(); setTab('plan') }, 2000)
+        } else if (data?.status === 'FAILED' || data?.status === 'REJECTED') {
+          clearInterval(interval)
+          setPayStatus('failed')
+          setPaying(null)
+          toast.error('Paiement echoue. Veuillez reessayer.')
+        } else if (attempts >= 20) {
+          clearInterval(interval)
+          setPayStatus('failed')
+          setPaying(null)
+          toast.error('Timeout - verifiez votre telephone et reessayez.')
+        }
+      } catch(e) { console.error(e) }
+    }, 5000)
   }
 
   const fmt = n => Number(n||0).toLocaleString('fr-FR')
@@ -322,6 +355,79 @@ export default function Abonnement() {
           </div>
         )}
       </div>
+      {/* MODAL PAIEMENT PAWAPAY */}
+      {showPayModal && selectedPlan && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div style={{background:'#0d1117',border:'1px solid rgba(255,255,255,0.12)',borderRadius:14,width:'100%',maxWidth:480,padding:28}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+              <div>
+                <div style={{fontSize:17,fontWeight:700,color:'#e6edf3'}}>Paiement Mobile Money</div>
+                <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginTop:2}}>Plan {selectedPlan.nom} — {periode==='mois'?selectedPlan.prix_mois_fcfa?.toLocaleString('fr-FR'):selectedPlan.prix_an_fcfa?.toLocaleString('fr-FR')} FCFA/{periode==='mois'?'mois':'mois (annuel)'}</div>
+              </div>
+              {payStatus!=='pending' && <button onClick={()=>{setShowPayModal(false);setPaying(null)}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:22}}>x</button>}
+            </div>
+
+            {payStatus===null && (
+              <div>
+                <div style={{marginBottom:14}}>
+                  <label style={{display:'block',fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.05em'}}>Operateur Mobile Money</label>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                    {CORRESPONDENTS.map(op=>(
+                      <div key={op.id} onClick={()=>setPayForm(p=>({...p,correspondent:op.id}))} style={{padding:'10px 12px',borderRadius:8,border:`1.5px solid ${payForm.correspondent===op.id?op.color:'rgba(255,255,255,0.08)'}`,background:payForm.correspondent===op.id?op.color+'12':'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.15s'}}>
+                        <div style={{fontSize:12.5,fontWeight:600,color:payForm.correspondent===op.id?op.color:'rgba(255,255,255,0.6)'}}>{op.label}</div>
+                        <div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{op.pays}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{marginBottom:20}}>
+                  <label style={{display:'block',fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.05em'}}>Numero de telephone</label>
+                  <input style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:15,outline:'none',colorScheme:'dark',boxSizing:'border-box'}}
+                    type="tel" placeholder="Ex: 22996000000" value={payForm.phone} onChange={e=>setPayForm(p=>({...p,phone:e.target.value}))}/>
+                  <div style={{fontSize:11,color:'rgba(255,255,255,0.25)',marginTop:5}}>Incluez le code pays (229 pour Benin, 228 pour Togo)</div>
+                </div>
+                <div style={{padding:'10px 14px',background:'rgba(0,120,212,0.06)',border:'1px solid rgba(0,120,212,0.15)',borderRadius:8,marginBottom:16}}>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.5)',lineHeight:1.6}}>Vous allez recevoir une notification USSD sur votre telephone. Approuvez le paiement pour activer votre abonnement.</div>
+                </div>
+                <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+                  <button style={{...bB}} onClick={()=>{setShowPayModal(false);setPaying(null)}}>Annuler</button>
+                  <button style={{...bP,opacity:paying?0.6:1}} disabled={!!paying} onClick={lancerPaiement}>{paying?'Envoi...':'Payer '+((periode==='mois'?selectedPlan.prix_mois_fcfa:selectedPlan.prix_an_fcfa)||0).toLocaleString('fr-FR')+' FCFA'}</button>
+                </div>
+              </div>
+            )}
+
+            {payStatus==='pending' && (
+              <div style={{textAlign:'center',padding:'20px 0'}}>
+                <div style={{fontSize:40,marginBottom:16}}>📱</div>
+                <div style={{fontSize:16,fontWeight:600,color:'#e6edf3',marginBottom:8}}>En attente de confirmation</div>
+                <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:20,lineHeight:1.7}}>Une notification USSD a ete envoyee sur votre telephone.<br/>Approuvez le paiement pour continuer.</div>
+                <div style={{display:'flex',justifyContent:'center',gap:6}}>
+                  {[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:'50%',background:'#0078d4',animation:`pulse 1.4s ease-in-out ${i*0.2}s infinite`}}/>)}
+                </div>
+                <style>{`@keyframes pulse{0%,80%,100%{opacity:0.3;transform:scale(0.8)}40%{opacity:1;transform:scale(1)}}`}</style>
+                <div style={{marginTop:20,fontSize:12,color:'rgba(255,255,255,0.25)'}}>Ref: {depositId?.slice(0,8)}...</div>
+              </div>
+            )}
+
+            {payStatus==='success' && (
+              <div style={{textAlign:'center',padding:'20px 0'}}>
+                <div style={{fontSize:40,marginBottom:16}}>✅</div>
+                <div style={{fontSize:16,fontWeight:600,color:'#00c896',marginBottom:8}}>Paiement confirme !</div>
+                <div style={{fontSize:13,color:'rgba(255,255,255,0.4)'}}>Votre abonnement {selectedPlan.nom} est maintenant actif.</div>
+              </div>
+            )}
+
+            {payStatus==='failed' && (
+              <div style={{textAlign:'center',padding:'20px 0'}}>
+                <div style={{fontSize:40,marginBottom:16}}>❌</div>
+                <div style={{fontSize:16,fontWeight:600,color:'#ef4444',marginBottom:8}}>Paiement echoue</div>
+                <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:16}}>Le paiement n a pas pu etre traite.</div>
+                <button style={{...bP,margin:'0 auto'}} onClick={()=>setPayStatus(null)}>Reessayer</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   )
 }
