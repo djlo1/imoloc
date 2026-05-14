@@ -122,6 +122,33 @@ export default function Abonnement() {
         const { data } = await supabase.functions.invoke('pawapay-status', { body: { depositId: depId } })
         if (data?.status === 'COMPLETED') {
           clearInterval(interval)
+          // Activer l abonnement directement
+          try {
+            const dateDebut = new Date()
+            const dateFin = new Date()
+            dateFin.setMonth(dateFin.getMonth() + (periode === 'an' ? 12 : 1))
+            const montant = periode === 'mois' ? selectedPlan.prix_mois_fcfa : selectedPlan.prix_an_fcfa * 12
+            await supabase.from('abonnements').upsert({
+              agence_id: agence.id,
+              plan: selectedPlan.id,
+              statut: 'actif',
+              date_debut: dateDebut.toISOString().split('T')[0],
+              date_fin: dateFin.toISOString().split('T')[0],
+              prix_mensuel: selectedPlan.prix_mois_fcfa,
+              renouvellement_auto: true,
+              reference_paiement: depId,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'agence_id' })
+            await supabase.from('factures').insert({
+              agence_id: agence.id,
+              numero: 'IMO-' + new Date().getFullYear() + '-' + depId.slice(0,6).toUpperCase(),
+              montant,
+              devise: 'XOF',
+              statut: 'paye',
+              date_paiement: new Date().toISOString(),
+              details: { plan: selectedPlan.id, periode, operateur: payForm.correspondent, phone: payForm.phone },
+            })
+          } catch(e) { console.error('Activation error:', e) }
           setPayStatus('success')
           setPaying(null)
           toast.success('Paiement confirme ! Abonnement active.')
