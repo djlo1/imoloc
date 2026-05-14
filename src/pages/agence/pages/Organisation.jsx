@@ -4,9 +4,9 @@ import { changeLanguage } from '../../../i18n'
 import toast from 'react-hot-toast'
 
 const TABS = [
-  { id:'services',  label:'Services' },
-  { id:'securite',  label:'Securite et confidentialite' },
-  { id:'profil',    label:'Profil de l organisation' },
+  { id:'services', label:'Services' },
+  { id:'securite', label:'Securite et confidentialite' },
+  { id:'profil',   label:'Profil de l organisation' },
 ]
 
 const ITEMS = {
@@ -21,7 +21,7 @@ const ITEMS = {
     { icon:'📧', color:'#0078d4', title:'Modeles d emails',       desc:'Personnalisez les emails automatiques envoyes par Imoloc a vos locataires.', action:null },
   ],
   securite: [
-    { icon:'🔐', color:'#ef4444', title:'Authentification a deux facteurs', desc:'Renforcez la securite des comptes avec la verification en deux etapes obligatoire.', action:'securite' },
+    { icon:'🔐', color:'#ef4444', title:'Authentification a deux facteurs', desc:'Renforcez la securite des comptes avec la verification en deux etapes.', action:'securite' },
     { icon:'📱', color:'#f59e0b', title:'Sessions et appareils',            desc:'Gerez les sessions actives et les appareils connectes a votre organisation.', action:'securite' },
     { icon:'🔑', color:'#f59e0b', title:'Politique de mot de passe',        desc:'Definissez les regles de complexite et la duree d expiration des mots de passe.', action:'securite' },
     { icon:'👥', color:'#0078d4', title:'Roles et permissions',             desc:'Controllez precisement ce que chaque collaborateur peut voir et faire.', action:'utilisateurs' },
@@ -33,15 +33,15 @@ const ITEMS = {
     { icon:'🗑️', color:'#ef4444', title:'Suppression des donnees',          desc:'Gerez la retention et la suppression des donnees conformement au RGPD.', action:null },
   ],
   profil: [
-    { icon:'🏢', color:'#0078d4', title:'Informations de l organisation',   desc:'Nom, email, telephone, adresse, ville, pays et site web de votre organisation.', action:'informations' },
-    { icon:'🌐', color:'#00c896', title:'Langue par defaut',                 desc:'Definissez la langue de l interface pour tous les collaborateurs.', action:'langue' },
-    { icon:'💱', color:'#f59e0b', title:'Devise et fuseau horaire',          desc:'Configurez la devise et le fuseau horaire utilises dans votre organisation.', action:'devise' },
-    { icon:'🎨', color:'#8b5cf6', title:'Charte graphique',                  desc:'Logo, couleur principale et identite visuelle de votre organisation.', action:'charte' },
-    { icon:'📍', color:'#ef4444', title:'Localisation',                      desc:'Adresse principale, ville et pays de votre organisation.', action:'informations' },
-    { icon:'📞', color:'#0078d4', title:'Coordonnees de contact',            desc:'Numero de telephone, email de contact et site web public.', action:'informations' },
-    { icon:'📄', color:'#0078d4', title:'Mentions legales',                  desc:'Configurez les mentions legales et politique de confidentialite.', action:null },
-    { icon:'🤝', color:'#00c896', title:'Partenaires et integrateurs',       desc:'Gerez les acces partenaires et les relations B2B de votre organisation.', action:null },
-    { icon:'💼', color:'#6c63ff', title:'Informations fiscales',             desc:'IFU, registre de commerce et statut fiscal de votre organisation.', action:null },
+    { icon:'🏢', color:'#0078d4', title:'Informations de l organisation',  desc:'Nom, email, telephone, adresse, ville, pays et site web de votre organisation.', action:'informations' },
+    { icon:'🌐', color:'#00c896', title:'Langue par defaut',                desc:'Definissez la langue de l interface pour tous les collaborateurs de l organisation.', action:'langue' },
+    { icon:'💱', color:'#f59e0b', title:'Devise et fuseau horaire',         desc:'Configurez la devise et le fuseau horaire utilises dans votre organisation.', action:'devise' },
+    { icon:'🎨', color:'#8b5cf6', title:'Charte graphique',                 desc:'Logo, couleur principale et identite visuelle de votre organisation.', action:'charte' },
+    { icon:'📍', color:'#ef4444', title:'Localisation',                     desc:'Adresse principale, ville et pays de votre organisation.', action:'informations' },
+    { icon:'📞', color:'#0078d4', title:'Coordonnees de contact',           desc:'Numero de telephone, email de contact et site web public.', action:'informations' },
+    { icon:'📄', color:'#0078d4', title:'Mentions legales',                 desc:'Configurez les mentions legales et politique de confidentialite.', action:null },
+    { icon:'🤝', color:'#00c896', title:'Partenaires et integrateurs',      desc:'Gerez les acces partenaires et les relations B2B de votre organisation.', action:null },
+    { icon:'💼', color:'#6c63ff', title:'Informations fiscales',            desc:'IFU, registre de commerce et statut fiscal de votre organisation.', action:null },
   ],
 }
 
@@ -77,29 +77,23 @@ export default function Organisation() {
     toast.success('Informations sauvegardees !')
     setPanel(null); setSaving(false)
   }
-
   const saveLangue = async () => {
     setSaving(true)
     await supabase.from('parametres_organisation').upsert({ agence_id:agenceId, langue:form.langue }, { onConflict:'agence_id' })
     changeLanguage(form.langue)
-    toast.success('Langue mise a jour !')
-    setPanel(null); setSaving(false)
+    toast.success('Langue mise a jour !'); setPanel(null); setSaving(false)
   }
-
   const saveDevise = async () => {
     setSaving(true)
     await supabase.from('parametres_organisation').upsert({ agence_id:agenceId, devise:form.devise, fuseau_horaire:form.fuseau }, { onConflict:'agence_id' })
-    toast.success('Parametres sauvegardes !')
-    setPanel(null); setSaving(false)
+    toast.success('Parametres sauvegardes !'); setPanel(null); setSaving(false)
   }
 
   const handleAction = (item) => {
     if (!item.action) return
-    if (['securite','utilisateurs','integrations','rapports','nouveautes','loci','notifications'].includes(item.action)) {
+    if (['securite','utilisateurs','integrations','rapports','nouveautes','loci','notifications','modeles'].includes(item.action)) {
       window.location.href = '/agence/' + item.action
-    } else {
-      setPanel(item.action)
-    }
+    } else { setPanel(item.action) }
   }
 
   const getBadge = (action) => {
@@ -121,156 +115,142 @@ export default function Organisation() {
   return (
     <>
       <style>{`
-        .ms-tab{padding:12px 16px;font-size:13px;font-weight:400;cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.5);transition:all 0.15s;white-space:nowrap;margin-bottom:-1px}
-        .ms-tab:hover{color:rgba(255,255,255,0.8);border-bottom-color:rgba(255,255,255,0.2)}
+        .ms-tab{padding:14px 18px;font-size:13.5px;font-weight:400;cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.5);transition:all 0.15s;white-space:nowrap;margin-bottom:-1px}
+        .ms-tab:hover{color:rgba(255,255,255,0.85)}
         .ms-tab.on{color:#e6edf3;font-weight:600;border-bottom-color:#0078d4}
-        .ms-row{display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background 0.1s;gap:24px}
+        .ms-row{display:grid;grid-template-columns:44px 1fr 1fr;align-items:center;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background 0.1s;gap:0}
         .ms-row:hover{background:rgba(255,255,255,0.03)}
         .ms-row:last-child{border-bottom:none}
-        .ms-title{font-size:13.5px;font-weight:400;color:#4da6ff;text-decoration:none}
-        .ms-title:hover{text-decoration:underline}
-        .ms-desc{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.5}
-        .ms-icon{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-        .ms-search{padding:6px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);borderRadius:4px;color:#e6edf3;font-family:Inter,sans-serif;font-size:13px;outline:none;width:220px}
-        .panel-overlay{position:fixed;top:0;right:0;height:100vh;width:min(480px,90vw);background:#161b22;border-left:1px solid rgba(255,255,255,0.08);z-index:200;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,0.4)}
+        .ms-icon-wrap{width:32px;height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px}
+        .panel-drawer{position:fixed;top:0;right:0;height:100vh;width:440px;background:#161b22;border-left:1px solid rgba(255,255,255,0.08);z-index:200;display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,0.5)}
       `}</style>
 
-      <div style={{ maxWidth:960, margin:'0 auto' }}>
+      <div style={{ width:'100%' }}>
         {/* HEADER */}
-        <div style={{ marginBottom:0 }}>
-          <div style={{ fontSize:22, fontWeight:700, color:'#e6edf3', letterSpacing:'-0.01em', marginBottom:20 }}>Parametres de l organisation</div>
-
-          {/* TABS */}
-          <div style={{ display:'flex', gap:0, borderBottom:'1px solid rgba(255,255,255,0.08)', marginBottom:0 }}>
-            {TABS.map(t => (
-              <button key={t.id} className={'ms-tab'+(tab===t.id?' on':'')} onClick={()=>{setTab(t.id);setPanel(null);setSearch('')}}>{t.label}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* TOOLBAR */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 20px', borderBottom:'1px solid rgba(255,255,255,0.06)', background:'rgba(255,255,255,0.01)' }}>
-          <span style={{ fontSize:13, color:'rgba(255,255,255,0.35)' }}>{filtered.length} element{filtered.length > 1 ? 's' : ''}</span>
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:4 }}>
+          <div style={{ fontSize:24, fontWeight:700, color:'#e6edf3', letterSpacing:'-0.01em' }}>Parametres de l organisation</div>
+          {/* Recherche top droite comme Microsoft */}
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <input className="ms-search" style={{ padding:'6px 10px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:4, color:'#e6edf3', fontFamily:'Inter,sans-serif', fontSize:13, outline:'none', width:220 }} placeholder="Rechercher dans tous les parametres..." value={search} onChange={e=>setSearch(e.target.value)}/>
+            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:4 }}>
+              <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
+              <input style={{ background:'none', border:'none', outline:'none', color:'#e6edf3', fontFamily:'Inter,sans-serif', fontSize:13, width:200 }} placeholder="Rechercher dans tous les parametres..." value={search} onChange={e=>setSearch(e.target.value)}/>
+            </div>
           </div>
         </div>
 
-        {/* TABLE HEADER */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', padding:'8px 20px', borderBottom:'1px solid rgba(255,255,255,0.08)', gap:24 }}>
-          <div style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.06em', display:'flex', alignItems:'center', gap:4 }}>
+        {/* TABS */}
+        <div style={{ display:'flex', gap:0, borderBottom:'1px solid rgba(255,255,255,0.08)', marginBottom:0, marginTop:16 }}>
+          {TABS.map(t => (
+            <button key={t.id} className={'ms-tab'+(tab===t.id?' on':'')} onClick={()=>{setTab(t.id);setPanel(null);setSearch('')}}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* COMPTEUR */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', padding:'10px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontSize:13, color:'rgba(255,255,255,0.4)' }}>{filtered.length} element{filtered.length > 1 ? 's' : ''}</span>
+            <svg width="16" height="16" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"/></svg>
+          </div>
+        </div>
+
+        {/* EN-TETE COLONNES */}
+        <div style={{ display:'grid', gridTemplateColumns:'44px 1fr 1fr', padding:'8px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)', gap:0 }}>
+          <div/>
+          <div style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.06em', display:'flex', alignItems:'center', gap:4 }}>
             Nom <span style={{ fontSize:10 }}>↑</span>
           </div>
-          <div style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.06em' }}>Description</div>
+          <div style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.06em' }}>Description</div>
         </div>
 
-        {/* ROWS */}
-        <div style={{ background:'rgba(255,255,255,0.01)' }}>
-          {filtered.map((item, i) => {
-            const badge = getBadge(item.action)
-            return (
-              <div key={i} className="ms-row" onClick={()=>handleAction(item)}>
-                {/* COL 1 : icon + title + badge */}
-                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                  <div className="ms-icon" style={{ background: item.color + '18', border: '1px solid ' + item.color + '33' }}>
-                    {item.icon}
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <span className="ms-title">{item.title}</span>
-                    {badge && <span style={{ fontSize:10.5, padding:'1px 7px', borderRadius:100, background:'rgba(0,120,212,0.1)', color:'#4da6ff', border:'1px solid rgba(0,120,212,0.2)', fontWeight:500 }}>{badge}</span>}
-                  </div>
+        {/* LIGNES */}
+        {filtered.map((item, i) => {
+          const badge = getBadge(item.action)
+          const clickable = !!item.action
+          return (
+            <div key={i} className="ms-row" onClick={()=>handleAction(item)} style={{ cursor: clickable ? 'pointer' : 'default' }}>
+              {/* Icone */}
+              <div>
+                <div className="ms-icon-wrap" style={{ background:item.color+'15', border:'1px solid '+item.color+'30' }}>
+                  {item.icon}
                 </div>
-                {/* COL 2 : description */}
-                <div className="ms-desc">{item.desc}</div>
               </div>
-            )
-          })}
-        </div>
-
-        {/* PANEL LATERAL */}
-        {panel && (
-          <div className="panel-overlay">
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid rgba(255,255,255,0.07)' }}>
-              <div style={{ fontSize:16, fontWeight:600, color:'#e6edf3' }}>
-                {panel==='informations'&&'Informations de l organisation'}
-                {panel==='langue'&&'Langue par defaut'}
-                {panel==='devise'&&'Devise et fuseau horaire'}
-                {panel==='charte'&&'Charte graphique'}
+              {/* Nom */}
+              <div style={{ paddingRight:32 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ fontSize:14, fontWeight:600, color: clickable ? '#4da6ff' : '#e6edf3' }}>{item.title}</span>
+                  {badge && <span style={{ fontSize:10.5, padding:'1px 8px', borderRadius:100, background:'rgba(0,120,212,0.1)', color:'#4da6ff', border:'1px solid rgba(0,120,212,0.2)', fontWeight:500 }}>{badge}</span>}
+                </div>
               </div>
-              <button onClick={()=>setPanel(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.4)', fontSize:22, lineHeight:1, padding:'2px 6px' }}>x</button>
+              {/* Description */}
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.5 }}>{item.desc}</div>
             </div>
-            <div style={{ flex:1, overflowY:'auto', padding:'20px' }}>
+          )
+        })}
+      </div>
 
-              {panel==='informations' && (
-                <div>
-                  <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', marginBottom:20, lineHeight:1.6 }}>Mettez a jour les informations de contact et d identification de votre organisation.</div>
-                  <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-                    {[['nom','Nom de l organisation'],['email','Email'],['telephone','Telephone'],['adresse','Adresse'],['ville','Ville'],['pays','Pays'],['site_web','Site web']].map(([k,l])=>(
-                      <div key={k}>
-                        <label style={lbl}>{l}</label>
-                        <input style={inp} value={form[k]||''} onChange={e=>set(k,e.target.value)}/>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {panel==='langue' && (
-                <div>
-                  <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', marginBottom:20, lineHeight:1.6 }}>Choisissez la langue par defaut pour tous les collaborateurs. Chaque utilisateur peut la modifier individuellement dans son profil.</div>
-                  <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                    {[['fr','🇫🇷','Francais','Langue par defaut'],['en','🇬🇧','English','Default language']].map(([val,flag,name,sub])=>(
-                      <div key={val} onClick={()=>set('langue',val)} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:8, border:`1.5px solid ${form.langue===val?'#0078d4':'rgba(255,255,255,0.08)'}`, background:form.langue===val?'rgba(0,120,212,0.06)':'rgba(255,255,255,0.02)', cursor:'pointer', transition:'all 0.15s' }}>
-                        <span style={{ fontSize:28 }}>{flag}</span>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontSize:14, fontWeight:600, color: form.langue===val?'#4da6ff':'#e6edf3', marginBottom:2 }}>{name}</div>
-                          <div style={{ fontSize:12, color:'rgba(255,255,255,0.35)' }}>{sub}</div>
-                        </div>
-                        {form.langue===val && <div style={{ width:18, height:18, borderRadius:'50%', background:'#0078d4', display:'flex', alignItems:'center', justifyContent:'center' }}><span style={{ color:'#fff', fontSize:11 }}>✓</span></div>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {panel==='devise' && (
-                <div>
-                  <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', marginBottom:20, lineHeight:1.6 }}>La devise et le fuseau horaire s appliquent a toute l organisation.</div>
-                  <div style={{ marginBottom:16 }}>
-                    <label style={lbl}>Devise</label>
-                    <select style={{ ...inp, cursor:'pointer', background:'rgba(20,27,40,0.95)' }} value={form.devise} onChange={e=>set('devise',e.target.value)}>
-                      {[['FCFA','FCFA — Franc CFA'],['USD','USD — Dollar americain'],['EUR','EUR — Euro'],['GBP','GBP — Livre sterling'],['MAD','MAD — Dirham marocain'],['NGN','NGN — Naira nigerien']].map(([v,l])=><option key={v} value={v} style={{ background:'#161b22' }}>{l}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={lbl}>Fuseau horaire</label>
-                    <select style={{ ...inp, cursor:'pointer', background:'rgba(20,27,40,0.95)' }} value={form.fuseau} onChange={e=>set('fuseau',e.target.value)}>
-                      {[['Africa/Porto-Novo','Africa/Porto-Novo (UTC+1)'],['Africa/Abidjan','Africa/Abidjan (UTC+0)'],['Africa/Lagos','Africa/Lagos (UTC+1)'],['Africa/Dakar','Africa/Dakar (UTC+0)'],['Europe/Paris','Europe/Paris (UTC+1/2)'],['America/New_York','America/New_York (UTC-5)']].map(([v,l])=><option key={v} value={v} style={{ background:'#161b22' }}>{l}</option>)}
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {panel==='charte' && (
-                <div>
-                  <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', marginBottom:20, lineHeight:1.6 }}>La charte graphique (logo, couleurs) se configure dans vos modeles de documents.</div>
-                  <button style={{ ...bP, width:'100%', justifyContent:'center' }} onClick={()=>window.location.href='/agence/modeles'}>Aller aux modeles de documents</button>
-                </div>
-              )}
+      {/* PANEL LATERAL */}
+      {panel && (
+        <div className="panel-drawer">
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 22px', borderBottom:'1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ fontSize:16, fontWeight:700, color:'#e6edf3' }}>
+              {panel==='informations'&&'Informations de l organisation'}
+              {panel==='langue'&&'Langue par defaut'}
+              {panel==='devise'&&'Devise et fuseau horaire'}
+              {panel==='charte'&&'Charte graphique'}
             </div>
-
-            {/* FOOTER PANEL */}
-            {['informations','langue','devise'].includes(panel) && (
-              <div style={{ padding:'14px 20px', borderTop:'1px solid rgba(255,255,255,0.07)', display:'flex', gap:8, justifyContent:'flex-end' }}>
-                <button style={bB} onClick={()=>setPanel(null)}>Annuler</button>
-                <button style={{ ...bP, opacity:saving?0.6:1 }} disabled={saving} onClick={panel==='informations'?saveInfos:panel==='langue'?saveLangue:saveDevise}>
-                  {saving?'Sauvegarde...':'Enregistrer'}
-                </button>
+            <button onClick={()=>setPanel(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.4)', fontSize:22, lineHeight:1 }}>x</button>
+          </div>
+          <div style={{ flex:1, overflowY:'auto', padding:'22px' }}>
+            {panel==='informations' && (
+              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                {[['nom','Nom de l organisation'],['email','Email'],['telephone','Telephone'],['adresse','Adresse'],['ville','Ville'],['pays','Pays'],['site_web','Site web']].map(([k,l])=>(
+                  <div key={k}><label style={lbl}>{l}</label><input style={inp} value={form[k]||''} onChange={e=>set(k,e.target.value)}/></div>
+                ))}
+              </div>
+            )}
+            {panel==='langue' && (
+              <div>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', marginBottom:20, lineHeight:1.7 }}>Choisissez la langue par defaut. Chaque utilisateur peut la modifier dans son profil.</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  {[['fr','🇫🇷','Francais'],['en','🇬🇧','English']].map(([val,flag,name])=>(
+                    <div key={val} onClick={()=>set('langue',val)} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:8, border:`1.5px solid ${form.langue===val?'#0078d4':'rgba(255,255,255,0.08)'}`, background:form.langue===val?'rgba(0,120,212,0.06)':'rgba(255,255,255,0.02)', cursor:'pointer', transition:'all 0.15s' }}>
+                      <span style={{ fontSize:28 }}>{flag}</span>
+                      <div style={{ flex:1, fontSize:14, fontWeight:600, color:form.langue===val?'#4da6ff':'#e6edf3' }}>{name}</div>
+                      {form.langue===val && <span style={{ color:'#0078d4', fontSize:18 }}>✓</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {panel==='devise' && (
+              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                <div><label style={lbl}>Devise</label>
+                  <select style={{ ...inp, cursor:'pointer', background:'rgba(20,27,40,0.95)' }} value={form.devise} onChange={e=>set('devise',e.target.value)}>
+                    {[['FCFA','FCFA — Franc CFA'],['USD','USD — Dollar americain'],['EUR','EUR — Euro'],['GBP','GBP — Livre sterling'],['MAD','MAD — Dirham marocain'],['NGN','NGN — Naira nigerien']].map(([v,l])=><option key={v} value={v} style={{ background:'#161b22' }}>{l}</option>)}
+                  </select>
+                </div>
+                <div><label style={lbl}>Fuseau horaire</label>
+                  <select style={{ ...inp, cursor:'pointer', background:'rgba(20,27,40,0.95)' }} value={form.fuseau} onChange={e=>set('fuseau',e.target.value)}>
+                    {[['Africa/Porto-Novo','Africa/Porto-Novo (UTC+1)'],['Africa/Abidjan','Africa/Abidjan (UTC+0)'],['Africa/Lagos','Africa/Lagos (UTC+1)'],['Africa/Dakar','Africa/Dakar (UTC+0)'],['Europe/Paris','Europe/Paris (UTC+1/2)'],['America/New_York','America/New_York (UTC-5)']].map(([v,l])=><option key={v} value={v} style={{ background:'#161b22' }}>{l}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+            {panel==='charte' && (
+              <div>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', marginBottom:20, lineHeight:1.7 }}>La charte graphique se configure dans vos modeles de documents.</p>
+                <button style={{ ...bP, width:'100%', justifyContent:'center' }} onClick={()=>window.location.href='/agence/modeles'}>Aller aux modeles</button>
               </div>
             )}
           </div>
-        )}
-      </div>
+          {['informations','langue','devise'].includes(panel) && (
+            <div style={{ padding:'14px 22px', borderTop:'1px solid rgba(255,255,255,0.07)', display:'flex', gap:8, justifyContent:'flex-end' }}>
+              <button style={bB} onClick={()=>setPanel(null)}>Annuler</button>
+              <button style={{ ...bP, opacity:saving?0.6:1 }} disabled={saving} onClick={panel==='informations'?saveInfos:panel==='langue'?saveLangue:saveDevise}>{saving?'Sauvegarde...':'Enregistrer'}</button>
+            </div>
+          )}
+        </div>
+      )}
     </>
   )
 }
