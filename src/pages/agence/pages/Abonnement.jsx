@@ -148,7 +148,10 @@ export default function Abonnement() {
               date_paiement: new Date().toISOString(),
               details: { plan: selectedPlan.id, periode, operateur: payForm.correspondent, phone: payForm.phone },
             })
-          } catch(e) { console.error('Activation error:', e) }
+          } catch(e) { 
+            console.error('Activation error:', e)
+            toast.error('Erreur activation: ' + JSON.stringify(e))
+          }
           setPayStatus('success')
           setPaying(null)
           toast.success('Paiement confirme ! Abonnement active.')
