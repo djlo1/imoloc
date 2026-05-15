@@ -44,16 +44,20 @@ export default function Abonnement() {
     setLoading(true)
     try {
       const { data:{ user } } = await supabase.auth.getUser()
-      const { data:ag } = await supabase.from('agences').select('*,abonnements(*)').eq('profile_id', user.id).single()
+      const { data:agList } = await supabase.from('agences').select('*')
+      const ag = agList?.find(a => a.profile_id === user.id) || agList?.[0]
       setAgence(ag)
-      if (ag?.abonnements) setAbonnement(ag.abonnements)
-      const { data:f } = await supabase.from('factures').select('*').eq('agence_id', ag?.id).order('created_at',{ascending:false})
-      setFactures(f||[])
-      const { data:m } = await supabase.from('methodes_paiement').select('*').eq('agence_id', ag?.id)
-      setMethodes(m||[])
-      const { data:prof } = await supabase.from('profiles').select('type_compte').eq('id', user.id).single()
+      if (ag?.id) {
+        const { data:abList } = await supabase.from('abonnements').select('*').eq('agence_id', ag.id).order('created_at',{ascending:false}).limit(1)
+        if (abList?.[0]) setAbonnement(abList[0])
+        const { data:f } = await supabase.from('factures').select('*').eq('agence_id', ag.id).order('created_at',{ascending:false})
+        setFactures(f||[])
+        const { data:m } = await supabase.from('methodes_paiement').select('*').eq('agence_id', ag.id)
+        setMethodes(m||[])
+      }
+      const { data:prof } = await supabase.from('profiles').select('type_compte').eq('id', user.id).maybeSingle()
       if (prof?.type_compte) setTypeCompte(prof.type_compte === 'particulier' ? 'particulier' : 'organisation')
-    } catch(e) { console.error(e) }
+    } catch(e) { console.error('Init error:', e) }
     finally { setLoading(false) }
   }
 
