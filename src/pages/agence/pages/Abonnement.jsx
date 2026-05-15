@@ -110,11 +110,11 @@ export default function Abonnement() {
       if (!data?.success) { toast.error(data?.error || 'Paiement rejete'); setPayStatus('failed'); setPaying(null); return }
       setDepositId(data.depositId)
       toast.success('Demande envoyee ! Approuvez sur votre telephone.')
-      pollStatus(data.depositId)
+      pollStatus(data.depositId, selectedPlan, agence)
     } catch(e) { toast.error(e.message); setPayStatus('failed'); setPaying(null) }
   }
 
-  const pollStatus = async (depId) => {
+  const pollStatus = async (depId, plan, ag) => {
     let attempts = 0
     const interval = setInterval(async () => {
       attempts++
@@ -129,12 +129,12 @@ export default function Abonnement() {
             dateFin.setMonth(dateFin.getMonth() + (periode === 'an' ? 12 : 1))
             const montant = periode === 'mois' ? selectedPlan.prix_mois_fcfa : selectedPlan.prix_an_fcfa * 12
             const { data: upsertData, error: upsertError } = await supabase.from('abonnements').upsert({
-              agence_id: agence.id,
-              plan: selectedPlan.id,
+              agence_id: ag.id,
+              plan: plan.id,
               statut: 'actif',
               date_debut: dateDebut.toISOString().split('T')[0],
               date_fin: dateFin.toISOString().split('T')[0],
-              prix_mensuel: selectedPlan.prix_mois_fcfa,
+              prix_mensuel: plan.prix_mois_fcfa,
               renouvellement_auto: true,
               reference_paiement: depId,
               updated_at: new Date().toISOString(),
@@ -142,7 +142,7 @@ export default function Abonnement() {
             console.log('Upsert result:', upsertData, 'Error:', upsertError)
             if (upsertError) toast.error('Upsert error: ' + upsertError.message + ' code:' + upsertError.code)
             await supabase.from('factures').insert({
-              agence_id: agence.id,
+              agence_id: ag.id,
               numero: 'IMO-' + new Date().getFullYear() + '-' + depId.slice(0,6).toUpperCase(),
               montant,
               devise: 'XOF',
