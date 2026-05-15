@@ -128,7 +128,7 @@ export default function Abonnement() {
             const dateFin = new Date()
             dateFin.setMonth(dateFin.getMonth() + (periode === 'an' ? 12 : 1))
             const montant = periode === 'mois' ? selectedPlan.prix_mois_fcfa : selectedPlan.prix_an_fcfa * 12
-            await supabase.from('abonnements').upsert({
+            const { data: upsertData, error: upsertError } = await supabase.from('abonnements').upsert({
               agence_id: agence.id,
               plan: selectedPlan.id,
               statut: 'actif',
@@ -139,6 +139,8 @@ export default function Abonnement() {
               reference_paiement: depId,
               updated_at: new Date().toISOString(),
             }, { onConflict: 'agence_id' })
+            console.log('Upsert result:', upsertData, 'Error:', upsertError)
+            if (upsertError) toast.error('Upsert error: ' + upsertError.message + ' code:' + upsertError.code)
             await supabase.from('factures').insert({
               agence_id: agence.id,
               numero: 'IMO-' + new Date().getFullYear() + '-' + depId.slice(0,6).toUpperCase(),
