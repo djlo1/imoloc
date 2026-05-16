@@ -1,250 +1,438 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 
 const PLANS = [
-  { name:'Basic', color:'#4da6ff', popular:false, price_monthly:'10 000', price_yearly:'108 000', price_orig:'120 000', features:['10 biens gérés','1 utilisateur','2 appareils','Notifications retard','Calendrier partagé','1 Go stockage'], disabled:['Version mobile','Facturation auto','Signature bail','Profil locataire'] },
-  { name:'Standard', color:'#0078d4', popular:true, price_monthly:'25 000', price_yearly:'270 000', price_orig:'300 000', features:['100 biens gérés','5 utilisateurs','5 appareils','Version mobile et web','Facturation automatique','Signature de bail','Profil locataire','Rapports financiers','100 Go stockage','Protection cyber'], disabled:['API Web Service','CRM Imoloc'] },
-  { name:'Premium', color:'#6c63ff', popular:false, price_monthly:'50 000', price_yearly:'540 000', price_orig:'600 000', features:['500 biens gérés','20 utilisateurs','10 appareils','Version mobile et web','Facturation automatique','Rapports avancés','API Web Service','CRM Imoloc','500 Go stockage','Backup avancé'], disabled:[] },
-  { name:'Entreprise', color:'#00c896', popular:false, price_monthly:null, price_yearly:null, price_orig:null, features:['Biens illimités','50+ utilisateurs','20+ appareils','Toutes fonctionnalités','Rapports personnalisés','CRM avancé','2 To stockage','Support 24/7','API avancée','Gestion appareils distants'], disabled:[] },
+  { nom: "Starter", color: "#0078d4", popular: false, prix_mois: 18000, prix_an: 15000,
+    desc: "Pour les petites agences",
+    features: ["50 biens", "3 utilisateurs", "Baux et contrats", "Paiements Mobile Money", "Support email"] },
+  { nom: "Business", color: "#6c63ff", popular: true, prix_mois: 39000, prix_an: 32000,
+    desc: "Pour les agences en croissance",
+    features: ["500 biens", "10 utilisateurs", "Signature electronique", "Portail locataire mobile", "Loci IA", "Support prioritaire"] },
+  { nom: "Enterprise", color: "#10b981", popular: false, prix_mois: null, prix_an: null,
+    desc: "Pour les grandes organisations",
+    features: ["Biens illimites", "Utilisateurs illimites", "Multi-agences", "API avancee", "Support 24/7"] },
 ]
 
-const FEATURES = [
-  { icon:'M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1V10.5z', title:'Gestion des biens', desc:'Gérez appartements, villas, bureaux, terrains depuis une seule interface intuitive.', color:'#0078d4' },
-  { icon:'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z', title:'Gestion des locataires', desc:'Enregistrez les locataires, suivez les baux et gérez les renouvellements automatiquement.', color:'#6c63ff' },
-  { icon:'M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75', title:'Paiements automatisés', desc:'Mobile Money, virement, carte — suivi en temps réel avec alertes de retard.', color:'#00c896' },
-  { icon:'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z', title:'Signature électronique', desc:'Signez les baux numériquement. PDF généré et archivé automatiquement.', color:'#f59e0b' },
-  { icon:'M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z', title:'Gestion des plaintes', desc:"Les locataires soumettent leurs plaintes via l'app mobile. Suivi en temps réel.", color:'#ef4444' },
-  { icon:'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z', title:'Rapports et Statistiques', desc:"Tableaux de bord, rapports financiers, taux d'occupation — toutes vos données.", color:'#0078d4' },
+const TABS = [
+  { id: "biens", icon: "\u{1F3E0}", label: "Gestion des biens", color: "#0078d4",
+    titre: "Gerez tous vos biens immobiliers",
+    desc: "Appartements, villas, bureaux — centralisez tout depuis un tableau de bord unique.",
+    points: ["Catalogue multi-types", "Photos et documents", "Suivi des travaux", "Historique complet"],
+    bg: "linear-gradient(135deg,#e8f4ff,#f0f9ff)" },
+  { id: "locataires", icon: "\u{1F465}", label: "Locataires et Baux", color: "#6c63ff",
+    titre: "Du contrat a la signature en quelques clics",
+    desc: "Creez des baux personnalises, invitez vos locataires a signer electroniquement.",
+    points: ["Generation bail PDF", "Signature electronique", "Portail mobile", "Alertes renouvellement"],
+    bg: "linear-gradient(135deg,#f0edff,#f8f7ff)" },
+  { id: "paiements", icon: "\u{1F4B3}", label: "Paiements", color: "#10b981",
+    titre: "Mobile Money — tout accepte",
+    desc: "Collectez les loyers via MTN MoMo, Moov Money, Wave. Quittances automatiques.",
+    points: ["MTN, Moov, Wave, Orange", "Quittances PDF auto", "Alertes de retard", "Rapports financiers"],
+    bg: "linear-gradient(135deg,#e8fff6,#f0fff9)" },
+  { id: "rapports", icon: "\u{1F4CA}", label: "Rapports", color: "#f59e0b",
+    titre: "Toutes vos donnees en un coup d\u2019oeil",
+    desc: "Taux d\u2019occupation, revenus, loyers en retard — exportez en PDF ou Excel.",
+    points: ["Tableau de bord temps reel", "Export PDF et Excel", "Stats par bien", "Comparaison mensuelle"],
+    bg: "linear-gradient(135deg,#fffbeb,#fefce8)" },
 ]
 
 export default function Landing() {
-  const [billing, setBilling] = useState('monthly')
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [openMenu, setOpenMenu] = useState(null)
+  const [activeTab, setActiveTab] = useState("biens")
+  const [billing, setBilling] = useState("mois")
+  const [mobileMenu, setMobileMenu] = useState(false)
+  const navRef = useRef(null)
+
+  useEffect(() => {
+    const h = (e) => { if (navRef.current && !navRef.current.contains(e.target)) setOpenMenu(null) }
+    document.addEventListener("click", h)
+    return () => document.removeEventListener("click", h)
+  }, [])
+
+  const tab = TABS.find(t => t.id === activeTab)
+
   return (
-    <>
+    <div style={{ fontFamily: '"Segoe UI", system-ui, sans-serif', color: "#323130", background: "#fff", overflowX: "hidden" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        .lp{width:100vw;min-height:100vh;background:#0d1117;color:#e6edf3;font-family:'Inter',sans-serif;overflow-x:hidden}
-        .lp-nav{position:fixed;top:0;left:0;right:0;z-index:200;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 5%;background:rgba(13,17,23,0.9);border-bottom:1px solid rgba(0,120,212,0.15);backdrop-filter:blur(24px)}
-        .lp-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-        .lp-logo-icon{width:36px;height:36px;border-radius:9px;background:linear-gradient(145deg,#0d1f35,#0a1628);border:1px solid rgba(0,120,212,0.45);display:flex;align-items:center;justify-content:center;color:#4da6ff}
-        .lp-logo-name{font-size:19px;font-weight:700;letter-spacing:-0.025em;background:linear-gradient(135deg,#4da6ff,#0078d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        .lp-nav-links{display:flex;align-items:center;gap:4px}
-        .lp-nav-link{padding:7px 15px;border-radius:7px;font-size:14px;font-weight:500;color:rgba(255,255,255,0.5);text-decoration:none;transition:all 0.15s}
-        .lp-nav-link:hover{color:rgba(255,255,255,0.9);background:rgba(255,255,255,0.05)}
-        .lp-nav-actions{display:flex;align-items:center;gap:10px}
-        .lp-btn-outline{padding:8px 18px;border-radius:8px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,0.6);background:transparent;border:1px solid rgba(255,255,255,0.12);text-decoration:none;transition:all 0.15s;display:inline-block}
-        .lp-btn-outline:hover{color:#fff;border-color:rgba(255,255,255,0.25);background:rgba(255,255,255,0.05)}
-        .lp-btn-blue{padding:8px 20px;border-radius:8px;font-size:13.5px;font-weight:600;color:#fff;background:#0078d4;border:1px solid rgba(0,120,212,0.6);text-decoration:none;transition:all 0.2s;display:inline-block;box-shadow:0 0 20px rgba(0,120,212,0.3)}
-        .lp-btn-blue:hover{background:#006cc1;transform:translateY(-1px)}
-        .lp-hamburger{display:none;background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:4px}
-        .lp-mobile-menu{display:none;position:fixed;top:62px;left:0;right:0;z-index:199;background:rgba(13,17,23,0.98);border-bottom:1px solid rgba(0,120,212,0.15);padding:12px 5% 20px;flex-direction:column;gap:4px;backdrop-filter:blur(24px)}
-        .lp-mobile-menu.open{display:flex}
-        .lp-mobile-btns{display:flex;gap:10px;padding:10px 0 4px}
-        .lp-mobile-btns a{flex:1;text-align:center}
-        .lp-hero{width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:130px 5% 80px;position:relative;overflow:hidden}
-        .lp-hero-bg{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 90% 60% at 50% -5%,rgba(0,120,212,0.18) 0%,transparent 65%),radial-gradient(ellipse 50% 40% at 85% 90%,rgba(108,99,255,0.08) 0%,transparent 55%)}
-        .lp-hero-grid{position:absolute;inset:0;z-index:0;background-image:linear-gradient(rgba(0,120,212,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,120,212,0.05) 1px,transparent 1px);background-size:50px 50px;mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 5%,transparent 75%)}
-        .lp-hero-inner{position:relative;z-index:1;max-width:860px;width:100%}
-        .lp-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:100px;background:rgba(0,120,212,0.1);border:1px solid rgba(0,120,212,0.3);font-size:12.5px;font-weight:500;color:#4da6ff;margin-bottom:32px}
-        .lp-badge-dot{width:7px;height:7px;border-radius:50%;background:#0078d4;animation:lp-pulse 2s ease-in-out infinite}
-        @keyframes lp-pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-        .lp-h1{font-size:clamp(38px,6.5vw,68px);font-weight:700;letter-spacing:-0.035em;line-height:1.08;color:#e6edf3;margin-bottom:26px}
-        .lp-h1 .blue{background:linear-gradient(135deg,#4da6ff 0%,#0078d4 45%,#6c63ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        .lp-hero-sub{font-size:clamp(15px,2.2vw,18px);font-weight:300;color:rgba(255,255,255,0.42);line-height:1.75;max-width:580px;margin:0 auto 44px}
-        .lp-hero-btns{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
-        .lp-hero-btn1{display:inline-flex;align-items:center;gap:9px;padding:15px 30px;border-radius:11px;font-size:15px;font-weight:600;color:#fff;background:#0078d4;border:1px solid rgba(0,120,212,0.6);text-decoration:none;transition:all 0.2s;box-shadow:0 0 32px rgba(0,120,212,0.35)}
-        .lp-hero-btn1:hover{background:#006cc1;transform:translateY(-2px)}
-        .lp-hero-btn2{display:inline-flex;align-items:center;gap:9px;padding:15px 30px;border-radius:11px;font-size:15px;font-weight:500;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);text-decoration:none;transition:all 0.2s}
-        .lp-hero-btn2:hover{background:rgba(255,255,255,0.09);color:#fff}
-        .lp-stats{display:flex;align-items:center;justify-content:center;margin-top:72px;flex-wrap:wrap}
-        .lp-stat{text-align:center;padding:0 32px}
-        .lp-stat-val{font-size:32px;font-weight:700;letter-spacing:-0.03em;background:linear-gradient(135deg,#4da6ff,#0078d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        .lp-stat-lbl{font-size:12px;color:rgba(255,255,255,0.28);margin-top:5px}
-        .lp-stat-sep{width:1px;height:44px;background:rgba(255,255,255,0.07)}
-        .lp-section{width:100%;padding:100px 5%}
-        .lp-section-lbl{font-size:11.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#0078d4;margin-bottom:14px}
-        .lp-section-title{font-size:clamp(28px,4vw,42px);font-weight:700;letter-spacing:-0.03em;color:#e6edf3;line-height:1.18;margin-bottom:14px}
-        .lp-section-title .blue{background:linear-gradient(135deg,#4da6ff,#0078d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        .lp-section-sub{font-size:15px;color:rgba(255,255,255,0.38);font-weight:300;line-height:1.75;max-width:500px}
-        .lp-section-head{margin-bottom:60px}
-        .lp-feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-        .lp-feat-card{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:28px 26px;transition:all 0.22s}
-        .lp-feat-card:hover{border-color:rgba(255,255,255,0.12);transform:translateY(-3px);background:rgba(255,255,255,0.04)}
-        .lp-feat-icon{width:54px;height:54px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;border-width:1px;border-style:solid}
-        .lp-feat-title{font-size:16px;font-weight:600;color:#e6edf3;margin-bottom:10px}
-        .lp-feat-desc{font-size:13.5px;color:rgba(255,255,255,0.36);line-height:1.68;font-weight:300}
-        .lp-pricing-wrap{width:100%;padding:100px 5%;background:rgba(0,0,0,0.2);border-top:1px solid rgba(0,120,212,0.1);border-bottom:1px solid rgba(0,120,212,0.1)}
-        .lp-billing-wrap{display:flex;justify-content:center;margin-bottom:52px}
-        .lp-billing{display:inline-flex;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:100px;padding:4px}
-        .lp-bill-btn{padding:9px 22px;border-radius:100px;font-size:13.5px;font-weight:500;cursor:pointer;border:none;transition:all 0.2s;display:flex;align-items:center;gap:6px;font-family:Inter,sans-serif}
-        .lp-bill-btn.on{background:#0078d4;color:#fff;box-shadow:0 0 20px rgba(0,120,212,0.4)}
-        .lp-bill-btn.off{background:none;color:rgba(255,255,255,0.38)}
-        .lp-save{font-size:11px;color:#00c896;font-weight:600}
-        .lp-plans{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;align-items:start}
-        .lp-plan{background:rgba(13,17,23,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:28px 22px;position:relative;transition:all 0.22s}
-        .lp-plan.popular{border-color:rgba(0,120,212,0.45);background:rgba(0,120,212,0.06);box-shadow:0 0 48px rgba(0,120,212,0.12);transform:scale(1.03)}
-        .lp-plan:hover{transform:translateY(-4px);box-shadow:0 24px 48px rgba(0,0,0,0.5)}
-        .lp-plan.popular:hover{transform:scale(1.03) translateY(-4px)}
-        .lp-plan-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#0078d4;color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:100px;letter-spacing:0.07em;text-transform:uppercase;white-space:nowrap}
-        .lp-plan-name{font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:18px}
-        .lp-plan-val{font-size:30px;font-weight:700;letter-spacing:-0.03em;color:#e6edf3}
-        .lp-plan-cur{font-size:13px;color:rgba(255,255,255,0.3)}
-        .lp-plan-period{font-size:12px;color:rgba(255,255,255,0.28);margin-bottom:8px}
-        .lp-plan-orig{font-size:12px;color:rgba(255,255,255,0.22);text-decoration:line-through}
-        .lp-plan-eco{font-size:12px;color:#00c896;font-weight:600;margin-bottom:18px}
-        .lp-plan-line{height:1px;background:rgba(255,255,255,0.07);margin:18px 0}
-        .lp-plan-feats{display:flex;flex-direction:column;gap:9px;margin-bottom:22px}
-        .lp-plan-feat{display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.5}
-        .lp-plan-feat.yes{color:rgba(255,255,255,0.65)}
-        .lp-plan-feat.no{color:rgba(255,255,255,0.2)}
-        .lp-check{color:#00c896;flex-shrink:0}
-        .lp-cross{color:rgba(255,255,255,0.18);flex-shrink:0}
-        .lp-plan-cta{display:block;width:100%;padding:12px 16px;border-radius:9px;text-align:center;font-size:13.5px;font-weight:600;text-decoration:none;transition:all 0.18s;cursor:pointer;border:none;font-family:Inter,sans-serif}
-        .lp-plan-cta.blue{background:#0078d4;color:#fff}
-        .lp-plan-cta.blue:hover{background:#006cc1}
-        .lp-plan-cta.ghost{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.1)}
-        .lp-plan-cta.ghost:hover{background:rgba(255,255,255,0.08);color:#fff}
-        .lp-plan-cta.green{background:rgba(0,200,150,0.09);color:#00c896;border:1px solid rgba(0,200,150,0.25)}
-        .lp-plan-cta.green:hover{background:rgba(0,200,150,0.16)}
-        .lp-plan-note{font-size:11.5px;color:rgba(255,255,255,0.22);text-align:center;margin-top:9px}
-        .lp-cta{width:100%;padding:110px 5%;text-align:center;background:radial-gradient(ellipse 70% 70% at 50% 50%,rgba(0,120,212,0.09) 0%,transparent 70%);border-top:1px solid rgba(0,120,212,0.08)}
-        .lp-cta-h2{font-size:clamp(28px,4vw,44px);font-weight:700;letter-spacing:-0.03em;color:#e6edf3;margin-bottom:16px}
-        .lp-cta-p{font-size:16px;color:rgba(255,255,255,0.38);font-weight:300;margin-bottom:44px;line-height:1.7}
-        .lp-cta-btns{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
-        .lp-footer{width:100%;padding:36px 5%;border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
-        .lp-footer-copy{font-size:13px;color:rgba(255,255,255,0.22)}
-        .lp-footer-links{display:flex;gap:22px;flex-wrap:wrap}
-        .lp-footer-link{font-size:13px;color:rgba(255,255,255,0.22);text-decoration:none;transition:color 0.15s}
-        .lp-footer-link:hover{color:rgba(255,255,255,0.6)}
-        @media(max-width:1100px){.lp-plans{grid-template-columns:repeat(2,1fr)}.lp-plan.popular{transform:none}}
-        @media(max-width:900px){.lp-feat-grid{grid-template-columns:repeat(2,1fr)}}
-        @media(max-width:768px){.lp-nav-links,.lp-nav-actions{display:none}.lp-hamburger{display:flex}.lp-feat-grid{grid-template-columns:1fr}.lp-plans{grid-template-columns:1fr}.lp-hero-btns{flex-direction:column;align-items:stretch}.lp-footer{flex-direction:column}}
-        @media(max-width:480px){.lp-stat-sep{display:none}.lp-stat{padding:0 12px}}
+        * { box-sizing: border-box; margin: 0; padding: 0 }
+        .nav-btn { height: 48px; padding: 0 14px; border: none; border-bottom: 2px solid transparent; background: none; font-size: 14px; font-family: inherit; color: #323130; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; white-space: nowrap }
+        .nav-btn:hover { color: #0078d4; border-bottom-color: #0078d4 }
+        .mega { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border-top: 1px solid #edebe9; box-shadow: 0 8px 24px rgba(0,0,0,0.1); z-index: 100; padding: 28px 40px }
+        .mini { position: absolute; top: 100%; background: #fff; border: 1px solid #edebe9; border-radius: 2px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 100; padding: 12px; min-width: 240px }
+        .mitem { display: flex; align-items: flex-start; gap: 12px; padding: 9px 12px; border-radius: 3px; cursor: pointer; text-decoration: none; color: inherit; transition: background 0.1s }
+        .mitem:hover { background: #f0f6ff }
+        .btn-p { padding: 8px 20px; background: #0078d4; color: #fff; border: none; font-size: 14px; font-family: inherit; font-weight: 600; cursor: pointer; border-radius: 2px; transition: background 0.15s }
+        .btn-p:hover { background: #106ebe }
+        .btn-o { padding: 8px 20px; background: transparent; color: #323130; border: 1px solid #8a8886; font-size: 14px; font-family: inherit; cursor: pointer; border-radius: 2px; transition: all 0.15s }
+        .btn-o:hover { background: #f3f2f1 }
+        .ftab { padding: 10px 20px; border: none; background: none; font-size: 14px; font-family: inherit; color: #605e5c; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap }
+        .ftab.on { color: #0078d4; border-bottom-color: #0078d4; font-weight: 600 }
+        .ftab:hover { color: #0078d4 }
+        .ucard { background: #fff; border: 1px solid #edebe9; padding: 32px; transition: all 0.2s }
+        .ucard:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: translateY(-2px) }
+        .pcard { border: 1px solid #edebe9; padding: 28px; background: #fff; position: relative; transition: all 0.2s }
+        .pcard:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1) }
+        .pcard.pop { border-color: #0078d4; box-shadow: 0 0 0 1px #0078d4 }
+        .fl { color: #605e5c; font-size: 13px; text-decoration: none; display: block; padding: 3px 0 }
+        .fl:hover { color: #0078d4 }
+        .rcard { background: #fff; border: 1px solid #edebe9; padding: 24px; transition: all 0.2s; cursor: pointer }
+        .rcard:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-2px) }
       `}</style>
-      <div className="lp">
-        <nav className="lp-nav">
-          <Link to="/" className="lp-logo">
-            <div className="lp-logo-icon">
-              <svg width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1V10.5z"/></svg>
+
+      {/* BANNIERE */}
+      <div style={{ background: "#0078d4", color: "#fff", textAlign: "center", padding: "7px 20px", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+        <span>&#127881; Nouveau &#8212; Portail mobile locataire disponible</span>
+        <Link to="/register" style={{ color: "#fff", fontWeight: 600, textDecoration: "underline", marginLeft: 4 }}>Essayer gratuitement</Link>
+      </div>
+
+      {/* NAVBAR */}
+      <nav ref={navRef} style={{ background: "#fff", borderBottom: "1px solid #edebe9", position: "sticky", top: 0, zIndex: 200 }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", alignItems: "center", height: 48, padding: "0 24px" }}>
+
+          {/* LOGO */}
+          <Link to="/" style={{ display: "flex", alignItems: "center", gap: 8, marginRight: 24, textDecoration: "none", flexShrink: 0 }}>
+            <div style={{ width: 28, height: 28, background: "#0078d4", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
             </div>
-            <span className="lp-logo-name">Imoloc</span>
+            <span style={{ fontSize: 17, fontWeight: 600, color: "#323130" }}>Imoloc</span>
           </Link>
-          <div className="lp-nav-links">
-            <a href="#fonctionnalites" className="lp-nav-link">Fonctionnalités</a>
-            <a href="#tarifs" className="lp-nav-link">Tarifs</a>
-            <a href="#contact" className="lp-nav-link">Contact</a>
+
+          {/* NAV ITEMS */}
+          <div style={{ display: "flex", flex: 1, alignItems: "center", position: "relative" }}>
+            {[["produits","Produits",true],["tarifs","Tarifs",false],["ressources","Ressources",true],["support","Support",true]].map(([key,label,chevron]) => (
+              <button key={key} className="nav-btn"
+                onMouseEnter={() => setOpenMenu(key)}
+                onClick={() => setOpenMenu(openMenu === key ? null : key)}>
+                {label}
+                {chevron && <svg style={{ marginLeft: 3, transition: "transform 0.15s", transform: openMenu===key?"rotate(180deg)":"none" }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>}
+              </button>
+            ))}
+
+            {/* MEGA MENU PRODUITS */}
+            {openMenu === "produits" && (
+              <div className="mega" onMouseLeave={() => setOpenMenu(null)}>
+                <div style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 32 }}>
+                  {[
+                    { titre: "Pour les agences", items: [
+                      { icon: "\u{1F3E2}", label: "Centre d\u2019administration", desc: "Gerez votre parc immobilier", path: "/agence" },
+                      { icon: "\u{1F465}", label: "Gestion des utilisateurs", desc: "Collaborateurs et permissions", path: "/agence/utilisateurs" },
+                      { icon: "\u{1F4CA}", label: "Rapports", desc: "Tableaux de bord financiers", path: "/agence/rapports" },
+                    ]},
+                    { titre: "Pour les proprietaires", items: [
+                      { icon: "\u{1F511}", label: "Espace proprietaire", desc: "Vos biens et revenus", path: "/proprietaire" },
+                      { icon: "\u{1F4C4}", label: "Baux et contrats", desc: "Generez vos baux", path: "/agence/baux" },
+                      { icon: "\u{1F4B0}", label: "Paiements", desc: "Loyers et quittances", path: "/agence/paiements" },
+                    ]},
+                    { titre: "Pour les locataires", items: [
+                      { icon: "\u{1F3E0}", label: "Portail locataire", desc: "Votre espace personnel", path: "/locataire" },
+                      { icon: "\u{1F4F1}", label: "Application mobile", desc: "iOS et Android", path: "/" },
+                      { icon: "\u{1F4E2}", label: "Signalements", desc: "Suivi en temps reel", path: "/locataire" },
+                    ]},
+                    { titre: "Applications", items: [
+                      { icon: "\u2728", label: "Loci IA", desc: "Assistant immobilier IA", path: "/agence" },
+                      { icon: "\u{1F517}", label: "Integrations", desc: "FedaPay, PawaPay, plus", path: "/" },
+                      { icon: "\u{1F4F2}", label: "API Imoloc", desc: "Connectez vos outils", path: "/" },
+                    ]},
+                  ].map(sec => (
+                    <div key={sec.titre}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#a19f9d", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{sec.titre}</div>
+                      {sec.items.map(item => (
+                        <Link key={item.label} to={item.path} className="mitem" onClick={() => setOpenMenu(null)}>
+                          <span style={{ fontSize: 20 }}>{item.icon}</span>
+                          <div>
+                            <div style={{ fontSize: 13.5, fontWeight: 500, color: "#323130" }}>{item.label}</div>
+                            <div style={{ fontSize: 12, color: "#605e5c" }}>{item.desc}</div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* MINI MENU RESSOURCES */}
+            {openMenu === "ressources" && (
+              <div className="mini" style={{ left: 155 }} onMouseLeave={() => setOpenMenu(null)}>
+                {[["\u{1F4D6}","Documentation","Guides et tutoriels"],["\u{1F393}","Formation","Apprenez Imoloc"],["\u{1F4AC}","Communaute","Forum et entraide"],["\u{1F4DD}","Blog","Actualites immobilieres"],["\u{1F504}","Nouveautes","Dernieres fonctionnalites"]].map(([ic,lb,dc]) => (
+                  <a key={lb} href="#" className="mitem">
+                    <span style={{ fontSize: 18 }}>{ic}</span>
+                    <div><div style={{ fontSize: 13.5, fontWeight: 500 }}>{lb}</div><div style={{ fontSize: 12, color: "#605e5c" }}>{dc}</div></div>
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {/* MINI MENU SUPPORT */}
+            {openMenu === "support" && (
+              <div className="mini" style={{ left: 250 }} onMouseLeave={() => setOpenMenu(null)}>
+                {[["\u{1F3AF}","Aide et support","FAQ et assistance"],["\u{1F527}","Support technique","Resoudre un probleme"],["\u{1F4DE}","Nous contacter","Parlez a un expert"],["\u{1F91D}","Partenaires","Programme revendeur"]].map(([ic,lb,dc]) => (
+                  <a key={lb} href="#" className="mitem">
+                    <span style={{ fontSize: 18 }}>{ic}</span>
+                    <div><div style={{ fontSize: 13.5, fontWeight: 500 }}>{lb}</div><div style={{ fontSize: 12, color: "#605e5c" }}>{dc}</div></div>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="lp-nav-actions">
-            <Link to="/login" className="lp-btn-outline">Se connecter</Link>
-            <Link to="/register" className="lp-btn-blue">Essai gratuit</Link>
-          </div>
-          <button className="lp-hamburger" onClick={() => setMenuOpen(!menuOpen)}>
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              {menuOpen ? <path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/> : <path strokeLinecap="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>}
-            </svg>
-          </button>
-        </nav>
-        <div className={`lp-mobile-menu ${menuOpen ? 'open' : ''}`}>
-          <a href="#fonctionnalites" className="lp-nav-link" onClick={() => setMenuOpen(false)}>Fonctionnalités</a>
-          <a href="#tarifs" className="lp-nav-link" onClick={() => setMenuOpen(false)}>Tarifs</a>
-          <a href="#contact" className="lp-nav-link" onClick={() => setMenuOpen(false)}>Contact</a>
-          <div className="lp-mobile-btns">
-            <Link to="/login" className="lp-btn-outline" onClick={() => setMenuOpen(false)}>Se connecter</Link>
-            <Link to="/register" className="lp-btn-blue" onClick={() => setMenuOpen(false)}>Essai gratuit</Link>
+
+          {/* CTA DROITE */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+            <Link to="/register"><button className="btn-p">Essayer gratuitement</button></Link>
+            <Link to="/login"><button className="btn-o">Se connecter</button></Link>
           </div>
         </div>
-        <section className="lp-hero">
-          <div className="lp-hero-bg"/><div className="lp-hero-grid"/>
-          <div className="lp-hero-inner">
-            <div className="lp-badge"><div className="lp-badge-dot"/>Plateforme de gestion immobilière en Afrique</div>
-            <h1 className="lp-h1">Gérez vos biens<br/><span className="blue">immobiliers simplement</span></h1>
-            <p className="lp-hero-sub">Imoloc connecte agences, propriétaires et locataires sur une seule plateforme. Paiements, baux, plaintes — tout en temps réel.</p>
-            <div className="lp-hero-btns">
-              <Link to="/register" className="lp-hero-btn1">Commencer gratuitement <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg></Link>
-              <a href="#fonctionnalites" className="lp-hero-btn2">Voir les fonctionnalités</a>
+      </nav>
+
+      {/* HERO */}
+      <section style={{ background: "linear-gradient(135deg,#0e1a2b 0%,#1a2d4a 40%,#0e2238 100%)", padding: "80px 24px 100px", position: "relative", overflow: "hidden", minHeight: 520 }}>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle at 20% 50%, rgba(0,120,212,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(108,99,255,0.1) 0%, transparent 40%)", pointerEvents: "none" }}/>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "60px 60px", pointerEvents: "none" }}/>
+        <div style={{ maxWidth: 1280, margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div style={{ maxWidth: 640 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(0,120,212,0.2)", border: "1px solid rgba(0,120,212,0.4)", borderRadius: 100, padding: "5px 14px", marginBottom: 24 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", display: "inline-block" }}/>
+              <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>Nouveau &#8212; Portail mobile locataire disponible</span>
             </div>
-            <div className="lp-stats">
-              {[{val:'4',lbl:'Plans disponibles'},null,{val:'3',lbl:'Rôles utilisateurs'},null,{val:'100%',lbl:'Web et Mobile'},null,{val:'1 mois',lbl:'Essai gratuit'}].map((item,i) =>
-                item===null ? <div key={i} className="lp-stat-sep"/> : <div key={i} className="lp-stat"><div className="lp-stat-val">{item.val}</div><div className="lp-stat-lbl">{item.lbl}</div></div>
-              )}
+            <h1 style={{ fontSize: "clamp(32px,5vw,52px)", fontWeight: 300, color: "#fff", lineHeight: 1.15, marginBottom: 20, letterSpacing: "-0.02em" }}>
+              La plateforme de gestion<br/>
+              <span style={{ fontWeight: 700, background: "linear-gradient(90deg,#4da6ff,#a78bfa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>immobili&#232;re pour l&#8217;Afrique</span>
+            </h1>
+            <p style={{ fontSize: 17, color: "rgba(255,255,255,0.7)", lineHeight: 1.7, marginBottom: 32, maxWidth: 540 }}>
+              G&#233;rez vos biens, locataires, baux et paiements depuis une seule plateforme. Mobile Money int&#233;gr&#233;, portail locataire, rapports avanc&#233;s.
+            </p>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 48 }}>
+              <Link to="/register">
+                <button className="btn-p" style={{ padding: "12px 28px", fontSize: 15 }}>D&#233;marrer gratuitement &#8594;</button>
+              </Link>
+              <button onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
+                style={{ padding: "12px 28px", background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.5)", fontSize: 15, cursor: "pointer", borderRadius: 2, fontFamily: "inherit" }}>
+                Voir les fonctionnalit&#233;s
+              </button>
             </div>
-          </div>
-        </section>
-        <section className="lp-section" id="fonctionnalites">
-          <div className="lp-section-head">
-            <div className="lp-section-lbl">Fonctionnalités</div>
-            <h2 className="lp-section-title">Tout ce dont vous avez<br/><span className="blue">besoin pour gérer</span></h2>
-            <p className="lp-section-sub">Une suite complète pour les agences immobilières modernes en Afrique.</p>
-          </div>
-          <div className="lp-feat-grid">
-            {FEATURES.map((f,i) => (
-              <div key={i} className="lp-feat-card">
-                <div className="lp-feat-icon" style={{background:`${f.color}14`,borderColor:`${f.color}28`,color:f.color}}>
-                  <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={f.icon}/></svg>
+            <div style={{ display: "flex", gap: 40, flexWrap: "wrap" }}>
+              {[["2 500+","Biens g&#233;r&#233;s"],["450+","Agences actives"],["8","Pays couverts"],["98%","Satisfaction client"]].map(([v,l]) => (
+                <div key={l}>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: "#fff" }} dangerouslySetInnerHTML={{__html:v}}/>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }} dangerouslySetInnerHTML={{__html:l}}/>
                 </div>
-                <div className="lp-feat-title">{f.title}</div>
-                <div className="lp-feat-desc">{f.desc}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-        <section className="lp-pricing-wrap" id="tarifs">
-          <div className="lp-section-head">
-            <div className="lp-section-lbl">Tarifs</div>
-            <h2 className="lp-section-title">Choisissez votre <span className="blue">plan</span></h2>
-            <p className="lp-section-sub">1 mois essai gratuit. Aucune carte bancaire requise.</p>
-          </div>
-          <div className="lp-billing-wrap">
-            <div className="lp-billing">
-              <button className={`lp-bill-btn ${billing==='monthly'?'on':'off'}`} onClick={() => setBilling('monthly')}>Mensuel</button>
-              <button className={`lp-bill-btn ${billing==='yearly'?'on':'off'}`} onClick={() => setBilling('yearly')}>Annuel <span className="lp-save">-10%</span></button>
+              ))}
             </div>
           </div>
-          <div className="lp-plans">
-            {PLANS.map((plan,i) => (
-              <div key={i} className={`lp-plan ${plan.popular?'popular':''}`}>
-                {plan.popular && <div className="lp-plan-badge">Populaire</div>}
-                <div className="lp-plan-name" style={{color:plan.color}}>{plan.name}</div>
-                {plan.price_monthly ? (
-                  <>
-                    <div><span className="lp-plan-val" style={{color:plan.color}}>{billing==='monthly'?plan.price_monthly:plan.price_yearly}</span><span className="lp-plan-cur"> FCFA</span></div>
-                    <div className="lp-plan-period">{billing==='monthly'?'par mois':'par an'}</div>
-                    {billing==='yearly' && <><div className="lp-plan-orig">Au lieu de {plan.price_orig} FCFA</div><div className="lp-plan-eco">Economisez 10%</div></>}
-                  </>
-                ) : (
-                  <><div className="lp-plan-val" style={{color:plan.color,fontSize:22}}>Sur devis</div><div className="lp-plan-period" style={{marginBottom:18}}>Contactez-nous</div></>
-                )}
-                <div className="lp-plan-line"/>
-                <div className="lp-plan-feats">
-                  {plan.features.map((feat,j) => <div key={j} className="lp-plan-feat yes"><span className="lp-check"><svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg></span>{feat}</div>)}
-                  {plan.disabled.map((feat,j) => <div key={j} className="lp-plan-feat no"><span className="lp-cross"><svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg></span>{feat}</div>)}
+        </div>
+      </section>
+
+      {/* ACCES DIRECT */}
+      <section style={{ background: "#f3f2f1", borderBottom: "1px solid #edebe9", padding: "12px 24px" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ fontSize: 13, color: "#605e5c", flexShrink: 0 }}>Acc&#232;s direct :</span>
+          {[["Centre d&#8217;administration","\u{1F3E2}","/agence","#0078d4"],["Espace propri&#233;taire","\u{1F511}","/proprietaire","#6c63ff"],["Portail locataire","\u{1F3E0}","/locataire","#10b981"]].map(([label,icon,path,color]) => (
+            <Link key={path} to={path}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: "#fff", border: `1px solid ${color}33`, borderRadius: 2, textDecoration: "none", fontSize: 13, color: color, fontWeight: 500 }}
+              dangerouslySetInnerHTML={undefined}>
+              <span>{icon}</span>
+              <span dangerouslySetInnerHTML={{ __html: label }}/>
+            </Link>
+          ))}
+          <div style={{ marginLeft: "auto", fontSize: 12, color: "#a19f9d" }}>
+            Pas encore de compte ? <Link to="/register" style={{ color: "#0078d4", textDecoration: "none", fontWeight: 600 }}>Cr&#233;er un compte gratuit</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* POUR QUI */}
+      <section style={{ padding: "80px 24px", background: "#fff" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#0078d4", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>POUR TOUS LES ACTEURS IMMOBILIERS</div>
+            <h2 style={{ fontSize: "clamp(24px,3vw,36px)", fontWeight: 300, color: "#323130" }}>Une plateforme, trois espaces distincts</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 1, background: "#edebe9", border: "1px solid #edebe9" }}>
+            {[
+              { icon: "\u{1F3E2}", titre: "Agences immobili&#232;res", desc: "G&#233;rez un portefeuille multi-biens avec votre &#233;quipe, g&#233;n&#233;rez des contrats professionnels et acceptez les paiements Mobile Money.", cta: "Centre d&#8217;administration", path: "/agence", color: "#0078d4", actions: ["Gestion &#233;quipe","Multi-biens","Rapports","Facturation"] },
+              { icon: "\u{1F511}", titre: "Propri&#233;taires", desc: "Suivez vos biens et locataires sans effort. Recevez vos loyers directement sur Mobile Money et consultez vos revenus.", cta: "Espace propri&#233;taire", path: "/proprietaire", color: "#6c63ff", actions: ["Suivi loyers","Documents","Paiements","Notifications"] },
+              { icon: "\u{1F3E0}", titre: "Locataires", desc: "Payez votre loyer, t&#233;l&#233;chargez vos quittances, signalez des probl&#232;mes et restez en contact avec votre agence.", cta: "Portail locataire", path: "/locataire", color: "#10b981", actions: ["Paiement mobile","Quittances","Plaintes","Documents"] },
+            ].map(uc => (
+              <div key={uc.path} className="ucard">
+                <div style={{ width: 52, height: 52, background: uc.color + "12", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, marginBottom: 20 }}>{uc.icon}</div>
+                <h3 style={{ fontSize: 20, fontWeight: 600, color: "#323130", marginBottom: 10 }} dangerouslySetInnerHTML={{ __html: uc.titre }}/>
+                <p style={{ fontSize: 14, color: "#605e5c", lineHeight: 1.7, marginBottom: 20 }} dangerouslySetInnerHTML={{ __html: uc.desc }}/>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 24 }}>
+                  {uc.actions.map(a => (
+                    <span key={a} style={{ fontSize: 12, padding: "3px 10px", background: uc.color + "10", color: uc.color, border: `1px solid ${uc.color}30`, borderRadius: 2 }} dangerouslySetInnerHTML={{ __html: a }}/>
+                  ))}
                 </div>
-                <Link to="/register" className={`lp-plan-cta ${plan.name==='Entreprise'?'green':plan.popular?'blue':'ghost'}`}>
-                  {plan.name==='Entreprise'?'Demander un devis':'Essai gratuit 1 mois'}
+                <Link to={uc.path}>
+                  <button style={{ padding: "9px 20px", background: uc.color, color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", borderRadius: 2, fontFamily: "inherit" }}>
+                    <span dangerouslySetInnerHTML={{ __html: uc.cta }}/> &#8594;
+                  </button>
                 </Link>
-                {plan.name!=='Entreprise' && <div className="lp-plan-note">Aucune carte requise</div>}
               </div>
             ))}
           </div>
-        </section>
-        <section className="lp-cta" id="contact">
-          <h2 className="lp-cta-h2">Prêt à moderniser votre<br/>gestion immobilière ?</h2>
-          <p className="lp-cta-p">Rejoignez les agences qui font confiance à Imoloc pour gérer leurs biens en Afrique.</p>
-          <div className="lp-cta-btns">
-            <Link to="/register" className="lp-hero-btn1">Créer un compte gratuit <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg></Link>
-            <Link to="/login" className="lp-hero-btn2">Se connecter</Link>
+        </div>
+      </section>
+
+      {/* FONCTIONNALITES */}
+      <section id="features" style={{ padding: "80px 24px", background: "#faf9f8" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#0078d4", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>FONCTIONNALIT&#201;S</div>
+            <h2 style={{ fontSize: "clamp(24px,3vw,36px)", fontWeight: 300, color: "#323130" }}>R&#233;pondre aux besoins de votre organisation</h2>
           </div>
-        </section>
-        <footer className="lp-footer">
-          <div className="lp-footer-copy">© {new Date().getFullYear()} Imoloc — DJLOTECH Society. Tous droits réservés.</div>
-          <div className="lp-footer-links">
-            <a href="#" className="lp-footer-link">Confidentialité</a>
-            <a href="#" className="lp-footer-link">Conditions</a>
-            <a href="#" className="lp-footer-link">Support</a>
+          <div style={{ display: "flex", borderBottom: "1px solid #edebe9", marginBottom: 40, overflowX: "auto" }}>
+            {TABS.map(t => (
+              <button key={t.id} className={"ftab" + (activeTab === t.id ? " on" : "")} onClick={() => setActiveTab(t.id)}>
+                {t.icon} {t.label}
+              </button>
+            ))}
           </div>
-        </footer>
-      </div>
-    </>
+          {tab && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
+              <div>
+                <h3 style={{ fontSize: "clamp(20px,2.5vw,30px)", fontWeight: 300, color: "#323130", marginBottom: 16, lineHeight: 1.3 }}>{tab.titre}</h3>
+                <p style={{ fontSize: 15, color: "#605e5c", lineHeight: 1.8, marginBottom: 28 }}>{tab.desc}</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
+                  {tab.points.map(p => (
+                    <div key={p} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 20, height: 20, borderRadius: "50%", background: tab.color + "18", border: "1px solid " + tab.color + "40", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={tab.color} strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                      </div>
+                      <span style={{ fontSize: 14, color: "#323130" }}>{p}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link to="/register"><button className="btn-p">Essayer gratuitement</button></Link>
+              </div>
+              <div style={{ background: tab.bg, borderRadius: 8, padding: 32, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 280, border: "1px solid " + tab.color + "20" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 72, marginBottom: 12 }}>{tab.icon}</div>
+                  <div style={{ fontSize: 18, fontWeight: 600, color: tab.color }}>{tab.titre}</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* TARIFS */}
+      <section style={{ padding: "80px 24px", background: "#fff" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#0078d4", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>OFFRES ET TARIFS</div>
+            <h2 style={{ fontSize: "clamp(24px,3vw,36px)", fontWeight: 300, color: "#323130", marginBottom: 20 }}>Comparez les offres et les prix</h2>
+            <div style={{ display: "inline-flex", background: "#f3f2f1", borderRadius: 4, padding: 4, gap: 4 }}>
+              {[["mois","Mensuel"],["an","Annuel (-20%)"]].map(([k,l]) => (
+                <button key={k} onClick={() => setBilling(k)}
+                  style={{ padding: "7px 20px", borderRadius: 2, border: "none", background: billing===k?"#fff":"transparent", fontFamily: "inherit", fontSize: 13, cursor: "pointer", fontWeight: billing===k?600:400, boxShadow: billing===k?"0 1px 4px rgba(0,0,0,0.1)":"none" }}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 1, background: "#edebe9", border: "1px solid #edebe9" }}>
+            {PLANS.map(plan => (
+              <div key={plan.nom} className={"pcard" + (plan.popular ? " pop" : "")}>
+                {plan.popular && <div style={{ position: "absolute", top: -1, left: 0, right: 0, height: 3, background: "#0078d4" }}/>}
+                {plan.popular && <div style={{ position: "absolute", top: 12, right: 12, fontSize: 11, fontWeight: 700, padding: "2px 10px", background: "#0078d4", color: "#fff", borderRadius: 2 }}>Recommand&#233;</div>}
+                <div style={{ fontSize: 12, fontWeight: 700, color: plan.color, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{plan.nom}</div>
+                <div style={{ fontSize: 13, color: "#605e5c", marginBottom: 16 }}>{plan.desc}</div>
+                {plan.prix_mois
+                  ? <div style={{ marginBottom: 24 }}><span style={{ fontSize: 32, fontWeight: 700, color: "#323130" }}>{(billing==="mois"?plan.prix_mois:plan.prix_an).toLocaleString("fr-FR")}</span><span style={{ fontSize: 13, color: "#605e5c" }}> FCFA/mois</span></div>
+                  : <div style={{ fontSize: 22, fontWeight: 300, color: "#605e5c", marginBottom: 24 }}>Sur devis</div>
+                }
+                <Link to="/register">
+                  <button style={{ width: "100%", padding: "9px", background: plan.popular ? plan.color : "transparent", color: plan.popular ? "#fff" : plan.color, border: "1px solid " + plan.color, fontSize: 13, fontWeight: 600, cursor: "pointer", borderRadius: 2, fontFamily: "inherit", marginBottom: 20 }}>
+                    {plan.prix_mois ? "Commencer" : "Nous contacter"}
+                  </button>
+                </Link>
+                <div style={{ height: 1, background: "#edebe9", marginBottom: 16 }}/>
+                {plan.features.map(f => (
+                  <div key={f} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", fontSize: 13, color: "#323130" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={plan.color} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                    {f}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* RESSOURCES */}
+      <section style={{ padding: "80px 24px", background: "#faf9f8" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#0078d4", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>RESSOURCES</div>
+              <h2 style={{ fontSize: "clamp(20px,2.5vw,30px)", fontWeight: 300, color: "#323130" }}>Tirez le meilleur d&#8217;Imoloc</h2>
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 20 }}>
+            {[
+              { cat: "Guide", titre: "D&#233;marrer avec Imoloc", desc: "Configurez votre organisation en 5 &#233;tapes.", icon: "\u{1F680}", color: "#0078d4" },
+              { cat: "Tutoriel", titre: "Cr&#233;er un bail &#233;lectronique", desc: "G&#233;n&#233;rez et envoyez un contrat en quelques minutes.", icon: "\u{1F4C4}", color: "#6c63ff" },
+              { cat: "Formation", titre: "Paiements Mobile Money", desc: "MTN, Moov, Wave &#8212; int&#233;grez tous les op&#233;rateurs.", icon: "\u{1F4B3}", color: "#10b981" },
+              { cat: "Webinaire", titre: "Rapports financiers", desc: "Analysez vos revenus et pr&#233;voyez votre croissance.", icon: "\u{1F4CA}", color: "#f59e0b" },
+            ].map(r => (
+              <div key={r.titre} className="rcard">
+                <div style={{ fontSize: 36, marginBottom: 12 }}>{r.icon}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: r.color, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{r.cat}</div>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: "#323130", marginBottom: 8, lineHeight: 1.3 }} dangerouslySetInnerHTML={{ __html: r.titre }}/>
+                <p style={{ fontSize: 13, color: "#605e5c", lineHeight: 1.6, marginBottom: 16 }} dangerouslySetInnerHTML={{ __html: r.desc }}/>
+                <a href="#" style={{ fontSize: 13, color: r.color, textDecoration: "none", fontWeight: 600 }}>En savoir plus &#8594;</a>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{ background: "#0078d4", padding: "60px 24px", textAlign: "center" }}>
+        <div style={{ maxWidth: 640, margin: "0 auto" }}>
+          <h2 style={{ fontSize: "clamp(22px,3vw,36px)", fontWeight: 300, color: "#fff", marginBottom: 12 }}>D&#233;marrez votre essai gratuit de 30 jours</h2>
+          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.8)", marginBottom: 28 }}>Aucune carte bancaire requise. Annulez &#224; tout moment.</p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <Link to="/register"><button style={{ padding: "12px 28px", background: "#fff", color: "#0078d4", border: "none", fontSize: 15, fontWeight: 600, cursor: "pointer", borderRadius: 2, fontFamily: "inherit" }}>Cr&#233;er un compte gratuit</button></Link>
+            <Link to="/login"><button style={{ padding: "12px 28px", background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.6)", fontSize: 15, cursor: "pointer", borderRadius: 2, fontFamily: "inherit" }}>Se connecter</button></Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{ background: "#f3f2f1", borderTop: "1px solid #edebe9", padding: "48px 24px 0" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr repeat(4,1fr)", gap: 32, marginBottom: 40 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <div style={{ width: 28, height: 28, background: "#0078d4", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                <span style={{ fontSize: 16, fontWeight: 600, color: "#323130" }}>Imoloc</span>
+              </div>
+              <p style={{ fontSize: 13, color: "#605e5c", lineHeight: 1.7, marginBottom: 16, maxWidth: 220 }}>La plateforme de gestion immobili&#232;re pour l&#8217;Afrique francophone.</p>
+            </div>
+            {[
+              ["Produits", ["Centre admin","Portail locataire","Espace propri&#233;taire","Loci IA","App mobile"]],
+              ["Tarifs", ["Plan Starter","Plan Business","Plan Enterprise","Comparer les plans"]],
+              ["Ressources", ["Documentation","Formation","Blog","Nouveaut&#233;s"]],
+              ["Support", ["Centre d&#8217;aide","Contact","Support technique","Partenaires"]],
+            ].map(([section, links]) => (
+              <div key={section}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#323130", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>{section}</div>
+                {links.map(link => <a key={link} href="#" className="fl" dangerouslySetInnerHTML={{ __html: link }}/>)}
+              </div>
+            ))}
+          </div>
+          <div style={{ borderTop: "1px solid #edebe9", padding: "16px 0 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            <div style={{ display: "flex", gap: 20 }}>
+              {["Mentions l&#233;gales","Confidentialit&#233;","Cookies"].map(l => <a key={l} href="#" style={{ fontSize: 12, color: "#605e5c", textDecoration: "none" }} dangerouslySetInnerHTML={{ __html: l }}/>)}
+            </div>
+            <div style={{ fontSize: 12, color: "#a19f9d" }}>&#169; 2026 Imoloc &#8212; Abomey-Calavi, B&#233;nin &#127463;&#127471;</div>
+          </div>
+        </div>
+      </footer>
+    </div>
   )
 }
