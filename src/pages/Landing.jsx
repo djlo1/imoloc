@@ -142,8 +142,8 @@ export default function Landing() {
         .nav-btn{height:44px;padding:0 14px;border:none;border-bottom:2px solid transparent;background:none;font-size:14px;font-family:inherit;color:#1a1a1a;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s;white-space:nowrap}
         .nav-btn:hover{border-bottom-color:#0078d4;color:#0078d4}
         /* MEGA MENU - pleine largeur */
-        .mega-wrap{position:fixed;top:44px;left:0;right:0;width:100vw;background:#fff;border-top:2px solid #0078d4;box-shadow:0 8px 40px rgba(0,0,0,0.12);z-index:500;animation:fadeDown 0.15s ease}
-        .mega-inner{max-width:1280px;margin:0 auto;padding:32px 48px;display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+        .mega-wrap{position:absolute;top:100%;left:0;right:0;background:#fff;border-top:2px solid #0078d4;box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:500;animation:fadeDown 0.15s ease}
+        .mega-inner{padding:28px 40px;display:grid;grid-template-columns:repeat(4,1fr);gap:0}
         .mega-col{padding:0 24px;border-right:1px solid #f0f0f0}
         .mega-col:first-child{padding-left:0}
         .mega-col:last-child{border-right:none}
@@ -153,7 +153,7 @@ export default function Landing() {
         .mega-item-label{font-size:13.5px;font-weight:500;color:#1a1a1a}
         .mega-item:hover .mega-item-label{color:#0078d4}
         .mega-item-desc{font-size:12px;color:#888;margin-top:2px}
-        .mini-drop{position:fixed;top:44px;background:#fff;border-top:2px solid #0078d4;border-bottom:1px solid #e5e5e5;box-shadow:0 8px 24px rgba(0,0,0,0.1);z-index:500;padding:8px;min-width:220px;animation:fadeDown 0.15s ease}
+        .mini-drop{position:absolute;top:100%;background:#fff;border-top:2px solid #0078d4;border:1px solid #e5e5e5;border-top:2px solid #0078d4;box-shadow:0 8px 24px rgba(0,0,0,0.1);z-index:500;padding:8px;min-width:220px;animation:fadeDown 0.15s ease}
         .mini-item{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:13.5px;color:#1a1a1a;border-radius:3px;cursor:pointer;transition:background 0.1s}
         .mini-item:hover{background:#f0f7ff;color:#0078d4}
         /* BUTTONS */
@@ -207,12 +207,12 @@ export default function Landing() {
       `}</style>
 
       {/* ── NAVBAR ── */}
-      <nav ref={navRef} style={{background:"#fff",borderBottom:"1px solid #e5e5e5",position:"sticky",top:0,zIndex:300}}>
+      <nav ref={navRef} style={{background:"#fff",borderBottom:"1px solid #e5e5e5",position:"sticky",top:0,zIndex:300,overflow:"visible"}}>
         <div style={{maxWidth:1280,margin:"0 auto",display:"flex",alignItems:"center",height:44,padding:"0 24px",gap:0}}>
           <Link to="/"><Logo/></Link>
           <span style={{width:1,height:20,background:"#e5e5e5",margin:"0 20px",flexShrink:0}}/>
-          <div style={{display:"flex",flex:1,alignItems:"center"}} className="hide-mobile">
-            {[["produits","Produits",true],["tarifs","Tarifs",false],["ressources","Ressources",true],["support","Support",true]].map(([k,l,c]) => (
+          <div style={{display:"flex",flex:1,alignItems:"center",position:"relative"}} className="hide-mobile">
+            {[["produits","Produits",true],["tarifs","Offres et tarifs",false],["ressources","Ressources",true],["support","Support",true]].map(([k,l,c]) => (
               <button key={k} className="nav-btn" onMouseEnter={()=>setOpenMenu(k)} onClick={()=>setOpenMenu(openMenu===k?null:k)}>
                 {l}{c && <Chev open={openMenu===k}/>}
               </button>
@@ -245,7 +245,7 @@ export default function Landing() {
 
         {/* MINI RESSOURCES */}
         {openMenu === "ressources" && (
-          <div className="mini-drop" style={{left:"50%",transform:"translateX(-50%)"}} onMouseLeave={()=>setOpenMenu(null)}>
+          <div className="mini-drop" style={{left:140}} onMouseLeave={()=>setOpenMenu(null)}>
             {[["Documentation","Guides et tutoriels"],["Formation","Apprenez Imoloc"],["Communaut&#233;","Forum et entraide"],["Blog","Actualit&#233;s immobili&#232;res"],["Nouveaut&#233;s","Derni&#232;res fonctionnalit&#233;s"]].map(([l,d]) => (
               <a key={l} href="#" className="mini-item"><div><div dangerouslySetInnerHTML={{__html:l}}/><div style={{fontSize:11.5,color:"#888"}} dangerouslySetInnerHTML={{__html:d}}/></div></a>
             ))}
@@ -254,7 +254,7 @@ export default function Landing() {
 
         {/* MINI SUPPORT */}
         {openMenu === "support" && (
-          <div className="mini-drop" style={{right:0}} onMouseLeave={()=>setOpenMenu(null)}>
+          <div className="mini-drop" style={{left:230}} onMouseLeave={()=>setOpenMenu(null)}>
             {[["Aide et support","FAQ et assistance"],["Support technique","R&#233;soudre un probl&#232;me"],["Nous contacter","Parlez &#224; un expert"],["Partenaires","Programme revendeur"]].map(([l,d]) => (
               <a key={l} href="#" className="mini-item"><div><div dangerouslySetInnerHTML={{__html:l}}/><div style={{fontSize:11.5,color:"#888"}} dangerouslySetInnerHTML={{__html:d}}/></div></a>
             ))}
