@@ -142,17 +142,17 @@ export default function Landing() {
         .nav-btn{height:44px;padding:0 14px;border:none;border-bottom:2px solid transparent;background:none;font-size:14px;font-family:inherit;color:#1a1a1a;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s;white-space:nowrap}
         .nav-btn:hover{border-bottom-color:#0078d4;color:#0078d4}
         /* MEGA MENU - pleine largeur */
-        .mega-wrap{position:absolute;top:100%;left:0;right:0;background:#fff;border-top:2px solid #0078d4;box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:500;animation:fadeDown 0.15s ease}
+        .mega-wrap{position:absolute;top:100%;left:-9999px;right:-9999px;margin-left:calc(50% - 50vw);width:100vw;background:#fff;border-top:2px solid #0078d4;box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:500;animation:fadeDown 0.15s ease}
         .mega-inner{padding:28px 40px;display:grid;grid-template-columns:repeat(4,1fr);gap:0}
         .mega-col{padding:0 24px;border-right:1px solid #f0f0f0}
         .mega-col:first-child{padding-left:0}
         .mega-col:last-child{border-right:none}
         .mega-title{font-size:11px;font-weight:700;color:#0078d4;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
-        .mega-item{display:flex;flex-direction:column;padding:10px 12px;border-radius:4px;cursor:pointer;transition:background 0.1s;margin-bottom:2px;text-decoration:none;color:inherit}
-        .mega-item:hover{background:#f0f7ff}
-        .mega-item-label{font-size:13.5px;font-weight:500;color:#1a1a1a}
+        .mega-item{display:flex;align-items:center;padding:8px 12px;border-radius:2px;cursor:pointer;transition:all 0.1s;margin-bottom:1px;text-decoration:none;color:#1a1a1a;font-size:13.5px}
+        .mega-item:hover{background:#f0f7ff;color:#0078d4;padding-left:16px}
+        .mega-item-label{font-size:13.5px;font-weight:400}
         .mega-item:hover .mega-item-label{color:#0078d4}
-        .mega-item-desc{font-size:12px;color:#888;margin-top:2px}
+        .mega-item-desc{display:none}
         .mini-drop{position:absolute;top:100%;background:#fff;border-top:2px solid #0078d4;border:1px solid #e5e5e5;border-top:2px solid #0078d4;box-shadow:0 8px 24px rgba(0,0,0,0.1);z-index:500;padding:8px;min-width:220px;animation:fadeDown 0.15s ease}
         .mini-item{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:13.5px;color:#1a1a1a;border-radius:3px;cursor:pointer;transition:background 0.1s}
         .mini-item:hover{background:#f0f7ff;color:#0078d4}
@@ -207,12 +207,12 @@ export default function Landing() {
       `}</style>
 
       {/* ── NAVBAR ── */}
-      <nav ref={navRef} style={{background:"#fff",borderBottom:"1px solid #e5e5e5",position:"sticky",top:0,zIndex:300,overflow:"visible"}}>
+      <nav ref={navRef} style={{background:"#fff",borderBottom:"1px solid #e5e5e5",position:"sticky",top:0,zIndex:300}}>
         <div style={{maxWidth:1280,margin:"0 auto",display:"flex",alignItems:"center",height:44,padding:"0 24px",gap:0}}>
           <Link to="/"><Logo/></Link>
           <span style={{width:1,height:20,background:"#e5e5e5",margin:"0 20px",flexShrink:0}}/>
           <div style={{display:"flex",flex:1,alignItems:"center",position:"relative"}} className="hide-mobile">
-            {[["produits","Produits",true],["tarifs","Offres et tarifs",false],["ressources","Ressources",true],["support","Support",true]].map(([k,l,c]) => (
+            {[["produits","Produits",true],["tarifs","Offres & Tarifs",false],["ressources","Ressources",true],["support","Support",true]].map(([k,l,c]) => (
               <button key={k} className="nav-btn" onMouseEnter={()=>setOpenMenu(k)} onClick={()=>setOpenMenu(openMenu===k?null:k)}>
                 {l}{c && <Chev open={openMenu===k}/>}
               </button>
