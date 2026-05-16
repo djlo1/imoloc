@@ -107,7 +107,7 @@ export default function Login() {
           <span style={{fontSize:12,color:'#a19f9d'}}>Options de connexion</span>
           <div style={{flex:1,height:1,background:'#edebe9'}}/>
         </div>
-        <div style={{display:'flex',gap:10'}}>
+        <div style={{display:'flex',gap:10}}>
           {['🏢 Agence','🏠 Locataire','👤 Proprietaire'].map(t=>(
             <button key={t} style={{flex:1,padding:'8px 4px',border:'1px solid #edebe9',background:'#faf9f8',borderRadius:2,fontSize:11,color:'#605e5c',cursor:'pointer',fontFamily:'inherit'}}>
               {t}
