@@ -113,22 +113,18 @@ const PLANS = [
 ]
 
 export default function Landing() {
-  const [openMenu, setOpenMenu] = useState(null)
   const [featTab, setFeatTab] = useState("gestion")
   const [openAcc, setOpenAcc] = useState(0)
   const [billing, setBilling] = useState("mois")
   const [activeInteg, setActiveInteg] = useState(0)
-  const navRef = useRef(null)
 
   useEffect(() => {
-    const h = e => { if (navRef.current && !navRef.current.contains(e.target)) setOpenMenu(null) }
-    document.addEventListener("click", h)
     // Intersection Observer pour animations
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("visible") })
     }, {threshold:0.1})
     document.querySelectorAll(".anim").forEach(el => obs.observe(el))
-    return () => { document.removeEventListener("click", h); obs.disconnect() }
+    return () => { obs.disconnect() }
   }, [])
 
   const acc = ACCORDIONS[openAcc] || ACCORDIONS[0]
@@ -203,15 +199,17 @@ export default function Landing() {
       `}</style>
 
       {/* ── NAVBAR ── */}
-      <nav ref={navRef} style={{background:"#fff",borderBottom:"1px solid #e5e5e5",position:"sticky",top:0,zIndex:300}}>
-        <div style={{maxWidth:1280,margin:"0 auto",display:"flex",alignItems:"center",height:44,padding:"0 24px",gap:0}}>
+      <nav style={{background:"#fff",borderBottom:"1px solid #e5e5e5",position:"sticky",top:0,zIndex:300}}>
+        <div style={{maxWidth:1280,margin:"0 auto",display:"flex",alignItems:"center",height:48,padding:"0 24px",gap:0}}>
           <Link to="/"><Logo/></Link>
           <span style={{width:1,height:20,background:"#e5e5e5",margin:"0 20px",flexShrink:0}}/>
-          <div style={{display:"flex",flex:1,alignItems:"center",position:"relative"}} className="hide-mobile">
-            {[["produits","Produits",true],["tarifs","Offres & Tarifs",false],["ressources","Ressources",true],["support","Support",true]].map(([k,l,c]) => (
-              <button key={k} className="nav-btn" onMouseEnter={()=>setOpenMenu(k)} onClick={()=>setOpenMenu(openMenu===k?null:k)}>
-                {l}{c && <Chev open={openMenu===k}/>}
-              </button>
+          <div style={{display:"flex",flex:1,alignItems:"center"}} className="hide-mobile">
+            {[["Produits","/"],["Offres & Tarifs","#tarifs"],["Ressources","/"],["Support","/"]].map(([l,p]) => (
+              <a key={l} href={p} style={{height:48,padding:"0 14px",display:"inline-flex",alignItems:"center",fontSize:14,color:"#1a1a1a",textDecoration:"none",borderBottom:"2px solid transparent",transition:"all 0.15s",whiteSpace:"nowrap"}}
+                onMouseOver={e=>{e.currentTarget.style.borderBottomColor="#0078d4";e.currentTarget.style.color="#0078d4"}}
+                onMouseOut={e=>{e.currentTarget.style.borderBottomColor="transparent";e.currentTarget.style.color="#1a1a1a"}}>
+                {l}
+              </a>
             ))}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
@@ -219,8 +217,6 @@ export default function Landing() {
             <Link to="/login"><button className="btn-out" style={{fontSize:13,padding:"7px 16px"}}>Se connecter</button></Link>
           </div>
         </div>
-
-        {/* PRODUITS - panneau large 4 colonnes */}
         {openMenu === "produits" && (
           <div className="drop-wide" onMouseLeave={()=>setOpenMenu(null)}>
             {MEGA_PRODUITS.map(sec => (
