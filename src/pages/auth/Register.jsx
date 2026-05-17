@@ -10,10 +10,13 @@ const PLANS = [
 ]
 
 const TYPES = [
-  { id:"organisation", label:"Agence / Organisation", desc:"Gestion multi-biens avec equipe" },
-  { id:"particulier", label:"Particulier", desc:"Proprietaire individuel" },
-  { id:"proprietaire", label:"Proprietaire", desc:"Suivez vos biens et revenus" },
-  { id:"locataire", label:"Locataire", desc:"Payez votre loyer en ligne" },
+  { id:"organisation", label:"Agence / Organisation", desc:"G\u00e9rez un parc multi-biens avec votre \u00e9quipe" },
+  { id:"particulier", label:"Particulier", desc:"Propri\u00e9taire individuel avec quelques biens" },
+]
+
+const TYPES_AUTRES = [
+  { id:"proprietaire", label:"Propri\u00e9taire", path:"/register/proprietaire" },
+  { id:"locataire", label:"Locataire", path:"/register/locataire" },
 ]
 
 export default function Register() {
@@ -85,6 +88,10 @@ export default function Register() {
         .step-num.done{background:#0067b8;color:#fff}
         .step-num.active{background:#fff;color:#0067b8;border:2px solid #0067b8}
         .step-num.todo{background:#e0e0e0;color:#888}
+        .step-link{font-size:13px;color:#0067b8;text-decoration:none;cursor:pointer;transition:color 0.1s}
+        .step-link:hover{text-decoration:underline}
+        .step-link.active{color:#1a1a1a;font-weight:600;cursor:default;text-decoration:none}
+        .step-link.todo{color:#999;cursor:default}
         .divider{height:1px;background:#e0e0e0;margin:20px 0}
         .summary-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:14px}
         .summary-total{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:2px solid #1a1a1a;font-size:16px;font-weight:700}
@@ -103,18 +110,17 @@ export default function Register() {
         <span style={{fontSize:14,color:"#555"}}>{planInfo?.nom||"Business"} &#8212; Essai gratuit</span>
       </div>
 
-      {/* PROGRESS STEPS */}
-      <div style={{background:"#fff",borderBottom:"1px solid #e0e0e0",padding:"16px 24px"}}>
-        <div style={{maxWidth:900,margin:"0 auto",display:"flex",alignItems:"center",gap:0}}>
+      {/* PROGRESS - Fil d ariel style Microsoft */}
+      <div style={{background:"#fff",borderBottom:"1px solid #e0e0e0",padding:"14px 24px"}}>
+        <div style={{maxWidth:900,margin:"0 auto",display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
           {STEPS.map((s,i) => (
-            <div key={s.n} style={{display:"flex",alignItems:"center",flex:i<STEPS.length-1?1:"auto"}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <div className={"step-num"+(step>s.n?" done":step===s.n?" active":" todo")}>
-                  {step>s.n ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg> : s.n}
-                </div>
-                <span style={{fontSize:13,color:step===s.n?"#0067b8":step>s.n?"#555":"#999",fontWeight:step===s.n?600:400,whiteSpace:"nowrap"}} dangerouslySetInnerHTML={{__html:s.label}}/>
-              </div>
-              {i<STEPS.length-1 && <div style={{flex:1,height:1,background:"#e0e0e0",margin:"0 16px"}}/>}
+            <div key={s.n} style={{display:"flex",alignItems:"center",gap:6}}>
+              {i>0 && <span style={{color:"#ccc",fontSize:13}}>&#8250;</span>}
+              <span
+                className={"step-link"+(step===s.n?" active":step>s.n?" done":" todo")}
+                onClick={()=>step>s.n&&setStep(s.n)}
+                dangerouslySetInnerHTML={{__html:s.label}}
+              />
             </div>
           ))}
         </div>
@@ -367,10 +373,36 @@ export default function Register() {
             )}
           </div>
 
+          {/* Points forts */}
+          <div style={{marginTop:16,padding:"20px",background:"#fff",border:"1px solid #e0e0e0"}}>
+            <div style={{fontSize:13,fontWeight:700,color:"#555",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12}}>Points forts du produit</div>
+            {[
+              "G\u00e9rez vos biens depuis n\u2019importe o\u00f9",
+              "Paiements Mobile Money int\u00e9gr\u00e9s",
+              "Signatures \u00e9lectroniques de baux",
+              "Portail locataire inclus",
+              "Rapports financiers automatiques",
+              "Support d\u00e9di\u00e9 6j/7",
+            ].map((item,i)=>(
+              <div key={i} style={{display:"flex",gap:8,marginBottom:8,alignItems:"flex-start"}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0067b8" strokeWidth="2.5" style={{flexShrink:0,marginTop:2}}><path d="M20 6L9 17l-5-5"/></svg>
+                <span style={{fontSize:13,color:"#444",lineHeight:1.5}}>{item}</span>
+              </div>
+            ))}
+          </div>
           {/* Deja un compte */}
-          <div style={{marginTop:16,padding:"16px",background:"#fff",border:"1px solid #e0e0e0",textAlign:"center"}}>
-            <div style={{fontSize:13,color:"#555"}}>D&#233;j&#224; un compte ?</div>
-            <Link to="/login" style={{fontSize:14,color:"#0067b8",textDecoration:"none",fontWeight:600}}>Se connecter &#8594;</Link>
+          <div style={{marginTop:16,padding:"14px 16px",background:"#fff",border:"1px solid #e0e0e0",textAlign:"center"}}>
+            <span style={{fontSize:13,color:"#555"}}>D&#233;j&#224; un compte ? </span>
+            <Link to="/login" style={{fontSize:13,color:"#0067b8",textDecoration:"none",fontWeight:600}}>Se connecter &#8594;</Link>
+          </div>
+          {/* Locataire / Proprietaire */}
+          <div style={{marginTop:12,padding:"14px 16px",background:"#fff8e1",border:"1px solid #fde68a"}}>
+            <div style={{fontSize:12,color:"#777",marginBottom:8}}>Vous &#234;tes locataire ou propri&#233;taire ?</div>
+            <div style={{display:"flex",gap:8}}>
+              <Link to="/login" style={{fontSize:12,color:"#0067b8",textDecoration:"none",fontWeight:600}}>Acc&#232;s locataire &#8594;</Link>
+              <span style={{color:"#ccc"}}>|</span>
+              <Link to="/login" style={{fontSize:12,color:"#0067b8",textDecoration:"none",fontWeight:600}}>Acc&#232;s propri&#233;taire &#8594;</Link>
+            </div>
           </div>
         </div>
       </div>
