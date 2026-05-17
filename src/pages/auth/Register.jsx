@@ -117,15 +117,7 @@ export default function Register() {
   const trial = new Date(); trial.setMonth(trial.getMonth()+1)
   const trialStr = trial.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})
 
-  useEffect(()=>{
-    supabase.auth.getSession().then(({data:{session}})=>{
-      if(!session) return
-      const r = session.user?.user_metadata?.role||""
-      if(r==="locataire") navigate("/locataire")
-      else if(r==="proprietaire") navigate("/proprietaire")
-      else navigate("/agence")
-    })
-  },[])
+  // Page publique - pas de redirect auto
 
   const goStep2 = () => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
