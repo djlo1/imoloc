@@ -148,8 +148,8 @@ export default function Register() {
       </div>
 
       {/* CARTE CENTRALE */}
-      <div style={{ maxWidth:920, margin:"36px auto", padding:"0 20px 48px" }}>
-        <div style={{ background:"white", borderRadius:4, boxShadow:"0 2px 12px rgba(0,0,0,0.08)", border:"1px solid "+BORDER, display:"grid", gridTemplateColumns:"1fr 320px", overflow:"hidden" }}>
+      <div style={{ maxWidth:1100, margin:"36px auto", padding:"0 20px 48px" }}>
+        <div style={{ background:"white", borderRadius:4, boxShadow:"0 2px 12px rgba(0,0,0,0.08)", border:"1px solid "+BORDER, display:"grid", gridTemplateColumns:"1fr 380px", overflow:"hidden" }}>
 
           {/* ━━ COLONNE GAUCHE ━━ */}
           <div style={{ padding:"36px 40px", borderRight:"1px solid "+BORDER }}>
