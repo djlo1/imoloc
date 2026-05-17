@@ -3,55 +3,69 @@ import { useNavigate, Link } from "react-router-dom"
 import { supabase } from "../../lib/supabase"
 import toast from "react-hot-toast"
 
+const BLUE = "#0078D4"
+const BG = "#f3f2f1"
+const TEXT = "#1f1f1f"
+const TEXT2 = "#605e5c"
+const BORDER = "#d2d0ce"
+const GREEN = "#107c10"
+
 const FMT = n => n?.toLocaleString("fr-FR") || "0"
 
 const MODULES = [
-  { nom: "Biens", color: "#0078d4" },
-  { nom: "Baux", color: "#107c10" },
-  { nom: "Paiements", color: "#d83b01" },
-  { nom: "Locataires", color: "#8764b8" },
-  { nom: "Rapports", color: "#038387" },
-  { nom: "Loci IA", color: "#0067b8" },
-  { nom: "Maintenance", color: "#ca5010" },
-  { nom: "Signatures", color: "#00b294" },
+  { nom: "Biens",       bg: "#0078D4", letter: "B" },
+  { nom: "Baux",        bg: "#107c10", letter: "B" },
+  { nom: "Paiements",   bg: "#d83b01", letter: "P" },
+  { nom: "Locataires",  bg: "#8764b8", letter: "L" },
+  { nom: "Rapports",    bg: "#038387", letter: "R" },
+  { nom: "Loci IA",     bg: "#0078D4", letter: "AI"},
+  { nom: "Maintenance", bg: "#ca5010", letter: "M" },
+  { nom: "Signatures",  bg: "#00b294", letter: "S" },
 ]
 
-function Stepper({ step }) {
+function StepDot({ n, active, done, label }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", marginBottom: 28 }}>
-      {[1, 2, 3].map((n, i) => (
-        <div key={n} style={{ display: "flex", alignItems: "center" }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: step >= n ? "#0067b8" : "#d6d6d6", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.3s" }}>
-            {step > n
-              ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-              : <span style={{ fontSize: 12, fontWeight: 600, color: step === n ? "#fff" : "#aaa" }}>{n}</span>}
-          </div>
-          {i < 2 && <div style={{ width: 64, height: 2, background: step > n ? "#0067b8" : "#d6d6d6", margin: "0 4px", transition: "background 0.3s" }}/>}
-        </div>
-      ))}
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6 }}>
+      <div style={{
+        width: 24, height: 24, borderRadius: "50%",
+        background: active||done ? BLUE : "#e0e0e0",
+        border: active ? "2px solid "+BLUE : done ? "2px solid "+BLUE : "2px solid #c8c8c8",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        position: "relative",
+      }}>
+        {done && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
+        {!done && <div style={{ width:8, height:8, borderRadius:"50%", background: active ? "white" : "transparent" }}/>}
+      </div>
+      <span style={{ fontSize:11, color: active ? TEXT : TEXT2, fontWeight: active ? 600 : 400, textAlign:"center", maxWidth:90, lineHeight:1.3 }}>{label}</span>
     </div>
   )
 }
 
 function Check({ children }) {
   return (
-    <div style={{ display: "flex", gap: 10, marginBottom: 9, alignItems: "flex-start" }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-        <circle cx="12" cy="12" r="11" fill="#dff6dd"/>
-        <path d="M7 12l3 3 7-7" stroke="#107c10" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <div style={{ display:"flex", gap:10, marginBottom:10, alignItems:"flex-start" }}>
+      <svg width="16" height="16" viewBox="0 0 16 16" style={{ flexShrink:0, marginTop:1 }}>
+        <circle cx="8" cy="8" r="8" fill="#dff6dd"/>
+        <path d="M4.5 8l2.5 2.5 5-5" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
       </svg>
-      <span style={{ fontSize: 13, color: "#333", lineHeight: 1.5 }}>{children}</span>
+      <span style={{ fontSize:13, color:TEXT, lineHeight:1.55 }}>{children}</span>
     </div>
   )
 }
 
-function Mod({ nom, color }) {
+function Dropdown({ value, onChange, children, style={} }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-      <div style={{ width: 42, height: 42, borderRadius: 7, background: color, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>{nom[0]}</span>
-      </div>
-      <span style={{ fontSize: 10, color: "#555", textAlign: "center", lineHeight: 1.2 }}>{nom}</span>
+    <div style={{ position:"relative", ...style }}>
+      <select value={value} onChange={onChange} style={{
+        width:"100%", padding:"7px 32px 7px 10px", border:"1px solid "+BORDER,
+        borderRadius:2, background:"white", fontSize:14, fontFamily:"inherit",
+        color:TEXT, outline:"none", cursor:"pointer", appearance:"none",
+      }}
+        onFocus={e=>{e.target.style.borderColor=BLUE;e.target.style.boxShadow="0 0 0 1px "+BLUE}}
+        onBlur={e=>{e.target.style.borderColor=BORDER;e.target.style.boxShadow="none"}}>
+        {children}
+      </select>
+      <svg style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TEXT2} strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
     </div>
   )
 }
@@ -60,248 +74,319 @@ export default function Register() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [users, setUsers] = useState(1)
-  const [duree, setDuree] = useState("an")
-  const [freq, setFreq] = useState("annuel")
+  const [duree, setDuree] = useState("mois")
+  const [freq, setFreq] = useState("mensuel")
   const [plan, setPlan] = useState("business")
-  const [form, setForm] = useState({ prenom: "", nom: "", email: "", password: "", confirm: "" })
+  const [form, setForm] = useState({ prenom:"", nom:"", email:"", password:"", confirm:"" })
   const [loading, setLoading] = useState(false)
   const [showPass, setShowPass] = useState(false)
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const set = (k,v) => setForm(f=>({...f,[k]:v}))
 
-  const PLANS = { starter: { nom: "Starter", mois: 18000, an: 15000 }, business: { nom: "Business", mois: 39000, an: 32000 } }
+  const PLANS = {
+    starter:  { nom:"Starter",  mois:18000, an:15000 },
+    business: { nom:"Business", mois:39000, an:32000 },
+  }
   const p = PLANS[plan]
-  const prixUnit = freq === "annuel" ? p.an : p.mois
+  const prixUnit = duree==="an" ? p.an : p.mois
   const sousTotal = prixUnit * users
-  const trial = new Date(); trial.setMonth(trial.getMonth() + 1)
-  const trialStr = trial.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+  const trial = new Date(); trial.setMonth(trial.getMonth()+1)
+  const trialStr = trial.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})
+
+  const STEPS = ["Details de l'abonnement et du compte", "Details de connexion", "Ajouter un paiement, confirmer et finaliser"]
 
   const submit = async () => {
-    if (!form.prenom || !form.nom) { toast.error("Prenom et nom requis"); return }
+    if (!form.prenom||!form.nom) { toast.error("Prenom et nom requis"); return }
     if (!form.email?.includes("@")) { toast.error("Email invalide"); return }
-    if (form.password.length < 8) { toast.error("8 caracteres minimum"); return }
-    if (form.password !== form.confirm) { toast.error("Mots de passe differents"); return }
+    if (form.password.length<8) { toast.error("8 caracteres minimum"); return }
+    if (form.password!==form.confirm) { toast.error("Mots de passe differents"); return }
     setLoading(true)
     const { error } = await supabase.auth.signUp({
-      email: form.email, password: form.password,
-      options: { data: { prenom: form.prenom, nom: form.nom, role: "global_admin", type_compte: "organisation" } }
+      email:form.email, password:form.password,
+      options:{ data:{ prenom:form.prenom, nom:form.nom, role:"global_admin", type_compte:"organisation" } }
     })
     if (error) { toast.error(error.message); setLoading(false); return }
     toast.success("Compte cree ! Bienvenue.")
     navigate("/agence")
   }
 
-  const W = "white"
-  const B = "#0067b8"
-  const G = "#107c10"
-  const R = "#d83b01"
+  const inputStyle = {
+    width:"100%", padding:"7px 10px", border:"1px solid "+BORDER,
+    borderRadius:2, fontSize:14, fontFamily:"inherit", color:TEXT,
+    background:"white", outline:"none",
+  }
+  const onFocus = e => { e.target.style.borderColor=BLUE; e.target.style.boxShadow="0 0 0 1px "+BLUE }
+  const onBlur  = e => { e.target.style.borderColor=BORDER; e.target.style.boxShadow="none" }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f0f0f0", fontFamily: '"Segoe UI", system-ui, sans-serif', fontSize: 14, color: "#1a1a1a", position: "relative" }}>
-      <svg style={{ position: "fixed", inset: 0, width: "100%", height: "100%", opacity: 0.05, pointerEvents: "none", zIndex: 0 }} aria-hidden="true">
-        {[0,1,2,3,4,5].map(r => [0,1,2,3,4,5,6,7].map(c => (
-          <g key={r+"-"+c} transform={"translate("+(c*180+(r%2)*90)+","+(r*130)+")"}>
-            <rect x="10" y="10" width="120" height="85" rx="8" fill="none" stroke={B} strokeWidth="1.5"/>
-            <circle cx="45" cy="38" r="14" fill="none" stroke={B} strokeWidth="1.5"/>
-            <rect x="20" y="60" width="80" height="5" rx="2.5" fill={B}/>
-            <rect x="30" y="71" width="60" height="4" rx="2" fill={B}/>
-          </g>
-        )))}
-      </svg>
+    <div style={{ minHeight:"100vh", background:BG, fontFamily:'"Segoe UI",system-ui,sans-serif', color:TEXT }}>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0}
-        a{color:#0067b8;text-decoration:none;font-size:13px}
+        a{color:${BLUE};text-decoration:none}
         a:hover{text-decoration:underline}
-        .f{width:100%;padding:7px 10px;border:1px solid #c8c8c8;font-size:14px;font-family:inherit;color:#1a1a1a;outline:none;background:#fff}
-        .f:focus{border-color:#0067b8;box-shadow:0 0 0 1px #0067b8}
-        .bn{padding:9px 24px;background:#0067b8;color:#fff;border:none;font-size:14px;font-family:inherit;font-weight:600;cursor:pointer;transition:background .15s}
+        .bn{display:inline-flex;align-items:center;padding:8px 20px;background:${BLUE};color:white;border:none;border-radius:2px;font-size:14px;font-family:inherit;font-weight:600;cursor:pointer;transition:background .15s}
         .bn:hover{background:#005a9e}
-        .bn:disabled{background:#b3b3b3;cursor:default}
-        .bs{padding:9px 22px;background:#fff;color:#0067b8;border:1px solid #0067b8;font-size:14px;font-family:inherit;cursor:pointer}
-        .bs:hover{background:#f0f7ff}
-        .db{background:#f5f5f5;border:1px solid #e0e0e0;padding:14px 18px;margin-top:18px}
-        .dr{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#555}
-        .dt{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid #c8c8c8;margin-top:8px;font-size:14px;font-weight:600}
-        .lbl{display:block;font-size:13px;margin-bottom:5px}
-        .sec-title{font-size:12px;font-weight:600;color:#444;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+        .bn:disabled{background:#c8c8c8;cursor:default}
+        .bs{display:inline-flex;align-items:center;padding:8px 20px;background:white;color:${BLUE};border:1px solid ${BLUE};border-radius:2px;font-size:14px;font-family:inherit;cursor:pointer;transition:all .15s}
+        .bs:hover{background:#f0f6ff}
+        .radio-row{display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer}
+        .radio-row input[type=radio]{width:16px;height:16px;accent-color:${BLUE};cursor:pointer}
       `}</style>
 
       {/* HEADER */}
-      <div style={{ position: "relative", zIndex: 10, background: "#fff", borderBottom: "1px solid #d6d6d6", padding: "11px 32px", display: "flex", alignItems: "center", gap: 12 }}>
-        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 26, height: 26, background: B, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={W} strokeWidth="2.5" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <div style={{ background:"white", borderBottom:"1px solid "+BORDER, padding:"14px 32px", display:"flex", alignItems:"center", gap:20 }}>
+        <Link to="/" style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
+          <div style={{ width:28, height:28, background:BLUE, borderRadius:4, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           </div>
-          <span style={{ fontSize: 15, fontWeight: 700 }}>Imoloc</span>
+          <span style={{ fontSize:15, fontWeight:600, color:TEXT }}>Imoloc</span>
         </Link>
-        <span style={{ color: "#d6d6d6", fontSize: 18 }}>|</span>
-        <span style={{ fontSize: 13, color: "#555" }}>Imoloc {p.nom} &mdash; Essai</span>
-        <span style={{ fontSize: 12, color: "#888", marginLeft: 4 }}>Un mois gratuit</span>
+        <div style={{ flex:1, textAlign:"center" }}>
+          <div style={{ fontSize:15, fontWeight:600, color:TEXT }}>Imoloc {p.nom} &mdash; Essai</div>
+          <div style={{ fontSize:12, color:TEXT2, marginTop:2 }}>Un mois gratuit &mdash; aucun paiement requis aujourd&apos;hui</div>
+        </div>
+        <div style={{ width:120 }}/>
       </div>
 
       {/* CARTE CENTRALE */}
-      <div style={{ position: "relative", zIndex: 10, maxWidth: 940, margin: "36px auto 40px", padding: "0 20px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 296px", background: "#fff", boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }}>
+      <div style={{ maxWidth:920, margin:"36px auto", padding:"0 20px 48px" }}>
+        <div style={{ background:"white", borderRadius:4, boxShadow:"0 2px 12px rgba(0,0,0,0.08)", border:"1px solid "+BORDER, display:"grid", gridTemplateColumns:"1fr 320px", overflow:"hidden" }}>
 
-          {/* GAUCHE */}
-          <div style={{ padding: "32px 36px", borderRight: "1px solid #ebebeb" }}>
-            <Stepper step={step}/>
+          {/* ━━ COLONNE GAUCHE ━━ */}
+          <div style={{ padding:"36px 40px", borderRight:"1px solid "+BORDER }}>
 
-            {step === 1 && (
+            {/* STEPPER */}
+            <div style={{ display:"flex", alignItems:"flex-start", marginBottom:36, position:"relative" }}>
+              {STEPS.map((label,i)=>(
+                <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", position:"relative" }}>
+                  {i>0 && <div style={{ position:"absolute", left:"-50%", right:"50%", top:11, height:1, background: step>i ? BLUE : BORDER }}/>}
+                  <StepDot n={i+1} active={step===i+1} done={step>i+1} label={label}/>
+                </div>
+              ))}
+            </div>
+
+            {/* ETAPE 1 */}
+            {step===1 && (
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 400, marginBottom: 5 }}>Essayer gratuitement pendant un mois</h2>
-                <p style={{ fontSize: 13, color: "#666", marginBottom: 24, lineHeight: 1.6 }}>Configurez votre abonnement. Aucun paiement requis aujourd&apos;hui.</p>
+                <h1 style={{ fontSize:24, fontWeight:700, color:TEXT, marginBottom:10, lineHeight:1.2 }}>Essayer gratuitement pendant un mois</h1>
+                <p style={{ fontSize:13, color:TEXT2, marginBottom:28, lineHeight:1.65 }}>
+                  Avant de commencer votre essai, vous devez configurer votre abonnement en ajoutant 25 utilisateurs gratuits au maximum.
+                </p>
 
-                <div style={{ marginBottom: 20 }}>
-                  <div className="sec-title">Plan</div>
+                {/* Plan */}
+                <div style={{ marginBottom:22 }}>
+                  <div style={{ fontSize:13, color:TEXT2, marginBottom:8 }}>Choisissez votre plan</div>
                   {[
-                    { id: "starter", label: "Imoloc Starter", prix: FMT(freq==="annuel"?15000:18000)+" FCFA/utilisateur/mois" },
-                    { id: "business", label: "Imoloc Business", prix: FMT(freq==="annuel"?32000:39000)+" FCFA/utilisateur/mois", rec: true },
-                  ].map(o => (
-                    <label key={o.id} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
-                      <input type="radio" name="plan" checked={plan===o.id} onChange={()=>setPlan(o.id)} style={{ width: 15, height: 15, accentColor: B, flexShrink: 0 }}/>
-                      <span style={{ flex: 1, fontSize: 14 }}>{o.label}{o.rec && <span style={{ fontSize: 10, fontWeight: 700, color: B, marginLeft: 8, padding: "1px 6px", border: "1px solid "+B }}> Recommand&eacute;</span>}</span>
-                      <span style={{ fontSize: 12, color: "#666", whiteSpace: "nowrap" }}>{o.prix}</span>
+                    {id:"starter", label:"Imoloc Starter", desc:"Pour les petites agences"},
+                    {id:"business", label:"Imoloc Business", desc:"Pour les agences en croissance", rec:true},
+                  ].map(o=>(
+                    <label key={o.id} className="radio-row">
+                      <input type="radio" name="plan" checked={plan===o.id} onChange={()=>setPlan(o.id)}/>
+                      <div>
+                        <span style={{ fontSize:14, color:TEXT, fontWeight:500 }}>{o.label}</span>
+                        {o.rec && <span style={{ marginLeft:8, fontSize:11, color:BLUE, fontWeight:600, padding:"1px 6px", border:"1px solid "+BLUE, borderRadius:2 }}>Recommand&eacute;</span>}
+                        <div style={{ fontSize:12, color:TEXT2 }}>{o.desc} &mdash; {FMT(duree==="an"?(o.id==="starter"?15000:32000):(o.id==="starter"?18000:39000))} FCFA/utilisateur/mois</div>
+                      </div>
                     </label>
                   ))}
                 </div>
 
-                <div style={{ marginBottom: 20 }}>
-                  <div className="sec-title">Nombre d&apos;utilisateurs</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <button onClick={()=>setUsers(u=>Math.max(1,u-1))} style={{ width: 30, height: 30, border: "1px solid #c8c8c8", background: "#fff", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>&minus;</button>
-                    <input type="number" min="1" max="25" value={users} onChange={e=>setUsers(Math.min(25,Math.max(1,+e.target.value)))} style={{ width: 60, textAlign: "center", padding: "5px", border: "1px solid #c8c8c8", fontSize: 16, fontWeight: 600, fontFamily: "inherit" }}/>
-                    <button onClick={()=>setUsers(u=>Math.min(25,u+1))} style={{ width: 30, height: 30, border: "1px solid #c8c8c8", background: "#fff", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
-                    <span style={{ fontSize: 12, color: "#888" }}>25 max. pendant l&apos;essai</span>
+                {/* Nombre utilisateurs */}
+                <div style={{ marginBottom:22 }}>
+                  <div style={{ fontSize:13, color:TEXT2, marginBottom:8 }}>Pour combien de personnes s&apos;agit-il ?</div>
+                  <Dropdown value={users} onChange={e=>setUsers(+e.target.value)} style={{ maxWidth:120 }}>
+                    {[1,2,3,4,5,6,7,8,9,10,15,20,25].map(n=><option key={n} value={n}>{n}</option>)}
+                  </Dropdown>
+                </div>
+
+                {/* Duree */}
+                <div style={{ marginBottom:22 }}>
+                  <div style={{ fontSize:13, color:TEXT2, marginBottom:8 }}>Choisir la dur&eacute;e de votre abonnement</div>
+                  <label className="radio-row"><input type="radio" name="duree" checked={duree==="an"} onChange={()=>setDuree("an")}/><span style={{ fontSize:14, color:TEXT }}>1 an <span style={{ fontSize:12, color:GREEN, fontWeight:600, marginLeft:6 }}>Economisez 20%</span></span></label>
+                  <label className="radio-row"><input type="radio" name="duree" checked={duree==="mois"} onChange={()=>setDuree("mois")}/><span style={{ fontSize:14, color:TEXT }}>1 mois</span></label>
+                </div>
+
+                {/* Frequence */}
+                <div style={{ marginBottom:28 }}>
+                  <div style={{ fontSize:13, color:TEXT2, marginBottom:8 }}>&Agrave; quelle fr&eacute;quence voulez-vous &ecirc;tre factur&eacute; ?</div>
+                  <Dropdown value={freq} onChange={e=>setFreq(e.target.value)} style={{ maxWidth:300 }}>
+                    <option value="mensuel">Tous les mois &mdash; {FMT(prixUnit*users)} FCFA/mois</option>
+                    <option value="annuel">Une fois par an &mdash; {FMT(prixUnit*users*12)} FCFA/an</option>
+                  </Dropdown>
+                </div>
+
+                {/* Resume commande */}
+                <div style={{ borderTop:"1px solid "+BORDER, paddingTop:20, marginBottom:16 }}>
+                  <div style={{ fontSize:14, fontWeight:600, color:TEXT, marginBottom:4 }}>R&eacute;sum&eacute; de la commande</div>
+                  <div style={{ fontSize:12, color:TEXT2, marginBottom:16 }}>D&eacute;tails de votre commande apr&egrave;s la fin de votre essai le {trialStr}.</div>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:500, color:TEXT }}>Imoloc {p.nom}</div>
+                      <div style={{ fontSize:12, color:TEXT2, marginTop:3 }}>
+                        Abonnement {duree==="an"?"1 an":"1 mois"}, paiement de {FMT(prixUnit)} FCFA utilisateur/mois pour {users} utilisateur{users>1?"s":""}
+                      </div>
+                    </div>
+                    <div style={{ fontSize:13, fontWeight:600, color:TEXT, whiteSpace:"nowrap", marginLeft:16 }}>{FMT(sousTotal)} FCFA</div>
+                  </div>
+                  <div style={{ borderTop:"1px solid "+BORDER, paddingTop:12, marginBottom:4 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <span style={{ fontSize:13, color:TEXT2 }}>Sous-total apr&egrave;s la version d&apos;essai (TVA non incluse)</span>
+                      <span style={{ fontSize:13, fontWeight:600, color:TEXT }}>{FMT(sousTotal)} FCFA</span>
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:8 }}>
+                    <span style={{ fontSize:13, color:TEXT }}>Paiement d&ucirc; aujourd&apos;hui (hors taxes)</span>
+                    <span style={{ fontSize:15, fontWeight:700, color:TEXT }}>0,00 FCFA</span>
                   </div>
                 </div>
 
-                <div style={{ marginBottom: 20 }}>
-                  <div className="sec-title">Dur&eacute;e de l&apos;abonnement</div>
-                  {[["an","1 an","Economisez 20%"],["mois","1 mois","Sans engagement"]].map(([v,l,s])=>(
-                    <label key={v} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginBottom: 8 }}>
-                      <input type="radio" name="duree" checked={duree===v} onChange={()=>{setDuree(v);setFreq(v==="an"?"annuel":"mensuel")}} style={{ width: 15, height: 15, accentColor: B }}/>
-                      <span style={{ fontSize: 14 }}>{l}</span>
-                      <span style={{ fontSize: 12, color: G, fontWeight: 600 }}>{s}</span>
-                    </label>
-                  ))}
-                </div>
+                {/* Legal */}
+                <p style={{ fontSize:11, color:TEXT2, lineHeight:1.6, marginBottom:24 }}>
+                  Une fois l&apos;essai termin&eacute;, il sera converti en abonnement payant. Vous ne serez pas factur&eacute; si vous l&apos;annulez avant le {trialStr}.{" "}
+                  <a href="#" style={{ fontSize:11 }}>D&eacute;couvrir plus d&apos;informations sur l&apos;annulation</a>
+                </p>
 
-                <div style={{ marginBottom: 6 }}>
-                  <div className="sec-title">&Agrave; quelle fr&eacute;quence voulez-vous &ecirc;tre factur&eacute; ?</div>
-                  <select className="f" style={{ width: "auto", minWidth: 260, cursor: "pointer" }} value={freq} onChange={e=>setFreq(e.target.value)}>
-                    <option value="annuel">Annuellement &mdash; {FMT(p.an*users*12)} FCFA/an</option>
-                    <option value="mensuel">Mensuellement &mdash; {FMT(p.mois*users)} FCFA/mois</option>
-                  </select>
-                </div>
-
-                <div className="db">
-                  <div className="dr"><span>Imoloc {p.nom} &times; {users} utilisateur{users>1?"s":""}</span><strong style={{color:"#1a1a1a"}}>{FMT(prixUnit)} FCFA/{freq==="annuel"?"an":"mois"}</strong></div>
-                  <div className="dr"><span>Sous-total apr&egrave;s l&apos;essai (hors taxes)</span><strong style={{color:"#1a1a1a"}}>{FMT(sousTotal)} FCFA</strong></div>
-                  <div className="dr" style={{color:G}}><span>Essai gratuit (1 mois offert)</span><strong style={{color:G}}>&minus;{FMT(sousTotal)} FCFA</strong></div>
-                  <div className="dt"><span>Paiement d&ucirc; aujourd&apos;hui (hors taxes)</span><strong style={{fontSize:16}}>0,00 FCFA</strong></div>
-                </div>
-
-                <div style={{ marginTop: 24 }}><button className="bn" onClick={()=>setStep(2)}>Suivant</button></div>
+                <button className="bn" onClick={()=>setStep(2)}>Suivant</button>
               </div>
             )}
 
-            {step === 2 && (
+            {/* ETAPE 2 */}
+            {step===2 && (
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 400, marginBottom: 5 }}>D&eacute;tails de connexion</h2>
-                <p style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>Cr&eacute;ez votre compte administrateur Imoloc.</p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
-                  <div><label className="lbl">Pr&eacute;nom <span style={{color:R}}>*</span></label><input className="f" value={form.prenom} onChange={e=>set("prenom",e.target.value)} autoFocus placeholder="Jean"/></div>
-                  <div><label className="lbl">Nom <span style={{color:R}}>*</span></label><input className="f" value={form.nom} onChange={e=>set("nom",e.target.value)} placeholder="Dupont"/></div>
+                <h1 style={{ fontSize:24, fontWeight:700, color:TEXT, marginBottom:10 }}>D&eacute;tails de connexion</h1>
+                <p style={{ fontSize:13, color:TEXT2, marginBottom:28 }}>Cr&eacute;ez votre compte administrateur Imoloc.</p>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
+                  <div>
+                    <label style={{ display:"block", fontSize:13, color:TEXT2, marginBottom:5 }}>Pr&eacute;nom <span style={{color:"#d83b01"}}>*</span></label>
+                    <input style={inputStyle} onFocus={onFocus} onBlur={onBlur} value={form.prenom} onChange={e=>set("prenom",e.target.value)} autoFocus placeholder="Jean"/>
+                  </div>
+                  <div>
+                    <label style={{ display:"block", fontSize:13, color:TEXT2, marginBottom:5 }}>Nom <span style={{color:"#d83b01"}}>*</span></label>
+                    <input style={inputStyle} onFocus={onFocus} onBlur={onBlur} value={form.nom} onChange={e=>set("nom",e.target.value)} placeholder="Dupont"/>
+                  </div>
                 </div>
-                <div style={{ marginBottom: 14 }}>
-                  <label className="lbl">E-mail professionnel <span style={{color:R}}>*</span></label>
-                  <input className="f" type="email" value={form.email} onChange={e=>set("email",e.target.value)} placeholder="vous@agence.com"/>
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Cette adresse sera votre identifiant de connexion.</div>
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:"block", fontSize:13, color:TEXT2, marginBottom:5 }}>E-mail professionnel <span style={{color:"#d83b01"}}>*</span></label>
+                  <input style={inputStyle} onFocus={onFocus} onBlur={onBlur} type="email" value={form.email} onChange={e=>set("email",e.target.value)} placeholder="vous@agence.com"/>
+                  <div style={{ fontSize:11, color:TEXT2, marginTop:4 }}>Cette adresse sera votre identifiant de connexion.</div>
                 </div>
-                <div style={{ marginBottom: 14 }}>
-                  <label className="lbl">Mot de passe <span style={{color:R}}>*</span></label>
-                  <div style={{ position: "relative" }}>
-                    <input className="f" type={showPass?"text":"password"} value={form.password} onChange={e=>set("password",e.target.value)} placeholder="8 caracteres minimum" style={{paddingRight:72}}/>
-                    <button type="button" onClick={()=>setShowPass(!showPass)} style={{ position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:B,fontSize:12,fontFamily:"inherit" }}>{showPass?"Masquer":"Afficher"}</button>
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:"block", fontSize:13, color:TEXT2, marginBottom:5 }}>Mot de passe <span style={{color:"#d83b01"}}>*</span></label>
+                  <div style={{ position:"relative" }}>
+                    <input style={{...inputStyle, paddingRight:72}} onFocus={onFocus} onBlur={onBlur} type={showPass?"text":"password"} value={form.password} onChange={e=>set("password",e.target.value)} placeholder="8 caracteres minimum"/>
+                    <button type="button" onClick={()=>setShowPass(!showPass)} style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:BLUE, fontSize:12, fontFamily:"inherit" }}>{showPass?"Masquer":"Afficher"}</button>
                   </div>
                   {form.password && (
-                    <div style={{ display:"flex",gap:4,marginTop:7,alignItems:"center" }}>
-                      {[form.password.length>=8,/[A-Z]/.test(form.password),/[0-9!@#$]/.test(form.password)].map((ok,i)=>(
-                        <div key={i} style={{ flex:1,height:3,background:ok?(i>1?G:B):"#e0e0e0",borderRadius:2,transition:"background .3s" }}/>
+                    <div style={{ display:"flex", gap:4, marginTop:7, alignItems:"center" }}>
+                      {[form.password.length>=8, /[A-Z]/.test(form.password), /[0-9!@#$]/.test(form.password)].map((ok,i)=>(
+                        <div key={i} style={{ flex:1, height:3, background:ok?(i>1?GREEN:BLUE):"#e0e0e0", borderRadius:2, transition:"background .25s" }}/>
                       ))}
-                      <span style={{ fontSize:11,color:"#555",whiteSpace:"nowrap",marginLeft:6 }}>
+                      <span style={{ fontSize:11, color:TEXT2, marginLeft:6, whiteSpace:"nowrap" }}>
                         {[form.password.length>=8,/[A-Z]/.test(form.password),/[0-9!@#$]/.test(form.password)].filter(Boolean).length>=3?"Solide":form.password.length>=8?"Moyen":"Faible"}
                       </span>
                     </div>
                   )}
                 </div>
-                <div style={{ marginBottom: 26 }}>
-                  <label className="lbl">Confirmer le mot de passe <span style={{color:R}}>*</span></label>
-                  <input className="f" type="password" value={form.confirm} onChange={e=>set("confirm",e.target.value)} placeholder="Repetez votre mot de passe"/>
-                  {form.confirm&&form.confirm!==form.password&&<div style={{fontSize:12,color:R,marginTop:4}}>Les mots de passe ne correspondent pas.</div>}
+                <div style={{ marginBottom:28 }}>
+                  <label style={{ display:"block", fontSize:13, color:TEXT2, marginBottom:5 }}>Confirmer le mot de passe <span style={{color:"#d83b01"}}>*</span></label>
+                  <input style={inputStyle} onFocus={onFocus} onBlur={onBlur} type="password" value={form.confirm} onChange={e=>set("confirm",e.target.value)} placeholder="Repetez votre mot de passe"/>
+                  {form.confirm&&form.confirm!==form.password&&<div style={{ fontSize:12, color:"#d83b01", marginTop:4 }}>Les mots de passe ne correspondent pas.</div>}
                 </div>
-                <div style={{ display:"flex",gap:12 }}>
+                <div style={{ display:"flex", gap:12 }}>
                   <button className="bs" onClick={()=>setStep(1)}>Pr&eacute;c&eacute;dent</button>
                   <button className="bn" onClick={()=>setStep(3)}>Suivant</button>
                 </div>
               </div>
             )}
 
-            {step === 3 && (
+            {/* ETAPE 3 */}
+            {step===3 && (
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 400, marginBottom: 5 }}>Confirmer et finaliser la commande</h2>
-                <p style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>V&eacute;rifiez vos informations avant de commencer votre essai.</p>
-                {[["Plan","Imoloc "+p.nom],["Duree",duree==="an"?"1 an":"1 mois"],["Facturation",freq==="annuel"?"Annuellement":"Mensuellement"],["Utilisateurs",users+" utilisateur"+(users>1?"s":"")],["Nom",form.prenom+" "+form.nom],["E-mail",form.email]].map(([l,v])=>(
-                  <div key={l} style={{ display:"flex",padding:"8px 0",borderBottom:"1px solid #f0f0f0",gap:16 }}>
-                    <span style={{ color:"#777",width:110,flexShrink:0,fontSize:13 }}>{l}</span>
-                    <span style={{ color:"#1a1a1a",fontWeight:500,fontSize:13 }}>{v||"&mdash;"}</span>
+                <h1 style={{ fontSize:24, fontWeight:700, color:TEXT, marginBottom:10 }}>Confirmer et finaliser la commande</h1>
+                <p style={{ fontSize:13, color:TEXT2, marginBottom:24 }}>V&eacute;rifiez vos informations avant de commencer votre essai.</p>
+                {[
+                  ["Plan", "Imoloc "+p.nom],
+                  ["Durée", duree==="an"?"1 an":"1 mois"],
+                  ["Facturation", freq==="annuel"?"Annuellement":"Mensuellement"],
+                  ["Utilisateurs", users+" utilisateur"+(users>1?"s":"")],
+                  ["Nom", form.prenom+" "+form.nom],
+                  ["E-mail", form.email],
+                ].map(([l,v])=>(
+                  <div key={l} style={{ display:"flex", padding:"9px 0", borderBottom:"1px solid #f3f2f1", gap:16 }}>
+                    <span style={{ color:TEXT2, width:110, flexShrink:0, fontSize:13 }}>{l}</span>
+                    <span style={{ color:TEXT, fontWeight:500, fontSize:13 }}>{v||"—"}</span>
                   </div>
                 ))}
-                <div className="db">
-                  <div className="dr"><span>Sous-total apr&egrave;s l&apos;essai</span><strong style={{color:"#1a1a1a"}}>{FMT(sousTotal)} FCFA</strong></div>
-                  <div className="dt"><span>Paiement d&ucirc; aujourd&apos;hui</span><strong style={{color:G}}>0,00 FCFA</strong></div>
+                <div style={{ marginTop:20, borderTop:"1px solid "+BORDER, paddingTop:16, marginBottom:16 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                    <span style={{ fontSize:13, color:TEXT2 }}>Sous-total après l’essai</span>
+                    <span style={{ fontSize:13, fontWeight:600, color:TEXT }}>{FMT(sousTotal)} FCFA</span>
+                  </div>
+                  <div style={{ display:"flex", justifyContent:"space-between" }}>
+                    <span style={{ fontSize:13, color:TEXT }}>Paiement dû aujourd’hui (hors taxes)</span>
+                    <span style={{ fontSize:15, fontWeight:700, color:TEXT }}>0,00 FCFA</span>
+                  </div>
                 </div>
-                <p style={{ fontSize:12,color:"#555",lineHeight:1.7,margin:"18px 0" }}>
-                  L&apos;abonnement payant commence le <strong>{trialStr}</strong>, sauf annulation avant. Vous acceptez les <a href="#">conditions</a> et la <a href="#">confidentialit&eacute;</a>.
+                <p style={{ fontSize:11, color:TEXT2, lineHeight:1.7, marginBottom:24 }}>
+                  L’abonnement payant commence le <strong>{trialStr}</strong>, sauf annulation avant. Vous acceptez les <a href="#">conditions d’utilisation</a> et la <a href="#">politique de confidentialité</a> d’Imoloc.
                 </p>
-                <div style={{ display:"flex",gap:12 }}>
-                  <button className="bs" onClick={()=>setStep(2)}>Pr&eacute;c&eacute;dent</button>
-                  <button className="bn" onClick={submit} disabled={loading} style={{padding:"10px 28px"}}>{loading?"Creation...":"Commencer mon essai gratuit"}</button>
+                <div style={{ display:"flex", gap:12 }}>
+                  <button className="bs" onClick={()=>setStep(2)}>Précédent</button>
+                  <button className="bn" onClick={submit} disabled={loading} style={{ padding:"9px 28px" }}>{loading?"Création...":"Commencer mon essai gratuit"}</button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* DROITE */}
-          <div style={{ padding: "32px 22px", background: "#fafafa", display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 3 }}>Imoloc {p.nom} &mdash; Essai</div>
-            <div style={{ fontSize: 12, color: "#555", fontWeight: 500, marginBottom: 16 }}>Inscription &agrave; votre essai gratuit</div>
-            <Check><strong>Jusqu&apos;&agrave; 25 utilisateurs</strong> pendant l&apos;essai</Check>
-            <Check>La version d&apos;&eacute;valuation inclut <strong>toutes les fonctionnalit&eacute;s</strong> du produit payant</Check>
-            <Check><strong>Aucun paiement</strong> requis pour commencer</Check>
-            <Check>Paiements <strong>Mobile Money natifs</strong> (MTN, Moov, Wave)</Check>
-            <Check>Annulation possible avant le <strong>{trialStr}</strong></Check>
-            <div style={{ height:1,background:"#e8e8e8",margin:"20px 0" }}/>
-            <div style={{ fontSize:12,fontWeight:600,color:"#444",textTransform:"uppercase",letterSpacing:".05em",marginBottom:14 }}>Modules inclus</div>
-            <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10 }}>
-              {MODULES.map(m=><Mod key={m.nom} {...m}/>)}
+          {/* ━━ COLONNE DROITE ━━ */}
+          <div style={{ background:"#faf9f8", padding:"36px 28px", display:"flex", flexDirection:"column", gap:0 }}>
+            <div style={{ fontSize:15, fontWeight:700, color:TEXT, marginBottom:6 }}>Imoloc {p.nom} &mdash; Essai</div>
+            <div style={{ fontSize:13, fontWeight:600, color:TEXT2, marginBottom:18 }}>Inscription &agrave; votre essai gratuit</div>
+
+            <Check>Ajoutez jusqu&apos;&agrave; <strong>25 utilisateurs</strong> pendant l&apos;essai</Check>
+            <Check>La version d&apos;&eacute;valuation inclut les <strong>m&ecirc;mes fonctionnalit&eacute;s</strong> que le produit payant</Check>
+            <Check>Aucun paiement requis pour commencer l&apos;essai</Check>
+            <Check>L&apos;abonnement payant commence &agrave; la fin de l&apos;essai, sauf annulation avant le {trialStr}</Check>
+
+            <div style={{ height:1, background:BORDER, margin:"20px 0" }}/>
+
+            <div style={{ fontSize:13, fontWeight:600, color:TEXT, marginBottom:14 }}>Points forts du produit</div>
+            <Check>G&eacute;rez vos biens depuis n&apos;importe quel appareil</Check>
+            <Check>Paiements <strong>Mobile Money</strong> natifs (MTN, Moov, Wave)</Check>
+            <Check>Signatures &eacute;lectroniques de baux incluses</Check>
+            <Check>Portail locataire mobile inclus</Check>
+            <Check>Rapports financiers automatiques</Check>
+
+            <div style={{ height:1, background:BORDER, margin:"20px 0" }}/>
+
+            {/* Grille modules */}
+            <div style={{ fontSize:13, fontWeight:600, color:TEXT, marginBottom:14 }}>Modules inclus</div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
+              {MODULES.map(m=>(
+                <div key={m.nom} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:5 }}>
+                  <div style={{ width:40, height:40, borderRadius:6, background:m.bg, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <span style={{ fontSize:m.letter.length>1?11:16, fontWeight:700, color:"white", letterSpacing:m.letter.length>1?"-0.5px":"0" }}>{m.letter}</span>
+                  </div>
+                  <span style={{ fontSize:10, color:TEXT2, textAlign:"center", lineHeight:1.3 }}>{m.nom}</span>
+                </div>
+              ))}
             </div>
-            <div style={{ marginTop:"auto",paddingTop:22,borderTop:"1px solid #e8e8e8" }}>
-              <div style={{ fontSize:12,color:"#555",marginBottom:6 }}>D&eacute;j&agrave; un compte ? <Link to="/login">Se connecter &rarr;</Link></div>
-              <div style={{ fontSize:12,color:"#555" }}>Locataire ou propri&eacute;taire ? <Link to="/login">Acc&egrave;s direct &rarr;</Link></div>
+
+            <div style={{ marginTop:"auto", paddingTop:24, borderTop:"1px solid "+BORDER }}>
+              <div style={{ fontSize:12, color:TEXT2, marginBottom:5 }}>D&eacute;j&agrave; un compte ? <Link to="/login" style={{ fontSize:12 }}>Se connecter</Link></div>
+              <div style={{ fontSize:12, color:TEXT2 }}>Locataire ou propri&eacute;taire ? <Link to="/login" style={{ fontSize:12 }}>Acc&egrave;s direct</Link></div>
             </div>
           </div>
         </div>
       </div>
 
       {/* FOOTER */}
-      <div style={{ position:"relative",zIndex:10,background:"#f0f0f0",borderTop:"1px solid #d6d6d6",padding:"10px 32px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8 }}>
-        <div style={{ display:"flex",gap:18,flexWrap:"wrap" }}>
-          {["Confidentialit&eacute; et cookies","Conditions d&apos;utilisation","Marques","Accessibilit&eacute;"].map(l=>(
-            <a key={l} href="#" style={{ fontSize:11,color:"#666" }} dangerouslySetInnerHTML={{__html:l}}/>
+      <div style={{ borderTop:"1px solid "+BORDER, padding:"10px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", background:BG, flexWrap:"wrap", gap:8 }}>
+        <div style={{ display:"flex", gap:20, flexWrap:"wrap" }}>
+          {["Vos choix de confidentialité","Confidentialité et cookies","Conditions d’utilisation","Marques","Accessibilité"].map(l=>(
+            <a key={l} href="#" style={{ fontSize:11, color:TEXT2 }}>{l}</a>
           ))}
         </div>
-        <span style={{ fontSize:11,color:"#999" }}>&copy; 2026 Imoloc</span>
+        <span style={{ fontSize:11, color:TEXT2 }}>&copy; 2026 Imoloc</span>
       </div>
     </div>
   )
