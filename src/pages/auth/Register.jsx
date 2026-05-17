@@ -133,18 +133,21 @@ export default function Register() {
       `}</style>
 
       {/* HEADER */}
-      <div style={{ background:"white", borderBottom:"1px solid "+BORDER, padding:"14px 32px", display:"flex", alignItems:"center", gap:20 }}>
-        <Link to="/" style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
-          <div style={{ width:28, height:28, background:BLUE, borderRadius:4, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <div style={{ background:"white", borderBottom:"1px solid "+BORDER, padding:"12px 32px" }}>
+        <Link to="/" style={{ display:"flex", alignItems:"center", gap:8, textDecoration:"none" }}>
+          <div style={{ width:26, height:26, background:BLUE, borderRadius:3, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           </div>
-          <span style={{ fontSize:15, fontWeight:600, color:TEXT }}>Imoloc</span>
+          <span style={{ fontSize:14, fontWeight:600, color:TEXT }}>Imoloc</span>
         </Link>
-        <div style={{ flex:1, textAlign:"center" }}>
-          <div style={{ fontSize:15, fontWeight:600, color:TEXT }}>Imoloc {p.nom} &mdash; Essai</div>
-          <div style={{ fontSize:12, color:TEXT2, marginTop:2 }}>Un mois gratuit &mdash; aucun paiement requis aujourd&apos;hui</div>
-        </div>
-        <div style={{ width:120 }}/>
+      </div>
+
+      {/* TITRE PAGE - comme Microsoft */}
+      <div style={{ textAlign:"center", padding:"36px 20px 0" }}>
+        <h1 style={{ fontSize:28, fontWeight:600, color:TEXT, marginBottom:8, letterSpacing:"-0.02em" }}>
+          Imoloc {p.nom} &mdash; Essai
+        </h1>
+        <p style={{ fontSize:15, color:TEXT2 }}>Un mois gratuit avec moyen de paiement requis</p>
       </div>
 
       {/* CARTE CENTRALE */}
