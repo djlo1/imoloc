@@ -302,7 +302,7 @@ export default function Landing() {
               Votre guide de la gestion<br/><strong style={{fontWeight:700,color:"#0078d4"}}>immobili&#232;re avec Imoloc</strong>
             </h1>
             <p style={{fontSize:16,color:"#444",lineHeight:1.8,marginBottom:32,maxWidth:480}}>
-              G&#233;rez efficacement vos biens, locataires, paiements et utilisateurs depuis une seule plateforme. Disponible partout dans le monde, en fran&#231;ais et en anglais.
+              G&#233;rez efficacement vos biens, locataires, paiements et utilisateurs depuis une seule plateforme. Simple, puissant et accessible partout dans le monde.
             </p>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:20}}>
               <Link to="/login"><button className="btn-dark">Se connecter</button></Link>
