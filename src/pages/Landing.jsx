@@ -217,36 +217,10 @@ export default function Landing() {
             <Link to="/login"><button className="btn-out" style={{fontSize:13,padding:"7px 16px"}}>Se connecter</button></Link>
           </div>
         </div>
-        {openMenu === "produits" && (
-          <div className="drop-wide" onMouseLeave={()=>setOpenMenu(null)}>
-            {MEGA_PRODUITS.map(sec => (
-              <div key={sec.titre} className="drop-col">
-                <div className="drop-head" dangerouslySetInnerHTML={{__html:sec.titre}}/>
-                {sec.items.map(item => (
-                  <Link key={item.label} to={item.path} className="drop-item" onClick={()=>setOpenMenu(null)} dangerouslySetInnerHTML={{__html:item.label}}/>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* RESSOURCES */}
-        {openMenu === "ressources" && (
-          <div className="drop drop-simple" style={{left:100}} onMouseLeave={()=>setOpenMenu(null)}>
-            {[["Documentation","Guides et tutoriels"],["Formation","Apprenez Imoloc"],["Communaut&#233;","Forum et entraide"],["Blog","Actualit&#233;s"],["Nouveaut&#233;s","Derni&#232;res fonctionnalit&#233;s"]].map(([l,d]) => (
-              <a key={l} href="#" className="drop-item"><span dangerouslySetInnerHTML={{__html:l}}/><span dangerouslySetInnerHTML={{__html:d}}/></a>
-            ))}
-          </div>
-        )}
 
         {/* SUPPORT */}
-        {openMenu === "support" && (
-          <div className="drop drop-simple" style={{left:190}} onMouseLeave={()=>setOpenMenu(null)}>
-            {[["Aide et support","FAQ et assistance"],["Support technique","R&#233;soudre un probl&#232;me"],["Nous contacter","Parlez &#224; un expert"],["Partenaires","Programme revendeur"]].map(([l,d]) => (
-              <a key={l} href="#" className="drop-item"><span dangerouslySetInnerHTML={{__html:l}}/><span dangerouslySetInnerHTML={{__html:d}}/></a>
-            ))}
-          </div>
-        )}
       </nav>
 
       {/* ── HERO ── */}
