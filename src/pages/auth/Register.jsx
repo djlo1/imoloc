@@ -1,274 +1,217 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { supabase } from "../../lib/supabase"
 import toast from "react-hot-toast"
 
-// ── DESIGN TOKENS FLUENT UI ──
 const C = {
-  blue:    "#0067b8",
-  hover:   "#005da0",
-  error:   "#a4262c",
-  bg:      "#f3f2f1",
-  surface: "#ffffff",
-  text:    "#323130",
-  text2:   "#605e5c",
-  border:  "#8a8886",
-  border2: "#d2d0ce",
-  green:   "#107c10",
-  sep:     "#e1dfdd",
+  blue:"#0067b8", hover:"#005da0", error:"#a4262c",
+  bg:"#f3f2f1", text:"#323130", text2:"#605e5c",
+  border:"#8a8886", sep:"#e1dfdd", green:"#107c10",
 }
-
 const FMT = n => n?.toLocaleString("fr-FR") || "0"
 
 const MODULES = [
-  {nom:"Biens",      bg:"#0078D4", l:"B"},
-  {nom:"Baux",       bg:"#107c10", l:"B"},
-  {nom:"Paiements",  bg:"#d83b01", l:"P"},
-  {nom:"Locataires", bg:"#8764b8", l:"L"},
-  {nom:"Rapports",   bg:"#038387", l:"R"},
-  {nom:"Loci IA",    bg:"#0067b8", l:"AI"},
-  {nom:"Maintenance",bg:"#ca5010", l:"M"},
-  {nom:"Signatures", bg:"#00b294", l:"S"},
+  {nom:"Biens",bg:"#0078D4"},{nom:"Baux",bg:"#107c10"},
+  {nom:"Paiements",bg:"#d83b01"},{nom:"Locataires",bg:"#8764b8"},
+  {nom:"Rapports",bg:"#038387"},{nom:"Loci IA",bg:"#0067b8"},
+  {nom:"Maintenance",bg:"#ca5010"},{nom:"Signatures",bg:"#00b294"},
 ]
-
-// ── COMPOSANTS ──
-function Spinner() {
-  return (
-    <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"48px 0"}}>
-      <div style={{width:40,height:40,border:"3px solid #e0e0e0",borderTop:"3px solid "+C.blue,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-    </div>
-  )
-}
 
 function Check({children}) {
   return (
-    <div style={{display:"flex",gap:10,marginBottom:10,alignItems:"flex-start"}}>
+    <div style={{display:"flex",gap:8,marginBottom:9,alignItems:"flex-start"}}>
       <svg width="16" height="16" viewBox="0 0 16 16" style={{flexShrink:0,marginTop:1}}>
         <circle cx="8" cy="8" r="8" fill="#dff6dd"/>
-        <path d="M4.5 8l2.5 2.5 5-5" stroke={C.green} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M4.5 8l2.5 2.5 5-5" stroke={C.green} strokeWidth="1.8" strokeLinecap="round" fill="none"/>
       </svg>
-      <span style={{fontSize:13,color:C.text,lineHeight:1.55}}>{children}</span>
+      <span style={{fontSize:13,color:C.text,lineHeight:1.5}}>{children}</span>
     </div>
   )
 }
 
-function StepIndicator({step}) {
-  const LABELS = ["Abonnement et compte","Connexion","Paiement et confirmation"]
+function Stepper({step}) {
+  const labels = ["Abonnement","Connexion","Finalisation"]
   return (
-    <div style={{display:"flex",alignItems:"flex-start",marginBottom:32,position:"relative"}}>
-      {LABELS.map((label,i)=>(
+    <div style={{display:"flex",alignItems:"flex-start",marginBottom:32}}>
+      {labels.map((l,i)=>(
         <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",position:"relative"}}>
-          {i>0 && <div style={{position:"absolute",left:"-50%",right:"50%",top:10,height:2,background:step>i+1?C.blue:"#edebe9"}}/>}
+          {i>0 && <div style={{position:"absolute",left:"-50%",right:"50%",top:10,height:2,background:step>i+1?C.blue:C.sep}}/>}
           <div style={{
-            width:20,height:20,borderRadius:"50%",position:"relative",zIndex:1,
-            border: step===i+1 ? "3px solid "+C.blue : step>i+1 ? "none" : "2px solid #c8c8c8",
-            background: step>i+1 ? C.blue : "#fff",
+            width:22,height:22,borderRadius:"50%",zIndex:1,position:"relative",
+            background:step>i+1?C.blue:"#fff",
+            border:step===i+1?"3px solid "+C.blue:"2px solid "+(step>i+1?C.blue:"#c8c8c8"),
             display:"flex",alignItems:"center",justifyContent:"center",
           }}>
             {step>i+1 && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
           </div>
-          <span style={{fontSize:11,color:step===i+1?C.text:C.text2,fontWeight:step===i+1?600:400,textAlign:"center",marginTop:6,lineHeight:1.3,maxWidth:96}}>{label}</span>
+          <span style={{fontSize:11,color:step===i+1?C.text:C.text2,fontWeight:step===i+1?600:400,marginTop:6,textAlign:"center",lineHeight:1.3}}>{l}</span>
         </div>
       ))}
     </div>
   )
 }
 
-function MsInput({label,type="text",value,onChange,error,placeholder,autoFocus,disabled,style={},rightEl}) {
-  const [focused,setFocused]=useState(false)
+function Field({label,type="text",value,onChange,error,placeholder,autoFocus,disabled,right}) {
+  const [foc,setFoc]=useState(false)
   return (
-    <div style={{marginBottom:16}}>
-      {label && <label style={{display:"block",fontSize:12,fontWeight:600,color:error?C.error:C.text2,marginBottom:4}}>{label}</label>}
+    <div style={{marginBottom:14}}>
+      {label&&<label style={{display:"block",fontSize:12,fontWeight:600,color:error?C.error:C.text2,marginBottom:4}}
+        dangerouslySetInnerHTML={{__html:label}}/>}
       <div style={{position:"relative"}}>
-        <input
-          type={type} value={value} onChange={onChange} placeholder={placeholder||""} autoFocus={autoFocus} disabled={disabled}
-          onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
+        <input type={type} value={value} onChange={onChange} placeholder={placeholder||""} autoFocus={!!autoFocus} disabled={!!disabled}
+          onFocus={()=>setFoc(true)} onBlur={()=>setFoc(false)}
           style={{
-            width:"100%",padding:"8px 10px",paddingRight:rightEl?44:10,
-            border: error ? "2px solid "+C.error : focused ? "2px solid "+C.text : "1px solid "+C.border,
+            width:"100%",padding:"8px 10px",paddingRight:right?72:10,
+            border:error?"2px solid "+C.error:foc?"2px solid "+C.text:"1px solid "+C.border,
             borderRadius:2,fontSize:14,fontFamily:"inherit",color:C.text,
-            background:disabled?"#f3f2f1":"#fff",outline:"none",
-            boxSizing:"border-box",...style
+            background:disabled?"#f3f2f1":"#fff",outline:"none",boxSizing:"border-box",
           }}/>
-        {rightEl && <div style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)"}}>{rightEl}</div>}
+        {right&&<div style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)"}}>{right}</div>}
       </div>
-      {error && <div style={{fontSize:12,color:C.error,marginTop:4}}>{error}</div>}
+      {error&&<div style={{fontSize:12,color:C.error,marginTop:3}}>{error}</div>}
     </div>
   )
 }
 
-function BtnPrimary({children,onClick,disabled,style={}}) {
-  const [hov,setHov]=useState(false)
+function Btn({children,onClick,disabled,outline,style={}}) {
+  const [h,setH]=useState(false)
   return (
-    <button onClick={onClick} disabled={disabled}
-      onMouseOver={()=>setHov(true)} onMouseOut={()=>setHov(false)}
-      style={{padding:"8px 20px",background:disabled?"#c8c8c8":hov?C.hover:C.blue,color:"#fff",border:"none",borderRadius:2,fontSize:14,fontFamily:"inherit",fontWeight:600,cursor:disabled?"default":"pointer",transition:"background .15s",...style}}>
-      {children}
-    </button>
+    <button onClick={onClick} disabled={!!disabled}
+      onMouseOver={()=>setH(true)} onMouseOut={()=>setH(false)}
+      style={{
+        padding:"8px 20px",borderRadius:2,fontSize:14,fontFamily:"inherit",fontWeight:outline?400:600,
+        cursor:disabled?"default":"pointer",transition:"background .15s",border:"none",
+        background:outline?"#fff":(disabled?"#c8c8c8":h?C.hover:C.blue),
+        color:outline?C.text:"#fff",
+        ...(outline?{border:"1px solid "+C.border}:{}),
+        ...style
+      }}>{children}</button>
   )
 }
 
-function BtnSecondary({children,onClick,style={}}) {
-  const [hov,setHov]=useState(false)
-  return (
-    <button onClick={onClick}
-      onMouseOver={()=>setHov(true)} onMouseOut={()=>setHov(false)}
-      style={{padding:"8px 20px",background:hov?"#f3f2f1":"#fff",color:C.text,border:"1px solid "+C.border,borderRadius:2,fontSize:14,fontFamily:"inherit",cursor:"pointer",transition:"background .15s",...style}}>
-      {children}
-    </button>
-  )
-}
-
-// ── COMPOSANT PRINCIPAL ──
 export default function Register() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
-
-  // STEP 1 STATE
+  const [plan, setPlan] = useState("business")
   const [users, setUsers] = useState(1)
   const [duree, setDuree] = useState("mois")
   const [freq, setFreq] = useState("mensuel")
-  const [plan, setPlan] = useState("business")
-
-  // STEP 2 STATE - 3 sous-etats (email → loading → confirm/exists)
-  const [s2, setS2] = useState(1) // 1=email, 2=loading, 3=confirm
   const [email, setEmail] = useState("")
   const [emailErr, setEmailErr] = useState("")
-
-  // STEP 3 STATE
-  const [form, setForm] = useState({prenom:"",nom:"",password:"",confirm:""})
-  const [showPass, setShowPass] = useState(false)
+  const [subStep, setSubStep] = useState(1)
+  const [prenom, setPrenom] = useState("")
+  const [nom, setNom] = useState("")
+  const [pwd, setPwd] = useState("")
+  const [pwd2, setPwd2] = useState("")
+  const [showPwd, setShowPwd] = useState(false)
   const [loading, setLoading] = useState(false)
-  const set3 = (k,v) => setForm(f=>({...f,[k]:v}))
-  const [done, setDone] = useState(false) // etape succes
+  const [success, setSuccess] = useState(false)
 
   const PLANS = {
-    starter:  {nom:"Starter",  mois:18000, an:15000},
-    business: {nom:"Business", mois:39000, an:32000},
+    starter:{nom:"Starter",mois:18000,an:15000},
+    business:{nom:"Business",mois:39000,an:32000},
   }
   const p = PLANS[plan]
-  const prixUnit = duree==="an" ? p.an : p.mois
-  const sousTotal = prixUnit * users
+  const pu = duree==="an"?p.an:p.mois
+  const total = pu*users
   const trial = new Date(); trial.setMonth(trial.getMonth()+1)
   const trialStr = trial.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})
 
+  useEffect(()=>{
+    supabase.auth.getSession().then(({data:{session}})=>{
+      if(!session) return
+      const r = session.user?.user_metadata?.role||""
+      if(r==="locataire") navigate("/locataire")
+      else if(r==="proprietaire") navigate("/proprietaire")
+      else navigate("/agence")
+    })
+  },[])
 
-
-  // ── STEP 2 ACTIONS ──
-  const handleEmailNext = () => {
-    if (!email) { setEmailErr("Cela est obligatoire"); return }
+  const goStep2 = () => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!re.test(email)) { setEmailErr("Entrez une adresse e-mail valide"); return }
+    if(!email) {setEmailErr("Cela est obligatoire");return}
+    if(!re.test(email)) {setEmailErr("Adresse e-mail invalide");return}
     setEmailErr("")
-    setS2(2) // Afficher confirmation directe
+    setSubStep(2)
   }
 
-  // ── STEP 3 SUBMIT ──
-  const submit = async () => {
-    if (!form.prenom||!form.nom) { toast.error("Prenom et nom requis"); return }
-    if (form.password.length<8) { toast.error("8 caracteres minimum"); return }
-    if (form.password!==form.confirm) { toast.error("Mots de passe differents"); return }
+  const finaliser = async () => {
+    if(!prenom.trim()||!nom.trim()){toast.error("Pr\u00e9nom et nom requis");return}
+    if(pwd.length<8){toast.error("Mot de passe : 8 caract\u00e8res minimum");return}
+    if(pwd!==pwd2){toast.error("Les mots de passe ne correspondent pas");return}
     setLoading(true)
-    // Deconnecter la session existante avant de creer un nouveau compte
     await supabase.auth.signOut()
-
-    const {data, error} = await supabase.auth.signUp({
-      email, password: form.password,
-      options:{ data:{ prenom:form.prenom, nom:form.nom, role:"global_admin", type_compte:"organisation" } }
+    const {data,error} = await supabase.auth.signUp({
+      email, password:pwd,
+      options:{data:{prenom:prenom.trim(),nom:nom.trim(),role:"global_admin",type_compte:"organisation"}},
     })
-    if (error) {
-      if (error.message?.toLowerCase().includes("already") || error.message?.toLowerCase().includes("registered")) {
-        toast.error("Ce compte existe deja.")
-        setTimeout(()=>navigate("/login"),2000)
-      } else {
-        toast.error(error.message)
-      }
-      setLoading(false); return
+    if(error){
+      toast.error(error.message)
+      setLoading(false)
+      return
     }
-    if (!data?.user?.identities?.length) {
-      toast.error("Ce compte existe deja. Veuillez vous connecter.")
-      setTimeout(()=>navigate("/login"),2000)
-      setLoading(false); return
+    if(!data?.user?.identities?.length){
+      toast.error("Ce compte existe d\u00e9j\u00e0.")
+      setTimeout(()=>navigate("/login"),2500)
+      setLoading(false)
+      return
     }
     setLoading(false)
-    setDone(true) // Afficher ecran de confirmation
+    setSuccess(true)
   }
 
-  // ── COLONNE DROITE (fixe) ──
-  const RightCol = () => (
-    <div style={{background:"#faf9f8",padding:"32px 28px",display:"flex",flexDirection:"column",gap:0,borderLeft:"1px solid "+C.sep}}>
-      <div style={{fontSize:15,fontWeight:700,color:C.text,marginBottom:4}}>Imoloc {p.nom} &mdash; Essai</div>
-      <div style={{fontSize:12,color:C.text2,fontWeight:500,marginBottom:18}}>Inscription &agrave; votre essai gratuit</div>
-
-      <Check>Ajoutez jusqu&apos;&agrave; <strong>25 utilisateurs</strong> pendant l&apos;essai</Check>
-      <Check>La version d&apos;&eacute;valuation inclut les <strong>m&ecirc;mes fonctionnalit&eacute;s</strong> que le produit payant</Check>
+  const RightPanel = () => (
+    <div style={{background:"#faf9f8",padding:"32px 24px",display:"flex",flexDirection:"column",borderLeft:"1px solid "+C.sep}}>
+      <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:3}}>Imoloc {p.nom} &mdash; Essai</div>
+      <div style={{fontSize:12,color:C.text2,marginBottom:16}}>Inscription &agrave; votre essai gratuit</div>
+      <Check>Jusqu&apos;&agrave; <strong>25 utilisateurs</strong> pendant l&apos;essai</Check>
+      <Check>Toutes les fonctionnalit&eacute;s du produit payant incluses</Check>
       <Check><strong>Aucun paiement</strong> requis pour commencer</Check>
-      <Check>L&apos;abonnement payant commence &agrave; la fin de l&apos;essai, sauf annulation avant le {trialStr}</Check>
-
+      <Check>Annulation possible avant le <strong>{trialStr}</strong></Check>
       <div style={{height:1,background:C.sep,margin:"16px 0"}}/>
-
-      {/* Resume commande */}
-      <div style={{background:C.bg,padding:14,marginBottom:16}}>
-        <div style={{fontSize:12,fontWeight:600,color:C.text2,marginBottom:10,textTransform:"uppercase",letterSpacing:".04em"}}>R&eacute;sum&eacute; de la commande</div>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-          <div>
-            <div style={{fontSize:13,fontWeight:500,color:C.text}}>Imoloc {p.nom}</div>
-            <div style={{fontSize:11,color:C.text2,marginTop:2}}>Abonnement {duree==="an"?"1 an":"1 mois"}, {FMT(prixUnit)} FCFA/utilisateur/{duree==="an"?"an":"mois"} pour {users} utilisateur{users>1?"s":""}</div>
-          </div>
-          <div style={{fontSize:13,fontWeight:600,color:C.text,whiteSpace:"nowrap",marginLeft:8}}>{FMT(sousTotal)} FCFA</div>
+      <div style={{background:C.bg,padding:12,marginBottom:16}}>
+        <div style={{fontSize:11,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:8}}>R&eacute;sum&eacute; de la commande</div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:4}}>
+          <span style={{color:C.text2}}>Imoloc {p.nom} &times; {users}</span>
+          <span style={{fontWeight:600,color:C.text}}>{FMT(total)} FCFA</span>
         </div>
-        <div style={{borderTop:"1px solid "+C.sep,paddingTop:8}}>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.text2,marginBottom:4}}>
-            <span>Sous-total apr&egrave;s l&apos;essai (TVA non incluse)</span>
-            <span style={{fontWeight:600,color:C.text}}>{FMT(sousTotal)} FCFA</span>
-          </div>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:13,fontWeight:700}}>
-            <span style={{color:C.text}}>Paiement d&ucirc; aujourd&apos;hui (hors taxes)</span>
-            <span style={{color:C.text}}>0,00 FCFA</span>
-          </div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:4}}>
+          <span style={{color:C.text2}}>Essai gratuit</span>
+          <span style={{color:C.green,fontWeight:600}}>&minus;{FMT(total)} FCFA</span>
+        </div>
+        <div style={{borderTop:"1px solid "+C.sep,paddingTop:8,display:"flex",justifyContent:"space-between",fontWeight:700,fontSize:14}}>
+          <span>D&ucirc; aujourd&apos;hui</span>
+          <span>0,00 FCFA</span>
         </div>
       </div>
-
-      <div style={{height:1,background:C.sep,margin:"4px 0 16px"}}/>
-
-      <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12}}>Points forts du produit</div>
+      <div style={{height:1,background:C.sep,margin:"0 0 16px"}}/>
+      <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:10}}>Points forts du produit</div>
       <Check>G&eacute;rez vos biens depuis n&apos;importe quel appareil</Check>
-      <Check>Paiements <strong>Mobile Money</strong> natifs (MTN, Moov, Wave)</Check>
-      <Check>Signatures &eacute;lectroniques et portail locataire inclus</Check>
-      <Check>Support d&eacute;di&eacute; inclus</Check>
-
+      <Check>Paiements <strong>Mobile Money</strong> natifs inclus</Check>
+      <Check>Signatures &eacute;lectroniques et portail locataire</Check>
       <div style={{height:1,background:C.sep,margin:"16px 0"}}/>
-
-      <div style={{fontSize:11,fontWeight:600,color:C.text2,marginBottom:12,textTransform:"uppercase",letterSpacing:".04em"}}>Modules inclus</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+      <div style={{fontSize:11,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:10}}>Modules inclus</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
         {MODULES.map(m=>(
           <div key={m.nom} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-            <div style={{width:38,height:38,borderRadius:6,background:m.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <span style={{fontSize:m.l.length>1?10:15,fontWeight:700,color:"white"}}>{m.l}</span>
+            <div style={{width:36,height:36,borderRadius:6,background:m.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <span style={{fontSize:14,fontWeight:700,color:"#fff"}}>{m.nom[0]}</span>
             </div>
-            <span style={{fontSize:10,color:C.text2,textAlign:"center",lineHeight:1.2}}>{m.nom}</span>
+            <span style={{fontSize:10,color:C.text2,textAlign:"center"}}>{m.nom}</span>
           </div>
         ))}
       </div>
-
-      <div style={{marginTop:"auto",paddingTop:20,borderTop:"1px solid "+C.sep}}>
-        <div style={{fontSize:12,color:C.text2,marginBottom:4}}>D&eacute;j&agrave; un compte ? <Link to="/login" style={{fontSize:12,color:C.blue}}>Se connecter</Link></div>
-        <div style={{fontSize:12,color:C.text2}}>Locataire ou propri&eacute;taire ? <Link to="/login" style={{fontSize:12,color:C.blue}}>Acc&egrave;s direct</Link></div>
+      <div style={{marginTop:"auto",paddingTop:16,borderTop:"1px solid "+C.sep}}>
+        <div style={{fontSize:12,color:C.text2}}>D&eacute;j&agrave; un compte ? <Link to="/login" style={{fontSize:12,color:C.blue}}>Se connecter</Link></div>
       </div>
     </div>
   )
 
   return (
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Segoe UI','Helvetica Neue',sans-serif",color:C.text}}>
-      <style>{`
-        *{box-sizing:border-box;margin:0;padding:0}
-        a{color:${C.blue};text-decoration:none}
-        a:hover{text-decoration:underline}
-        @keyframes spin{to{transform:rotate(360deg)}}
-      `}</style>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0}a{color:${C.blue};text-decoration:none}a:hover{text-decoration:underline}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
-      {/* HEADER */}
-      <div style={{background:"#fff",borderBottom:"1px solid "+C.sep,padding:"12px 32px"}}>
+      <div style={{background:"#fff",borderBottom:"1px solid "+C.sep,padding:"11px 32px"}}>
         <Link to="/" style={{display:"flex",alignItems:"center",gap:8}}>
           <div style={{width:26,height:26,background:C.blue,borderRadius:3,display:"flex",alignItems:"center",justifyContent:"center"}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -277,247 +220,203 @@ export default function Register() {
         </Link>
       </div>
 
-      {/* TITRE PAGE */}
-      <div style={{textAlign:"center",padding:"32px 20px 0"}}>
-        <h1 style={{fontSize:28,fontWeight:600,color:C.text,marginBottom:6,letterSpacing:"-0.02em"}}>Imoloc {p.nom} &mdash; Essai</h1>
-        <p style={{fontSize:15,color:C.text2}}>Un mois gratuit avec moyen de paiement requis</p>
+      <div style={{textAlign:"center",padding:"28px 20px 0"}}>
+        <h1 style={{fontSize:26,fontWeight:600,color:C.text,marginBottom:6}}>Imoloc {p.nom} &mdash; Essai</h1>
+        <p style={{fontSize:14,color:C.text2}}>Un mois gratuit &mdash; aucun paiement requis aujourd&apos;hui</p>
       </div>
 
-      {/* CARTE CENTRALE */}
-      <div style={{maxWidth:1100,margin:"28px auto 48px",padding:"0 20px"}}>
-        <div style={{background:"#fff",borderRadius:2,boxShadow:"0 1.6px 3.6px 0 rgba(0,0,0,0.132),0 0.3px 0.9px 0 rgba(0,0,0,0.108)",border:"1px solid "+C.sep,display:"grid",gridTemplateColumns:"1fr 340px",overflow:"hidden"}}>
+      <div style={{maxWidth:1100,margin:"24px auto 48px",padding:"0 20px"}}>
+        <div style={{background:"#fff",borderRadius:2,boxShadow:"0 1.6px 3.6px rgba(0,0,0,0.13),0 0.3px 0.9px rgba(0,0,0,0.11)",border:"1px solid "+C.sep,display:"grid",gridTemplateColumns:"1fr 320px",overflow:"hidden"}}>
 
-          {/* ━━ COLONNE GAUCHE ━━ */}
-          <div style={{padding:"36px 40px",position:"relative"}}>
-            <StepIndicator step={step}/>
+          <div style={{padding:"36px 40px"}}>
 
-            {/* ── ETAPE 1 : ABONNEMENT ── */}
-            {step===1 && (
-              <div>
-                <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Essayer gratuitement pendant un mois</h2>
-                <p style={{fontSize:13,color:C.text2,marginBottom:28,lineHeight:1.65}}>
-                  Avant de commencer votre essai, configurez votre abonnement. Ajoutez jusqu&apos;&agrave; 25 utilisateurs gratuitement.
+            {/* SUCCES */}
+            {success && (
+              <div style={{textAlign:"center",padding:"32px 0"}}>
+                <div style={{width:72,height:72,borderRadius:"50%",background:"#dff6dd",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                </div>
+                <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:10}}>Votre essai est activ&eacute; !</h2>
+                <p style={{fontSize:14,color:C.text2,lineHeight:1.7,marginBottom:6}}>
+                  Bienvenue <strong style={{color:C.text}}>{prenom} {nom}</strong> !
                 </p>
+                <p style={{fontSize:13,color:C.text2,lineHeight:1.7,marginBottom:28}}>
+                  Votre compte a &eacute;t&eacute; cr&eacute;&eacute; avec <strong>{email}</strong>.<br/>
+                  Essai gratuit actif jusqu&apos;au <strong>{trialStr}</strong>.
+                </p>
+                <Btn onClick={()=>navigate("/agence")} style={{padding:"10px 32px",fontSize:15}}>
+                  Acc&eacute;der &agrave; mon espace &rarr;
+                </Btn>
+                <div style={{marginTop:12,fontSize:12,color:C.text2}}>Un email de confirmation a &eacute;t&eacute; envoy&eacute; &agrave; {email}</div>
+              </div>
+            )}
 
-                {/* Plan */}
-                <div style={{marginBottom:24}}>
-                  <div style={{fontSize:12,fontWeight:600,color:C.text2,marginBottom:10,textTransform:"uppercase",letterSpacing:".04em"}}>Plan</div>
+            {/* STEP 1 */}
+            {!success && step===1 && (
+              <div>
+                <Stepper step={1}/>
+                <h2 style={{fontSize:22,fontWeight:600,color:C.text,marginBottom:8}}>Essayer gratuitement pendant un mois</h2>
+                <p style={{fontSize:13,color:C.text2,marginBottom:28,lineHeight:1.65}}>Configurez votre abonnement. 25 utilisateurs maximum pendant l&apos;essai.</p>
+
+                <div style={{marginBottom:22}}>
+                  <div style={{fontSize:12,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:10}}>Plan</div>
                   {[
-                    {id:"starter",  label:"Imoloc Starter",  desc:"Pour les petites agences"},
-                    {id:"business", label:"Imoloc Business", desc:"Pour les agences en croissance", rec:true},
+                    {id:"starter",label:"Imoloc Starter",desc:"Pour les petites agences"},
+                    {id:"business",label:"Imoloc Business",desc:"Pour les agences en croissance",rec:true},
                   ].map(o=>(
                     <label key={o.id} style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",padding:"8px 0",borderBottom:"1px solid "+C.sep}}>
                       <input type="radio" name="plan" checked={plan===o.id} onChange={()=>setPlan(o.id)}
-                        style={{width:16,height:16,accentColor:C.blue,flexShrink:0,marginTop:2}}/>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:14,fontWeight:500,color:C.text}}>
-                          {o.label}
-                          {o.rec && <span style={{marginLeft:8,fontSize:11,color:C.blue,fontWeight:600,padding:"1px 6px",border:"1px solid "+C.blue,borderRadius:2}}>Recommand&eacute;</span>}
-                        </div>
-                        <div style={{fontSize:12,color:C.text2,marginTop:2}}>
-                          {o.desc} &mdash; {FMT(duree==="an"?(o.id==="starter"?15000:32000):(o.id==="starter"?18000:39000))} FCFA/utilisateur/mois
-                        </div>
+                        style={{width:16,height:16,accentColor:C.blue,flexShrink:0,marginTop:2,cursor:"pointer"}}/>
+                      <div>
+                        <span style={{fontSize:14,color:C.text}}>{o.label}</span>
+                        {o.rec&&<span style={{marginLeft:8,fontSize:11,color:C.blue,fontWeight:600,padding:"1px 6px",border:"1px solid "+C.blue,borderRadius:2}}>Recommand&eacute;</span>}
+                        <div style={{fontSize:12,color:C.text2,marginTop:2}}>{o.desc} &mdash; {FMT(duree==="an"?(o.id==="starter"?15000:32000):(o.id==="starter"?18000:39000))} FCFA/utilisateur/mois</div>
                       </div>
                     </label>
                   ))}
                 </div>
 
-                {/* Nombre utilisateurs - style Microsoft (input numerique propre) */}
-                <div style={{marginBottom:24}}>
-                  <div style={{fontSize:12,fontWeight:600,color:C.text2,marginBottom:10,textTransform:"uppercase",letterSpacing:".04em"}}>Pour combien de personnes s&apos;agit-il ?</div>
+                <div style={{marginBottom:22}}>
+                  <div style={{fontSize:12,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:10}}>Pour combien de personnes s&apos;agit-il ?</div>
                   <div style={{display:"flex",alignItems:"stretch",width:"fit-content",border:"1px solid "+C.border,borderRadius:2,overflow:"hidden"}}>
-                    <button onClick={()=>setUsers(u=>Math.max(1,u-1))}
-                      style={{width:36,background:"#f3f2f1",border:"none",borderRight:"1px solid "+C.border2,fontSize:20,cursor:"pointer",color:C.text,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1,padding:0}}>
-                      &minus;
-                    </button>
+                    <button onClick={()=>setUsers(u=>Math.max(1,u-1))} style={{width:34,background:"#f3f2f1",border:"none",borderRight:"1px solid "+C.sep,fontSize:18,cursor:"pointer",color:C.text,lineHeight:1}}>&minus;</button>
                     <input type="number" min="1" max="25" value={users} onChange={e=>setUsers(Math.min(25,Math.max(1,+e.target.value)))}
-                      style={{width:64,textAlign:"center",border:"none",fontSize:16,fontWeight:600,fontFamily:"inherit",color:C.text,outline:"none",padding:"6px 0"}}/>
-                    <button onClick={()=>setUsers(u=>Math.min(25,u+1))}
-                      style={{width:36,background:"#f3f2f1",border:"none",borderLeft:"1px solid "+C.border2,fontSize:20,cursor:"pointer",color:C.text,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1,padding:0}}>
-                      +
-                    </button>
+                      style={{width:60,textAlign:"center",border:"none",fontSize:15,fontWeight:600,fontFamily:"inherit",color:C.text,outline:"none",padding:"7px 0"}}/>
+                    <button onClick={()=>setUsers(u=>Math.min(25,u+1))} style={{width:34,background:"#f3f2f1",border:"none",borderLeft:"1px solid "+C.sep,fontSize:18,cursor:"pointer",color:C.text,lineHeight:1}}>+</button>
                   </div>
-                  <div style={{fontSize:11,color:C.text2,marginTop:6}}>25 utilisateurs maximum pendant l&apos;essai</div>
                 </div>
 
-                {/* Duree */}
-                <div style={{marginBottom:24}}>
-                  <div style={{fontSize:12,fontWeight:600,color:C.text2,marginBottom:10,textTransform:"uppercase",letterSpacing:".04em"}}>Choisir la dur&eacute;e de votre abonnement</div>
-                  {[["an","1 an","Economisez 20%"],["mois","1 mois",""]].map(([v,l,s])=>(
-                    <label key={v} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:10}}>
+                <div style={{marginBottom:22}}>
+                  <div style={{fontSize:12,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:10}}>Dur&eacute;e</div>
+                  {[["an","1 an","&Eacute;conomisez 20%"],["mois","1 mois",""]].map(([v,l,s])=>(
+                    <label key={v} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:8}}>
                       <input type="radio" name="duree" checked={duree===v} onChange={()=>{setDuree(v);setFreq(v==="an"?"annuel":"mensuel")}}
-                        style={{width:16,height:16,accentColor:C.blue}}/>
+                        style={{width:16,height:16,accentColor:C.blue,cursor:"pointer"}}/>
                       <span style={{fontSize:14,color:C.text}}>{l}</span>
-                      {s && <span style={{fontSize:12,color:C.green,fontWeight:600}}>{s}</span>}
+                      {s&&<span style={{fontSize:12,color:C.green,fontWeight:600}} dangerouslySetInnerHTML={{__html:s}}/>}
                     </label>
                   ))}
                 </div>
 
-                {/* Frequence */}
                 <div style={{marginBottom:24}}>
-                  <div style={{fontSize:12,fontWeight:600,color:C.text2,marginBottom:10,textTransform:"uppercase",letterSpacing:".04em"}}>&Agrave; quelle fr&eacute;quence voulez-vous &ecirc;tre factur&eacute; ?</div>
-                  <div style={{position:"relative",display:"inline-block",minWidth:300}}>
+                  <div style={{fontSize:12,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:10}}>Fr&eacute;quence de facturation</div>
+                  <div style={{position:"relative",display:"inline-block",minWidth:280}}>
                     <select value={freq} onChange={e=>setFreq(e.target.value)}
-                      style={{width:"100%",padding:"7px 32px 7px 10px",border:"1px solid "+C.border,borderRadius:2,background:"#fff",fontSize:14,fontFamily:"inherit",color:C.text,outline:"none",cursor:"pointer",appearance:"none"}}>
-                      <option value="mensuel">Tous les mois &mdash; {FMT(prixUnit*users)} FCFA/mois</option>
-                      <option value="annuel">Une fois par an &mdash; {FMT(prixUnit*users*12)} FCFA/an</option>
+                      style={{width:"100%",padding:"7px 30px 7px 10px",border:"1px solid "+C.border,borderRadius:2,background:"#fff",fontSize:14,fontFamily:"inherit",color:C.text,outline:"none",cursor:"pointer",appearance:"none"}}>
+                      <option value="mensuel">Tous les mois &mdash; {FMT(pu*users)} FCFA/mois</option>
+                      <option value="annuel">Une fois par an &mdash; {FMT(pu*users*12)} FCFA/an</option>
                     </select>
-                    <svg style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.text2} strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+                    <svg style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={C.text2} strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
                   </div>
                 </div>
 
-                {/* Resume commande inline */}
-                <div style={{borderTop:"1px solid "+C.sep,paddingTop:20,marginBottom:16}}>
-                  <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:4}}>R&eacute;sum&eacute; de la commande</div>
-                  <div style={{fontSize:12,color:C.text2,marginBottom:14,lineHeight:1.5}}>D&eacute;tails de votre commande apr&egrave;s la fin de votre essai le {trialStr}.</div>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
-                    <div>
-                      <div style={{fontSize:13,fontWeight:500,color:C.text}}>Imoloc {p.nom}</div>
-                      <div style={{fontSize:12,color:C.text2,marginTop:3}}>Abonnement {duree==="an"?"1 an":"1 mois"}, paiement de {FMT(prixUnit)} FCFA utilisateur/{duree==="an"?"an":"mois"} pour {users} utilisateur{users>1?"s":""}</div>
-                    </div>
-                    <div style={{fontSize:13,fontWeight:600,color:C.text,whiteSpace:"nowrap",marginLeft:16}}>{FMT(sousTotal)} FCFA</div>
+                <div style={{borderTop:"1px solid "+C.sep,paddingTop:18,marginBottom:18}}>
+                  <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12}}>R&eacute;sum&eacute; de la commande</div>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6}}>
+                    <span style={{color:C.text2}}>Imoloc {p.nom} &times; {users} utilisateur{users>1?"s":""}</span>
+                    <span style={{fontWeight:600}}>{FMT(total)} FCFA</span>
                   </div>
-                  <div style={{borderTop:"1px solid "+C.sep,paddingTop:10,marginBottom:4}}>
-                    <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.text2,marginBottom:6}}>
-                      <span>Sous-total apr&egrave;s la version d&apos;essai (TVA non incluse)</span>
-                      <span style={{fontWeight:600,color:C.text}}>{FMT(sousTotal)} FCFA</span>
-                    </div>
-                    <div style={{display:"flex",justifyContent:"space-between",fontSize:13,fontWeight:700}}>
-                      <span>Paiement d&ucirc; aujourd&apos;hui (hors taxes)</span>
-                      <span>0,00 FCFA</span>
-                    </div>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6,color:C.green}}>
+                    <span>Essai gratuit (1 mois)</span>
+                    <span style={{fontWeight:600}}>&minus;{FMT(total)} FCFA</span>
                   </div>
+                  <div style={{borderTop:"1px solid "+C.sep,paddingTop:8,display:"flex",justifyContent:"space-between",fontWeight:700,fontSize:14}}>
+                    <span>Paiement d&ucirc; aujourd&apos;hui (hors taxes)</span>
+                    <span>0,00 FCFA</span>
+                  </div>
+                  <p style={{fontSize:11,color:C.text2,marginTop:10,lineHeight:1.6}}>
+                    Une fois l&apos;essai termin&eacute;, votre abonnement devient payant sauf annulation avant le {trialStr}.{" "}
+                    <a href="#" style={{fontSize:11}}>En savoir plus</a>
+                  </p>
                 </div>
 
-                <p style={{fontSize:11,color:C.text2,lineHeight:1.65,marginBottom:24}}>
-                  Une fois l&apos;essai termin&eacute;, il sera converti en abonnement payant. Vous ne serez pas factur&eacute; si vous l&apos;annulez avant le {trialStr}.{" "}
-                  <a href="#" style={{fontSize:11,color:C.blue}}>D&eacute;couvrir plus d&apos;informations sur l&apos;annulation</a>
-                </p>
-
-                <BtnPrimary onClick={()=>setStep(2)}>Suivant</BtnPrimary>
+                <Btn onClick={()=>setStep(2)}>Suivant</Btn>
               </div>
             )}
 
-            {/* ── ETAPE 2 : CONNEXION (4 sous-etats) ── */}
-            {step===2 && (
-              <div style={{position:"relative"}}>
+            {/* STEP 2 */}
+            {!success && step===2 && (
+              <div>
+                <Stepper step={2}/>
 
-
-                {/* Sous-etat 1 : Saisie email */}
-                {s2===1 && (
+                {subStep===1 && (
                   <div>
-                    <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Nous allons vous aider &agrave; d&eacute;marrer</h2>
-                    <p style={{fontSize:13,color:C.text2,marginBottom:28,lineHeight:1.65}}>Entrez votre adresse e-mail professionnelle pour cr&eacute;er votre compte Imoloc.</p>
-                    <MsInput label="Adresse e-mail professionnelle *" type="email" value={email}
-                      onChange={e=>{setEmail(e.target.value);setEmailErr("")}} error={emailErr} autoFocus/>
-                    <div style={{fontSize:12,color:C.text2,marginBottom:24}}>
-                      D&eacute;j&agrave; un compte ? <Link to="/login" style={{fontSize:12}}>Se connecter</Link>
-                    </div>
+                    <h2 style={{fontSize:22,fontWeight:600,color:C.text,marginBottom:8}}>Nous allons vous aider &agrave; d&eacute;marrer</h2>
+                    <p style={{fontSize:13,color:C.text2,marginBottom:28,lineHeight:1.65}}>Entrez votre adresse e-mail pour cr&eacute;er votre compte Imoloc.</p>
+                    <Field label="Adresse e-mail professionnelle *" type="email" value={email}
+                      onChange={e=>{setEmail(e.target.value);setEmailErr("")}} error={emailErr} autoFocus placeholder="vous@agence.com"/>
+                    <div style={{fontSize:12,color:C.text2,marginBottom:24}}>D&eacute;j&agrave; un compte ? <Link to="/login">Se connecter</Link></div>
                     <div style={{display:"flex",gap:12}}>
-                      <BtnSecondary onClick={()=>setStep(1)}>Pr&eacute;c&eacute;dent</BtnSecondary>
-                      <BtnPrimary onClick={handleEmailNext}>Suivant</BtnPrimary>
+                      <Btn outline onClick={()=>setStep(1)}>Pr&eacute;c&eacute;dent</Btn>
+                      <Btn onClick={goStep2}>Suivant</Btn>
                     </div>
                   </div>
                 )}
 
-
-
-                {/* Sous-etat 2 : Confirmation email */}
-                {s2===2 && (
+                {subStep===2 && (
                   <div>
-                    <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Nous allons vous aider &agrave; d&eacute;marrer</h2>
+                    <h2 style={{fontSize:22,fontWeight:600,color:C.text,marginBottom:8}}>Nous allons vous aider &agrave; d&eacute;marrer</h2>
                     <p style={{fontSize:13,color:C.text2,marginBottom:20,lineHeight:1.65}}>
-                      Il semble que vous devez cr&eacute;er un nouveau compte. Commencez !<br/>
                       Continuez en tant que <strong style={{color:C.text}}>{email}</strong>
                     </p>
                     <div style={{display:"flex",gap:12}}>
-                      <BtnPrimary onClick={()=>setStep(3)}>Configurer le compte</BtnPrimary>
-                      <BtnSecondary onClick={()=>{setS2(1);setEmail("")}}>Modifier mon adresse e-mail</BtnSecondary>
+                      <Btn onClick={()=>setStep(3)}>Configurer le compte</Btn>
+                      <Btn outline onClick={()=>{setSubStep(1);setEmail("")}}>Modifier mon adresse e-mail</Btn>
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* ── ETAPE SUCCES ── */}
-            {done && (
-              <div style={{textAlign:"center",padding:"40px 20px"}}>
-                <div style={{width:72,height:72,borderRadius:"50%",background:"#dff6dd",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px"}}>
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                </div>
-                <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:12}}>Votre essai est activ&eacute; !</h2>
-                <p style={{fontSize:14,color:C.text2,lineHeight:1.7,marginBottom:8}}>
-                  Bienvenue <strong style={{color:C.text}}>{form.prenom} {form.nom}</strong> !<br/>
-                  Votre compte Imoloc a &eacute;t&eacute; cr&eacute;&eacute; avec l&apos;adresse <strong>{email}</strong>.
-                </p>
-                <p style={{fontSize:13,color:C.text2,marginBottom:32,lineHeight:1.6}}>
-                  Votre essai gratuit de 30 jours est maintenant actif.<br/>
-                  Vous serez factur&eacute; &agrave; partir du {trialStr} si vous ne l&apos;annulez pas.
-                </p>
-                <BtnPrimary onClick={()=>navigate("/agence")} style={{padding:"10px 32px",fontSize:15}}>
-                  Acc&eacute;der &agrave; mon espace &rarr;
-                </BtnPrimary>
-                <div style={{marginTop:16,fontSize:12,color:C.text2}}>
-                  Un email de confirmation a &eacute;t&eacute; envoy&eacute; &agrave; {email}
-                </div>
-              </div>
-            )}
-
-            {/* ── ETAPE 3 : FINALISATION ── */}
-            {!done && step===3 && (
+            {/* STEP 3 */}
+            {!success && step===3 && (
               <div>
-                <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Compl&eacute;tez votre profil</h2>
+                <Stepper step={3}/>
+                <h2 style={{fontSize:22,fontWeight:600,color:C.text,marginBottom:8}}>Compl&eacute;tez votre profil</h2>
                 <p style={{fontSize:13,color:C.text2,marginBottom:28}}>
-                  Votre email <strong style={{color:C.text}}>{email}</strong> a &eacute;t&eacute; v&eacute;rifi&eacute;. Renseignez les derniers d&eacute;tails.
+                  Compte : <strong>{email}</strong>
                 </p>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:4}}>
-                  <MsInput label="Pr&eacute;nom *" value={form.prenom} onChange={e=>set3("prenom",e.target.value)} autoFocus placeholder="Jean"/>
-                  <MsInput label="Nom *" value={form.nom} onChange={e=>set3("nom",e.target.value)} placeholder="Dupont"/>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                  <Field label="Pr&eacute;nom *" value={prenom} onChange={e=>setPrenom(e.target.value)} autoFocus placeholder="Jean"/>
+                  <Field label="Nom *" value={nom} onChange={e=>setNom(e.target.value)} placeholder="Dupont"/>
                 </div>
-                <MsInput label="Mot de passe *" type={showPass?"text":"password"} value={form.password}
-                  onChange={e=>set3("password",e.target.value)} placeholder="8 caract&egrave;res minimum"
-                  rightEl={<button type="button" onClick={()=>setShowPass(!showPass)} style={{background:"none",border:"none",cursor:"pointer",color:C.blue,fontSize:12,fontFamily:"inherit",whiteSpace:"nowrap"}}>{showPass?"Masquer":"Afficher"}</button>}/>
-                {form.password && (
-                  <div style={{display:"flex",gap:4,marginBottom:16,alignItems:"center"}}>
-                    {[form.password.length>=8,/[A-Z]/.test(form.password),/[0-9!@#$]/.test(form.password)].map((ok,i)=>(
+                <Field label="Mot de passe * (8 caract&egrave;res minimum)" type={showPwd?"text":"password"} value={pwd}
+                  onChange={e=>setPwd(e.target.value)} placeholder="Minimum 8 caract&egrave;res"
+                  right={<button type="button" onClick={()=>setShowPwd(!showPwd)}
+                    style={{background:"none",border:"none",cursor:"pointer",color:C.blue,fontSize:12,fontFamily:"inherit"}}>{showPwd?"Masquer":"Afficher"}</button>}/>
+                {pwd&&(
+                  <div style={{display:"flex",gap:4,marginBottom:14,alignItems:"center"}}>
+                    {[pwd.length>=8,/[A-Z]/.test(pwd),/[0-9]/.test(pwd)].map((ok,i)=>(
                       <div key={i} style={{flex:1,height:3,background:ok?(i>1?C.green:C.blue):"#e0e0e0",borderRadius:2,transition:"background .25s"}}/>
                     ))}
                     <span style={{fontSize:11,color:C.text2,marginLeft:6,whiteSpace:"nowrap"}}>
-                      {[form.password.length>=8,/[A-Z]/.test(form.password),/[0-9!@#$]/.test(form.password)].filter(Boolean).length>=3?"Solide":form.password.length>=8?"Moyen":"Faible"}
+                      {[pwd.length>=8,/[A-Z]/.test(pwd),/[0-9]/.test(pwd)].filter(Boolean).length>=3?"Solide":pwd.length>=8?"Moyen":"Faible"}
                     </span>
                   </div>
                 )}
-                <MsInput label="Confirmer le mot de passe *" type="password" value={form.confirm}
-                  onChange={e=>set3("confirm",e.target.value)} placeholder="R&eacute;p&eacute;tez votre mot de passe"
-                  error={form.confirm&&form.confirm!==form.password?"Les mots de passe ne correspondent pas":""} />
+                <Field label="Confirmer le mot de passe *" type="password" value={pwd2}
+                  onChange={e=>setPwd2(e.target.value)} placeholder="R&eacute;p&eacute;tez le mot de passe"
+                  error={pwd2&&pwd2!==pwd?"Les mots de passe ne correspondent pas":""}/>
                 <p style={{fontSize:11,color:C.text2,lineHeight:1.7,marginBottom:24}}>
-                  En cr&eacute;ant ce compte, vous acceptez les <a href="#" style={{fontSize:11}}>conditions d&apos;utilisation</a> et la <a href="#" style={{fontSize:11}}>politique de confidentialit&eacute;</a> d&apos;Imoloc.
+                  En cr&eacute;ant ce compte, vous acceptez les <a href="#" style={{fontSize:11}}>conditions d&apos;utilisation</a> et la <a href="#" style={{fontSize:11}}>politique de confidentialit&eacute;</a>.
                 </p>
-                <BtnPrimary onClick={submit} disabled={loading} style={{padding:"9px 28px"}}>
-                  {loading?"Cr&eacute;ation...":"Commencer mon essai gratuit"}
-                </BtnPrimary>
+                <div style={{display:"flex",gap:12}}>
+                  <Btn outline onClick={()=>setStep(2)}>Pr&eacute;c&eacute;dent</Btn>
+                  <Btn onClick={finaliser} disabled={loading} style={{padding:"9px 28px"}}>
+                    {loading?<span style={{display:"flex",alignItems:"center",gap:8}}><span style={{width:14,height:14,border:"2px solid rgba(255,255,255,0.4)",borderTop:"2px solid #fff",borderRadius:"50%",display:"inline-block",animation:"spin 0.75s linear infinite"}}/>Cr&eacute;ation...</span>:"Commencer mon essai gratuit"}
+                  </Btn>
+                </div>
               </div>
             )}
           </div>
 
-          {/* COLONNE DROITE */}
-          {!done && <RightCol/>}
-          {done && (
-            <div style={{background:"#faf9f8",padding:"48px 28px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",borderLeft:"1px solid "+C.sep}}>
-              <div style={{width:64,height:64,borderRadius:"50%",background:"#dff6dd",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:20}}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-              </div>
-              <div style={{fontSize:14,fontWeight:600,color:C.text,textAlign:"center",marginBottom:8}}>Essai activ&eacute; !</div>
-              <div style={{fontSize:12,color:C.text2,textAlign:"center",lineHeight:1.6}}>Votre essai gratuit de 30 jours a &eacute;t&eacute; activ&eacute; avec succ&egrave;s.</div>
-            </div>
-          )}
+          <RightPanel/>
         </div>
       </div>
 
-      {/* FOOTER */}
-      <div style={{borderTop:"1px solid "+C.sep,padding:"10px 32px",display:"flex",justifyContent:"space-between",alignItems:"center",background:C.bg,flexWrap:"wrap",gap:8}}>
-        <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
-          {["Vos choix de confidentialit\u00e9","Confidentialit\u00e9 et cookies","Conditions d\u2019utilisation","Marques","Accessibilit\u00e9"].map(l=>(
+      <div style={{borderTop:"1px solid "+C.sep,padding:"10px 32px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,background:C.bg}}>
+        <div style={{display:"flex",gap:18,flexWrap:"wrap"}}>
+          {["Confidentialit\u00e9","Conditions d\u2019utilisation","Accessibilit\u00e9"].map(l=>(
             <a key={l} href="#" style={{fontSize:11,color:C.text2}}>{l}</a>
           ))}
         </div>
