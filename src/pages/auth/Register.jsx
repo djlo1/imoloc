@@ -140,6 +140,7 @@ export default function Register() {
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
   const set3 = (k,v) => setForm(f=>({...f,[k]:v}))
+  const [done, setDone] = useState(false) // etape succes
 
   const PLANS = {
     starter:  {nom:"Starter",  mois:18000, an:15000},
@@ -168,27 +169,29 @@ export default function Register() {
     if (form.password.length<8) { toast.error("8 caracteres minimum"); return }
     if (form.password!==form.confirm) { toast.error("Mots de passe differents"); return }
     setLoading(true)
+    // Deconnecter la session existante avant de creer un nouveau compte
+    await supabase.auth.signOut()
+
     const {data, error} = await supabase.auth.signUp({
       email, password: form.password,
       options:{ data:{ prenom:form.prenom, nom:form.nom, role:"global_admin", type_compte:"organisation" } }
     })
     if (error) {
-      if (error.message?.toLowerCase().includes("already")) {
-        toast.error("Ce compte existe deja. Veuillez vous connecter.")
+      if (error.message?.toLowerCase().includes("already") || error.message?.toLowerCase().includes("registered")) {
+        toast.error("Ce compte existe deja.")
         setTimeout(()=>navigate("/login"),2000)
       } else {
         toast.error(error.message)
       }
       setLoading(false); return
     }
-    // Supabase retourne un user vide si email deja confirme (sans erreur)
     if (!data?.user?.identities?.length) {
       toast.error("Ce compte existe deja. Veuillez vous connecter.")
       setTimeout(()=>navigate("/login"),2000)
       setLoading(false); return
     }
-    toast.success("Compte cree ! Bienvenue sur Imoloc.")
-    navigate("/agence")
+    setLoading(false)
+    setDone(true) // Afficher ecran de confirmation
   }
 
   // ── COLONNE DROITE (fixe) ──
@@ -436,8 +439,32 @@ export default function Register() {
               </div>
             )}
 
+            {/* ── ETAPE SUCCES ── */}
+            {done && (
+              <div style={{textAlign:"center",padding:"40px 20px"}}>
+                <div style={{width:72,height:72,borderRadius:"50%",background:"#dff6dd",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px"}}>
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                </div>
+                <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:12}}>Votre essai est activ&eacute; !</h2>
+                <p style={{fontSize:14,color:C.text2,lineHeight:1.7,marginBottom:8}}>
+                  Bienvenue <strong style={{color:C.text}}>{form.prenom} {form.nom}</strong> !<br/>
+                  Votre compte Imoloc a &eacute;t&eacute; cr&eacute;&eacute; avec l&apos;adresse <strong>{email}</strong>.
+                </p>
+                <p style={{fontSize:13,color:C.text2,marginBottom:32,lineHeight:1.6}}>
+                  Votre essai gratuit de 30 jours est maintenant actif.<br/>
+                  Vous serez factur&eacute; &agrave; partir du {trialStr} si vous ne l&apos;annulez pas.
+                </p>
+                <BtnPrimary onClick={()=>navigate("/agence")} style={{padding:"10px 32px",fontSize:15}}>
+                  Acc&eacute;der &agrave; mon espace &rarr;
+                </BtnPrimary>
+                <div style={{marginTop:16,fontSize:12,color:C.text2}}>
+                  Un email de confirmation a &eacute;t&eacute; envoy&eacute; &agrave; {email}
+                </div>
+              </div>
+            )}
+
             {/* ── ETAPE 3 : FINALISATION ── */}
-            {step===3 && (
+            {!done && step===3 && (
               <div>
                 <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Compl&eacute;tez votre profil</h2>
                 <p style={{fontSize:13,color:C.text2,marginBottom:28}}>
@@ -474,7 +501,16 @@ export default function Register() {
           </div>
 
           {/* COLONNE DROITE */}
-          <RightCol/>
+          {!done && <RightCol/>}
+          {done && (
+            <div style={{background:"#faf9f8",padding:"48px 28px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",borderLeft:"1px solid "+C.sep}}>
+              <div style={{width:64,height:64,borderRadius:"50%",background:"#dff6dd",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:20}}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              </div>
+              <div style={{fontSize:14,fontWeight:600,color:C.text,textAlign:"center",marginBottom:8}}>Essai activ&eacute; !</div>
+              <div style={{fontSize:12,color:C.text2,textAlign:"center",lineHeight:1.6}}>Votre essai gratuit de 30 jours a &eacute;t&eacute; activ&eacute; avec succ&egrave;s.</div>
+            </div>
+          )}
         </div>
       </div>
 
