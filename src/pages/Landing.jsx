@@ -113,6 +113,7 @@ const PLANS = [
 ]
 
 export default function Landing() {
+  const [openMenu, setOpenMenu] = useState(null)
   const [featTab, setFeatTab] = useState("gestion")
   const [openAcc, setOpenAcc] = useState(0)
   const [billing, setBilling] = useState("mois")
@@ -181,6 +182,18 @@ export default function Landing() {
         .integ-tab.on{border-bottom-color:var(--ic,#0078d4);box-shadow:inset 0 -3px 0 var(--ic,#0078d4)}
         /* ANIMATIONS */
         @keyframes fadeDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+        .nav-wrap{position:relative}
+        .drop-menu{position:absolute;top:calc(100% + 8px);left:0;background:#fff;border:1px solid #e0e0e0;border-top:3px solid #0078d4;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:999;animation:fadeDown 0.15s ease;min-width:200px}
+        .drop-wide{width:680px;display:grid;grid-template-columns:repeat(4,1fr)}
+        .drop-col{padding:20px 16px;border-right:1px solid #f0f0f0}
+        .drop-col:last-child{border-right:none}
+        .drop-head{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #f0f0f0}
+        .drop-link{display:block;padding:7px 10px;font-size:13px;color:#1a1a1a;text-decoration:none;border-radius:2px;transition:all 0.1s}
+        .drop-link:hover{background:#f0f7ff;color:#0078d4;padding-left:14px}
+        .drop-simple{padding:8px;min-width:240px}
+        .drop-simple-item{display:block;padding:9px 16px;font-size:13.5px;color:#1a1a1a;text-decoration:none;border-radius:2px;transition:background 0.1s;white-space:nowrap}
+        .drop-simple-item:hover{background:#f0f7ff;color:#0078d4}
+        .drop-simple-item small{display:block;font-size:11.5px;color:#999;margin-top:1px}
         @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         @keyframes slideRight{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
@@ -204,13 +217,69 @@ export default function Landing() {
           <Link to="/"><Logo/></Link>
           <span style={{width:1,height:20,background:"#e5e5e5",margin:"0 20px",flexShrink:0}}/>
           <div style={{display:"flex",flex:1,alignItems:"center"}} className="hide-mobile">
-            {[["Produits","/"],["Offres & Tarifs","#tarifs"],["Ressources","/"],["Support","/"]].map(([l,p]) => (
-              <a key={l} href={p} style={{height:48,padding:"0 14px",display:"inline-flex",alignItems:"center",fontSize:14,color:"#1a1a1a",textDecoration:"none",borderBottom:"2px solid transparent",transition:"all 0.15s",whiteSpace:"nowrap"}}
-                onMouseOver={e=>{e.currentTarget.style.borderBottomColor="#0078d4";e.currentTarget.style.color="#0078d4"}}
-                onMouseOut={e=>{e.currentTarget.style.borderBottomColor="transparent";e.currentTarget.style.color="#1a1a1a"}}>
-                {l}
-              </a>
-            ))}
+            {/* Produits */}
+            <div className="nav-wrap" onMouseLeave={()=>setOpenMenu(null)}>
+              <button onMouseEnter={()=>setOpenMenu("produits")} style={{height:48,padding:"0 14px",border:"none",borderBottom:"2px solid "+(openMenu==="produits"?"#0078d4":"transparent"),background:"none",fontSize:14,color:openMenu==="produits"?"#0078d4":"#1a1a1a",cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:4,transition:"all 0.15s"}}>
+                Produits
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{transform:openMenu==="produits"?"rotate(180deg)":"none",transition:"transform 0.2s"}}><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              {openMenu==="produits" && (
+                <div className="drop-menu drop-wide">
+                  {[
+                    {titre:"Pour les agences",items:[["Centre d&#8217;administration","/agence"],["Gestion des utilisateurs","/agence/utilisateurs"],["Rapports","/agence/rapports"],["Facturation","/agence/abonnement"]]},
+                    {titre:"Pour les propri&#233;taires",items:[["Espace propri&#233;taire","/proprietaire"],["Baux et contrats","/agence/baux"],["Suivi des paiements","/agence/paiements"]]},
+                    {titre:"Pour les locataires",items:[["Portail locataire","/locataire"],["Application mobile","/"],["Signalements","/locataire"]]},
+                    {titre:"Applications",items:[["Loci IA","/agence"],["Int&#233;grations","/"],["API Imoloc","/"]]},
+                  ].map(sec=>(
+                    <div key={sec.titre} className="drop-col">
+                      <div className="drop-head" dangerouslySetInnerHTML={{__html:sec.titre}}/>
+                      {sec.items.map(([l,p])=><Link key={l} to={p} className="drop-link" onClick={()=>setOpenMenu(null)} dangerouslySetInnerHTML={{__html:l}}/>)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Offres & Tarifs - lien direct */}
+            <a href="#tarifs" style={{height:48,padding:"0 14px",display:"inline-flex",alignItems:"center",fontSize:14,color:"#1a1a1a",textDecoration:"none",borderBottom:"2px solid transparent",transition:"all 0.15s",whiteSpace:"nowrap"}}
+              onMouseOver={e=>{e.currentTarget.style.borderBottomColor="#0078d4";e.currentTarget.style.color="#0078d4"}}
+              onMouseOut={e=>{e.currentTarget.style.borderBottomColor="transparent";e.currentTarget.style.color="#1a1a1a"}}>
+              Offres &amp; Tarifs
+            </a>
+
+            {/* Ressources */}
+            <div className="nav-wrap" onMouseLeave={()=>setOpenMenu(null)}>
+              <button onMouseEnter={()=>setOpenMenu("ressources")} style={{height:48,padding:"0 14px",border:"none",borderBottom:"2px solid "+(openMenu==="ressources"?"#0078d4":"transparent"),background:"none",fontSize:14,color:openMenu==="ressources"?"#0078d4":"#1a1a1a",cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:4,transition:"all 0.15s"}}>
+                Ressources
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{transform:openMenu==="ressources"?"rotate(180deg)":"none",transition:"transform 0.2s"}}><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              {openMenu==="ressources" && (
+                <div className="drop-menu drop-simple">
+                  {[["Documentation","Guides et tutoriels"],["Formation","Apprenez Imoloc"],["Communaut&#233;","Forum et entraide"],["Blog","Actualit&#233;s immobili&#232;res"],["Nouveaut&#233;s","Derni&#232;res fonctionnalit&#233;s"]].map(([l,d])=>(
+                    <a key={l} href="#" className="drop-simple-item" onClick={()=>setOpenMenu(null)}>
+                      <span dangerouslySetInnerHTML={{__html:l}}/><small dangerouslySetInnerHTML={{__html:d}}/>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Support */}
+            <div className="nav-wrap" onMouseLeave={()=>setOpenMenu(null)}>
+              <button onMouseEnter={()=>setOpenMenu("support")} style={{height:48,padding:"0 14px",border:"none",borderBottom:"2px solid "+(openMenu==="support"?"#0078d4":"transparent"),background:"none",fontSize:14,color:openMenu==="support"?"#0078d4":"#1a1a1a",cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:4,transition:"all 0.15s"}}>
+                Support
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{transform:openMenu==="support"?"rotate(180deg)":"none",transition:"transform 0.2s"}}><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              {openMenu==="support" && (
+                <div className="drop-menu drop-simple">
+                  {[["Aide et support","FAQ et assistance"],["Support technique","R&#233;soudre un probl&#232;me"],["Nous contacter","Parlez &#224; un expert"],["Partenaires","Programme revendeur"]].map(([l,d])=>(
+                    <a key={l} href="#" className="drop-simple-item" onClick={()=>setOpenMenu(null)}>
+                      <span dangerouslySetInnerHTML={{__html:l}}/><small dangerouslySetInnerHTML={{__html:d}}/>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
             <Link to="/register"><button className="btn-dark" style={{fontSize:13,padding:"7px 16px"}}>Essayer gratuitement</button></Link>
