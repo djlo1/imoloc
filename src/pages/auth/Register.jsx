@@ -130,14 +130,11 @@ export default function Register() {
   const [freq, setFreq] = useState("mensuel")
   const [plan, setPlan] = useState("business")
 
-  // STEP 2 STATE - 4 sous-etats
-  const [s2, setS2] = useState(1) // 1=email, 2=loading, 3=confirm, 4=otp
+  // STEP 2 STATE - 3 sous-etats (email → loading → confirm/exists)
+  const [s2, setS2] = useState(1) // 1=email, 2=loading, 3=confirm
   const [email, setEmail] = useState("")
   const [emailErr, setEmailErr] = useState("")
-  const [otp, setOtp] = useState("")
-  const [otpErr, setOtpErr] = useState("")
-  const [timer, setTimer] = useState(60)
-  const timerRef = useRef(null)
+  const [emailExists, setEmailExists] = useState(false)
 
   // STEP 3 STATE
   const [form, setForm] = useState({prenom:"",nom:"",password:"",confirm:""})
@@ -155,34 +152,25 @@ export default function Register() {
   const trial = new Date(); trial.setMonth(trial.getMonth()+1)
   const trialStr = trial.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})
 
-  // Timer OTP
-  useEffect(() => {
-    if (s2===4) {
-      setTimer(60)
-      timerRef.current = setInterval(()=>setTimer(t=>t>0?t-1:0),1000)
-    }
-    return ()=>clearInterval(timerRef.current)
-  },[s2])
+
 
   // ── STEP 2 ACTIONS ──
   const handleEmailNext = async () => {
     if (!email || !email.includes("@")) { setEmailErr("Cela est obligatoire"); return }
     setEmailErr("")
     setS2(2)
-    // Simuler chargement + envoyer OTP
+    // Verifier si email existe via tentative signIn silencieuse
     try {
-      await supabase.auth.signInWithOtp({ email, options:{ shouldCreateUser:true } })
-    } catch(e) {}
-    setTimeout(()=>setS2(3), 1800)
-  }
-
-  const handleVerifyOtp = async () => {
-    if (!otp || otp.length<4) { setOtpErr("Entrez le code recu par email"); return }
-    setOtpErr("")
-    setS2(2)
-    const {error} = await supabase.auth.verifyOtp({email, token:otp, type:"email"})
-    if (error) { setOtpErr(error.message); setS2(4); return }
-    setStep(3)
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: "___check___" })
+      // Si erreur "Invalid login credentials" = email existe mais mauvais mdp
+      // Si erreur "Email not confirmed" = email existe
+      // Si erreur autre = email n'existe pas
+      const exists = error?.message?.includes("Invalid") || error?.message?.includes("confirmed")
+      setEmailExists(exists)
+    } catch(e) {
+      setEmailExists(false)
+    }
+    setTimeout(()=>setS2(3), 1200)
   }
 
   // ── STEP 3 SUBMIT ──
@@ -191,12 +179,12 @@ export default function Register() {
     if (form.password.length<8) { toast.error("8 caracteres minimum"); return }
     if (form.password!==form.confirm) { toast.error("Mots de passe differents"); return }
     setLoading(true)
-    const {error} = await supabase.auth.updateUser({
-      password: form.password,
-      data: { prenom:form.prenom, nom:form.nom, role:"global_admin", type_compte:"organisation" }
+    const {error} = await supabase.auth.signUp({
+      email, password: form.password,
+      options:{ data:{ prenom:form.prenom, nom:form.nom, role:"global_admin", type_compte:"organisation" } }
     })
     if (error) { toast.error(error.message); setLoading(false); return }
-    toast.success("Compte configure ! Bienvenue.")
+    toast.success("Compte cree ! Bienvenue sur Imoloc.")
     navigate("/agence")
   }
 
@@ -440,42 +428,35 @@ export default function Register() {
                   </div>
                 )}
 
-                {/* Sous-etat 3 : Confirmation email */}
+                {/* Sous-etat 3 : Confirmation ou compte existant */}
                 {s2===3 && (
                   <div>
-                    <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Nous allons vous aider &agrave; d&eacute;marrer</h2>
-                    <p style={{fontSize:13,color:C.text2,marginBottom:20,lineHeight:1.65}}>
-                      Il semble que vous devez cr&eacute;er un nouveau compte. Commencez !<br/>
-                      Continuez en tant que <strong style={{color:C.text}}>{email}</strong>
-                    </p>
-                    <div style={{display:"flex",gap:12,marginBottom:24}}>
-                      <BtnPrimary onClick={()=>setS2(4)}>Configurer le compte</BtnPrimary>
-                      <BtnSecondary onClick={()=>{setS2(1);setEmail("")}}>Modifier mon adresse e-mail</BtnSecondary>
-                    </div>
-                  </div>
-                )}
-
-                {/* Sous-etat 4 : Code OTP */}
-                {s2===4 && (
-                  <div>
-                    <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Nous souhaitons mieux vous conna&icirc;tre</h2>
-                    <p style={{fontSize:13,color:C.text2,marginBottom:24,lineHeight:1.65}}>
-                      Nous avons envoy&eacute; un code de v&eacute;rification &agrave; <strong style={{color:C.text}}>{email}</strong>. Entrez le code pour terminer l&apos;inscription.
-                    </p>
-                    <MsInput label="Code de v&eacute;rification *" value={otp}
-                      onChange={e=>{setOtp(e.target.value.replace(/\D/g,""));setOtpErr("")}}
-                      error={otpErr} autoFocus style={{maxWidth:200}} placeholder="000000"/>
-                    <div style={{fontSize:12,color:C.text2,marginBottom:24}}>
-                      Vous ne l&apos;avez pas encore ?{" "}
-                      {timer>0
-                        ? <span style={{color:"#c8c8c8"}}>R&eacute;essayer ({timer}s)</span>
-                        : <a href="#" style={{fontSize:12}} onClick={e=>{e.preventDefault();handleEmailNext()}}>R&eacute;essayer</a>
-                      }
-                    </div>
-                    <div style={{display:"flex",gap:12}}>
-                      <BtnSecondary onClick={()=>setS2(3)}>Pr&eacute;c&eacute;dent</BtnSecondary>
-                      <BtnPrimary onClick={handleVerifyOtp}>V&eacute;rifier</BtnPrimary>
-                    </div>
+                    {emailExists ? (
+                      // Email existe deja → rediriger vers login
+                      <div>
+                        <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Vous avez d&eacute;j&agrave; un compte</h2>
+                        <p style={{fontSize:13,color:C.text2,marginBottom:20,lineHeight:1.65}}>
+                          L&apos;adresse <strong style={{color:C.text}}>{email}</strong> est d&eacute;j&agrave; associ&eacute;e &agrave; un compte Imoloc.
+                        </p>
+                        <div style={{display:"flex",gap:12}}>
+                          <BtnPrimary onClick={()=>window.location.href="/login"}>Se connecter</BtnPrimary>
+                          <BtnSecondary onClick={()=>{setS2(1);setEmail("")}}>Utiliser une autre adresse</BtnSecondary>
+                        </div>
+                      </div>
+                    ) : (
+                      // Nouvel utilisateur → continuer
+                      <div>
+                        <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Nous allons vous aider &agrave; d&eacute;marrer</h2>
+                        <p style={{fontSize:13,color:C.text2,marginBottom:20,lineHeight:1.65}}>
+                          Il semble que vous devez cr&eacute;er un nouveau compte. Commencez !<br/>
+                          Continuez en tant que <strong style={{color:C.text}}>{email}</strong>
+                        </p>
+                        <div style={{display:"flex",gap:12}}>
+                          <BtnPrimary onClick={()=>setStep(3)}>Configurer le compte</BtnPrimary>
+                          <BtnSecondary onClick={()=>{setS2(1);setEmail("")}}>Modifier mon adresse e-mail</BtnSecondary>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
