@@ -616,6 +616,158 @@ export default function Landing() {
         </div>
       </section>
 
+
+      {/* ── COMMENT CA MARCHE ── */}
+      <section style={{padding:"80px 24px",background:"#fff"}}>
+        <div style={{maxWidth:1280,margin:"0 auto"}}>
+          <div style={{textAlign:"center",marginBottom:56}} className="anim">
+            <div style={{fontSize:11,fontWeight:700,color:"#0078d4",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:12}}>D&#201;MARRAGE RAPIDE</div>
+            <h2 style={{fontSize:"clamp(24px,3vw,36px)",fontWeight:300,color:"#1a1a1a",marginBottom:12}}>Op&#233;rationnel en moins de 10 minutes</h2>
+            <p style={{fontSize:15,color:"#555",maxWidth:520,margin:"0 auto"}}>Pas de formation complexe. Imoloc est con&#231;u pour &#234;tre simple et intuitif d&#232;s le premier jour.</p>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1,background:"#e5e5e5",border:"1px solid #e5e5e5"}}>
+            {[
+              {num:"01",titre:"Cr&#233;ez votre compte",desc:"Inscrivez-vous en 2 minutes. Choisissez votre type de compte (agence, propri&#233;taire ou locataire) et configurez votre profil.",color:"#0078d4",
+               points:["Inscription gratuite 30 jours","Aucune carte bancaire","Configuration guid&#233;e pas &#224; pas"]},
+              {num:"02",titre:"Ajoutez vos biens et locataires",desc:"Importez votre parc immobilier existant ou ajoutez vos biens un par un. Invitez vos locataires &#224; rejoindre leur portail.",color:"#6c63ff",
+               points:["Import Excel de vos donn&#233;es","Invitation locataires par email","G&#233;n&#233;ration automatique des baux"]},
+              {num:"03",titre:"G&#233;rez et encaissez",desc:"Recevez vos loyers via Mobile Money, g&#233;n&#233;rez des quittances automatiquement et suivez tout depuis votre tableau de bord.",color:"#10b981",
+               points:["Paiements MTN, Moov, Wave","Quittances PDF automatiques","Notifications en temps r&#233;el"]},
+            ].map((step,i) => (
+              <div key={i} className="anim" style={{background:"#fff",padding:"36px 32px","animationDelay":i*0.15+"s"}}>
+                <div style={{fontSize:48,fontWeight:800,color:step.color+"20",lineHeight:1,marginBottom:16}} dangerouslySetInnerHTML={{__html:step.num}}/>
+                <h3 style={{fontSize:19,fontWeight:600,color:"#1a1a1a",marginBottom:12,lineHeight:1.3}} dangerouslySetInnerHTML={{__html:step.titre}}/>
+                <p style={{fontSize:14,color:"#555",lineHeight:1.75,marginBottom:20}} dangerouslySetInnerHTML={{__html:step.desc}}/>
+                <div style={{borderTop:"1px solid #f0f0f0",paddingTop:16}}>
+                  {step.points.map(p => (
+                    <div key={p} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                      <div style={{width:18,height:18,borderRadius:"50%",background:step.color+"15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={step.color} strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                      </div>
+                      <span style={{fontSize:13,color:"#555"}} dangerouslySetInnerHTML={{__html:p}}/>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{textAlign:"center",marginTop:32}}>
+            <Link to="/register"><button style={{padding:"12px 32px",background:"#0078d4",color:"#fff",border:"none",fontSize:15,fontWeight:600,cursor:"pointer",borderRadius:2,fontFamily:"inherit"}}>Commencer gratuitement &#8594;</button></Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── POURQUOI IMOLOC ── */}
+      <section style={{padding:"80px 24px",background:"#f9f5f2"}}>
+        <div style={{maxWidth:1280,margin:"0 auto"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:80,alignItems:"center"}}>
+            <div className="anim">
+              <div style={{fontSize:11,fontWeight:700,color:"#0078d4",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:16}}>POURQUOI IMOLOC</div>
+              <h2 style={{fontSize:"clamp(24px,3vw,36px)",fontWeight:300,color:"#1a1a1a",marginBottom:20,lineHeight:1.2}}>Con&#231;u sp&#233;cifiquement pour l&#8217;Afrique francophone</h2>
+              <p style={{fontSize:15,color:"#444",lineHeight:1.8,marginBottom:32}}>Contrairement aux solutions europ&#233;ennes inadapt&#233;es, Imoloc int&#232;gre nativement le Mobile Money, fonctionne en zone &#224; faible connectivit&#233; et propose une interface en fran&#231;ais.</p>
+              <div style={{display:"flex",flexDirection:"column",gap:20}}>
+                {[
+                  {titre:"Mobile Money natif",desc:"MTN, Moov, Wave, Orange Money — sans passer par une banque traditionnelle.",color:"#0078d4"},
+                  {titre:"Interface 100% fran&#231;ais",desc:"Con&#231;ue pour les march&#233;s francophones d&#8217;Afrique de l&#8217;Ouest et Centrale.",color:"#10b981"},
+                  {titre:"Fonctionne hors ligne",desc:"L&#8217;application continue de fonctionner m&#234;me sans connexion internet stable.",color:"#6c63ff"},
+                  {titre:"Support local d&#233;di&#233;",desc:"Une &#233;quipe bas&#233;e &#224; Cotonou, B&#233;nin, disponible 6j/7.",color:"#f59e0b"},
+                ].map((item,i) => (
+                  <div key={i} style={{display:"flex",gap:16,alignItems:"flex-start"}}>
+                    <div style={{width:40,height:40,borderRadius:6,background:item.color+"12",border:"1px solid "+item.color+"25",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={item.color} strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                    <div>
+                      <div style={{fontSize:15,fontWeight:600,color:"#1a1a1a",marginBottom:4}} dangerouslySetInnerHTML={{__html:item.titre}}/>
+                      <div style={{fontSize:13.5,color:"#666",lineHeight:1.6}} dangerouslySetInnerHTML={{__html:item.desc}}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="anim anim-d2">
+              <div style={{background:"#fff",border:"1px solid #e5e5e5",borderRadius:12,padding:32,boxShadow:"0 8px 32px rgba(0,0,0,0.08)"}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:20}}>Comparatif</div>
+                <table style={{width:"100%",borderCollapse:"collapse"}}>
+                  <thead>
+                    <tr>
+                      <th style={{textAlign:"left",padding:"8px 0",fontSize:12,color:"#888",fontWeight:600,borderBottom:"1px solid #f0f0f0"}}>Fonctionnalit&#233;</th>
+                      <th style={{textAlign:"center",padding:"8px",fontSize:12,color:"#0078d4",fontWeight:700,borderBottom:"1px solid #f0f0f0"}}>Imoloc</th>
+                      <th style={{textAlign:"center",padding:"8px",fontSize:12,color:"#888",fontWeight:600,borderBottom:"1px solid #f0f0f0"}}>Excel</th>
+                      <th style={{textAlign:"center",padding:"8px",fontSize:12,color:"#888",fontWeight:600,borderBottom:"1px solid #f0f0f0"}}>Autres SaaS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ["Mobile Money natif","✅","❌","❌"],
+                      ["Interface en fran&#231;ais","✅","⚠️","⚠️"],
+                      ["Portail locataire","✅","❌","✅"],
+                      ["Baux &#233;lectroniques","✅","❌","⚠️"],
+                      ["Prix adapt&#233; Afrique","✅","✅","❌"],
+                      ["Support local","✅","❌","❌"],
+                    ].map(([feat,...vals],i) => (
+                      <tr key={i} style={{borderBottom:"1px solid #f8f8f8",background:i%2===0?"#fafafa":"#fff"}}>
+                        <td style={{padding:"10px 0",fontSize:13,color:"#333"}} dangerouslySetInnerHTML={{__html:feat}}/>
+                        {vals.map((v,j) => <td key={j} style={{textAlign:"center",padding:"10px 8px",fontSize:16}}>{v}</td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TEMOIGNAGES ── */}
+      <section style={{padding:"80px 24px",background:"#fff"}}>
+        <div style={{maxWidth:1280,margin:"0 auto"}}>
+          <div style={{textAlign:"center",marginBottom:48}} className="anim">
+            <div style={{fontSize:11,fontWeight:700,color:"#0078d4",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:12}}>T&#201;MOIGNAGES CLIENTS</div>
+            <h2 style={{fontSize:"clamp(24px,3vw,36px)",fontWeight:300,color:"#1a1a1a"}}>Ils font confiance &#224; Imoloc</h2>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24}}>
+            {[
+              {nom:"Kossi Agbodjan",role:"Directeur",entreprise:"Agence Immovie, Lom&#233;",avis:"Depuis qu&#8217;on utilise Imoloc, nos locataires paient via MTN Money sans qu&#8217;on ait &#224; relancer. Les quittances sont g&#233;n&#233;r&#233;es automatiquement. Un gain de temps immense.",initiales:"KA",color:"#0078d4"},
+              {nom:"Adjoua Koffi",role:"Propri&#233;taire",entreprise:"12 appartements &#224; Abidjan",avis:"Je suis propri&#233;taire et je vis en France. Gr&#226;ce &#224; Imoloc je suis mes loyers en temps r&#233;el et mon gestionnaire peut tout faire depuis son t&#233;l&#233;phone. Parfait.",initiales:"AK",color:"#10b981"},
+              {nom:"Moussa Diallo",role:"G&#233;rant",entreprise:"Immobilier Sahel, Ouagadougou",avis:"La partie signature &#233;lectronique des baux est r&#233;volutionnaire pour notre march&#233;. On g&#233;n&#232;re et signe les contrats sans imprimante. Nos clients adorent.",initiales:"MD",color:"#6c63ff"},
+            ].map((t,i) => (
+              <div key={i} className="anim" style={{background:"#fff",border:"1px solid #e5e5e5",padding:"28px",borderRadius:4,position:"relative","animationDelay":i*0.15+"s"}}>
+                <div style={{fontSize:40,color:"#0078d4",lineHeight:1,marginBottom:16,opacity:0.15,fontFamily:"Georgia,serif",position:"absolute",top:16,right:20}}>&#8220;</div>
+                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+                  <div style={{width:44,height:44,borderRadius:"50%",background:t.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:"#fff",flexShrink:0}}>{t.initiales}</div>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:700,color:"#1a1a1a"}} dangerouslySetInnerHTML={{__html:t.nom}}/>
+                    <div style={{fontSize:12,color:"#888",marginTop:1}} dangerouslySetInnerHTML={{__html:t.role+" — "+t.entreprise}}/>
+                  </div>
+                </div>
+                <p style={{fontSize:14,color:"#444",lineHeight:1.8,fontStyle:"italic"}} dangerouslySetInnerHTML={{__html:"&laquo;&nbsp;"+t.avis+"&nbsp;&raquo;"}}/>
+                <div style={{display:"flex",gap:3,marginTop:16}}>
+                  {[0,1,2,3,4].map(s=><svg key={s} width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── BANDE DE CONFIANCE ── */}
+      <section style={{padding:"40px 24px",background:"#f3f3f3",borderTop:"1px solid #e5e5e5",borderBottom:"1px solid #e5e5e5"}}>
+        <div style={{maxWidth:1280,margin:"0 auto"}}>
+          <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap",justifyContent:"space-between"}}>
+            <div style={{fontSize:13,color:"#888",fontWeight:500,marginRight:32,whiteSpace:"nowrap"}}>Paiements accept&#233;s via</div>
+            {[["MTN MoMo","#f59e0b"],["Moov Money","#0078d4"],["Wave","#10b981"],["Orange Money","#f97316"],["PawaPay","#6c63ff"]].map(([nom,color])=>(
+              <div key={nom} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 16px",background:"#fff",border:"1px solid #e5e5e5",borderRadius:4,margin:"4px"}}>
+                <div style={{width:10,height:10,borderRadius:"50%",background:color}}/>
+                <span style={{fontSize:13,fontWeight:600,color:"#333"}}>{nom}</span>
+              </div>
+            ))}
+            <div style={{marginLeft:"auto",fontSize:13,color:"#888",paddingLeft:24}}>
+              <strong style={{color:"#1a1a1a",fontSize:16}}>450+</strong> agences actives dans <strong style={{color:"#1a1a1a"}}>8 pays</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── FOOTER (cap 10) ── */}
       <footer style={{background:"#f3f3f3",borderTop:"1px solid #e5e5e5"}}>
         {/* CTA bande */}
