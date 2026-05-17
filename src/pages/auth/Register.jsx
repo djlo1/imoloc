@@ -134,7 +134,6 @@ export default function Register() {
   const [s2, setS2] = useState(1) // 1=email, 2=loading, 3=confirm
   const [email, setEmail] = useState("")
   const [emailErr, setEmailErr] = useState("")
-  const [emailExists, setEmailExists] = useState(false)
 
   // STEP 3 STATE
   const [form, setForm] = useState({prenom:"",nom:"",password:"",confirm:""})
@@ -155,22 +154,12 @@ export default function Register() {
 
 
   // ── STEP 2 ACTIONS ──
-  const handleEmailNext = async () => {
-    if (!email || !email.includes("@")) { setEmailErr("Cela est obligatoire"); return }
+  const handleEmailNext = () => {
+    if (!email) { setEmailErr("Cela est obligatoire"); return }
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!re.test(email)) { setEmailErr("Entrez une adresse e-mail valide"); return }
     setEmailErr("")
-    setS2(2)
-    // Verifier si email existe via tentative signIn silencieuse
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: "___check___" })
-      // Si erreur "Invalid login credentials" = email existe mais mauvais mdp
-      // Si erreur "Email not confirmed" = email existe
-      // Si erreur autre = email n'existe pas
-      const exists = error?.message?.includes("Invalid") || error?.message?.includes("confirmed")
-      setEmailExists(exists)
-    } catch(e) {
-      setEmailExists(false)
-    }
-    setTimeout(()=>setS2(3), 1200)
+    setS2(2) // Afficher confirmation directe
   }
 
   // ── STEP 3 SUBMIT ──
@@ -179,11 +168,25 @@ export default function Register() {
     if (form.password.length<8) { toast.error("8 caracteres minimum"); return }
     if (form.password!==form.confirm) { toast.error("Mots de passe differents"); return }
     setLoading(true)
-    const {error} = await supabase.auth.signUp({
+    const {data, error} = await supabase.auth.signUp({
       email, password: form.password,
       options:{ data:{ prenom:form.prenom, nom:form.nom, role:"global_admin", type_compte:"organisation" } }
     })
-    if (error) { toast.error(error.message); setLoading(false); return }
+    if (error) {
+      if (error.message?.toLowerCase().includes("already")) {
+        toast.error("Ce compte existe deja. Veuillez vous connecter.")
+        setTimeout(()=>navigate("/login"),2000)
+      } else {
+        toast.error(error.message)
+      }
+      setLoading(false); return
+    }
+    // Supabase retourne un user vide si email deja confirme (sans erreur)
+    if (!data?.user?.identities?.length) {
+      toast.error("Ce compte existe deja. Veuillez vous connecter.")
+      setTimeout(()=>navigate("/login"),2000)
+      setLoading(false); return
+    }
     toast.success("Compte cree ! Bienvenue sur Imoloc.")
     navigate("/agence")
   }
@@ -395,12 +398,7 @@ export default function Register() {
             {/* ── ETAPE 2 : CONNEXION (4 sous-etats) ── */}
             {step===2 && (
               <div style={{position:"relative"}}>
-                {/* Overlay spinner */}
-                {s2===2 && (
-                  <div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.82)",zIndex:10,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:2}}>
-                    <div style={{width:44,height:44,border:"4px solid #e0e0e0",borderTop:"4px solid "+C.blue,borderRadius:"50%",animation:"spin 0.75s linear infinite"}}/>
-                  </div>
-                )}
+
 
                 {/* Sous-etat 1 : Saisie email */}
                 {s2===1 && (
@@ -419,44 +417,20 @@ export default function Register() {
                   </div>
                 )}
 
-                {/* Sous-etat 2 : Chargement (affiche quand meme le titre) */}
-                {s2===2 && (
-                  <div style={{opacity:0.4}}>
-                    <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Nous allons vous aider &agrave; d&eacute;marrer</h2>
-                    <MsInput label="Adresse e-mail" value={email} disabled/>
-                    <BtnPrimary disabled>Suivant</BtnPrimary>
-                  </div>
-                )}
 
-                {/* Sous-etat 3 : Confirmation ou compte existant */}
-                {s2===3 && (
+
+                {/* Sous-etat 2 : Confirmation email */}
+                {s2===2 && (
                   <div>
-                    {emailExists ? (
-                      // Email existe deja → rediriger vers login
-                      <div>
-                        <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Vous avez d&eacute;j&agrave; un compte</h2>
-                        <p style={{fontSize:13,color:C.text2,marginBottom:20,lineHeight:1.65}}>
-                          L&apos;adresse <strong style={{color:C.text}}>{email}</strong> est d&eacute;j&agrave; associ&eacute;e &agrave; un compte Imoloc.
-                        </p>
-                        <div style={{display:"flex",gap:12}}>
-                          <BtnPrimary onClick={()=>window.location.href="/login"}>Se connecter</BtnPrimary>
-                          <BtnSecondary onClick={()=>{setS2(1);setEmail("")}}>Utiliser une autre adresse</BtnSecondary>
-                        </div>
-                      </div>
-                    ) : (
-                      // Nouvel utilisateur → continuer
-                      <div>
-                        <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Nous allons vous aider &agrave; d&eacute;marrer</h2>
-                        <p style={{fontSize:13,color:C.text2,marginBottom:20,lineHeight:1.65}}>
-                          Il semble que vous devez cr&eacute;er un nouveau compte. Commencez !<br/>
-                          Continuez en tant que <strong style={{color:C.text}}>{email}</strong>
-                        </p>
-                        <div style={{display:"flex",gap:12}}>
-                          <BtnPrimary onClick={()=>setStep(3)}>Configurer le compte</BtnPrimary>
-                          <BtnSecondary onClick={()=>{setS2(1);setEmail("")}}>Modifier mon adresse e-mail</BtnSecondary>
-                        </div>
-                      </div>
-                    )}
+                    <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:8}}>Nous allons vous aider &agrave; d&eacute;marrer</h2>
+                    <p style={{fontSize:13,color:C.text2,marginBottom:20,lineHeight:1.65}}>
+                      Il semble que vous devez cr&eacute;er un nouveau compte. Commencez !<br/>
+                      Continuez en tant que <strong style={{color:C.text}}>{email}</strong>
+                    </p>
+                    <div style={{display:"flex",gap:12}}>
+                      <BtnPrimary onClick={()=>setStep(3)}>Configurer le compte</BtnPrimary>
+                      <BtnSecondary onClick={()=>{setS2(1);setEmail("")}}>Modifier mon adresse e-mail</BtnSecondary>
+                    </div>
                   </div>
                 )}
               </div>
