@@ -107,7 +107,7 @@ export default function Register() {
           </g>
         )))}
       </svg>
-      <style>{\`
+      <style>{`
         *{box-sizing:border-box;margin:0;padding:0}
         a{color:#0067b8;text-decoration:none;font-size:13px}
         a:hover{text-decoration:underline}
@@ -123,7 +123,7 @@ export default function Register() {
         .dt{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid #c8c8c8;margin-top:8px;font-size:14px;font-weight:600}
         .lbl{display:block;font-size:13px;margin-bottom:5px}
         .sec-title{font-size:12px;font-weight:600;color:#444;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
-      \`}</style>
+      `}</style>
 
       {/* HEADER */}
       <div style={{ position: "relative", zIndex: 10, background: "#fff", borderBottom: "1px solid #d6d6d6", padding: "11px 32px", display: "flex", alignItems: "center", gap: 12 }}>
