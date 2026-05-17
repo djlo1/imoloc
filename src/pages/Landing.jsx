@@ -142,20 +142,16 @@ export default function Landing() {
         .nav-btn{height:44px;padding:0 14px;border:none;border-bottom:2px solid transparent;background:none;font-size:14px;font-family:inherit;color:#1a1a1a;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s;white-space:nowrap}
         .nav-btn:hover{border-bottom-color:#0078d4;color:#0078d4}
         /* MEGA MENU - pleine largeur */
-        .mega-wrap{position:absolute;top:100%;left:-9999px;right:-9999px;margin-left:calc(50% - 50vw);width:100vw;background:#fff;border-top:2px solid #0078d4;box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:500;animation:fadeDown 0.15s ease}
-        .mega-inner{padding:28px 40px;display:grid;grid-template-columns:repeat(4,1fr);gap:0}
-        .mega-col{padding:0 24px;border-right:1px solid #f0f0f0}
-        .mega-col:first-child{padding-left:0}
-        .mega-col:last-child{border-right:none}
-        .mega-title{font-size:11px;font-weight:700;color:#0078d4;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
-        .mega-item{display:flex;align-items:center;padding:8px 12px;border-radius:2px;cursor:pointer;transition:all 0.1s;margin-bottom:1px;text-decoration:none;color:#1a1a1a;font-size:13.5px}
-        .mega-item:hover{background:#f0f7ff;color:#0078d4;padding-left:16px}
-        .mega-item-label{font-size:13.5px;font-weight:400}
-        .mega-item:hover .mega-item-label{color:#0078d4}
-        .mega-item-desc{display:none}
-        .mini-drop{position:absolute;top:100%;background:#fff;border-top:2px solid #0078d4;border:1px solid #e5e5e5;border-top:2px solid #0078d4;box-shadow:0 8px 24px rgba(0,0,0,0.1);z-index:500;padding:8px;min-width:220px;animation:fadeDown 0.15s ease}
-        .mini-item{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:13.5px;color:#1a1a1a;border-radius:3px;cursor:pointer;transition:background 0.1s}
-        .mini-item:hover{background:#f0f7ff;color:#0078d4}
+        .drop{position:absolute;top:calc(100% + 1px);background:#fff;border:1px solid #e0e0e0;box-shadow:0 4px 20px rgba(0,0,0,0.12);z-index:500;animation:fadeDown 0.15s ease;min-width:180px}
+        .drop-wide{position:absolute;top:calc(100% + 1px);left:0;background:#fff;border:1px solid #e0e0e0;box-shadow:0 4px 20px rgba(0,0,0,0.12);z-index:500;animation:fadeDown 0.15s ease;width:720px;display:grid;grid-template-columns:repeat(4,1fr)}
+        .drop-col{padding:20px 16px;border-right:1px solid #f0f0f0}
+        .drop-col:last-child{border-right:none}
+        .drop-head{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+        .drop-item{display:block;padding:7px 10px;font-size:13px;color:#1a1a1a;text-decoration:none;border-radius:2px;transition:all 0.1s;white-space:nowrap}
+        .drop-item:hover{background:#f0f7ff;color:#0078d4}
+        .drop-simple{padding:8px}
+        .drop-simple .drop-item{padding:9px 14px;display:flex;flex-direction:column;gap:2px}
+        .drop-simple .drop-item span{font-size:11.5px;color:#888}
         /* BUTTONS */
         .btn-dark{padding:10px 22px;background:#1a1a1a;color:#fff;border:none;font-size:14px;font-family:inherit;font-weight:600;cursor:pointer;border-radius:2px;transition:background 0.15s;white-space:nowrap}
         .btn-dark:hover{background:#000}
@@ -224,39 +220,34 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* MEGA MENU PRODUITS */}
+        {/* PRODUITS - panneau large 4 colonnes */}
         {openMenu === "produits" && (
-          <div className="mega-wrap" onMouseLeave={()=>setOpenMenu(null)}>
-            <div className="mega-inner">
-              {MEGA_PRODUITS.map(sec => (
-                <div key={sec.titre} className="mega-col">
-                  <div className="mega-title" dangerouslySetInnerHTML={{__html:sec.titre}}/>
-                  {sec.items.map(item => (
-                    <Link key={item.label} to={item.path} className="mega-item" onClick={()=>setOpenMenu(null)}>
-                      <span className="mega-item-label" dangerouslySetInnerHTML={{__html:item.label}}/>
-                      <span className="mega-item-desc" dangerouslySetInnerHTML={{__html:item.desc}}/>
-                    </Link>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* MINI RESSOURCES */}
-        {openMenu === "ressources" && (
-          <div className="mini-drop" style={{left:140}} onMouseLeave={()=>setOpenMenu(null)}>
-            {[["Documentation","Guides et tutoriels"],["Formation","Apprenez Imoloc"],["Communaut&#233;","Forum et entraide"],["Blog","Actualit&#233;s immobili&#232;res"],["Nouveaut&#233;s","Derni&#232;res fonctionnalit&#233;s"]].map(([l,d]) => (
-              <a key={l} href="#" className="mini-item"><div><div dangerouslySetInnerHTML={{__html:l}}/><div style={{fontSize:11.5,color:"#888"}} dangerouslySetInnerHTML={{__html:d}}/></div></a>
+          <div className="drop-wide" onMouseLeave={()=>setOpenMenu(null)}>
+            {MEGA_PRODUITS.map(sec => (
+              <div key={sec.titre} className="drop-col">
+                <div className="drop-head" dangerouslySetInnerHTML={{__html:sec.titre}}/>
+                {sec.items.map(item => (
+                  <Link key={item.label} to={item.path} className="drop-item" onClick={()=>setOpenMenu(null)} dangerouslySetInnerHTML={{__html:item.label}}/>
+                ))}
+              </div>
             ))}
           </div>
         )}
 
-        {/* MINI SUPPORT */}
+        {/* RESSOURCES */}
+        {openMenu === "ressources" && (
+          <div className="drop drop-simple" style={{left:100}} onMouseLeave={()=>setOpenMenu(null)}>
+            {[["Documentation","Guides et tutoriels"],["Formation","Apprenez Imoloc"],["Communaut&#233;","Forum et entraide"],["Blog","Actualit&#233;s"],["Nouveaut&#233;s","Derni&#232;res fonctionnalit&#233;s"]].map(([l,d]) => (
+              <a key={l} href="#" className="drop-item"><span dangerouslySetInnerHTML={{__html:l}}/><span dangerouslySetInnerHTML={{__html:d}}/></a>
+            ))}
+          </div>
+        )}
+
+        {/* SUPPORT */}
         {openMenu === "support" && (
-          <div className="mini-drop" style={{left:230}} onMouseLeave={()=>setOpenMenu(null)}>
+          <div className="drop drop-simple" style={{left:190}} onMouseLeave={()=>setOpenMenu(null)}>
             {[["Aide et support","FAQ et assistance"],["Support technique","R&#233;soudre un probl&#232;me"],["Nous contacter","Parlez &#224; un expert"],["Partenaires","Programme revendeur"]].map(([l,d]) => (
-              <a key={l} href="#" className="mini-item"><div><div dangerouslySetInnerHTML={{__html:l}}/><div style={{fontSize:11.5,color:"#888"}} dangerouslySetInnerHTML={{__html:d}}/></div></a>
+              <a key={l} href="#" className="drop-item"><span dangerouslySetInnerHTML={{__html:l}}/><span dangerouslySetInnerHTML={{__html:d}}/></a>
             ))}
           </div>
         )}
