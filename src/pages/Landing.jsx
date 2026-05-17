@@ -297,18 +297,18 @@ export default function Landing() {
         <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle at 70% 30%,rgba(108,99,255,0.06) 0%,transparent 50%),radial-gradient(circle at 20% 70%,rgba(0,120,212,0.06) 0%,transparent 50%)",pointerEvents:"none"}}/>
         <div style={{maxWidth:1280,margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:60,alignItems:"center",position:"relative",zIndex:1}}>
           <div className="anim">
-            <div style={{fontSize:11,fontWeight:700,color:"#0078d4",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:16}}>GESTION IMMOBILI&#200;RE POUR L&#8217;AFRIQUE</div>
+            <div style={{fontSize:11,fontWeight:700,color:"#0078d4",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:16}}>LA PLATEFORME DE GESTION IMMOBILI&#200;RE</div>
             <h1 style={{fontSize:"clamp(30px,4vw,50px)",fontWeight:300,color:"#1a1a1a",lineHeight:1.15,marginBottom:20,letterSpacing:"-0.02em"}}>
               Votre guide de la gestion<br/><strong style={{fontWeight:700,color:"#0078d4"}}>immobili&#232;re avec Imoloc</strong>
             </h1>
             <p style={{fontSize:16,color:"#444",lineHeight:1.8,marginBottom:32,maxWidth:480}}>
-              G&#233;rez efficacement vos biens, locataires, paiements et utilisateurs depuis une seule plateforme. Con&#231;ue pour l&#8217;Afrique francophone.
+              G&#233;rez efficacement vos biens, locataires, paiements et utilisateurs depuis une seule plateforme. Disponible partout dans le monde, en fran&#231;ais et en anglais.
             </p>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:20}}>
-              <Link to="/agence"><button className="btn-dark">Se connecter en tant qu&#8217;administrateur</button></Link>
+              <Link to="/login"><button className="btn-dark">Se connecter</button></Link>
               <Link to="/register"><button className="btn-out">Essayer gratuitement</button></Link>
             </div>
-            <a href="#" style={{fontSize:13,color:"#555",display:"inline-flex",alignItems:"center",gap:8,marginTop:4}}>
+            <a href="/login?demo=1" style={{fontSize:13,color:"#555",display:"inline-flex",alignItems:"center",gap:8,marginTop:4}}>
               <span style={{width:22,height:22,borderRadius:"50%",background:"#1a1a1a",display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
                 <svg width="9" height="9" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               </span>
