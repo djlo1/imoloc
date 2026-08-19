@@ -13,6 +13,7 @@ import Nouveautes from './pages/Nouveautes'
 import ImolocCenter from './imoloc/ImolocCenter'
 import Organisation from './pages/Organisation'
 import Abonnement from './pages/Abonnement'
+import AbonnementPlan from './pages/AbonnementPlan'
 import Securite from './pages/Securite'
 import Parametres from './pages/Parametres'
 import Rapports from './pages/Rapports'
@@ -98,7 +99,8 @@ export default function DashboardAgence() {
                 <Route path="utilisateurs/*" element={<Utilisateurs />} />
                 <Route path="organisation" element={<Organisation />} />
                 <Route path="abonnement" element={<Abonnement />} />
-                <Route path="abonnement/*" element={<Abonnement />} />
+                <Route path="abonnement/modes" element={<Abonnement />} />
+                <Route path="abonnement/plan" element={<AbonnementPlan />} />
                 <Route path="securite" element={<Securite />} />
                 <Route path="parametres" element={<Parametres />} />
                 <Route path="parametres/*" element={<Parametres />} />
