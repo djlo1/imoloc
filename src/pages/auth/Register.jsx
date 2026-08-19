@@ -93,12 +93,12 @@ export default function Register() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [plan, setPlan] = useState("business")
-  const [users, setUsers] = useState(1)
   const [duree, setDuree] = useState("mois")
   const [freq, setFreq] = useState("mensuel")
   const [email, setEmail] = useState("")
   const [emailErr, setEmailErr] = useState("")
   const [subStep, setSubStep] = useState(1)
+  const [nomAgence, setNomAgence] = useState("")
   const [prenom, setPrenom] = useState("")
   const [nom, setNom] = useState("")
   const [pwd, setPwd] = useState("")
@@ -108,12 +108,12 @@ export default function Register() {
   const [success, setSuccess] = useState(false)
 
   const PLANS = {
-    starter:{nom:"Starter",mois:18000,an:15000},
-    business:{nom:"Business",mois:39000,an:32000},
+    starter:{id:"starter_o",nom:"Starter",mois:18000,an:15000,usersMax:3},
+    business:{id:"business_o",nom:"Business",mois:39000,an:32400,usersMax:10},
   }
   const p = PLANS[plan]
   const pu = duree==="an"?p.an:p.mois
-  const total = pu*users
+  const total = pu
   const trial = new Date(); trial.setMonth(trial.getMonth()+1)
   const trialStr = trial.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})
 
@@ -129,6 +129,7 @@ export default function Register() {
 
   const finaliser = async () => {
     if(!prenom.trim()||!nom.trim()){toast.error("Pr\u00e9nom et nom requis");return}
+    if(!nomAgence.trim()){toast.error("Nom de l'agence requis");return}
     if(pwd.length<8){toast.error("Mot de passe : 8 caract\u00e8res minimum");return}
     if(pwd!==pwd2){toast.error("Les mots de passe ne correspondent pas");return}
     setLoading(true)
@@ -148,6 +149,24 @@ export default function Register() {
       setLoading(false)
       return
     }
+
+    const { data:agence, error:agErr } = await supabase.from("agences").insert({
+      nom: nomAgence.trim(),
+      email,
+      profile_id: data.user.id,
+    }).select().single()
+
+    if(agErr){
+      toast.error("Compte cr\u00e9\u00e9, mais erreur agence : "+agErr.message)
+      setLoading(false)
+      return
+    }
+
+    const { error:trialErr } = await supabase.functions.invoke("create-trial", {
+      body: { agence_id: agence.id, plan: p.id, prix_mensuel: p.mois, prix_annuel: p.an },
+    })
+    if(trialErr) console.error("Trial creation error:", trialErr)
+
     setLoading(false)
     setSuccess(true)
   }
@@ -156,7 +175,7 @@ export default function Register() {
     <div style={{background:"#faf9f8",padding:"32px 24px",display:"flex",flexDirection:"column",borderLeft:"1px solid "+C.sep}}>
       <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:3}}>Imoloc {p.nom} &mdash; Essai</div>
       <div style={{fontSize:12,color:C.text2,marginBottom:16}}>Inscription &agrave; votre essai gratuit</div>
-      <Check>Jusqu&apos;&agrave; <strong>25 utilisateurs</strong> pendant l&apos;essai</Check>
+      <Check>Jusqu&apos;&agrave; <strong>{p.usersMax} utilisateurs</strong> inclus dans ce plan</Check>
       <Check>Toutes les fonctionnalit&eacute;s du produit payant incluses</Check>
       <Check><strong>Aucun paiement</strong> requis pour commencer</Check>
       <Check>Annulation possible avant le <strong>{trialStr}</strong></Check>
@@ -164,7 +183,7 @@ export default function Register() {
       <div style={{background:C.bg,padding:12,marginBottom:16}}>
         <div style={{fontSize:11,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:8}}>R&eacute;sum&eacute; de la commande</div>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:4}}>
-          <span style={{color:C.text2}}>Imoloc {p.nom} &times; {users}</span>
+          <span style={{color:C.text2}}>Imoloc {p.nom}</span>
           <span style={{fontWeight:600,color:C.text}}>{FMT(total)} FCFA</span>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:4}}>
@@ -248,13 +267,13 @@ export default function Register() {
               <div>
                 <Stepper step={1}/>
                 <h2 style={{fontSize:22,fontWeight:600,color:C.text,marginBottom:8}}>Essayer gratuitement pendant un mois</h2>
-                <p style={{fontSize:13,color:C.text2,marginBottom:28,lineHeight:1.65}}>Configurez votre abonnement. 25 utilisateurs maximum pendant l&apos;essai.</p>
+                <p style={{fontSize:13,color:C.text2,marginBottom:28,lineHeight:1.65}}>Configurez votre abonnement.</p>
 
                 <div style={{marginBottom:22}}>
                   <div style={{fontSize:12,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:10}}>Plan</div>
                   {[
-                    {id:"starter",label:"Imoloc Starter",desc:"Pour les petites agences"},
-                    {id:"business",label:"Imoloc Business",desc:"Pour les agences en croissance",rec:true},
+                    {id:"starter",label:"Imoloc Starter",desc:"Pour les petites agences",usersMax:3},
+                    {id:"business",label:"Imoloc Business",desc:"Pour les agences en croissance",rec:true,usersMax:10},
                   ].map(o=>(
                     <label key={o.id} style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",padding:"8px 0",borderBottom:"1px solid "+C.sep}}>
                       <input type="radio" name="plan" checked={plan===o.id} onChange={()=>setPlan(o.id)}
@@ -262,20 +281,10 @@ export default function Register() {
                       <div>
                         <span style={{fontSize:14,color:C.text}}>{o.label}</span>
                         {o.rec&&<span style={{marginLeft:8,fontSize:11,color:C.blue,fontWeight:600,padding:"1px 6px",border:"1px solid "+C.blue,borderRadius:2}}>Recommand&eacute;</span>}
-                        <div style={{fontSize:12,color:C.text2,marginTop:2}}>{o.desc} &mdash; {FMT(duree==="an"?(o.id==="starter"?15000:32000):(o.id==="starter"?18000:39000))} FCFA/utilisateur/mois</div>
+                        <div style={{fontSize:12,color:C.text2,marginTop:2}}>{o.desc} &mdash; {o.usersMax} utilisateurs inclus &mdash; {FMT(duree==="an"?(o.id==="starter"?15000:32400):(o.id==="starter"?18000:39000))} FCFA/mois</div>
                       </div>
                     </label>
                   ))}
-                </div>
-
-                <div style={{marginBottom:22}}>
-                  <div style={{fontSize:12,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:10}}>Pour combien de personnes s&apos;agit-il ?</div>
-                  <div style={{display:"flex",alignItems:"stretch",width:"fit-content",border:"1px solid "+C.border,borderRadius:2,overflow:"hidden"}}>
-                    <button onClick={()=>setUsers(u=>Math.max(1,u-1))} style={{width:34,background:"#f3f2f1",border:"none",borderRight:"1px solid "+C.sep,fontSize:18,cursor:"pointer",color:C.text,lineHeight:1}}>&minus;</button>
-                    <input type="number" min="1" max="25" value={users} onChange={e=>setUsers(Math.min(25,Math.max(1,+e.target.value)))}
-                      style={{width:60,textAlign:"center",border:"none",fontSize:15,fontWeight:600,fontFamily:"inherit",color:C.text,outline:"none",padding:"7px 0"}}/>
-                    <button onClick={()=>setUsers(u=>Math.min(25,u+1))} style={{width:34,background:"#f3f2f1",border:"none",borderLeft:"1px solid "+C.sep,fontSize:18,cursor:"pointer",color:C.text,lineHeight:1}}>+</button>
-                  </div>
                 </div>
 
                 <div style={{marginBottom:22}}>
@@ -295,8 +304,8 @@ export default function Register() {
                   <div style={{position:"relative",display:"inline-block",minWidth:280}}>
                     <select value={freq} onChange={e=>setFreq(e.target.value)}
                       style={{width:"100%",padding:"7px 30px 7px 10px",border:"1px solid "+C.border,borderRadius:2,background:"#fff",fontSize:14,fontFamily:"inherit",color:C.text,outline:"none",cursor:"pointer",appearance:"none"}}>
-                      <option value="mensuel">Tous les mois &mdash; {FMT(pu*users)} FCFA/mois</option>
-                      <option value="annuel">Une fois par an &mdash; {FMT(pu*users*12)} FCFA/an</option>
+                      <option value="mensuel">Tous les mois &mdash; {FMT(pu)} FCFA/mois</option>
+                      <option value="annuel">Une fois par an &mdash; {FMT(pu*12)} FCFA/an</option>
                     </select>
                     <svg style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={C.text2} strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
                   </div>
@@ -305,7 +314,7 @@ export default function Register() {
                 <div style={{borderTop:"1px solid "+C.sep,paddingTop:18,marginBottom:18}}>
                   <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12}}>R&eacute;sum&eacute; de la commande</div>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6}}>
-                    <span style={{color:C.text2}}>Imoloc {p.nom} &times; {users} utilisateur{users>1?"s":""}</span>
+                    <span style={{color:C.text2}}>Imoloc {p.nom} &mdash; {p.usersMax} utilisateurs inclus</span>
                     <span style={{fontWeight:600}}>{FMT(total)} FCFA</span>
                   </div>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6,color:C.green}}>
@@ -368,8 +377,9 @@ export default function Register() {
                 <p style={{fontSize:13,color:C.text2,marginBottom:28}}>
                   Compte : <strong>{email}</strong>
                 </p>
+                <Field label="Nom de l&apos;agence *" value={nomAgence} onChange={e=>setNomAgence(e.target.value)} autoFocus placeholder="Mon agence immobili&egrave;re"/>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                  <Field label="Pr&eacute;nom *" value={prenom} onChange={e=>setPrenom(e.target.value)} autoFocus placeholder="Jean"/>
+                  <Field label="Pr&eacute;nom *" value={prenom} onChange={e=>setPrenom(e.target.value)} placeholder="Jean"/>
                   <Field label="Nom *" value={nom} onChange={e=>setNom(e.target.value)} placeholder="Dupont"/>
                 </div>
                 <Field label="Mot de passe * (8 caract&egrave;res minimum)" type={showPwd?"text":"password"} value={pwd}

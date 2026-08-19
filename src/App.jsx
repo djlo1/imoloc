@@ -60,8 +60,12 @@ export default function App() {
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return
-      if (event === 'SIGNED_OUT') { setUser(null); setProfile(null); setLoading(false) }
-      // Ne pas refaire fetchProfile sur SIGNED_IN pour éviter le double appel
+      if (event === 'SIGNED_OUT') { setUser(null); setProfile(null); setLoading(false); return }
+      if (event === 'SIGNED_IN' && session?.user) {
+        setUser(session.user)
+        const current = useAuthStore.getState().profile
+        if (!current || current.id !== session.user.id) fetchProfile(session.user.id)
+      }
     })
     return () => { mounted = false; subscription.unsubscribe() }
   }, [])
