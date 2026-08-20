@@ -316,28 +316,49 @@ const DEPARTEMENTS_VILLES = {
 const operateursDisponibles = (paysNom) => OPERATEURS.filter(o => o.pays.includes(paysNom))
 
 const validerMethode = (m) => {
-  if (!m.pays) return 'Selectionnez un pays'
-  if (operateursDisponibles(m.pays).length === 0) return 'Mobile Money n est pas disponible pour ce pays'
-  if (!m.operateur) return 'Selectionnez un operateur'
-  if (!m.nomTitulaire.trim()) return 'Le nom du titulaire est requis'
+  const err = {}
+  if (!m.pays) err.pays = 'Selectionnez un pays'
+  else if (operateursDisponibles(m.pays).length === 0) err.operateur = 'Mobile Money n est pas disponible pour ce pays'
+  else if (!m.operateur) err.operateur = 'Selectionnez un operateur'
+
+  if (!m.nomTitulaire.trim()) err.nomTitulaire = 'Entrez le nom du titulaire'
+
   const clean = (m.telephone || '').replace(/[\s-]/g, '')
   const paysInfo = PAYS.find(p => p.nom === m.pays)
-  if (!clean) return 'Le numero de telephone est requis'
-  if (!/^\d+$/.test(clean)) return 'Le numero ne doit contenir que des chiffres'
-  if (paysInfo?.longueur) {
-    if (clean.length !== paysInfo.longueur) return `Le numero doit contenir ${paysInfo.longueur} chiffres (hors indicatif)`
-  } else if (clean.length < 4 || clean.length > 14) {
-    return 'Numero de telephone invalide'
-  }
-  if (!m.adresse1.trim()) return 'La ligne d adresse 1 est requise'
-  if (DEPARTEMENTS_VILLES[m.pays] && !m.departement) return 'Selectionnez un departement'
-  if (!m.ville.trim()) return 'Renseignez une ville'
-  return null
+  if (!clean) err.telephone = 'Entrez un numero de telephone'
+  else if (!/^\d+$/.test(clean)) err.telephone = 'Chiffres uniquement'
+  else if (paysInfo?.longueur && clean.length !== paysInfo.longueur) err.telephone = `${paysInfo.longueur} chiffres attendus (hors indicatif)`
+  else if (!paysInfo?.longueur && (clean.length < 4 || clean.length > 14)) err.telephone = 'Numero invalide'
+
+  if (!m.adresse1.trim()) err.adresse1 = 'Entrez la ligne d adresse 1'
+  if (DEPARTEMENTS_VILLES[m.pays] && !m.departement) err.departement = 'Selectionnez un departement'
+  if (!m.ville.trim()) err.ville = 'Entrez une ville'
+  return err
 }
 
 const bB = { display:'inline-flex',alignItems:'center',gap:6,padding:'8px 16px',borderRadius:6,fontSize:13,fontWeight:500,cursor:'pointer',border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.6)',fontFamily:'Inter,sans-serif',transition:'all 0.15s' }
 const bP = { ...bB, background:'#0078d4', borderColor:'#0078d4', color:'#fff' }
 const fmt = n => Number(n||0).toLocaleString('fr-FR')
+
+const fieldStyle = (hasError, disabled) => ({
+  width:'100%', padding:'10px 34px 10px 12px', background:disabled?'rgba(255,255,255,0.02)':'rgba(255,255,255,0.06)',
+  border:`1px solid ${hasError ? '#ef4444' : 'rgba(255,255,255,0.35)'}`, borderRadius:8,
+  color:'#e6edf3', fontFamily:'Inter,sans-serif', fontSize:14, outline:'none', colorScheme:'dark', boxSizing:'border-box',
+})
+
+function Chevron({ error }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={error?'#ef4444':'rgba(255,255,255,0.5)'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+      style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', pointerEvents:'none' }}>
+      <path d="M6 9l6 6 6-6"/>
+    </svg>
+  )
+}
+
+function FieldError({ message }) {
+  if (!message) return null
+  return <div style={{ fontSize:11.5, color:'#ef4444', marginTop:5 }}>{message}</div>
+}
 
 function OperateurBadge({ operateurId, size=32 }) {
   const op = OPERATEURS.find(o => o.id === operateurId)
@@ -345,7 +366,7 @@ function OperateurBadge({ operateurId, size=32 }) {
   return <div style={{ width:size, height:size, borderRadius:'50%', background:'#ffcc00', display:'flex', alignItems:'center', justifyContent:'center', fontSize:size*0.26, fontWeight:800, color:'#111', flexShrink:0 }}>MTN</div>
 }
 
-function Combobox({ value, onChange, options, placeholder, freeText=false, disabled=false }) {
+function Combobox({ value, onChange, options, placeholder, freeText=false, disabled=false, error=false }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const ref = useRef(null)
@@ -363,10 +384,11 @@ function Combobox({ value, onChange, options, placeholder, freeText=false, disab
         onFocus={() => { setOpen(true); setQuery('') }}
         onChange={e => { setQuery(e.target.value); if (freeText) onChange(e.target.value) }}
         placeholder={placeholder}
-        style={{ width:'100%', padding:'10px 12px', background:disabled?'rgba(255,255,255,0.02)':'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:7, color:'#e6edf3', fontFamily:'Inter,sans-serif', fontSize:14, outline:'none', colorScheme:'dark', boxSizing:'border-box' }}
+        style={fieldStyle(error, disabled)}
       />
+      <Chevron error={error}/>
       {open && filtered.length > 0 && (
-        <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, maxHeight:200, overflowY:'auto', background:'#161b22', border:'1px solid rgba(255,255,255,0.12)', borderRadius:7, zIndex:20, boxShadow:'0 8px 24px rgba(0,0,0,0.4)' }}>
+        <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, maxHeight:200, overflowY:'auto', background:'#161b22', border:'1px solid rgba(255,255,255,0.25)', borderRadius:8, zIndex:20, boxShadow:'0 8px 24px rgba(0,0,0,0.4)' }}>
           {filtered.map(o => (
             <div key={o} onMouseDown={() => { onChange(o); setOpen(false); setQuery('') }}
               style={{ padding:'8px 12px', fontSize:13.5, color:'#e6edf3', cursor:'pointer' }}
@@ -375,6 +397,18 @@ function Combobox({ value, onChange, options, placeholder, freeText=false, disab
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function Select({ value, onChange, children, error=false, style={} }) {
+  return (
+    <div style={{ position:'relative', ...style }}>
+      <select value={value} onChange={onChange}
+        style={{ ...fieldStyle(error), appearance:'none', WebkitAppearance:'none', MozAppearance:'none', cursor:'pointer' }}>
+        {children}
+      </select>
+      <Chevron error={error}/>
     </div>
   )
 }
@@ -444,15 +478,16 @@ export default function Abonnement() {
   })
   const [newMethod, setNewMethod] = useState(emptyMethod())
   const [newCard, setNewCard] = useState(emptyCard())
-  const [methodError, setMethodError] = useState('')
+  const [methodErrors, setMethodErrors] = useState({})
   const [savingMethod, setSavingMethod] = useState(false)
+  const clearErr = (field) => setMethodErrors(e => (e[field] ? { ...e, [field]:undefined } : e))
 
   const ouvrirAjoutMethode = () => {
     const paysDefaut = PAYS.find(p => p.nom === agence?.pays)?.nom || 'Benin'
     setNewMethod(emptyMethod(paysDefaut))
     setNewCard(emptyCard(paysDefaut))
     setMethodeType('mobile')
-    setMethodError('')
+    setMethodErrors({})
     setShowAddMethod(true)
   }
 
@@ -464,12 +499,12 @@ export default function Abonnement() {
       operateur: OPERATEURS.find(o => o.id === p.operateur)?.pays.includes(paysNom) ? p.operateur : '',
       departement: '', ville: '',
     }))
-    setMethodError('')
+    setMethodErrors({})
   }
 
   const ajouterMethode = async () => {
     const err = validerMethode(newMethod)
-    if (err) { setMethodError(err); return }
+    if (Object.keys(err).length) { setMethodErrors(err); return }
     setSavingMethod(true)
     const op = OPERATEURS.find(o => o.id === newMethod.operateur)
     const clean = newMethod.telephone.replace(/[\s-]/g, '')
@@ -755,7 +790,7 @@ export default function Abonnement() {
         {/* PANNEAU LATERAL AJOUT METHODE DE PAIEMENT (style Microsoft admin) */}
         {showAddMethod && (
           <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:500}} onClick={()=>setShowAddMethod(false)}>
-            <div onClick={e=>e.stopPropagation()} style={{position:'absolute',top:0,right:0,height:'100%',width:'100%',maxWidth:440,background:'#0d1117',borderLeft:'1px solid rgba(255,255,255,0.12)',boxShadow:'-8px 0 32px rgba(0,0,0,0.4)',display:'flex',flexDirection:'column',animation:'slideInRight 0.2s ease-out'}}>
+            <div onClick={e=>e.stopPropagation()} style={{position:'absolute',top:0,right:0,height:'100%',width:'100%',maxWidth:560,background:'#0d1117',borderLeft:'1px solid rgba(255,255,255,0.12)',boxShadow:'-8px 0 32px rgba(0,0,0,0.4)',display:'flex',flexDirection:'column',animation:'slideInRight 0.2s ease-out'}}>
               <style>{`@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
 
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'20px 24px',borderBottom:'1px solid rgba(255,255,255,0.07)'}}>
@@ -765,10 +800,10 @@ export default function Abonnement() {
 
               <div style={{padding:'20px 24px',overflowY:'auto',flex:1}}>
 
-                <div style={{display:'flex',gap:8,marginBottom:24}}>
+                <div style={{display:'flex',gap:24,borderBottom:'1px solid rgba(255,255,255,0.08)',marginBottom:24}}>
                   {[['mobile','Portefeuille Mobile Money'],['carte','Carte de credit ou de debit']].map(([k,l])=>(
-                    <button key={k} onClick={()=>{setMethodeType(k);setMethodError('')}}
-                      style={{flex:1,padding:'10px 8px',borderRadius:8,border:`1.5px solid ${methodeType===k?'#4da6ff':'rgba(255,255,255,0.1)'}`,background:methodeType===k?'rgba(77,166,255,0.08)':'rgba(255,255,255,0.02)',color:methodeType===k?'#4da6ff':'rgba(255,255,255,0.6)',fontSize:12.5,fontWeight:600,fontFamily:'Inter,sans-serif',cursor:'pointer'}}>{l}</button>
+                    <button key={k} onClick={()=>{setMethodeType(k);setMethodErrors({})}}
+                      style={{background:'none',border:'none',borderBottom:methodeType===k?'2px solid #4da6ff':'2px solid transparent',padding:'0 0 10px',fontSize:13,fontWeight:methodeType===k?700:500,color:methodeType===k?'#e6edf3':'rgba(255,255,255,0.5)',cursor:'pointer',fontFamily:'Inter,sans-serif'}}>{l}</button>
                   ))}
                 </div>
 
@@ -788,96 +823,103 @@ export default function Abonnement() {
 
                 <div style={{marginBottom:16}}>
                   <label style={{display:'block',fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>Pays</label>
-                  <Combobox value={newMethod.pays} onChange={choisirPays} options={PAYS.map(p=>p.nom)} placeholder="Rechercher un pays"/>
+                  <Combobox value={newMethod.pays} onChange={choisirPays} options={PAYS.map(p=>p.nom)} placeholder="Rechercher un pays" error={!!methodErrors.pays}/>
+                  <FieldError message={methodErrors.pays}/>
                 </div>
 
                 <div style={{marginBottom:20}}>
                   <label style={{display:'block',fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>Operateur Mobile Money</label>
                   {operateursDisponibles(newMethod.pays).length === 0 ? (
-                    <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)',padding:'10px 12px',background:'rgba(255,255,255,0.03)',borderRadius:7,border:'1px solid rgba(255,255,255,0.08)'}}>
+                    <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)',padding:'10px 12px',background:'rgba(255,255,255,0.03)',borderRadius:8,border:'1px solid rgba(255,255,255,0.2)'}}>
                       Mobile Money n est pas encore disponible pour ce pays. Vous pouvez ajouter une carte de credit ou de debit a la place.
                     </div>
-                  ) : (
+                  ) : (<>
                     <Combobox
                       value={OPERATEURS.find(o=>o.id===newMethod.operateur)?.label || ''}
-                      onChange={label=>{const op=OPERATEURS.find(o=>o.label===label);setNewMethod(p=>({...p,operateur:op?.id||''}));setMethodError('')}}
+                      onChange={label=>{const op=OPERATEURS.find(o=>o.label===label);setNewMethod(p=>({...p,operateur:op?.id||''}));clearErr('operateur')}}
                       options={operateursDisponibles(newMethod.pays).map(o=>o.label)}
-                      placeholder="Rechercher un operateur"/>
-                  )}
+                      placeholder="Rechercher un operateur" error={!!methodErrors.operateur}/>
+                    <FieldError message={methodErrors.operateur}/>
+                  </>)}
                 </div>
 
                 <div style={{fontSize:11.5,fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10,marginTop:24}}>Coordonnees de paiement</div>
 
                 <div style={{marginBottom:14}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Nom du titulaire du moyen de paiement *</label>
-                  <input value={newMethod.nomTitulaire} onChange={e=>{setNewMethod(p=>({...p,nomTitulaire:e.target.value}));setMethodError('')}}
+                  <input value={newMethod.nomTitulaire} onChange={e=>{setNewMethod(p=>({...p,nomTitulaire:e.target.value}));clearErr('nomTitulaire')}}
                     placeholder="Ex: Jeanne Testeuse"
-                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                    style={fieldStyle(!!methodErrors.nomTitulaire)}/>
+                  <FieldError message={methodErrors.nomTitulaire}/>
                 </div>
 
                 <div style={{marginBottom:20}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Numero de telephone *</label>
                   <div style={{display:'flex',gap:8}}>
-                    <select value={newMethod.indicatif} onChange={e=>setNewMethod(p=>({...p,indicatif:e.target.value}))}
-                      style={{width:100,padding:'10px 8px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',colorScheme:'dark'}}>
+                    <Select value={newMethod.indicatif} onChange={e=>setNewMethod(p=>({...p,indicatif:e.target.value}))} style={{width:100,flexShrink:0}}>
                       {PAYS.map(p=><option key={p.nom+p.indicatif} value={p.indicatif}>+{p.indicatif}</option>)}
-                    </select>
-                    <input type="tel" value={newMethod.telephone} onChange={e=>{setNewMethod(p=>({...p,telephone:e.target.value}));setMethodError('')}}
-                      placeholder="96000000"
-                      style={{flex:1,padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',colorScheme:'dark',boxSizing:'border-box'}}/>
+                    </Select>
+                    <div style={{flex:1,position:'relative'}}>
+                      <input type="tel" value={newMethod.telephone} onChange={e=>{setNewMethod(p=>({...p,telephone:e.target.value}));clearErr('telephone')}}
+                        placeholder="96000000"
+                        style={{...fieldStyle(!!methodErrors.telephone),padding:'10px 12px'}}/>
+                    </div>
                   </div>
-                  <div style={{fontSize:11,color:'rgba(255,255,255,0.25)',marginTop:5}}>Indicatif pre-rempli selon le pays, modifiable si besoin</div>
+                  {methodErrors.telephone ? <FieldError message={methodErrors.telephone}/> : <div style={{fontSize:11,color:'rgba(255,255,255,0.25)',marginTop:5}}>Indicatif pre-rempli selon le pays, modifiable si besoin</div>}
                 </div>
 
                 <div style={{fontSize:11.5,fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10,marginTop:24}}>Adresse</div>
 
                 <div style={{marginBottom:14}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ligne d adresse 1 *</label>
-                  <input value={newMethod.adresse1} onChange={e=>{setNewMethod(p=>({...p,adresse1:e.target.value}));setMethodError('')}}
-                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                  <input value={newMethod.adresse1} onChange={e=>{setNewMethod(p=>({...p,adresse1:e.target.value}));clearErr('adresse1')}}
+                    style={fieldStyle(!!methodErrors.adresse1)}/>
+                  <FieldError message={methodErrors.adresse1}/>
                 </div>
 
                 <div style={{marginBottom:14}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ligne d adresse 2 (en option)</label>
                   <input value={newMethod.adresse2} onChange={e=>setNewMethod(p=>({...p,adresse2:e.target.value}))}
-                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                    style={fieldStyle(false)}/>
                 </div>
 
                 {DEPARTEMENTS_VILLES[newMethod.pays] ? (<>
                   <div style={{marginBottom:14}}>
                     <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Departement *</label>
                     <Combobox value={newMethod.departement}
-                      onChange={d=>{setNewMethod(p=>({...p,departement:d,ville:''}));setMethodError('')}}
+                      onChange={d=>{setNewMethod(p=>({...p,departement:d,ville:''}));clearErr('departement')}}
                       options={Object.keys(DEPARTEMENTS_VILLES[newMethod.pays]||{})}
-                      placeholder="Rechercher un departement" disabled={!newMethod.pays}/>
+                      placeholder="Rechercher un departement" disabled={!newMethod.pays} error={!!methodErrors.departement}/>
+                    <FieldError message={methodErrors.departement}/>
                   </div>
                   <div style={{marginBottom:14}}>
                     <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ville *</label>
                     <Combobox value={newMethod.ville}
-                      onChange={v=>{setNewMethod(p=>({...p,ville:v}));setMethodError('')}}
+                      onChange={v=>{setNewMethod(p=>({...p,ville:v}));clearErr('ville')}}
                       options={DEPARTEMENTS_VILLES[newMethod.pays]?.[newMethod.departement] || []}
-                      placeholder="Rechercher ou saisir une ville" freeText disabled={!newMethod.departement}/>
+                      placeholder="Rechercher ou saisir une ville" freeText disabled={!newMethod.departement} error={!!methodErrors.ville}/>
+                    <FieldError message={methodErrors.ville}/>
                   </div>
                 </>) : (<>
                   <div style={{marginBottom:14}}>
                     <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Departement / Region *</label>
-                    <input value={newMethod.departement} onChange={e=>{setNewMethod(p=>({...p,departement:e.target.value}));setMethodError('')}}
-                      style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                    <input value={newMethod.departement} onChange={e=>{setNewMethod(p=>({...p,departement:e.target.value}));clearErr('departement')}}
+                      style={fieldStyle(!!methodErrors.departement)}/>
+                    <FieldError message={methodErrors.departement}/>
                   </div>
                   <div style={{marginBottom:14}}>
                     <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ville *</label>
-                    <input value={newMethod.ville} onChange={e=>{setNewMethod(p=>({...p,ville:e.target.value}));setMethodError('')}}
-                      style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                    <input value={newMethod.ville} onChange={e=>{setNewMethod(p=>({...p,ville:e.target.value}));clearErr('ville')}}
+                      style={fieldStyle(!!methodErrors.ville)}/>
+                    <FieldError message={methodErrors.ville}/>
                   </div>
                 </>)}
 
                 <div style={{marginBottom:8}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Code postal (facultatif)</label>
                   <input value={newMethod.codePostal} onChange={e=>setNewMethod(p=>({...p,codePostal:e.target.value}))}
-                    style={{width:'50%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                    style={{...fieldStyle(false),width:'50%'}}/>
                 </div>
-
-                {methodError && <div style={{fontSize:12.5,color:'#ef4444',marginTop:10,padding:'8px 12px',background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:6}}>{methodError}</div>}
                 </>) : (<>
                 <div style={{fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Nous acceptons les cartes suivantes</div>
                 <div style={{display:'flex',alignItems:'stretch',marginBottom:24,width:'fit-content',borderRadius:8,overflow:'hidden',border:'1px solid rgba(255,255,255,0.1)'}}>
@@ -893,50 +935,48 @@ export default function Abonnement() {
                 <div style={{marginBottom:14}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Nom du titulaire de la carte *</label>
                   <input value={newCard.nomTitulaire} onChange={e=>setNewCard(p=>({...p,nomTitulaire:e.target.value}))}
-                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                    style={fieldStyle(false)}/>
                 </div>
 
                 <div style={{marginBottom:14}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Numero de carte *</label>
                   <input inputMode="numeric" autoComplete="off" value={newCard.numeroCarte} onChange={e=>setNewCard(p=>({...p,numeroCarte:e.target.value}))}
-                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                    style={fieldStyle(false)}/>
                 </div>
 
                 <div style={{display:'flex',gap:8,marginBottom:14}}>
                   <div style={{flex:1}}>
                     <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Mois d exp. *</label>
-                    <select value={newCard.moisExp} onChange={e=>setNewCard(p=>({...p,moisExp:e.target.value}))}
-                      style={{width:'100%',padding:'10px 8px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',colorScheme:'dark'}}>
+                    <Select value={newCard.moisExp} onChange={e=>setNewCard(p=>({...p,moisExp:e.target.value}))}>
                       <option value="">MM</option>
                       {Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0')).map(m=><option key={m} value={m}>{m}</option>)}
-                    </select>
+                    </Select>
                   </div>
                   <div style={{flex:1}}>
                     <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Annee d exp. *</label>
-                    <select value={newCard.anneeExp} onChange={e=>setNewCard(p=>({...p,anneeExp:e.target.value}))}
-                      style={{width:'100%',padding:'10px 8px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',colorScheme:'dark'}}>
+                    <Select value={newCard.anneeExp} onChange={e=>setNewCard(p=>({...p,anneeExp:e.target.value}))}>
                       <option value="">AA</option>
                       {Array.from({length:15},(_,i)=>String(new Date().getFullYear()+i).slice(-2)).map(a=><option key={a} value={a}>{a}</option>)}
-                    </select>
+                    </Select>
                   </div>
                 </div>
 
                 <div style={{marginBottom:20,maxWidth:140}}>
                   <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Cryptogramme visuel * <span title="3 chiffres au dos de la carte" style={{color:'rgba(255,255,255,0.3)',cursor:'help'}}>ⓘ</span></label>
                   <input inputMode="numeric" autoComplete="off" maxLength={4} value={newCard.cvv} onChange={e=>setNewCard(p=>({...p,cvv:e.target.value}))}
-                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                    style={fieldStyle(false)}/>
                 </div>
 
                 <div style={{marginBottom:14}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ligne d adresse 1 *</label>
                   <input value={newCard.adresse1} onChange={e=>setNewCard(p=>({...p,adresse1:e.target.value}))}
-                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                    style={fieldStyle(false)}/>
                 </div>
 
                 <div style={{marginBottom:14}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ligne d adresse 2 (en option)</label>
                   <input value={newCard.adresse2} onChange={e=>setNewCard(p=>({...p,adresse2:e.target.value}))}
-                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                    style={fieldStyle(false)}/>
                 </div>
 
                 <div style={{marginBottom:14}}>
@@ -947,7 +987,7 @@ export default function Abonnement() {
                       placeholder="Rechercher ou saisir une ville" freeText/>
                   ) : (
                     <input value={newCard.ville} onChange={e=>setNewCard(p=>({...p,ville:e.target.value}))}
-                      style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                      style={fieldStyle(false)}/>
                   )}
                 </div>
 
@@ -959,14 +999,14 @@ export default function Abonnement() {
                   ) : (
                     <input value={newCard.departement} onChange={e=>setNewCard(p=>({...p,departement:e.target.value}))}
                       placeholder="--Selectionner--"
-                      style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                      style={fieldStyle(false)}/>
                   )}
                 </div>
 
                 <div style={{marginBottom:14}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Code postal *</label>
                   <input value={newCard.codePostal} onChange={e=>setNewCard(p=>({...p,codePostal:e.target.value}))}
-                    style={{width:'50%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                    style={{...fieldStyle(false),width:'50%'}}/>
                 </div>
 
                 <div style={{marginBottom:20}}>
