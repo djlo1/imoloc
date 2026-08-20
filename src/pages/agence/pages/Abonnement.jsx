@@ -11,9 +11,259 @@ const FACTURE_STATUT_CFG = {
 }
 
 const PAYS = [
-  { nom:'Benin', indicatif:'229', longueur:8 },
-  { nom:'Togo', indicatif:'228', longueur:8 },
-  { nom:'Senegal', indicatif:'221', longueur:9 },
+  { nom:'Afghanistan', indicatif:'93', code:'AF' },
+  { nom:'Åland Islands', indicatif:'358', code:'AX' },
+  { nom:'Albania', indicatif:'355', code:'AL' },
+  { nom:'Algeria', indicatif:'213', code:'DZ' },
+  { nom:'American Samoa', indicatif:'1684', code:'AS' },
+  { nom:'Andorra', indicatif:'376', code:'AD' },
+  { nom:'Angola', indicatif:'244', code:'AO' },
+  { nom:'Anguilla', indicatif:'1264', code:'AI' },
+  { nom:'Antarctica', indicatif:'672', code:'AQ' },
+  { nom:'Antigua and Barbuda', indicatif:'1268', code:'AG' },
+  { nom:'Argentina', indicatif:'54', code:'AR' },
+  { nom:'Armenia', indicatif:'374', code:'AM' },
+  { nom:'Aruba', indicatif:'297', code:'AW' },
+  { nom:'Australia', indicatif:'61', code:'AU' },
+  { nom:'Austria', indicatif:'43', code:'AT' },
+  { nom:'Azerbaijan', indicatif:'994', code:'AZ' },
+  { nom:'Bahamas', indicatif:'1242', code:'BS' },
+  { nom:'Bahrain', indicatif:'973', code:'BH' },
+  { nom:'Bangladesh', indicatif:'880', code:'BD' },
+  { nom:'Barbados', indicatif:'1246', code:'BB' },
+  { nom:'Belarus', indicatif:'375', code:'BY' },
+  { nom:'Belgium', indicatif:'32', code:'BE' },
+  { nom:'Belize', indicatif:'501', code:'BZ' },
+  { nom:'Benin', indicatif:'229', code:'BJ', longueur:8 },
+  { nom:'Bermuda', indicatif:'1441', code:'BM' },
+  { nom:'Bhutan', indicatif:'975', code:'BT' },
+  { nom:'Bolivia', indicatif:'591', code:'BO' },
+  { nom:'Bosnia and Herzegovina', indicatif:'387', code:'BA' },
+  { nom:'Botswana', indicatif:'267', code:'BW' },
+  { nom:'Bouvet Island', indicatif:'47', code:'BV' },
+  { nom:'Brazil', indicatif:'55', code:'BR' },
+  { nom:'British Indian Ocean Territory', indicatif:'246', code:'IO' },
+  { nom:'Brunei Darussalam', indicatif:'673', code:'BN' },
+  { nom:'Bulgaria', indicatif:'359', code:'BG' },
+  { nom:'Burkina Faso', indicatif:'226', code:'BF' },
+  { nom:'Burundi', indicatif:'257', code:'BI' },
+  { nom:'Cambodia', indicatif:'855', code:'KH' },
+  { nom:'Cameroon', indicatif:'237', code:'CM' },
+  { nom:'Canada', indicatif:'1', code:'CA' },
+  { nom:'Cape Verde', indicatif:'238', code:'CV' },
+  { nom:'Cayman Islands', indicatif:'1345', code:'KY' },
+  { nom:'Central African Republic', indicatif:'236', code:'CF' },
+  { nom:'Chad', indicatif:'235', code:'TD' },
+  { nom:'Chile', indicatif:'56', code:'CL' },
+  { nom:'China', indicatif:'86', code:'CN' },
+  { nom:'Christmas Island', indicatif:'61', code:'CX' },
+  { nom:'Cocos (Keeling) Islands', indicatif:'61', code:'CC' },
+  { nom:'Colombia', indicatif:'57', code:'CO' },
+  { nom:'Comoros', indicatif:'269', code:'KM' },
+  { nom:'Congo', indicatif:'242', code:'CG' },
+  { nom:'Congo, The Democratic Republic of the Congo', indicatif:'243', code:'CD' },
+  { nom:'Cook Islands', indicatif:'682', code:'CK' },
+  { nom:'Costa Rica', indicatif:'506', code:'CR' },
+  { nom:'Côte d\'Ivoire', indicatif:'225', code:'CI' },
+  { nom:'Croatia', indicatif:'385', code:'HR' },
+  { nom:'Cuba', indicatif:'53', code:'CU' },
+  { nom:'Cyprus', indicatif:'357', code:'CY' },
+  { nom:'Czech Republic', indicatif:'420', code:'CZ' },
+  { nom:'Denmark', indicatif:'45', code:'DK' },
+  { nom:'Djibouti', indicatif:'253', code:'DJ' },
+  { nom:'Dominica', indicatif:'1767', code:'DM' },
+  { nom:'Dominican Republic', indicatif:'1849', code:'DO' },
+  { nom:'Ecuador', indicatif:'593', code:'EC' },
+  { nom:'Egypt', indicatif:'20', code:'EG' },
+  { nom:'El Salvador', indicatif:'503', code:'SV' },
+  { nom:'Equatorial Guinea', indicatif:'240', code:'GQ' },
+  { nom:'Eritrea', indicatif:'291', code:'ER' },
+  { nom:'Estonia', indicatif:'372', code:'EE' },
+  { nom:'Ethiopia', indicatif:'251', code:'ET' },
+  { nom:'Falkland Islands (Malvinas)', indicatif:'500', code:'FK' },
+  { nom:'Faroe Islands', indicatif:'298', code:'FO' },
+  { nom:'Fiji', indicatif:'679', code:'FJ' },
+  { nom:'Finland', indicatif:'358', code:'FI' },
+  { nom:'France', indicatif:'33', code:'FR' },
+  { nom:'French Guiana', indicatif:'594', code:'GF' },
+  { nom:'French Polynesia', indicatif:'689', code:'PF' },
+  { nom:'French Southern Territories', indicatif:'262', code:'TF' },
+  { nom:'Gabon', indicatif:'241', code:'GA' },
+  { nom:'Gambia', indicatif:'220', code:'GM' },
+  { nom:'Georgia', indicatif:'995', code:'GE' },
+  { nom:'Germany', indicatif:'49', code:'DE' },
+  { nom:'Ghana', indicatif:'233', code:'GH' },
+  { nom:'Gibraltar', indicatif:'350', code:'GI' },
+  { nom:'Greece', indicatif:'30', code:'GR' },
+  { nom:'Greenland', indicatif:'299', code:'GL' },
+  { nom:'Grenada', indicatif:'1473', code:'GD' },
+  { nom:'Guadeloupe', indicatif:'590', code:'GP' },
+  { nom:'Guam', indicatif:'1671', code:'GU' },
+  { nom:'Guatemala', indicatif:'502', code:'GT' },
+  { nom:'Guernsey', indicatif:'44', code:'GG' },
+  { nom:'Guinea', indicatif:'224', code:'GN' },
+  { nom:'Guinea-Bissau', indicatif:'245', code:'GW' },
+  { nom:'Guyana', indicatif:'592', code:'GY' },
+  { nom:'Haiti', indicatif:'509', code:'HT' },
+  { nom:'Heard Island and Mcdonald Islands', indicatif:'672', code:'HM' },
+  { nom:'Holy See (Vatican City State)', indicatif:'379', code:'VA' },
+  { nom:'Honduras', indicatif:'504', code:'HN' },
+  { nom:'Hong Kong', indicatif:'852', code:'HK' },
+  { nom:'Hungary', indicatif:'36', code:'HU' },
+  { nom:'Iceland', indicatif:'354', code:'IS' },
+  { nom:'India', indicatif:'91', code:'IN' },
+  { nom:'Indonesia', indicatif:'62', code:'ID' },
+  { nom:'Iran', indicatif:'98', code:'IR' },
+  { nom:'Iraq', indicatif:'964', code:'IQ' },
+  { nom:'Ireland', indicatif:'353', code:'IE' },
+  { nom:'Isle of Man', indicatif:'44', code:'IM' },
+  { nom:'Israel', indicatif:'972', code:'IL' },
+  { nom:'Italy', indicatif:'39', code:'IT' },
+  { nom:'Jamaica', indicatif:'1876', code:'JM' },
+  { nom:'Japan', indicatif:'81', code:'JP' },
+  { nom:'Jersey', indicatif:'44', code:'JE' },
+  { nom:'Jordan', indicatif:'962', code:'JO' },
+  { nom:'Kazakhstan', indicatif:'7', code:'KZ' },
+  { nom:'Kenya', indicatif:'254', code:'KE' },
+  { nom:'Kiribati', indicatif:'686', code:'KI' },
+  { nom:'Korea, Democratic People\'s Republic of Korea', indicatif:'850', code:'KP' },
+  { nom:'Korea, Republic of South Korea', indicatif:'82', code:'KR' },
+  { nom:'Kosovo', indicatif:'383', code:'XK' },
+  { nom:'Kuwait', indicatif:'965', code:'KW' },
+  { nom:'Kyrgyzstan', indicatif:'996', code:'KG' },
+  { nom:'Laos', indicatif:'856', code:'LA' },
+  { nom:'Latvia', indicatif:'371', code:'LV' },
+  { nom:'Lebanon', indicatif:'961', code:'LB' },
+  { nom:'Lesotho', indicatif:'266', code:'LS' },
+  { nom:'Liberia', indicatif:'231', code:'LR' },
+  { nom:'Libyan Arab Jamahiriya', indicatif:'218', code:'LY' },
+  { nom:'Liechtenstein', indicatif:'423', code:'LI' },
+  { nom:'Lithuania', indicatif:'370', code:'LT' },
+  { nom:'Luxembourg', indicatif:'352', code:'LU' },
+  { nom:'Macao', indicatif:'853', code:'MO' },
+  { nom:'Macedonia', indicatif:'389', code:'MK' },
+  { nom:'Madagascar', indicatif:'261', code:'MG' },
+  { nom:'Malawi', indicatif:'265', code:'MW' },
+  { nom:'Malaysia', indicatif:'60', code:'MY' },
+  { nom:'Maldives', indicatif:'960', code:'MV' },
+  { nom:'Mali', indicatif:'223', code:'ML' },
+  { nom:'Malta', indicatif:'356', code:'MT' },
+  { nom:'Marshall Islands', indicatif:'692', code:'MH' },
+  { nom:'Martinique', indicatif:'596', code:'MQ' },
+  { nom:'Mauritania', indicatif:'222', code:'MR' },
+  { nom:'Mauritius', indicatif:'230', code:'MU' },
+  { nom:'Mayotte', indicatif:'262', code:'YT' },
+  { nom:'Mexico', indicatif:'52', code:'MX' },
+  { nom:'Micronesia, Federated States of Micronesia', indicatif:'691', code:'FM' },
+  { nom:'Moldova', indicatif:'373', code:'MD' },
+  { nom:'Monaco', indicatif:'377', code:'MC' },
+  { nom:'Mongolia', indicatif:'976', code:'MN' },
+  { nom:'Montenegro', indicatif:'382', code:'ME' },
+  { nom:'Montserrat', indicatif:'1664', code:'MS' },
+  { nom:'Morocco', indicatif:'212', code:'MA' },
+  { nom:'Mozambique', indicatif:'258', code:'MZ' },
+  { nom:'Myanmar', indicatif:'95', code:'MM' },
+  { nom:'Namibia', indicatif:'264', code:'NA' },
+  { nom:'Nauru', indicatif:'674', code:'NR' },
+  { nom:'Nepal', indicatif:'977', code:'NP' },
+  { nom:'Netherlands', indicatif:'31', code:'NL' },
+  { nom:'Netherlands Antilles', indicatif:'599', code:'AN' },
+  { nom:'New Caledonia', indicatif:'687', code:'NC' },
+  { nom:'New Zealand', indicatif:'64', code:'NZ' },
+  { nom:'Nicaragua', indicatif:'505', code:'NI' },
+  { nom:'Niger', indicatif:'227', code:'NE' },
+  { nom:'Nigeria', indicatif:'234', code:'NG' },
+  { nom:'Niue', indicatif:'683', code:'NU' },
+  { nom:'Norfolk Island', indicatif:'672', code:'NF' },
+  { nom:'Northern Mariana Islands', indicatif:'1670', code:'MP' },
+  { nom:'Norway', indicatif:'47', code:'NO' },
+  { nom:'Oman', indicatif:'968', code:'OM' },
+  { nom:'Pakistan', indicatif:'92', code:'PK' },
+  { nom:'Palau', indicatif:'680', code:'PW' },
+  { nom:'Palestinian Territory, Occupied', indicatif:'970', code:'PS' },
+  { nom:'Panama', indicatif:'507', code:'PA' },
+  { nom:'Papua New Guinea', indicatif:'675', code:'PG' },
+  { nom:'Paraguay', indicatif:'595', code:'PY' },
+  { nom:'Peru', indicatif:'51', code:'PE' },
+  { nom:'Philippines', indicatif:'63', code:'PH' },
+  { nom:'Pitcairn', indicatif:'64', code:'PN' },
+  { nom:'Poland', indicatif:'48', code:'PL' },
+  { nom:'Portugal', indicatif:'351', code:'PT' },
+  { nom:'Puerto Rico', indicatif:'1939', code:'PR' },
+  { nom:'Qatar', indicatif:'974', code:'QA' },
+  { nom:'Romania', indicatif:'40', code:'RO' },
+  { nom:'Russia', indicatif:'7', code:'RU' },
+  { nom:'Rwanda', indicatif:'250', code:'RW' },
+  { nom:'Reunion', indicatif:'262', code:'RE' },
+  { nom:'Saint Barthelemy', indicatif:'590', code:'BL' },
+  { nom:'Saint Helena, Ascension and Tristan Da Cunha', indicatif:'290', code:'SH' },
+  { nom:'Saint Kitts and Nevis', indicatif:'1869', code:'KN' },
+  { nom:'Saint Lucia', indicatif:'1758', code:'LC' },
+  { nom:'Saint Martin', indicatif:'590', code:'MF' },
+  { nom:'Saint Pierre and Miquelon', indicatif:'508', code:'PM' },
+  { nom:'Saint Vincent and the Grenadines', indicatif:'1784', code:'VC' },
+  { nom:'Samoa', indicatif:'685', code:'WS' },
+  { nom:'San Marino', indicatif:'378', code:'SM' },
+  { nom:'Sao Tome and Principe', indicatif:'239', code:'ST' },
+  { nom:'Saudi Arabia', indicatif:'966', code:'SA' },
+  { nom:'Senegal', indicatif:'221', code:'SN', longueur:9 },
+  { nom:'Serbia', indicatif:'381', code:'RS' },
+  { nom:'Seychelles', indicatif:'248', code:'SC' },
+  { nom:'Sierra Leone', indicatif:'232', code:'SL' },
+  { nom:'Singapore', indicatif:'65', code:'SG' },
+  { nom:'Slovakia', indicatif:'421', code:'SK' },
+  { nom:'Slovenia', indicatif:'386', code:'SI' },
+  { nom:'Solomon Islands', indicatif:'677', code:'SB' },
+  { nom:'Somalia', indicatif:'252', code:'SO' },
+  { nom:'South Africa', indicatif:'27', code:'ZA' },
+  { nom:'South Sudan', indicatif:'211', code:'SS' },
+  { nom:'South Georgia and the South Sandwich Islands', indicatif:'500', code:'GS' },
+  { nom:'Spain', indicatif:'34', code:'ES' },
+  { nom:'Sri Lanka', indicatif:'94', code:'LK' },
+  { nom:'Sudan', indicatif:'249', code:'SD' },
+  { nom:'Suriname', indicatif:'597', code:'SR' },
+  { nom:'Svalbard and Jan Mayen', indicatif:'47', code:'SJ' },
+  { nom:'Swaziland', indicatif:'268', code:'SZ' },
+  { nom:'Sweden', indicatif:'46', code:'SE' },
+  { nom:'Switzerland', indicatif:'41', code:'CH' },
+  { nom:'Syrian Arab Republic', indicatif:'963', code:'SY' },
+  { nom:'Taiwan', indicatif:'886', code:'TW' },
+  { nom:'Tajikistan', indicatif:'992', code:'TJ' },
+  { nom:'Tanzania, United Republic of Tanzania', indicatif:'255', code:'TZ' },
+  { nom:'Thailand', indicatif:'66', code:'TH' },
+  { nom:'Timor-Leste', indicatif:'670', code:'TL' },
+  { nom:'Togo', indicatif:'228', code:'TG', longueur:8 },
+  { nom:'Tokelau', indicatif:'690', code:'TK' },
+  { nom:'Tonga', indicatif:'676', code:'TO' },
+  { nom:'Trinidad and Tobago', indicatif:'1868', code:'TT' },
+  { nom:'Tunisia', indicatif:'216', code:'TN' },
+  { nom:'Turkey', indicatif:'90', code:'TR' },
+  { nom:'Turkmenistan', indicatif:'993', code:'TM' },
+  { nom:'Turks and Caicos Islands', indicatif:'1649', code:'TC' },
+  { nom:'Tuvalu', indicatif:'688', code:'TV' },
+  { nom:'Uganda', indicatif:'256', code:'UG' },
+  { nom:'Ukraine', indicatif:'380', code:'UA' },
+  { nom:'United Arab Emirates', indicatif:'971', code:'AE' },
+  { nom:'United Kingdom', indicatif:'44', code:'GB' },
+  { nom:'United States', indicatif:'1', code:'US' },
+  { nom:'Uruguay', indicatif:'598', code:'UY' },
+  { nom:'Uzbekistan', indicatif:'998', code:'UZ' },
+  { nom:'Vanuatu', indicatif:'678', code:'VU' },
+  { nom:'Venezuela', indicatif:'58', code:'VE' },
+  { nom:'Vietnam', indicatif:'84', code:'VN' },
+  { nom:'Virgin Islands, British', indicatif:'1284', code:'VG' },
+  { nom:'Virgin Islands, U.S.', indicatif:'1340', code:'VI' },
+  { nom:'Wallis and Futuna', indicatif:'681', code:'WF' },
+  { nom:'Yemen', indicatif:'967', code:'YE' },
+  { nom:'Zambia', indicatif:'260', code:'ZM' },
+  { nom:'Zimbabwe', indicatif:'263', code:'ZW' },
+]
+
+const CARTES = [
+  { id:'visa', label:'Visa', logo:'/logos/visa.svg' },
+  { id:'mastercard', label:'Mastercard', logo:'/logos/mastercard.svg' },
+  { id:'amex', label:'American Express', logo:'/logos/amex.svg' },
+  { id:'discover', label:'Discover', logo:'/logos/discover.png' },
 ]
 
 const OPERATEURS = [
@@ -63,17 +313,24 @@ const DEPARTEMENTS_VILLES = {
   },
 }
 
+const operateursDisponibles = (paysNom) => OPERATEURS.filter(o => o.pays.includes(paysNom))
+
 const validerMethode = (m) => {
   if (!m.pays) return 'Selectionnez un pays'
+  if (operateursDisponibles(m.pays).length === 0) return 'Mobile Money n est pas disponible pour ce pays'
   if (!m.operateur) return 'Selectionnez un operateur'
   if (!m.nomTitulaire.trim()) return 'Le nom du titulaire est requis'
   const clean = (m.telephone || '').replace(/[\s-]/g, '')
   const paysInfo = PAYS.find(p => p.nom === m.pays)
   if (!clean) return 'Le numero de telephone est requis'
   if (!/^\d+$/.test(clean)) return 'Le numero ne doit contenir que des chiffres'
-  if (clean.length !== paysInfo.longueur) return `Le numero doit contenir ${paysInfo.longueur} chiffres (hors indicatif)`
+  if (paysInfo?.longueur) {
+    if (clean.length !== paysInfo.longueur) return `Le numero doit contenir ${paysInfo.longueur} chiffres (hors indicatif)`
+  } else if (clean.length < 4 || clean.length > 14) {
+    return 'Numero de telephone invalide'
+  }
   if (!m.adresse1.trim()) return 'La ligne d adresse 1 est requise'
-  if (!m.departement) return 'Selectionnez un departement'
+  if (DEPARTEMENTS_VILLES[m.pays] && !m.departement) return 'Selectionnez un departement'
   if (!m.ville.trim()) return 'Renseignez une ville'
   return null
 }
@@ -176,17 +433,25 @@ export default function Abonnement() {
   }
 
   const [showAddMethod, setShowAddMethod] = useState(false)
+  const [methodeType, setMethodeType] = useState('mobile') // 'mobile' | 'carte'
   const emptyMethod = (pays='Benin') => ({
     pays, indicatif: PAYS.find(p=>p.nom===pays)?.indicatif || '229', operateur: '',
     nomTitulaire: '', telephone: '', adresse1: '', adresse2: '', departement: '', ville: '', codePostal: '',
   })
+  const emptyCard = (pays='Benin') => ({
+    nomTitulaire: '', numeroCarte: '', moisExp: '', anneeExp: '', cvv: '',
+    adresse1: '', adresse2: '', ville: '', departement: '', codePostal: '', pays,
+  })
   const [newMethod, setNewMethod] = useState(emptyMethod())
+  const [newCard, setNewCard] = useState(emptyCard())
   const [methodError, setMethodError] = useState('')
   const [savingMethod, setSavingMethod] = useState(false)
 
   const ouvrirAjoutMethode = () => {
     const paysDefaut = PAYS.find(p => p.nom === agence?.pays)?.nom || 'Benin'
     setNewMethod(emptyMethod(paysDefaut))
+    setNewCard(emptyCard(paysDefaut))
+    setMethodeType('mobile')
     setMethodError('')
     setShowAddMethod(true)
   }
@@ -499,15 +764,24 @@ export default function Abonnement() {
               </div>
 
               <div style={{padding:'20px 24px',overflowY:'auto',flex:1}}>
+
+                <div style={{display:'flex',gap:8,marginBottom:24}}>
+                  {[['mobile','Portefeuille Mobile Money'],['carte','Carte de credit ou de debit']].map(([k,l])=>(
+                    <button key={k} onClick={()=>{setMethodeType(k);setMethodError('')}}
+                      style={{flex:1,padding:'10px 8px',borderRadius:8,border:`1.5px solid ${methodeType===k?'#4da6ff':'rgba(255,255,255,0.1)'}`,background:methodeType===k?'rgba(77,166,255,0.08)':'rgba(255,255,255,0.02)',color:methodeType===k?'#4da6ff':'rgba(255,255,255,0.6)',fontSize:12.5,fontWeight:600,fontFamily:'Inter,sans-serif',cursor:'pointer'}}>{l}</button>
+                  ))}
+                </div>
+
+                {methodeType==='mobile' ? (<>
                 <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)',lineHeight:1.6,marginBottom:24}}>
                   Ce mode de paiement sera enregistre sur votre compte pour vos prochains abonnements. Rien n est debite automatiquement : chaque paiement doit etre approuve sur votre telephone.
                 </div>
 
                 <div style={{fontSize:11.5,fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10}}>Nous prenons en charge les operateurs suivants</div>
-                <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:24,flexWrap:'wrap'}}>
+                <div style={{display:'flex',alignItems:'stretch',marginBottom:24,width:'fit-content',borderRadius:8,overflow:'hidden',border:'1px solid rgba(255,255,255,0.1)'}}>
                   {OPERATEURS.map(op=>(
-                    <div key={op.id} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,width:60}}>
-                      <OperateurBadge operateurId={op.id} size={36}/>
+                    <div key={op.id} style={{padding:6,background:'rgba(255,255,255,0.02)'}}>
+                      <OperateurBadge operateurId={op.id} size={40}/>
                     </div>
                   ))}
                 </div>
@@ -519,15 +793,17 @@ export default function Abonnement() {
 
                 <div style={{marginBottom:20}}>
                   <label style={{display:'block',fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>Operateur Mobile Money</label>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                    {OPERATEURS.filter(op=>op.pays.includes(newMethod.pays)).map(op=>(
-                      <div key={op.id} onClick={()=>{setNewMethod(p=>({...p,operateur:op.id}));setMethodError('')}}
-                        style={{padding:'8px 12px',borderRadius:8,border:`1.5px solid ${newMethod.operateur===op.id?'#4da6ff':'rgba(255,255,255,0.08)'}`,background:newMethod.operateur===op.id?'rgba(77,166,255,0.08)':'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.15s',display:'flex',alignItems:'center',gap:10}}>
-                        <OperateurBadge operateurId={op.id} size={26}/>
-                        <div style={{fontSize:12.5,fontWeight:600,color:newMethod.operateur===op.id?'#4da6ff':'rgba(255,255,255,0.7)'}}>{op.label}</div>
-                      </div>
-                    ))}
-                  </div>
+                  {operateursDisponibles(newMethod.pays).length === 0 ? (
+                    <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)',padding:'10px 12px',background:'rgba(255,255,255,0.03)',borderRadius:7,border:'1px solid rgba(255,255,255,0.08)'}}>
+                      Mobile Money n est pas encore disponible pour ce pays. Vous pouvez ajouter une carte de credit ou de debit a la place.
+                    </div>
+                  ) : (
+                    <Combobox
+                      value={OPERATEURS.find(o=>o.id===newMethod.operateur)?.label || ''}
+                      onChange={label=>{const op=OPERATEURS.find(o=>o.label===label);setNewMethod(p=>({...p,operateur:op?.id||''}));setMethodError('')}}
+                      options={operateursDisponibles(newMethod.pays).map(o=>o.label)}
+                      placeholder="Rechercher un operateur"/>
+                  )}
                 </div>
 
                 <div style={{fontSize:11.5,fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10,marginTop:24}}>Coordonnees de paiement</div>
@@ -543,8 +819,8 @@ export default function Abonnement() {
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Numero de telephone *</label>
                   <div style={{display:'flex',gap:8}}>
                     <select value={newMethod.indicatif} onChange={e=>setNewMethod(p=>({...p,indicatif:e.target.value}))}
-                      style={{width:88,padding:'10px 8px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',colorScheme:'dark'}}>
-                      {PAYS.map(p=><option key={p.nom} value={p.indicatif}>+{p.indicatif}</option>)}
+                      style={{width:100,padding:'10px 8px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',colorScheme:'dark'}}>
+                      {PAYS.map(p=><option key={p.nom+p.indicatif} value={p.indicatif}>+{p.indicatif}</option>)}
                     </select>
                     <input type="tel" value={newMethod.telephone} onChange={e=>{setNewMethod(p=>({...p,telephone:e.target.value}));setMethodError('')}}
                       placeholder="96000000"
@@ -567,21 +843,33 @@ export default function Abonnement() {
                     style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
                 </div>
 
-                <div style={{marginBottom:14}}>
-                  <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Departement *</label>
-                  <Combobox value={newMethod.departement}
-                    onChange={d=>{setNewMethod(p=>({...p,departement:d,ville:''}));setMethodError('')}}
-                    options={Object.keys(DEPARTEMENTS_VILLES[newMethod.pays]||{})}
-                    placeholder="Rechercher un departement" disabled={!newMethod.pays}/>
-                </div>
-
-                <div style={{marginBottom:14}}>
-                  <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ville *</label>
-                  <Combobox value={newMethod.ville}
-                    onChange={v=>{setNewMethod(p=>({...p,ville:v}));setMethodError('')}}
-                    options={DEPARTEMENTS_VILLES[newMethod.pays]?.[newMethod.departement] || []}
-                    placeholder="Rechercher ou saisir une ville" freeText disabled={!newMethod.departement}/>
-                </div>
+                {DEPARTEMENTS_VILLES[newMethod.pays] ? (<>
+                  <div style={{marginBottom:14}}>
+                    <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Departement *</label>
+                    <Combobox value={newMethod.departement}
+                      onChange={d=>{setNewMethod(p=>({...p,departement:d,ville:''}));setMethodError('')}}
+                      options={Object.keys(DEPARTEMENTS_VILLES[newMethod.pays]||{})}
+                      placeholder="Rechercher un departement" disabled={!newMethod.pays}/>
+                  </div>
+                  <div style={{marginBottom:14}}>
+                    <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ville *</label>
+                    <Combobox value={newMethod.ville}
+                      onChange={v=>{setNewMethod(p=>({...p,ville:v}));setMethodError('')}}
+                      options={DEPARTEMENTS_VILLES[newMethod.pays]?.[newMethod.departement] || []}
+                      placeholder="Rechercher ou saisir une ville" freeText disabled={!newMethod.departement}/>
+                  </div>
+                </>) : (<>
+                  <div style={{marginBottom:14}}>
+                    <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Departement / Region *</label>
+                    <input value={newMethod.departement} onChange={e=>{setNewMethod(p=>({...p,departement:e.target.value}));setMethodError('')}}
+                      style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                  </div>
+                  <div style={{marginBottom:14}}>
+                    <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ville *</label>
+                    <input value={newMethod.ville} onChange={e=>{setNewMethod(p=>({...p,ville:e.target.value}));setMethodError('')}}
+                      style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                  </div>
+                </>)}
 
                 <div style={{marginBottom:8}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Code postal (facultatif)</label>
@@ -590,11 +878,118 @@ export default function Abonnement() {
                 </div>
 
                 {methodError && <div style={{fontSize:12.5,color:'#ef4444',marginTop:10,padding:'8px 12px',background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:6}}>{methodError}</div>}
+                </>) : (<>
+                <div style={{fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Nous acceptons les cartes suivantes</div>
+                <div style={{display:'flex',alignItems:'stretch',marginBottom:24,width:'fit-content',borderRadius:8,overflow:'hidden',border:'1px solid rgba(255,255,255,0.1)'}}>
+                  {CARTES.map(c=>(
+                    <div key={c.id} style={{padding:8,background:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      <img src={c.logo} alt={c.label} style={{height:24,width:'auto',objectFit:'contain'}}/>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:20}}>* Obligatoire</div>
+
+                <div style={{marginBottom:14}}>
+                  <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Nom du titulaire de la carte *</label>
+                  <input value={newCard.nomTitulaire} onChange={e=>setNewCard(p=>({...p,nomTitulaire:e.target.value}))}
+                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                </div>
+
+                <div style={{marginBottom:14}}>
+                  <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Numero de carte *</label>
+                  <input inputMode="numeric" autoComplete="off" value={newCard.numeroCarte} onChange={e=>setNewCard(p=>({...p,numeroCarte:e.target.value}))}
+                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                </div>
+
+                <div style={{display:'flex',gap:8,marginBottom:14}}>
+                  <div style={{flex:1}}>
+                    <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Mois d exp. *</label>
+                    <select value={newCard.moisExp} onChange={e=>setNewCard(p=>({...p,moisExp:e.target.value}))}
+                      style={{width:'100%',padding:'10px 8px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',colorScheme:'dark'}}>
+                      <option value="">MM</option>
+                      {Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0')).map(m=><option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                  <div style={{flex:1}}>
+                    <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Annee d exp. *</label>
+                    <select value={newCard.anneeExp} onChange={e=>setNewCard(p=>({...p,anneeExp:e.target.value}))}
+                      style={{width:'100%',padding:'10px 8px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',colorScheme:'dark'}}>
+                      <option value="">AA</option>
+                      {Array.from({length:15},(_,i)=>String(new Date().getFullYear()+i).slice(-2)).map(a=><option key={a} value={a}>{a}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{marginBottom:20,maxWidth:140}}>
+                  <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Cryptogramme visuel * <span title="3 chiffres au dos de la carte" style={{color:'rgba(255,255,255,0.3)',cursor:'help'}}>ⓘ</span></label>
+                  <input inputMode="numeric" autoComplete="off" maxLength={4} value={newCard.cvv} onChange={e=>setNewCard(p=>({...p,cvv:e.target.value}))}
+                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                </div>
+
+                <div style={{marginBottom:14}}>
+                  <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ligne d adresse 1 *</label>
+                  <input value={newCard.adresse1} onChange={e=>setNewCard(p=>({...p,adresse1:e.target.value}))}
+                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                </div>
+
+                <div style={{marginBottom:14}}>
+                  <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ligne d adresse 2 (en option)</label>
+                  <input value={newCard.adresse2} onChange={e=>setNewCard(p=>({...p,adresse2:e.target.value}))}
+                    style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                </div>
+
+                <div style={{marginBottom:14}}>
+                  <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Ville *</label>
+                  {DEPARTEMENTS_VILLES[newCard.pays] ? (
+                    <Combobox value={newCard.ville} onChange={v=>setNewCard(p=>({...p,ville:v}))}
+                      options={DEPARTEMENTS_VILLES[newCard.pays]?.[newCard.departement] || []}
+                      placeholder="Rechercher ou saisir une ville" freeText/>
+                  ) : (
+                    <input value={newCard.ville} onChange={e=>setNewCard(p=>({...p,ville:e.target.value}))}
+                      style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                  )}
+                </div>
+
+                <div style={{marginBottom:14}}>
+                  <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Departement *</label>
+                  {DEPARTEMENTS_VILLES[newCard.pays] ? (
+                    <Combobox value={newCard.departement} onChange={d=>setNewCard(p=>({...p,departement:d,ville:''}))}
+                      options={Object.keys(DEPARTEMENTS_VILLES[newCard.pays]||{})} placeholder="--Selectionner--"/>
+                  ) : (
+                    <input value={newCard.departement} onChange={e=>setNewCard(p=>({...p,departement:e.target.value}))}
+                      placeholder="--Selectionner--"
+                      style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                  )}
+                </div>
+
+                <div style={{marginBottom:14}}>
+                  <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Code postal *</label>
+                  <input value={newCard.codePostal} onChange={e=>setNewCard(p=>({...p,codePostal:e.target.value}))}
+                    style={{width:'50%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+                </div>
+
+                <div style={{marginBottom:20}}>
+                  <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Pays/region *</label>
+                  <Combobox value={newCard.pays} onChange={p2=>setNewCard(p=>({...p,pays:p2,departement:'',ville:''}))} options={PAYS.map(p=>p.nom)} placeholder="Rechercher un pays"/>
+                </div>
+
+                <div style={{fontSize:11.5,color:'rgba(255,255,255,0.4)',lineHeight:1.6,marginBottom:8}}>
+                  Cette option de paiement sera enregistree sur votre compte.
+                </div>
+                <div style={{fontSize:12,color:'#f59e0b',padding:'8px 12px',background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:6}}>
+                  Le paiement par carte sera bientot disponible. Ce formulaire n enregistre rien pour l instant.
+                </div>
+                </>)}
               </div>
 
               <div style={{display:'flex',gap:8,justifyContent:'flex-end',padding:'16px 24px',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
                 <button style={bB} onClick={()=>setShowAddMethod(false)}>Annuler</button>
-                <button style={{...bP,opacity:savingMethod?0.6:1}} disabled={savingMethod} onClick={ajouterMethode}>{savingMethod?'Ajout...':'Ajouter'}</button>
+                {methodeType==='mobile' ? (
+                  <button style={{...bP,opacity:savingMethod?0.6:1}} disabled={savingMethod} onClick={ajouterMethode}>{savingMethod?'Ajout...':'Ajouter'}</button>
+                ) : (
+                  <button style={{...bP,opacity:0.4,cursor:'not-allowed'}} disabled title="Paiement par carte bientot disponible">Ajouter</button>
+                )}
               </div>
             </div>
           </div>
