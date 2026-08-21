@@ -2,6 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
+import {
+  RefreshCw, Download, FileDown, Users, Search, List,
+  ChevronsUpDown, ChevronDown, Info, CheckCircle2, MoreHorizontal,
+  FileText, BookOpen, Link2, X,
+} from 'lucide-react'
 
 const FACTURE_STATUT_CFG = {
   paye:    { color:'#00c896', bg:'rgba(0,200,150,0.1)', label:'Payee' },
@@ -429,8 +434,18 @@ function ColHeader({ label }) {
   return (
     <div style={{ display:'flex', alignItems:'center', gap:5 }}>
       <span style={{ textTransform:'uppercase' }}>{label}</span>
-      <span style={{ fontSize:11, opacity:0.5 }}>↕</span>
-      <span style={{ fontSize:9, opacity:0.5 }}>⌄</span>
+      <ChevronsUpDown size={11} style={{ opacity:0.5, flexShrink:0 }}/>
+      <ChevronDown size={11} style={{ opacity:0.5, flexShrink:0 }}/>
+    </div>
+  )
+}
+
+function SearchBox({ value, onChange, placeholder='Rechercher', style={} }) {
+  return (
+    <div style={{ position:'relative', ...style }}>
+      <Search size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'rgba(255,255,255,0.35)', pointerEvents:'none' }}/>
+      <input value={value} onChange={onChange} placeholder={placeholder}
+        style={{ width:'100%', padding:'7px 12px 7px 30px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:2, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none', boxSizing:'border-box' }}/>
     </div>
   )
 }
@@ -468,19 +483,19 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
       <div style={{ fontSize:26, fontWeight:700, color:'#e6edf3', marginBottom:16 }}>{f.numero}</div>
 
       <div style={{ display:'flex', gap:24, marginBottom:20, flexWrap:'wrap' }}>
-        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}>📄 Preparer le fichier d utilisation</a>
-        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}>⬇ Telechargement ⌄</a>
-        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}>🔗 Liens utiles ⌄</a>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><FileText size={14}/> Preparer le fichier d utilisation</a>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><Download size={14}/> Telechargement <ChevronDown size={13}/></a>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><Link2 size={14}/> Liens utiles <ChevronDown size={13}/></a>
       </div>
 
       {bannerOuverte && (
         <div style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'14px 16px', background:'rgba(0,120,212,0.06)', borderRadius:2, marginBottom:28 }}>
-          <span style={{ fontSize:14, flexShrink:0 }}>ℹ️</span>
+          <Info size={15} style={{ color:'#4da6ff', flexShrink:0, marginTop:1 }}/>
           <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.6)', lineHeight:1.7, flex:1 }}>
             Cette facture concerne les achats d abonnement, les renouvellements et les frais recurrents a la date indiquee. La periode de service que vous payez est repertoriee dans chaque abonnement ci-dessous.{' '}
             <a href="#" onClick={e=>e.preventDefault()} style={{ color:'#4da6ff' }}>En savoir plus sur le calendrier de facturation</a>
           </div>
-          <button onClick={()=>setBannerOuverte(false)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:14, flexShrink:0 }}>✕</button>
+          <button onClick={()=>setBannerOuverte(false)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', display:'flex', flexShrink:0 }}><X size={15}/></button>
         </div>
       )}
 
@@ -489,7 +504,7 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
           <div style={{ fontSize:13, fontWeight:700, color:'#e6edf3', marginBottom:12 }}>Montant du</div>
           <div style={{ fontSize:28, fontWeight:700, color:'#e6edf3', marginBottom:8 }}>{paye ? '0,00' : fmt(montant)} {devise}</div>
           {paye ? (
-            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12.5, color:'#00c896' }}>✓ Cette facture a ete payee le {datePaiement}</div>
+            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12.5, color:'#00c896' }}><CheckCircle2 size={14}/> Cette facture a ete payee le {datePaiement}</div>
           ) : (
             <div style={{ fontSize:12.5, color:sc.color }}>{sc.label}</div>
           )}
@@ -531,8 +546,8 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
       </div>
 
       <div style={{ display:'flex', alignItems:'center', gap:18, marginBottom:16, flexWrap:'wrap', paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}>⬇ Exporter vers un fichier CSV</a>
-        <input placeholder="🔍 Rechercher" style={{ marginLeft:'auto', padding:'7px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:2, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none', minWidth:180 }}/>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><Download size={14}/> Exporter vers un fichier CSV</a>
+        <SearchBox value="" onChange={()=>{}} style={{ marginLeft:'auto', minWidth:180 }}/>
       </div>
 
       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18, flexWrap:'wrap' }}>
@@ -545,23 +560,23 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
         <table style={{ width:'100%', borderCollapse:'collapse', minWidth:1100 }}>
           <thead><tr>
             {['Date','Periode de service (UTC)','Type','Famille de produit','Type de produit','Reference SKU du produit','Section facture','Prix e...','Quantite','Frais','Taxe','Total'].map(h=>(
-              <th key={h} style={{ textAlign:'left', padding:'12px 16px', fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', borderBottom:'1px solid rgba(255,255,255,0.06)', whiteSpace:'nowrap' }}>{h} ⌄</th>
+              <th key={h} className="fl-th"><ColHeader label={h}/></th>
             ))}
           </tr></thead>
           <tbody>
-            <tr>
-              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>{dateFacture}</td>
-              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>{periodeLabel}</td>
-              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>Paiement</td>
-              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>Imoloc</td>
-              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>Abonnement Imoloc</td>
-              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>{f.abonnement_id ? String(f.abonnement_id).slice(0,8) : 'N/A'}</td>
-              <td style={{ padding:'12px 16px', fontSize:13, color:'#4da6ff', whiteSpace:'nowrap' }}>{agence?.nom}</td>
-              <td style={{ padding:'12px 16px', fontSize:13, color:'#e6edf3', whiteSpace:'nowrap' }}>{fmt(montant)} {devise}</td>
-              <td style={{ padding:'12px 16px', fontSize:13, color:'#e6edf3', whiteSpace:'nowrap' }}>1</td>
-              <td style={{ padding:'12px 16px', fontSize:13, color:'#e6edf3', whiteSpace:'nowrap' }}>{fmt(montant)} {devise}</td>
-              <td style={{ padding:'12px 16px', fontSize:13, color:'#e6edf3', whiteSpace:'nowrap' }}>0 {devise}</td>
-              <td style={{ padding:'12px 16px', fontSize:13, fontWeight:600, color:'#e6edf3', whiteSpace:'nowrap' }}>{fmt(montant)} {devise}</td>
+            <tr className="fl-row">
+              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>{dateFacture}</td>
+              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>{periodeLabel}</td>
+              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>Paiement</td>
+              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>Imoloc</td>
+              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>Abonnement Imoloc</td>
+              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>{f.abonnement_id ? String(f.abonnement_id).slice(0,8) : 'N/A'}</td>
+              <td className="fl-td" style={{ color:'#4da6ff' }}>{agence?.nom}</td>
+              <td className="fl-td" style={{ color:'#e6edf3' }}>{fmt(montant)} {devise}</td>
+              <td className="fl-td" style={{ color:'#e6edf3' }}>1</td>
+              <td className="fl-td" style={{ color:'#e6edf3' }}>{fmt(montant)} {devise}</td>
+              <td className="fl-td" style={{ color:'#e6edf3' }}>0 {devise}</td>
+              <td className="fl-td" style={{ fontWeight:600, color:'#e6edf3' }}>{fmt(montant)} {devise}</td>
             </tr>
           </tbody>
         </table>
@@ -742,7 +757,7 @@ export default function Abonnement() {
 
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:10, marginBottom:20 }}>
           <div style={{ fontSize:26, fontWeight:700, color:'#e6edf3' }}>Factures et paiements</div>
-          <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:12.5, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6, marginTop:6 }}>📖 Decouvrez plus d informations sur la nouvelle experience de facturation.</a>
+          <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:12.5, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6, marginTop:6 }}><BookOpen size={13}/> Decouvrez plus d informations sur la nouvelle experience de facturation.</a>
         </div>
 
         <div style={{ display:'flex', gap:24, borderBottom:'1px solid rgba(255,255,255,0.08)', marginBottom:20 }}>
@@ -765,7 +780,7 @@ export default function Abonnement() {
             </div>
 
             <div style={{ display:'flex', gap:10, padding:'14px 16px', background:'rgba(0,120,212,0.06)', borderRadius:2, marginBottom:24 }}>
-              <span style={{ fontSize:14, flexShrink:0 }}>ℹ️</span>
+              <Info size={15} style={{ color:'#4da6ff', flexShrink:0, marginTop:1 }}/>
               <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.6)', lineHeight:1.7 }}>
                 Les factures sont generees automatiquement a chaque paiement Mobile Money confirme (essai gratuit, souscription ou renouvellement d abonnement). Retrouvez le detail de chaque transaction ci-dessous.
               </div>
@@ -783,17 +798,20 @@ export default function Abonnement() {
             </div>
 
             <div style={{ display:'flex', alignItems:'center', gap:18, marginBottom:14, flexWrap:'wrap', paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-              <button onClick={init} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}>↻ Actualiser</button>
-              <button onClick={()=>exporterCSV(selectedFactures.length?facturesFiltrees.filter(f=>selectedFactures.includes(f.id)):facturesFiltrees)} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}>⬇ Exporter vers un fichier CSV</button>
-              <span style={{ fontSize:13, color:'rgba(255,255,255,0.25)', cursor:'default', display:'flex', alignItems:'center', gap:6 }}>📄 Telecharger</span>
-              <span style={{ fontSize:13, color:'rgba(255,255,255,0.25)', cursor:'default', display:'flex', alignItems:'center', gap:6 }}>👥 Gerer l acces</span>
-              <input value={factureSearch} onChange={e=>setFactureSearch(e.target.value)} placeholder="🔍 Rechercher"
-                style={{ padding:'7px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:2, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none', minWidth:180 }}/>
+              <button onClick={init} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}><RefreshCw size={13}/> Actualiser</button>
+              <button onClick={()=>exporterCSV(selectedFactures.length?facturesFiltrees.filter(f=>selectedFactures.includes(f.id)):facturesFiltrees)} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}><Download size={13}/> Exporter vers un fichier CSV</button>
+              <span style={{ fontSize:13, color:'rgba(255,255,255,0.25)', cursor:'default', display:'flex', alignItems:'center', gap:6 }}><FileDown size={13}/> Telecharger</span>
+              <span style={{ fontSize:13, color:'rgba(255,255,255,0.25)', cursor:'default', display:'flex', alignItems:'center', gap:6 }}><Users size={13}/> Gerer l acces</span>
+              <SearchBox value={factureSearch} onChange={e=>setFactureSearch(e.target.value)} style={{ minWidth:180 }}/>
               <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:16 }}>
                 <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:12.5, color:'#4da6ff', textDecoration:'none' }}>M aider a comprendre ce tableau</a>
-                <select value="liste" onChange={()=>{}} style={{ padding:'6px 10px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:2, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none' }}>
-                  <option value="liste">Liste</option>
-                </select>
+                <div style={{ position:'relative' }}>
+                  <select value="liste" onChange={()=>{}} style={{ padding:'6px 28px 6px 30px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:2, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none', appearance:'none', WebkitAppearance:'none', MozAppearance:'none', cursor:'pointer' }}>
+                    <option value="liste">Liste</option>
+                  </select>
+                  <List size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'rgba(255,255,255,0.5)', pointerEvents:'none' }}/>
+                  <ChevronDown size={13} style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', color:'rgba(255,255,255,0.5)', pointerEvents:'none' }}/>
+                </div>
               </div>
             </div>
 
@@ -819,7 +837,7 @@ export default function Abonnement() {
             <div style={{ background:'rgba(255,255,255,0.02)', borderRadius:2, overflow:'hidden' }}>
               {facturesFiltrees.length === 0 ? (
                 <div style={{ textAlign:'center', padding:'60px', color:'rgba(255,255,255,0.3)' }}>
-                  <div style={{ fontSize:32, marginBottom:12, opacity:0.3 }}>📄</div>
+                  <FileText size={32} style={{ marginBottom:12, opacity:0.3 }}/>
                   <div style={{ fontSize:14 }}>{factures.length===0 ? 'Aucune facture pour le moment' : 'Aucune facture ne correspond a ce filtre'}</div>
                   {factures.length===0 && <div style={{ fontSize:12.5, marginTop:6, color:'rgba(255,255,255,0.25)' }}>Vos factures apparaitront ici des qu un paiement sera effectue.</div>}
                 </div>
@@ -843,7 +861,7 @@ export default function Abonnement() {
                       </td>
                       <td className="fl-td" style={{ fontWeight:600 }}>
                         <a href="#" onClick={e=>{e.preventDefault();setFactureDetail(f)}} style={{ color:'#4da6ff', textDecoration:'none', cursor:'pointer' }}>{f.numero}</a>{' '}
-                        <span style={{ color:'rgba(255,255,255,0.3)', fontSize:11 }}>ⓘ</span>
+                        <Info size={11} style={{ color:'rgba(255,255,255,0.3)', verticalAlign:-1 }}/>
                       </td>
                       <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>{new Date(f.created_at).toLocaleDateString('fr-FR')}</td>
                       <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>
@@ -853,19 +871,15 @@ export default function Abonnement() {
                       <td className="fl-td" style={{ fontWeight:600, color:'#e6edf3' }}>{fmt(f.montant)} {f.devise||'FCFA'}</td>
                       <td className="fl-td">
                         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                          {f.statut==='paye' && (
-                            <span style={{ width:14, height:14, borderRadius:'50%', background:'#00c896', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                              <svg width="8" height="8" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="#0d1117" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                            </span>
-                          )}
+                          {f.statut==='paye' && <CheckCircle2 size={14} style={{ color:'#00c896', flexShrink:0 }} fill="#00c896" stroke="#0d1117"/>}
                           <span style={{ fontSize:12.5, color:sc.color }}>{f.statut==='paye' ? `Paye le ${f.date_paiement?new Date(f.date_paiement).toLocaleDateString('fr-FR'):new Date(f.created_at).toLocaleDateString('fr-FR')}` : sc.label}</span>
                         </div>
                       </td>
                       <td className="fl-td" style={{ color:'rgba(255,255,255,0.3)' }}>N/A</td>
                       <td className="fl-td">
                         <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                          <a href="#" onClick={e=>e.preventDefault()} style={{ color:'#4da6ff', textDecoration:'none', fontSize:12.5, display:'flex', alignItems:'center', gap:4 }}>↓ Telecharger</a>
-                          <button onClick={e=>e.preventDefault()} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:14, letterSpacing:1, padding:0 }}>&#8943;</button>
+                          <a href="#" onClick={e=>e.preventDefault()} style={{ color:'#4da6ff', textDecoration:'none', fontSize:12.5, display:'flex', alignItems:'center', gap:4 }}><Download size={13}/> Telecharger</a>
+                          <button onClick={e=>e.preventDefault()} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', display:'flex', padding:0 }}><MoreHorizontal size={15}/></button>
                         </div>
                       </td>
                     </tr>
@@ -897,7 +911,7 @@ export default function Abonnement() {
 
             <div style={{ display:'flex', alignItems:'center', gap:24, marginBottom:16, paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
               <button onClick={ouvrirAjoutMethode} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}>+ Ajouter une methode de paiement</button>
-              <button onClick={init} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}>↻ Actualiser</button>
+              <button onClick={init} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}><RefreshCw size={13}/> Actualiser</button>
             </div>
 
             <div style={{ marginBottom:36 }}>
@@ -1146,7 +1160,7 @@ export default function Abonnement() {
                 </div>
 
                 <div style={{marginBottom:20,maxWidth:140}}>
-                  <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Cryptogramme visuel * <span title="3 chiffres au dos de la carte" style={{color:'rgba(255,255,255,0.3)',cursor:'help'}}>ⓘ</span></label>
+                  <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Cryptogramme visuel * <Info size={12} title="3 chiffres au dos de la carte" style={{color:'rgba(255,255,255,0.3)',cursor:'help'}}/></label>
                   <input inputMode="numeric" autoComplete="off" maxLength={4} value={newCard.cvv} onChange={e=>setNewCard(p=>({...p,cvv:e.target.value}))}
                     style={fieldStyle(false)}/>
                 </div>
