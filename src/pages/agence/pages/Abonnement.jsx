@@ -336,7 +336,7 @@ const validerMethode = (m) => {
   return err
 }
 
-const bB = { display:'inline-flex',alignItems:'center',gap:6,padding:'8px 16px',borderRadius:6,fontSize:13,fontWeight:500,cursor:'pointer',border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.6)',fontFamily:'Inter,sans-serif',transition:'all 0.15s' }
+const bB = { display:'inline-flex',alignItems:'center',gap:6,padding:'8px 16px',borderRadius:2,fontSize:13,fontWeight:500,cursor:'pointer',border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.6)',fontFamily:'Inter,sans-serif',transition:'all 0.15s' }
 const bP = { ...bB, background:'#0078d4', borderColor:'#0078d4', color:'#fff' }
 const fmt = n => Number(n||0).toLocaleString('fr-FR')
 
@@ -502,11 +502,11 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
       </div>
 
       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18, flexWrap:'wrap' }}>
-        <span style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:100, color:'#e6edf3', fontSize:12, fontWeight:600 }}>Type de transaction : Tout</span>
-        <span style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:100, color:'#e6edf3', fontSize:12, fontWeight:600 }}>Section facture : Tout</span>
+        <span style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:2, color:'#e6edf3', fontSize:12, fontWeight:600 }}>Type de transaction : Tout</span>
+        <span style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:2, color:'#e6edf3', fontSize:12, fontWeight:600 }}>Section facture : Tout</span>
       </div>
 
-      <div style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:12, overflow:'hidden' }}>
+      <div style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:2, overflow:'hidden' }}>
         <div style={{ overflowX:'auto' }}>
         <table style={{ width:'100%', borderCollapse:'collapse', minWidth:1100 }}>
           <thead><tr>
@@ -690,7 +690,7 @@ export default function Abonnement() {
 
   return (
     <>
-      <div style={{ maxWidth:1300, margin:'0 auto' }}>
+      <div style={{ width:'100%' }}>
 
         <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14 }}>
           Accueil <span style={{ margin:'0 4px' }}>&gt;</span>{' '}
@@ -729,7 +729,7 @@ export default function Abonnement() {
               Factures connectees a <span style={{ color:'#4da6ff', fontWeight:600 }}>{agence?.nom}</span>
             </div>
 
-            <div style={{ display:'flex', gap:10, padding:'14px 16px', background:'rgba(0,120,212,0.06)', border:'1px solid rgba(0,120,212,0.2)', borderRadius:8, marginBottom:24 }}>
+            <div style={{ display:'flex', gap:10, padding:'14px 16px', background:'rgba(0,120,212,0.06)', border:'1px solid rgba(0,120,212,0.2)', borderRadius:2, marginBottom:24 }}>
               <span style={{ fontSize:14, flexShrink:0 }}>ℹ️</span>
               <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.6)', lineHeight:1.7 }}>
                 Les factures sont generees automatiquement a chaque paiement Mobile Money confirme (essai gratuit, souscription ou renouvellement d abonnement). Retrouvez le detail de chaque transaction ci-dessous.
@@ -753,10 +753,10 @@ export default function Abonnement() {
               <span style={{ fontSize:13, color:'rgba(255,255,255,0.25)', cursor:'default', display:'flex', alignItems:'center', gap:6 }}>📄 Telecharger</span>
               <span style={{ fontSize:13, color:'rgba(255,255,255,0.25)', cursor:'default', display:'flex', alignItems:'center', gap:6 }}>👥 Gerer l acces</span>
               <input value={factureSearch} onChange={e=>setFactureSearch(e.target.value)} placeholder="🔍 Rechercher"
-                style={{ padding:'7px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:6, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none', minWidth:180 }}/>
+                style={{ padding:'7px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:2, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none', minWidth:180 }}/>
               <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:16 }}>
                 <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:12.5, color:'#4da6ff', textDecoration:'none' }}>M aider a comprendre ce tableau</a>
-                <select value="liste" onChange={()=>{}} style={{ padding:'6px 10px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:6, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none' }}>
+                <select value="liste" onChange={()=>{}} style={{ padding:'6px 10px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:2, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none' }}>
                   <option value="liste">Liste</option>
                 </select>
               </div>
@@ -764,13 +764,13 @@ export default function Abonnement() {
 
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18, flexWrap:'wrap' }}>
               <select value={factureStatutFilter} onChange={e=>setFactureStatutFilter(e.target.value)}
-                style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:100, color:'#e6edf3', fontSize:12, fontWeight:600, fontFamily:'Inter,sans-serif', outline:'none' }}>
+                style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:2, color:'#e6edf3', fontSize:12, fontWeight:600, fontFamily:'Inter,sans-serif', outline:'none' }}>
                 <option value="tout">Etat : Tout</option>
                 {Object.entries(FACTURE_STATUT_CFG).map(([k,v])=><option key={k} value={k}>Etat : {v.label}</option>)}
               </select>
-              <span style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:100, color:'#e6edf3', fontSize:12, fontWeight:600 }}>Profil de facturation : {agence?.nom}</span>
+              <span style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:2, color:'#e6edf3', fontSize:12, fontWeight:600 }}>Profil de facturation : {agence?.nom}</span>
               <select value={factureDuree} onChange={e=>setFactureDuree(e.target.value)}
-                style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:100, color:'#e6edf3', fontSize:12, fontWeight:600, fontFamily:'Inter,sans-serif', outline:'none' }}>
+                style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:2, color:'#e6edf3', fontSize:12, fontWeight:600, fontFamily:'Inter,sans-serif', outline:'none' }}>
                 <option value="3mois">Duree : 3 derniers mois</option>
                 <option value="12mois">Duree : 12 derniers mois</option>
                 <option value="tout">Duree : Tout</option>
@@ -781,7 +781,7 @@ export default function Abonnement() {
               </label>
             </div>
 
-            <div style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:12, overflow:'hidden' }}>
+            <div style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:2, overflow:'hidden' }}>
               {facturesFiltrees.length === 0 ? (
                 <div style={{ textAlign:'center', padding:'60px', color:'rgba(255,255,255,0.3)' }}>
                   <div style={{ fontSize:32, marginBottom:12, opacity:0.3 }}>📄</div>
@@ -869,7 +869,7 @@ export default function Abonnement() {
                           <div style={{ fontSize:14, fontWeight:600, color:'#e6edf3' }}>{m.details?.operateur || 'Mobile Money'}</div>
                           <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)' }}>{m.nom_titulaire} &middot; {m.details?.phoneMasque || m.details?.phone} &middot; {m.details?.pays}</div>
                         </div>
-                        {m.par_defaut && <span style={{ fontSize:11, padding:'2px 8px', borderRadius:100, background:'rgba(0,200,150,0.1)', color:'#00c896', border:'1px solid rgba(0,200,150,0.2)', marginLeft:4 }}>Par defaut</span>}
+                        {m.par_defaut && <span style={{ fontSize:11, padding:'2px 8px', borderRadius:2, background:'rgba(0,200,150,0.1)', color:'#00c896', border:'1px solid rgba(0,200,150,0.2)', marginLeft:4 }}>Par defaut</span>}
                       </div>
                     </td>
                     <td style={{ padding:'14px 16px 14px 0', fontSize:13, color:'rgba(255,255,255,0.4)' }}>&mdash;</td>
@@ -896,7 +896,7 @@ export default function Abonnement() {
             </div>
             <div style={{ marginBottom:16 }}>
               <span style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)' }}>Filtres : </span>
-              <span style={{ fontSize:12, fontWeight:600, padding:'4px 10px', borderRadius:100, background:'rgba(255,255,255,0.06)', color:'#e6edf3' }}>Profil de facturation : Tous</span>
+              <span style={{ fontSize:12, fontWeight:600, padding:'4px 10px', borderRadius:2, background:'rgba(255,255,255,0.06)', color:'#e6edf3' }}>Profil de facturation : Tous</span>
             </div>
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <thead><tr>{['Mode de paiement par defaut','Profil de facturation','Date d expiration ↑','Type'].map(h=>(
@@ -1156,7 +1156,7 @@ export default function Abonnement() {
                 <div style={{fontSize:11.5,color:'rgba(255,255,255,0.4)',lineHeight:1.6,marginBottom:8}}>
                   Cette option de paiement sera enregistree sur votre compte.
                 </div>
-                <div style={{fontSize:12,color:'#f59e0b',padding:'8px 12px',background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:6}}>
+                <div style={{fontSize:12,color:'#f59e0b',padding:'8px 12px',background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:2}}>
                   Le paiement par carte sera bientot disponible. Ce formulaire n enregistre rien pour l instant.
                 </div>
                 </>)}
