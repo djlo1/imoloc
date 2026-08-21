@@ -726,6 +726,19 @@ function Select({ value, onChange, children, error=false, style={} }) {
 
 function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
   const [bannerOuverte, setBannerOuverte] = useState(true)
+  const exporterTransactionCSV = () => {
+    const lignes = [
+      ['Date','Periode de service (UTC)','Type','Famille de produit','Type de produit','Reference SKU du produit','Section facture','Prix e...','Quantite','Frais','Taxe','Total'],
+      [dateFacture, periodeLabel, 'Paiement', 'Imoloc', 'Abonnement Imoloc', f.abonnement_id ? String(f.abonnement_id).slice(0,8) : 'N/A', agence?.nom||'', `${fmt(montant)} ${devise}`, 1, `${fmt(montant)} ${devise}`, `0 ${devise}`, `${fmt(montant)} ${devise}`],
+    ]
+    const csv = lignes.map(l => l.map(c => `"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n')
+    const blob = new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `${f.numero}-transactions.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
   const sc = statutCfg[f.statut] || statutCfg.en_attente
   const paye = f.statut === 'paye'
   const dateFacture = new Date(f.created_at).toLocaleDateString('fr-FR')
@@ -808,7 +821,7 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
       </div>
 
       <div style={{ display:'flex', alignItems:'center', gap:18, marginBottom:16, flexWrap:'wrap', paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><Download/> Exporter vers un fichier CSV</a>
+        <a href="#" onClick={e=>{e.preventDefault();exporterTransactionCSV()}} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><Download/> Exporter vers un fichier CSV</a>
         <SearchBox value="" onChange={()=>{}} style={{ marginLeft:'auto', minWidth:180 }}/>
       </div>
 
@@ -822,7 +835,7 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
         <table style={{ width:'100%', borderCollapse:'collapse', minWidth:1100 }}>
           <thead><tr>
             {['Date','Periode de service (UTC)','Type','Famille de produit','Type de produit','Reference SKU du produit','Section facture','Prix e...','Quantite','Frais','Taxe','Total'].map(h=>(
-              <th key={h} className="fl-th"><ColHeader label={h}/></th>
+              <th key={h} className="fl-th"><ColHeader label={h} sortable={false}/></th>
             ))}
           </tr></thead>
           <tbody>
@@ -897,7 +910,7 @@ export default function Abonnement() {
   }
 
   const toggleSelectFacture = (id) => setSelectedFactures(s => s.includes(id) ? s.filter(x=>x!==id) : [...s, id])
-  const toggleSelectAllFactures = (list) => setSelectedFactures(s => s.length===list.length ? [] : list.map(f=>f.id))
+  const toggleSelectAllFactures = (list) => setSelectedFactures(s => (list.length>0 && list.every(f=>s.includes(f.id))) ? [] : list.map(f=>f.id))
 
   const exporterCSV = (list) => {
     const lignes = [
@@ -1125,7 +1138,7 @@ export default function Abonnement() {
                   </colgroup>
                   <thead><tr>
                     <th className="fl-th">
-                      <FluentCheckbox checked={selectedFactures.length>0 && selectedFactures.length===facturesFiltrees.length} onChange={()=>toggleSelectAllFactures(facturesFiltrees)}/>
+                      <FluentCheckbox checked={facturesFiltrees.length>0 && facturesFiltrees.every(f=>selectedFactures.includes(f.id))} onChange={()=>toggleSelectAllFactures(facturesFiltrees)}/>
                     </th>
                     {FACTURE_COLONNES.map(c=>(
                       <th key={c.key} className="fl-th">
@@ -1161,8 +1174,8 @@ export default function Abonnement() {
                       <td className="fl-td" style={{ color:'rgba(255,255,255,0.3)' }}>N/A</td>
                       <td className="fl-td">
                         <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                          <a href="#" onClick={e=>e.preventDefault()} style={{ color:'#4da6ff', textDecoration:'none', fontSize:12.5, display:'flex', alignItems:'center', gap:4 }}><Download/> Telecharger</a>
-                          <button onClick={e=>e.preventDefault()} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', display:'flex', padding:0 }}><MoreHorizontal/></button>
+                          <a href="#" onClick={e=>{e.preventDefault();toast('Le telechargement PDF de facture arrive bientot')}} style={{ color:'#4da6ff', textDecoration:'none', fontSize:12.5, display:'flex', alignItems:'center', gap:4 }}><Download/> Telecharger</a>
+                          <button onClick={e=>{e.preventDefault();setFactureDetail(f)}} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', display:'flex', padding:0 }}><MoreHorizontal/></button>
                         </div>
                       </td>
                     </tr>
