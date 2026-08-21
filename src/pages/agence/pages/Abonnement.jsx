@@ -432,6 +432,13 @@ const FLUENT_TABLE_CSS = `
 .fl-checkbox-checked, .fl-row:hover .fl-checkbox-checked { background:#0078d4; border-color:#0078d4; }
 .fl-th { position:relative; text-align:left; padding:0 12px; height:36px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.035); border-bottom:1px solid #2b2b2b; white-space:nowrap; overflow:hidden; }
 .fl-td { padding:0 12px; height:36px; vertical-align:middle; font-size:13px; color:#ffffff; border-bottom:1px solid #2b2b2b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:640px) {
+  .page-title { font-size:20px !important; }
+  .panel-body { padding:16px !important; }
+}
+@media (max-width:420px) {
+  .page-title { font-size:18px !important; }
+}
 `
 
 const FACTURE_COL_DEFAULTS = {
@@ -755,7 +762,7 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
 
   return (
     <div>
-      <div style={{ fontSize:26, fontWeight:700, color:'#e6edf3', marginBottom:16 }}>{f.numero}</div>
+      <div className="page-title" style={{ fontSize:26, fontWeight:700, color:'#e6edf3', marginBottom:16 }}>{f.numero}</div>
 
       <div style={{ display:'flex', gap:24, marginBottom:20, flexWrap:'wrap' }}>
         <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><FileText/> Preparer le fichier d utilisation</a>
@@ -1050,7 +1057,7 @@ export default function Abonnement() {
         ) : (<>
 
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:10, marginBottom:20 }}>
-          <div style={{ fontSize:26, fontWeight:700, color:'#e6edf3' }}>Factures et paiements</div>
+          <div className="page-title" style={{ fontSize:26, fontWeight:700, color:'#e6edf3' }}>Factures et paiements</div>
           <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:12.5, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6, marginTop:6 }}><BookOpen/> Decouvrez plus d informations sur la nouvelle experience de facturation.</a>
         </div>
 
@@ -1080,7 +1087,7 @@ export default function Abonnement() {
               </div>
             </div>
 
-            <div style={{ display:'flex', gap:32, marginBottom:20 }}>
+            <div style={{ display:'flex', gap:32, marginBottom:20, flexWrap:'wrap' }}>
               <div style={{ borderLeft:'3px solid #d6249f', paddingLeft:14 }}>
                 <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:4 }}>Total invoices</div>
                 <div style={{ fontSize:22, fontWeight:700, color:'#e6edf3' }}>{factures.length}</div>
@@ -1205,13 +1212,13 @@ export default function Abonnement() {
               Voici les modes de paiement dont vous etes proprietaire. Ils ne sont pas automatiquement affectes a un comptes de facturation.
             </div>
 
-            <div style={{ display:'flex', alignItems:'center', gap:24, marginBottom:16, paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:24, marginBottom:16, paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.06)', flexWrap:'wrap' }}>
               <button onClick={ouvrirAjoutMethode} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}>+ Ajouter une methode de paiement</button>
               <button onClick={init} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}><RefreshCw/> Actualiser</button>
             </div>
 
-            <div style={{ marginBottom:36 }}>
-              <table style={{ width:'100%', borderCollapse:'collapse' }}>
+            <div style={{ marginBottom:36, overflowX:'auto' }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', minWidth:560 }}>
                 <thead><tr>{['Mode de paiement','Date d expiration ↑','Statut d expiration','Type'].map(h=>(
                   <th key={h} style={{ textAlign:'left', padding:'10px 16px 10px 0', fontSize:12.5, fontWeight:400, color:'rgba(255,255,255,0.45)', borderBottom:'1px solid rgba(255,255,255,0.1)' }}>{h}</th>
                 ))}<th style={{ borderBottom:'1px solid rgba(255,255,255,0.1)' }}/></tr></thead>
@@ -1253,7 +1260,8 @@ export default function Abonnement() {
               <span style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', marginRight:8 }}>Filtres : </span>
               <FilterPill label="Profil de facturation" value="tous" onChange={()=>{}} options={[{value:'tous',label:'Tous'}]}/>
             </div>
-            <table style={{ width:'100%', borderCollapse:'collapse' }}>
+            <div style={{ overflowX:'auto' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse', minWidth:560 }}>
               <thead><tr>{['Mode de paiement par defaut','Profil de facturation','Date d expiration ↑','Type'].map(h=>(
                 <th key={h} style={{ textAlign:'left', padding:'10px 16px 10px 0', fontSize:12.5, fontWeight:400, color:'rgba(255,255,255,0.45)', borderBottom:'1px solid rgba(255,255,255,0.1)' }}>{h}</th>
               ))}</tr></thead>
@@ -1271,6 +1279,7 @@ export default function Abonnement() {
                 </tr>
               </tbody>}
             </table>
+            </div>
             {!methodeParDefaut && (
               <div style={{ textAlign:'center', padding:'40px' }}>
                 <div style={{ fontSize:13, color:'rgba(255,255,255,0.3)' }}>Aucun mode de paiement par defaut defini</div>
@@ -1287,12 +1296,12 @@ export default function Abonnement() {
             <div onClick={e=>e.stopPropagation()} style={{position:'absolute',top:0,right:0,height:'100%',width:'100%',maxWidth:560,background:'#0d1117',borderLeft:'1px solid rgba(255,255,255,0.12)',boxShadow:'-8px 0 32px rgba(0,0,0,0.4)',display:'flex',flexDirection:'column',animation:'slideInRight 0.2s ease-out'}}>
               <style>{`@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
 
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'20px 24px',borderBottom:'1px solid rgba(255,255,255,0.07)'}}>
-                <div style={{fontSize:18,fontWeight:700,color:'#e6edf3'}}>Ajouter une methode de paiement</div>
-                <button onClick={()=>setShowAddMethod(false)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:20}}>x</button>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,padding:'20px 24px',borderBottom:'1px solid rgba(255,255,255,0.07)'}}>
+                <div style={{fontSize:18,fontWeight:700,color:'#e6edf3',minWidth:0}}>Ajouter une methode de paiement</div>
+                <button onClick={()=>setShowAddMethod(false)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:20,flexShrink:0}}>x</button>
               </div>
 
-              <div style={{padding:'20px 24px',overflowY:'auto',flex:1}}>
+              <div style={{padding:'20px 24px',overflowY:'auto',flex:1}} className="panel-body">
 
                 <div style={{display:'flex',gap:24,borderBottom:'1px solid rgba(255,255,255,0.08)',marginBottom:24}}>
                   {[['mobile','Portefeuille Mobile Money'],['carte','Carte de credit ou de debit']].map(([k,l])=>(
@@ -1307,7 +1316,7 @@ export default function Abonnement() {
                 </div>
 
                 <div style={{fontSize:11.5,fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10}}>Nous prenons en charge les operateurs suivants</div>
-                <div style={{display:'flex',alignItems:'stretch',marginBottom:24,width:'fit-content',borderRadius:2,overflow:'hidden'}}>
+                <div style={{display:'flex',alignItems:'stretch',marginBottom:24,width:'fit-content',maxWidth:'100%',borderRadius:2,overflow:'hidden',flexWrap:'wrap'}}>
                   {OPERATEURS.map(op=>(
                     <div key={op.id} style={{padding:8,background:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}}>
                       <OperateurBadge operateurId={op.id} size={24}/>
@@ -1349,7 +1358,7 @@ export default function Abonnement() {
 
                 <div style={{marginBottom:20}}>
                   <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Numero de telephone *</label>
-                  <div style={{display:'flex',gap:8}}>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                     <Select value={newMethod.indicatif} onChange={e=>setNewMethod(p=>({...p,indicatif:e.target.value}))} style={{width:100,flexShrink:0}}>
                       {PAYS.map(p=><option key={p.nom+p.indicatif} value={p.indicatif}>+{p.indicatif}</option>)}
                     </Select>
@@ -1416,7 +1425,7 @@ export default function Abonnement() {
                 </div>
                 </>) : (<>
                 <div style={{fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Nous acceptons les cartes suivantes</div>
-                <div style={{display:'flex',alignItems:'stretch',marginBottom:24,width:'fit-content',borderRadius:2,overflow:'hidden'}}>
+                <div style={{display:'flex',alignItems:'stretch',marginBottom:24,width:'fit-content',maxWidth:'100%',borderRadius:2,overflow:'hidden',flexWrap:'wrap'}}>
                   {CARTES.map(c=>(
                     <div key={c.id} style={{padding:8,background:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}}>
                       <img src={c.logo} alt={c.label} style={{height:24,width:'auto',objectFit:'contain'}}/>
@@ -1438,7 +1447,7 @@ export default function Abonnement() {
                     style={fieldStyle(false)}/>
                 </div>
 
-                <div style={{display:'flex',gap:8,marginBottom:14}}>
+                <div style={{display:'flex',gap:8,marginBottom:14,flexWrap:'wrap'}}>
                   <div style={{flex:1}}>
                     <label style={{display:'block',fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Mois d exp. *</label>
                     <Select value={newCard.moisExp} onChange={e=>setNewCard(p=>({...p,moisExp:e.target.value}))}>
