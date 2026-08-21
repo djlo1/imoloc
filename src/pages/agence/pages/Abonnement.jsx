@@ -688,6 +688,10 @@ function FactureBarChart({ factures, fmt }) {
         <span style={{ width:10, height:10, background:'#4da6ff', borderRadius:1, flexShrink:0 }}/>
         <span style={{ fontSize:12, color:'rgba(255,255,255,0.5)' }}>Montant total</span>
       </div>
+      <div style={{ borderLeft:'3px solid #4da6ff', paddingLeft:14, marginTop:14, paddingBottom:10 }}>
+        <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:4 }}>Montant total</div>
+        <div style={{ fontSize:22, fontWeight:700, color:'#e6edf3' }}>{fmt(entrees.reduce((s,[,v])=>s+v,0))} {factures[0]?.devise || 'FCFA'}</div>
+      </div>
     </div>
   )
 }
