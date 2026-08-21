@@ -35,6 +35,8 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [agenceId, setAgenceId] = useState(null)
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
 
   const closeAll = () => {
     setWaffleOpen(false); setNotifOpen(false)
-    setSettingsOpen(false); setProfileOpen(false); setNouveautesOpen(false)
+    setSettingsOpen(false); setProfileOpen(false); setNouveautesOpen(false); setMoreOpen(false)
   }
 
   useEffect(() => {
@@ -103,7 +105,8 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
         .hd3-search-hint{font-size:11px;color:rgba(255,255,255,0.2);flex-shrink:0;white-space:nowrap}
 
         /* Droite */
-        .hd3-right{display:flex;align-items:center;gap:2px;padding:0 8px;flex-shrink:0}
+        .hd3-right{display:flex;align-items:center;gap:2px;padding:0 8px;flex-shrink:0;position:relative;margin-left:auto}
+        .hd3-settings-menu{max-width:calc(100vw - 16px)}
         .hd3-icon-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:4px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,0.5);transition:all 0.1s;position:relative;flex-shrink:0;text-decoration:none}
         .hd3-icon-btn:hover{background:rgba(255,255,255,0.08);color:#e6edf3}
         .hd3-badge{position:absolute;top:5px;right:5px;min-width:15px;height:15px;border-radius:100px;background:#ef4444;border:1.5px solid #1c2434;font-size:9px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 2px}
@@ -159,6 +162,31 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
 
         @media(max-width:900px){.hd3-brand-name{font-size:11px}}
         @media(max-width:768px){.hd3-search-hint{display:none}}
+
+        /* ── Adaptation progressive du header ── */
+        .hd3-brand-short{display:none}
+        @media(max-width:900px){
+          .hd3-brand-full{display:none}
+          .hd3-brand-short{display:inline}
+        }
+        @media(max-width:420px){
+          .hd3-brand-short{display:none}
+        }
+
+        /* Recherche : bascule en icone sur ecran etroit, s ouvre en plein largeur */
+        .hd3-search-toggle{display:none}
+        @media(max-width:640px){
+          .hd3-center{display:none}
+          .hd3-search-toggle{display:flex}
+        }
+        .hd3-search-overlay{position:absolute;inset:0;background:#1c2434;display:flex;align-items:center;gap:8px;padding:0 8px;z-index:210}
+
+        /* Icones secondaires repliees dans le menu "plus" sur ecran etroit */
+        .hd3-more-btn{display:none}
+        @media(max-width:640px){
+          .hd3-secondary{display:none}
+          .hd3-more-btn{display:flex}
+        }
       `}</style>
 
       <header className="hd3">
@@ -171,7 +199,7 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
           <style>{`@media(max-width:768px){#hd3-mob{display:flex!important}}`}</style>
 
           {/* Waffle 9 points */}
-          <div className="hd3-dropdown-zone" style={{position:'relative'}}>
+          <div className="hd3-dropdown-zone">
             <button className="hd3-waffle" onClick={() => { closeAll(); setWaffleOpen(v=>!v) }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                 <rect x="0" y="0" width="5" height="5" rx="1"/>
@@ -207,7 +235,8 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1V10.5z"/>
               </svg>
             </div>
-            <span className="hd3-brand-name">Imoloc centre d'administration</span>
+            <span className="hd3-brand-name hd3-brand-full">Imoloc centre d'administration</span>
+            <span className="hd3-brand-name hd3-brand-short">Imoloc</span>
           </Link>
         </div>
 
@@ -222,11 +251,58 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
           </div>
         </div>
 
+        {/* Recherche compacte (icone) : visible seulement sous 640px, remplace le centre */}
+        <button className="hd3-icon-btn hd3-search-toggle" title="Rechercher" onClick={()=>setMobileSearchOpen(true)}>
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/>
+          </svg>
+        </button>
+
+        {mobileSearchOpen && (
+          <div className="hd3-search-overlay">
+            <button className="hd3-icon-btn" onClick={()=>setMobileSearchOpen(false)}>
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+            </button>
+            <div className="hd3-search" style={{flex:1}}>
+              <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/>
+              </svg>
+              <input autoFocus placeholder="Rechercher" value={search} onChange={e=>setSearch(e.target.value)}/>
+            </div>
+          </div>
+        )}
+
         {/* ── DROITE ── */}
         <div className="hd3-right">
 
+          {/* Menu "plus" : regroupe Nouveautes/Notifications/Parametres/Aide sous 640px. Positionnement relatif a .hd3-right (et non a ce petit bouton) pour que le menu reste dans l ecran sur les tres etroits viewports. */}
+          <div className="hd3-dropdown-zone">
+            <button className="hd3-icon-btn hd3-more-btn" title="Plus d options" onClick={()=>{closeAll();setMoreOpen(v=>!v)}}>
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" d="M12 6h.008v.008H12V6zm0 6h.008v.008H12V12zm0 6h.008v.008H12V18z"/>
+              </svg>
+              {(unreadNouveautes>0 || unreadCount>0) && <span className="hd3-badge">{unreadNouveautes+unreadCount}</span>}
+            </button>
+            {moreOpen && (
+              <div className="hd3-drop hd3-settings-menu" style={{position:'absolute'}}>
+                <Link to="/agence/nouveautes" className="hd3-settings-item" onClick={closeAll} style={{display:'flex',alignItems:'center',justifyContent:'space-between',textDecoration:'none',color:'inherit'}}>
+                  <span className="hd3-settings-left">Nouveautes {unreadNouveautes>0 && <span style={{marginLeft:6,width:8,height:8,borderRadius:'50%',background:'#0078d4',display:'inline-block'}}/>}</span>
+                </Link>
+                <button className="hd3-settings-item" onClick={()=>{setMoreOpen(false);setNotifOpen(true)}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',border:'none',background:'none',cursor:'pointer',fontFamily:'Inter,sans-serif'}}>
+                  <span className="hd3-settings-left">Notifications {unreadCount>0 && <span style={{marginLeft:6,fontSize:11,color:'#ef4444'}}>({unreadCount})</span>}</span>
+                </button>
+                <button className="hd3-settings-item" onClick={()=>{setMoreOpen(false);setSettingsOpen(true)}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',border:'none',background:'none',cursor:'pointer',fontFamily:'Inter,sans-serif'}}>
+                  <span className="hd3-settings-left">Parametres</span>
+                </button>
+                <div className="hd3-settings-item" style={{cursor:'default'}}>
+                  <span className="hd3-settings-left">Aide</span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Nouveautés */}
-          <div style={{position:'relative'}}>
+          <div className="hd3-secondary" style={{position:'relative'}}>
             <button className="hd3-icon-btn" title="Nouveautés" onClick={()=>navigate('/agence/nouveautes')} style={{position:'relative'}}>
               {unreadNouveautes>0&&(
                 <span style={{position:'absolute',top:2,right:2,width:8,height:8,borderRadius:'50%',background:'#0078d4',border:'2px solid #0d1117'}}/>
@@ -238,8 +314,8 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
           </div>
 
                     {/* Notifications */}
-          <div className="hd3-dropdown-zone" style={{position:'relative'}}>
-            <button className="hd3-icon-btn" title="Notifications" onClick={()=>{closeAll();setNotifOpen(v=>!v)}}>
+          <div className="hd3-dropdown-zone">
+            <button className="hd3-icon-btn hd3-secondary" title="Notifications" onClick={()=>{closeAll();setNotifOpen(v=>!v)}}>
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
               </svg>
@@ -270,8 +346,8 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
           </div>
 
           {/* Paramètres */}
-          <div className="hd3-dropdown-zone" style={{position:'relative'}}>
-            <button className="hd3-icon-btn" title="Paramètres" onClick={()=>{closeAll();setSettingsOpen(v=>!v)}}>
+          <div className="hd3-dropdown-zone">
+            <button className="hd3-icon-btn hd3-secondary" title="Paramètres" onClick={()=>{closeAll();setSettingsOpen(v=>!v)}}>
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
@@ -303,14 +379,14 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
           </div>
 
           {/* Aide */}
-          <button className="hd3-icon-btn" title="Aide">
+          <button className="hd3-icon-btn hd3-secondary" title="Aide">
             <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/>
             </svg>
           </button>
 
           {/* Profil */}
-          <div className="hd3-dropdown-zone" style={{position:'relative'}}>
+          <div className="hd3-dropdown-zone">
             <div className="hd3-avatar" onClick={()=>{closeAll();setProfileOpen(v=>!v)}}>
               {profile?.prenom?.[0]?.toUpperCase()||'A'}
             </div>
