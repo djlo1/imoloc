@@ -401,6 +401,40 @@ function Combobox({ value, onChange, options, placeholder, freeText=false, disab
   )
 }
 
+const FLUENT_TABLE_CSS = `
+.fl-row { border-left:2px solid transparent; transition:background-color 0.1s ease; }
+.fl-row:hover { background-color:#252525; }
+.fl-row-selected { background-color:#292929; border-left:2px solid #0078d4; }
+.fl-checkbox { width:16px; height:16px; border-radius:2px; border:1px solid rgba(255,255,255,0.35); background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:border-color 0.1s ease, background-color 0.1s ease; }
+.fl-row:hover .fl-checkbox { border-color:#0078d4; }
+.fl-checkbox-checked, .fl-row:hover .fl-checkbox-checked { background:#0078d4; border-color:#0078d4; }
+.fl-th { text-align:left; padding:0 12px; height:36px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.035); border-bottom:1px solid #2b2b2b; white-space:nowrap; }
+.fl-td { padding:0 12px; height:36px; vertical-align:middle; font-size:13px; border-bottom:1px solid #2b2b2b; white-space:nowrap; }
+`
+
+function FluentCheckbox({ checked, onChange }) {
+  return (
+    <div role="checkbox" aria-checked={checked} onClick={e=>{e.stopPropagation();onChange(!checked)}}
+      className={`fl-checkbox${checked ? ' fl-checkbox-checked' : ''}`}>
+      {checked && (
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+          <path d="M2 8l4 4 8-8" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+    </div>
+  )
+}
+
+function ColHeader({ label }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+      <span style={{ textTransform:'uppercase' }}>{label}</span>
+      <span style={{ fontSize:11, opacity:0.5 }}>↕</span>
+      <span style={{ fontSize:9, opacity:0.5 }}>⌄</span>
+    </div>
+  )
+}
+
 function Select({ value, onChange, children, error=false, style={} }) {
   return (
     <div style={{ position:'relative', ...style }}>
@@ -691,6 +725,7 @@ export default function Abonnement() {
   return (
     <>
       <div style={{ width:'100%' }}>
+        <style>{FLUENT_TABLE_CSS}</style>
 
         <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14 }}>
           Accueil <span style={{ margin:'0 4px' }}>&gt;</span>{' '}
@@ -792,37 +827,47 @@ export default function Abonnement() {
                 <div style={{ overflowX:'auto' }}>
                 <table style={{ width:'100%', borderCollapse:'collapse', minWidth:900 }}>
                   <thead><tr>
-                    <th style={{ padding:'12px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-                      <input type="checkbox" checked={selectedFactures.length>0 && selectedFactures.length===facturesFiltrees.length} onChange={()=>toggleSelectAllFactures(facturesFiltrees)} />
+                    <th className="fl-th" style={{ width:36 }}>
+                      <FluentCheckbox checked={selectedFactures.length>0 && selectedFactures.length===facturesFiltrees.length} onChange={()=>toggleSelectAllFactures(facturesFiltrees)}/>
                     </th>
                     {['ID de facture','Date de facture (UTC)','Periode de facturation','Profil de facturation','Montant total','Etat','Paie','Telecharger la facture'].map(h=>(
-                      <th key={h} style={{ textAlign:'left', padding:'12px 16px', fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', borderBottom:'1px solid rgba(255,255,255,0.06)', whiteSpace:'nowrap' }}>{h} ⌄</th>
+                      <th key={h} className="fl-th"><ColHeader label={h}/></th>
                     ))}
                   </tr></thead>
                   <tbody>{facturesFiltrees.map(f=>{
                     const sc = FACTURE_STATUT_CFG[f.statut] || FACTURE_STATUT_CFG.en_attente
-                    return <tr key={f.id} style={{ borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-                      <td style={{ padding:'12px 16px' }}>
-                        <input type="checkbox" checked={selectedFactures.includes(f.id)} onChange={()=>toggleSelectFacture(f.id)} />
+                    const selected = selectedFactures.includes(f.id)
+                    return <tr key={f.id} className={`fl-row${selected ? ' fl-row-selected' : ''}`}>
+                      <td className="fl-td">
+                        <FluentCheckbox checked={selected} onChange={()=>toggleSelectFacture(f.id)}/>
                       </td>
-                      <td style={{ padding:'12px 16px', fontSize:13, fontWeight:600, whiteSpace:'nowrap' }}>
+                      <td className="fl-td" style={{ fontWeight:600 }}>
                         <a href="#" onClick={e=>{e.preventDefault();setFactureDetail(f)}} style={{ color:'#4da6ff', textDecoration:'none', cursor:'pointer' }}>{f.numero}</a>{' '}
-                        <span style={{ color:'rgba(255,255,255,0.25)' }}>ⓘ</span>
+                        <span style={{ color:'rgba(255,255,255,0.3)', fontSize:11 }}>ⓘ</span>
                       </td>
-                      <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>{new Date(f.created_at).toLocaleDateString('fr-FR')}</td>
-                      <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>
+                      <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>{new Date(f.created_at).toLocaleDateString('fr-FR')}</td>
+                      <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>
                         {f.periode_debut ? new Date(f.periode_debut).toLocaleDateString('fr-FR') : new Date(f.created_at).toLocaleDateString('fr-FR')}
                       </td>
-                      <td style={{ padding:'12px 16px', fontSize:13, color:'#4da6ff', whiteSpace:'nowrap' }}>{agence?.nom}</td>
-                      <td style={{ padding:'12px 16px', fontSize:13, fontWeight:600, color:'#e6edf3', whiteSpace:'nowrap' }}>{fmt(f.montant)} {f.devise||'FCFA'}</td>
-                      <td style={{ padding:'12px 16px', whiteSpace:'nowrap' }}>
+                      <td className="fl-td" style={{ color:'#4da6ff' }}>{agence?.nom}</td>
+                      <td className="fl-td" style={{ fontWeight:600, color:'#e6edf3' }}>{fmt(f.montant)} {f.devise||'FCFA'}</td>
+                      <td className="fl-td">
                         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                          {f.statut==='paye' && <span style={{ color:'#00c896', fontSize:13 }}>✓</span>}
+                          {f.statut==='paye' && (
+                            <span style={{ width:14, height:14, borderRadius:'50%', background:'#00c896', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                              <svg width="8" height="8" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="#0d1117" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            </span>
+                          )}
                           <span style={{ fontSize:12.5, color:sc.color }}>{f.statut==='paye' ? `Paye le ${f.date_paiement?new Date(f.date_paiement).toLocaleDateString('fr-FR'):new Date(f.created_at).toLocaleDateString('fr-FR')}` : sc.label}</span>
                         </div>
                       </td>
-                      <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.3)' }}>N/A</td>
-                      <td style={{ padding:'12px 16px', fontSize:12.5, color:'rgba(255,255,255,0.25)', whiteSpace:'nowrap' }}>⬇ Telecharger</td>
+                      <td className="fl-td" style={{ color:'rgba(255,255,255,0.3)' }}>N/A</td>
+                      <td className="fl-td">
+                        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                          <a href="#" onClick={e=>e.preventDefault()} style={{ color:'#4da6ff', textDecoration:'none', fontSize:12.5, display:'flex', alignItems:'center', gap:4 }}>↓ Telecharger</a>
+                          <button onClick={e=>e.preventDefault()} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:14, letterSpacing:1, padding:0 }}>&#8943;</button>
+                        </div>
+                      </td>
                     </tr>
                   })}</tbody>
                 </table>
