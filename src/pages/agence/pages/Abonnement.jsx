@@ -11,6 +11,8 @@ import {
   Search16Regular as Search,
   List16Regular as List,
   ArrowSort16Regular as ArrowSort,
+  ArrowSortUp16Regular as ArrowSortUp,
+  ArrowSortDown16Regular as ArrowSortDown,
   ChevronDown16Regular as ChevronDown,
   Info16Regular as Info,
   CheckmarkCircle16Filled as CheckCircle2,
@@ -428,9 +430,24 @@ const FLUENT_TABLE_CSS = `
 .fl-checkbox { width:16px; height:16px; border-radius:2px; border:1px solid rgba(255,255,255,0.35); background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:border-color 0.1s ease, background-color 0.1s ease; }
 .fl-row:hover .fl-checkbox { border-color:#0078d4; }
 .fl-checkbox-checked, .fl-row:hover .fl-checkbox-checked { background:#0078d4; border-color:#0078d4; }
-.fl-th { text-align:left; padding:0 12px; height:36px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.035); border-bottom:1px solid #2b2b2b; white-space:nowrap; }
-.fl-td { padding:0 12px; height:36px; vertical-align:middle; font-size:13px; color:#ffffff; border-bottom:1px solid #2b2b2b; white-space:nowrap; }
+.fl-th { position:relative; text-align:left; padding:0 12px; height:36px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.035); border-bottom:1px solid #2b2b2b; white-space:nowrap; overflow:hidden; }
+.fl-td { padding:0 12px; height:36px; vertical-align:middle; font-size:13px; color:#ffffff; border-bottom:1px solid #2b2b2b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 `
+
+const FACTURE_COL_DEFAULTS = {
+  checkbox:36, numero:190, created_at:160, periode_debut:180,
+  agence_id:180, montant:150, statut:200, paie:100, telecharger:190,
+}
+const FACTURE_COLONNES = [
+  { key:'numero', label:'ID de facture', field:'numero' },
+  { key:'created_at', label:'Date de facture (UTC)', field:'created_at' },
+  { key:'periode_debut', label:'Periode de facturation', field:'periode_debut' },
+  { key:'agence_id', label:'Profil de facturation', field:'agence_id' },
+  { key:'montant', label:'Montant total', field:'montant' },
+  { key:'statut', label:'Etat', field:'statut' },
+  { key:'paie', label:'Paie', sortable:false },
+  { key:'telecharger', label:'Telecharger la facture', sortable:false },
+]
 
 function FluentCheckbox({ checked, onChange }) {
   return (
@@ -445,7 +462,39 @@ function FluentCheckbox({ checked, onChange }) {
   )
 }
 
-function ColHeader({ label, sortable=true, active=false, onSort }) {
+function ResizeHandle({ onResize }) {
+  const dragging = useRef(false)
+  const lastX = useRef(0)
+  useEffect(() => {
+    const onMove = e => {
+      if (!dragging.current) return
+      const delta = e.clientX - lastX.current
+      lastX.current = e.clientX
+      onResize(delta)
+    }
+    const onUp = () => {
+      if (!dragging.current) return
+      dragging.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+  }, [onResize])
+  return (
+    <div
+      onMouseDown={e => { e.preventDefault(); e.stopPropagation(); dragging.current = true; lastX.current = e.clientX; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none' }}
+      onClick={e => e.stopPropagation()}
+      style={{ position:'absolute', top:0, right:-4, width:8, height:'100%', cursor:'col-resize', zIndex:5 }}
+    />
+  )
+}
+
+function ColHeader({ label, sortable=true, sortDir=null, onSort, onResize }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top:0, left:0 })
   const btnRef = useRef(null)
@@ -477,26 +526,28 @@ function ColHeader({ label, sortable=true, active=false, onSort }) {
     setOpen(o => !o)
   }
   const menuItemStyle = { padding:'8px 14px', fontSize:13, color:'#ffffff', cursor:'pointer', whiteSpace:'nowrap' }
+  const SortIcon = sortDir === 'asc' ? ArrowSortUp : sortDir === 'desc' ? ArrowSortDown : ArrowSort
   return (
     <div style={{ display:'flex', alignItems:'center', gap:5, position:'relative' }}>
-      <span style={{ textTransform:'uppercase' }}>{label}</span>
-      {sortable && <ArrowSort style={{ opacity:active?1:0.5, flexShrink:0, color:active?'#4da6ff':undefined }}/>}
+      <span style={{ textTransform:'uppercase', overflow:'hidden', textOverflow:'ellipsis' }}>{label}</span>
+      {sortable && <SortIcon style={{ opacity:sortDir?1:0.5, flexShrink:0, color:sortDir?'#4da6ff':undefined }}/>}
       <button ref={btnRef} onClick={e=>{e.stopPropagation();toggle()}}
-        style={{ background:'none', border:'none', padding:0, display:'flex', cursor:'pointer', color:'inherit' }}>
+        style={{ background:'none', border:'none', padding:0, display:'flex', cursor:'pointer', color:'inherit', flexShrink:0 }}>
         <ChevronDown style={{ opacity:0.5, flexShrink:0 }}/>
       </button>
+      {onResize && <ResizeHandle onResize={onResize}/>}
       {open && createPortal(
         <div ref={menuRef} style={{ position:'fixed', top:pos.top, left:pos.left, background:'#202020', border:'1px solid rgba(255,255,255,0.12)', borderRadius:4, boxShadow:'0 8px 24px rgba(0,0,0,0.5)', zIndex:1000, minWidth:170, padding:'4px 0', textTransform:'none', fontWeight:400, fontFamily:'Inter,sans-serif' }}>
           <div style={{ position:'absolute', top:-5, left:pos.flip?undefined:14, right:pos.flip?14:undefined, width:10, height:10, background:'#202020', borderLeft:'1px solid rgba(255,255,255,0.12)', borderTop:'1px solid rgba(255,255,255,0.12)', transform:'rotate(45deg)' }}/>
           <div style={menuItemStyle}
             onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.08)'}
             onMouseLeave={e=>e.currentTarget.style.background='none'}
-            onClick={()=>setOpen(false)}>Redimensionner</div>
+            onClick={()=>setOpen(false)}>Redimensionner <span style={{opacity:0.4,fontSize:11}}>(glisser le bord)</span></div>
           {sortable && (
             <div style={menuItemStyle}
               onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.08)'}
               onMouseLeave={e=>e.currentTarget.style.background='none'}
-              onClick={()=>{onSort?.();setOpen(false)}}>Trier</div>
+              onClick={()=>{onSort?.();setOpen(false)}}>Trier {sortDir==='asc' ? '(Z → A)' : sortDir==='desc' ? '(reinitialiser)' : '(A → Z)'}</div>
           )}
         </div>,
         document.body
@@ -816,10 +867,13 @@ export default function Abonnement() {
   const [factureSortField, setFactureSortField] = useState(null)
   const [factureSortDir, setFactureSortDir] = useState('asc')
   const [vueFactures, setVueFactures] = useState('liste')
+  const [factureColWidths, setFactureColWidths] = useState({})
+  const resizeFactureCol = (key, delta) => setFactureColWidths(w => ({ ...w, [key]: Math.max(60, (w[key] ?? FACTURE_COL_DEFAULTS[key] ?? 140) + delta) }))
   const toggleFactureSort = (field) => {
     if (!field) return
-    if (factureSortField === field) setFactureSortDir(d => d==='asc' ? 'desc' : 'asc')
-    else { setFactureSortField(field); setFactureSortDir('asc') }
+    if (factureSortField !== field) { setFactureSortField(field); setFactureSortDir('asc'); return }
+    if (factureSortDir === 'asc') { setFactureSortDir('desc'); return }
+    setFactureSortField(null)
   }
 
   const toggleSelectFacture = (id) => setSelectedFactures(s => s.includes(id) ? s.filter(x=>x!==id) : [...s, id])
@@ -1044,24 +1098,20 @@ export default function Abonnement() {
                 </div>
               ) : (
                 <div style={{ overflowX:'auto', overflowY:'visible' }}>
-                <table style={{ width:'100%', borderCollapse:'collapse', minWidth:900 }}>
+                <table style={{ width:'100%', borderCollapse:'collapse', minWidth:900, tableLayout:'fixed' }}>
+                  <colgroup>
+                    <col style={{ width:factureColWidths.checkbox ?? FACTURE_COL_DEFAULTS.checkbox }}/>
+                    {FACTURE_COLONNES.map(c => <col key={c.key} style={{ width:factureColWidths[c.key] ?? FACTURE_COL_DEFAULTS[c.key] }}/>)}
+                  </colgroup>
                   <thead><tr>
-                    <th className="fl-th" style={{ width:36 }}>
+                    <th className="fl-th">
                       <FluentCheckbox checked={selectedFactures.length>0 && selectedFactures.length===facturesFiltrees.length} onChange={()=>toggleSelectAllFactures(facturesFiltrees)}/>
                     </th>
-                    {[
-                      { label:'ID de facture', field:'numero' },
-                      { label:'Date de facture (UTC)', field:'created_at' },
-                      { label:'Periode de facturation', field:'periode_debut' },
-                      { label:'Profil de facturation', field:'agence_id' },
-                      { label:'Montant total', field:'montant' },
-                      { label:'Etat', field:'statut' },
-                      { label:'Paie', sortable:false },
-                      { label:'Telecharger la facture', sortable:false },
-                    ].map(c=>(
-                      <th key={c.label} className="fl-th">
-                        <ColHeader label={c.label} sortable={c.sortable!==false} active={factureSortField===c.field}
-                          onSort={()=>toggleFactureSort(c.field)}/>
+                    {FACTURE_COLONNES.map(c=>(
+                      <th key={c.key} className="fl-th">
+                        <ColHeader label={c.label} sortable={c.sortable!==false} sortDir={factureSortField===c.field ? factureSortDir : null}
+                          onSort={()=>toggleFactureSort(c.field)}
+                          onResize={delta=>resizeFactureCol(c.key, delta)}/>
                       </th>
                     ))}
                   </tr></thead>
