@@ -3,10 +3,24 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 import {
-  RefreshCw, Download, FileDown, Users, Search, List,
-  ChevronsUpDown, ChevronDown, Info, CheckCircle2, MoreHorizontal,
-  FileText, BookOpen, Link2, X,
-} from 'lucide-react'
+  ArrowClockwise16Regular as RefreshCw,
+  ArrowDownload16Regular as Download,
+  DocumentArrowDown16Regular as FileDown,
+  People16Regular as Users,
+  Search16Regular as Search,
+  List16Regular as List,
+  ArrowSort16Regular as ArrowSort,
+  ChevronDown16Regular as ChevronDown,
+  Info16Regular as Info,
+  CheckmarkCircle16Filled as CheckCircle2,
+  MoreHorizontal16Regular as MoreHorizontal,
+  DocumentText16Regular as FileText,
+  DocumentText32Regular as FileTextLarge,
+  BookOpen16Regular as BookOpen,
+  Link16Regular as Link2,
+  Dismiss16Regular as X,
+  DataBarVertical16Regular as BarChartIcon,
+} from '@fluentui/react-icons'
 
 const FACTURE_STATUT_CFG = {
   paye:    { color:'#00c896', bg:'rgba(0,200,150,0.1)', label:'Payee' },
@@ -430,12 +444,37 @@ function FluentCheckbox({ checked, onChange }) {
   )
 }
 
-function ColHeader({ label }) {
+function ColHeader({ label, sortable=true, active=false, onSort }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    const onClick = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [])
+  const menuItemStyle = { padding:'8px 14px', fontSize:13, color:'#e6edf3', cursor:'pointer', whiteSpace:'nowrap' }
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+    <div ref={ref} style={{ display:'flex', alignItems:'center', gap:5, position:'relative' }}>
       <span style={{ textTransform:'uppercase' }}>{label}</span>
-      <ChevronsUpDown size={11} style={{ opacity:0.5, flexShrink:0 }}/>
-      <ChevronDown size={11} style={{ opacity:0.5, flexShrink:0 }}/>
+      {sortable && <ArrowSort style={{ opacity:active?1:0.5, flexShrink:0, color:active?'#4da6ff':undefined }}/>}
+      <button onClick={e=>{e.stopPropagation();setOpen(o=>!o)}}
+        style={{ background:'none', border:'none', padding:0, display:'flex', cursor:'pointer', color:'inherit' }}>
+        <ChevronDown style={{ opacity:0.5, flexShrink:0 }}/>
+      </button>
+      {open && (
+        <div style={{ position:'absolute', top:'100%', left:0, marginTop:4, background:'#1f1f1f', border:'1px solid rgba(255,255,255,0.12)', borderRadius:2, boxShadow:'0 8px 24px rgba(0,0,0,0.4)', zIndex:30, minWidth:170, padding:'4px 0', textTransform:'none', fontWeight:400 }}>
+          <div style={menuItemStyle}
+            onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.06)'}
+            onMouseLeave={e=>e.currentTarget.style.background='none'}
+            onClick={()=>setOpen(false)}>Redimensionner</div>
+          {sortable && (
+            <div style={menuItemStyle}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.06)'}
+              onMouseLeave={e=>e.currentTarget.style.background='none'}
+              onClick={()=>{onSort?.();setOpen(false)}}>Trier</div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -443,9 +482,103 @@ function ColHeader({ label }) {
 function SearchBox({ value, onChange, placeholder='Rechercher', style={} }) {
   return (
     <div style={{ position:'relative', ...style }}>
-      <Search size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'rgba(255,255,255,0.35)', pointerEvents:'none' }}/>
+      <Search style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'rgba(255,255,255,0.35)', pointerEvents:'none' }}/>
       <input value={value} onChange={onChange} placeholder={placeholder}
         style={{ width:'100%', padding:'7px 12px 7px 30px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:2, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none', boxSizing:'border-box' }}/>
+    </div>
+  )
+}
+
+const VUES_FACTURES = [
+  { id:'liste', label:'Liste', Icon:List },
+  { id:'graphique', label:'Graphique', Icon:BarChartIcon },
+]
+
+function ViewSwitcher({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    const onClick = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [])
+  const courant = VUES_FACTURES.find(v => v.id === value) || VUES_FACTURES[0]
+  return (
+    <div ref={ref} style={{ position:'relative' }}>
+      <button onClick={()=>setOpen(o=>!o)}
+        style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 10px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:2, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', cursor:'pointer', minWidth:110 }}>
+        <courant.Icon/>
+        <span style={{ flex:1, textAlign:'left' }}>{courant.label}</span>
+        <ChevronDown style={{ opacity:0.5, flexShrink:0 }}/>
+      </button>
+      {open && (
+        <div style={{ position:'absolute', top:'100%', right:0, marginTop:4, background:'#1f1f1f', border:'1px solid rgba(255,255,255,0.12)', borderRadius:2, boxShadow:'0 8px 24px rgba(0,0,0,0.4)', zIndex:30, minWidth:130, padding:'4px 0' }}>
+          {VUES_FACTURES.map(v => (
+            <div key={v.id} onClick={()=>{onChange(v.id);setOpen(false)}}
+              style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px', fontSize:13, color:'#e6edf3', cursor:'pointer', background:v.id===value?'rgba(0,120,212,0.12)':'none' }}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.06)'}
+              onMouseLeave={e=>e.currentTarget.style.background=v.id===value?'rgba(0,120,212,0.12)':'none'}>
+              <v.Icon/><span>{v.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function FactureBarChart({ factures, fmt }) {
+  const parMois = {}
+  factures.forEach(f => {
+    const d = new Date(f.created_at)
+    const cle = `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`
+    parMois[cle] = (parMois[cle]||0) + Number(f.montant||0)
+  })
+  const entrees = Object.entries(parMois).sort((a,b) => {
+    const [ma,ya] = a[0].split('/'); const [mb,yb] = b[0].split('/')
+    return new Date(ya,ma-1) - new Date(yb,mb-1)
+  })
+  if (entrees.length === 0) {
+    return (
+      <div style={{ textAlign:'center', padding:'60px', color:'rgba(255,255,255,0.3)' }}>
+        <BarChartIcon style={{ marginBottom:12, opacity:0.3, width:32, height:32 }}/>
+        <div style={{ fontSize:14 }}>Aucune donnee a afficher</div>
+      </div>
+    )
+  }
+  const maxVal = Math.max(...entrees.map(([,v])=>v), 1)
+  const paliers = 4
+  const step = Math.ceil(maxVal/paliers/100)*100 || 1
+  const plafond = step*paliers
+  return (
+    <div style={{ padding:'24px 24px 8px', background:'rgba(255,255,255,0.02)', borderRadius:2 }}>
+      <div style={{ display:'flex' }}>
+        <div style={{ display:'flex', flexDirection:'column', justifyContent:'space-between', height:240, marginRight:12, fontSize:11, color:'rgba(255,255,255,0.4)', textAlign:'right' }}>
+          {Array.from({length:paliers+1},(_,i)=>plafond-i*step).map(v => <div key={v}>{v>=1000 ? `${(v/1000).toFixed(v%1000===0?0:1)}k` : v}</div>)}
+        </div>
+        <div style={{ flex:1, position:'relative' }}>
+          {Array.from({length:paliers+1},(_,i)=>i).map(i => (
+            <div key={i} style={{ position:'absolute', left:0, right:0, top:`${(i/paliers)*100}%`, borderTop:'1px solid rgba(255,255,255,0.06)' }}/>
+          ))}
+          <div style={{ display:'flex', alignItems:'flex-end', height:240, gap:Math.max(4, 32-entrees.length), position:'relative' }}>
+            {entrees.map(([mois,val]) => (
+              <div key={mois} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', height:'100%' }}>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', marginBottom:4 }}>{val>0 ? fmt(val) : ''}</div>
+                <div style={{ width:'60%', maxWidth:36, height:`${Math.max((val/plafond)*100, val>0?2:0)}%`, background:'#4da6ff', borderRadius:'2px 2px 0 0' }}/>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div style={{ display:'flex', marginLeft:44 }}>
+        {entrees.map(([mois]) => (
+          <div key={mois} style={{ flex:1, textAlign:'center', fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:8 }}>{mois}</div>
+        ))}
+      </div>
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:20, paddingTop:14, borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+        <span style={{ width:10, height:10, background:'#4da6ff', borderRadius:1, flexShrink:0 }}/>
+        <span style={{ fontSize:12, color:'rgba(255,255,255,0.5)' }}>Montant total</span>
+      </div>
     </div>
   )
 }
@@ -483,19 +616,19 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
       <div style={{ fontSize:26, fontWeight:700, color:'#e6edf3', marginBottom:16 }}>{f.numero}</div>
 
       <div style={{ display:'flex', gap:24, marginBottom:20, flexWrap:'wrap' }}>
-        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><FileText size={14}/> Preparer le fichier d utilisation</a>
-        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><Download size={14}/> Telechargement <ChevronDown size={13}/></a>
-        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><Link2 size={14}/> Liens utiles <ChevronDown size={13}/></a>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><FileText/> Preparer le fichier d utilisation</a>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><Download/> Telechargement <ChevronDown/></a>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><Link2/> Liens utiles <ChevronDown/></a>
       </div>
 
       {bannerOuverte && (
         <div style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'14px 16px', background:'rgba(0,120,212,0.06)', borderRadius:2, marginBottom:28 }}>
-          <Info size={15} style={{ color:'#4da6ff', flexShrink:0, marginTop:1 }}/>
+          <Info style={{ color:'#4da6ff', flexShrink:0, marginTop:1 }}/>
           <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.6)', lineHeight:1.7, flex:1 }}>
             Cette facture concerne les achats d abonnement, les renouvellements et les frais recurrents a la date indiquee. La periode de service que vous payez est repertoriee dans chaque abonnement ci-dessous.{' '}
             <a href="#" onClick={e=>e.preventDefault()} style={{ color:'#4da6ff' }}>En savoir plus sur le calendrier de facturation</a>
           </div>
-          <button onClick={()=>setBannerOuverte(false)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', display:'flex', flexShrink:0 }}><X size={15}/></button>
+          <button onClick={()=>setBannerOuverte(false)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', display:'flex', flexShrink:0 }}><X/></button>
         </div>
       )}
 
@@ -504,7 +637,7 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
           <div style={{ fontSize:13, fontWeight:700, color:'#e6edf3', marginBottom:12 }}>Montant du</div>
           <div style={{ fontSize:28, fontWeight:700, color:'#e6edf3', marginBottom:8 }}>{paye ? '0,00' : fmt(montant)} {devise}</div>
           {paye ? (
-            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12.5, color:'#00c896' }}><CheckCircle2 size={14}/> Cette facture a ete payee le {datePaiement}</div>
+            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12.5, color:'#00c896' }}><CheckCircle2/> Cette facture a ete payee le {datePaiement}</div>
           ) : (
             <div style={{ fontSize:12.5, color:sc.color }}>{sc.label}</div>
           )}
@@ -546,7 +679,7 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
       </div>
 
       <div style={{ display:'flex', alignItems:'center', gap:18, marginBottom:16, flexWrap:'wrap', paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><Download size={14}/> Exporter vers un fichier CSV</a>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}><Download/> Exporter vers un fichier CSV</a>
         <SearchBox value="" onChange={()=>{}} style={{ marginLeft:'auto', minWidth:180 }}/>
       </div>
 
@@ -622,6 +755,14 @@ export default function Abonnement() {
   const [exclureZero, setExclureZero] = useState(false)
   const [selectedFactures, setSelectedFactures] = useState([])
   const [factureDetail, setFactureDetail] = useState(null)
+  const [factureSortField, setFactureSortField] = useState(null)
+  const [factureSortDir, setFactureSortDir] = useState('asc')
+  const [vueFactures, setVueFactures] = useState('liste')
+  const toggleFactureSort = (field) => {
+    if (!field) return
+    if (factureSortField === field) setFactureSortDir(d => d==='asc' ? 'desc' : 'asc')
+    else { setFactureSortField(field); setFactureSortDir('asc') }
+  }
 
   const toggleSelectFacture = (id) => setSelectedFactures(s => s.includes(id) ? s.filter(x=>x!==id) : [...s, id])
   const toggleSelectAllFactures = (list) => setSelectedFactures(s => s.length===list.length ? [] : list.map(f=>f.id))
@@ -735,6 +876,14 @@ export default function Abonnement() {
     .filter(f => !factureSearch || f.numero?.toLowerCase().includes(factureSearch.toLowerCase()))
     .filter(f => !exclureZero || Number(f.montant||0) > 0)
     .filter(f => !dureeLimite || new Date(f.created_at) >= new Date(Date.now() - dureeLimite*30*24*60*60*1000))
+    .sort((a,b) => {
+      if (!factureSortField) return 0
+      let va = a[factureSortField], vb = b[factureSortField]
+      if (factureSortField==='montant') { va = Number(va||0); vb = Number(vb||0) }
+      else { va = va ?? ''; vb = vb ?? '' }
+      const cmp = va > vb ? 1 : va < vb ? -1 : 0
+      return factureSortDir==='asc' ? cmp : -cmp
+    })
   const methodeParDefaut = methodes.find(m=>m.par_defaut)
 
   return (
@@ -757,7 +906,7 @@ export default function Abonnement() {
 
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:10, marginBottom:20 }}>
           <div style={{ fontSize:26, fontWeight:700, color:'#e6edf3' }}>Factures et paiements</div>
-          <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:12.5, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6, marginTop:6 }}><BookOpen size={13}/> Decouvrez plus d informations sur la nouvelle experience de facturation.</a>
+          <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:12.5, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6, marginTop:6 }}><BookOpen/> Decouvrez plus d informations sur la nouvelle experience de facturation.</a>
         </div>
 
         <div style={{ display:'flex', gap:24, borderBottom:'1px solid rgba(255,255,255,0.08)', marginBottom:20 }}>
@@ -780,7 +929,7 @@ export default function Abonnement() {
             </div>
 
             <div style={{ display:'flex', gap:10, padding:'14px 16px', background:'rgba(0,120,212,0.06)', borderRadius:2, marginBottom:24 }}>
-              <Info size={15} style={{ color:'#4da6ff', flexShrink:0, marginTop:1 }}/>
+              <Info style={{ color:'#4da6ff', flexShrink:0, marginTop:1 }}/>
               <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.6)', lineHeight:1.7 }}>
                 Les factures sont generees automatiquement a chaque paiement Mobile Money confirme (essai gratuit, souscription ou renouvellement d abonnement). Retrouvez le detail de chaque transaction ci-dessous.
               </div>
@@ -798,20 +947,14 @@ export default function Abonnement() {
             </div>
 
             <div style={{ display:'flex', alignItems:'center', gap:18, marginBottom:14, flexWrap:'wrap', paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-              <button onClick={init} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}><RefreshCw size={13}/> Actualiser</button>
-              <button onClick={()=>exporterCSV(selectedFactures.length?facturesFiltrees.filter(f=>selectedFactures.includes(f.id)):facturesFiltrees)} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}><Download size={13}/> Exporter vers un fichier CSV</button>
-              <span style={{ fontSize:13, color:'rgba(255,255,255,0.25)', cursor:'default', display:'flex', alignItems:'center', gap:6 }}><FileDown size={13}/> Telecharger</span>
-              <span style={{ fontSize:13, color:'rgba(255,255,255,0.25)', cursor:'default', display:'flex', alignItems:'center', gap:6 }}><Users size={13}/> Gerer l acces</span>
+              <button onClick={init} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}><RefreshCw/> Actualiser</button>
+              <button onClick={()=>exporterCSV(selectedFactures.length?facturesFiltrees.filter(f=>selectedFactures.includes(f.id)):facturesFiltrees)} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}><Download/> Exporter vers un fichier CSV</button>
+              <span style={{ fontSize:13, color:'rgba(255,255,255,0.25)', cursor:'default', display:'flex', alignItems:'center', gap:6 }}><FileDown/> Telecharger</span>
+              <span style={{ fontSize:13, color:'rgba(255,255,255,0.25)', cursor:'default', display:'flex', alignItems:'center', gap:6 }}><Users/> Gerer l acces</span>
               <SearchBox value={factureSearch} onChange={e=>setFactureSearch(e.target.value)} style={{ minWidth:180 }}/>
               <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:16 }}>
                 <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:12.5, color:'#4da6ff', textDecoration:'none' }}>M aider a comprendre ce tableau</a>
-                <div style={{ position:'relative' }}>
-                  <select value="liste" onChange={()=>{}} style={{ padding:'6px 28px 6px 30px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:2, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none', appearance:'none', WebkitAppearance:'none', MozAppearance:'none', cursor:'pointer' }}>
-                    <option value="liste">Liste</option>
-                  </select>
-                  <List size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'rgba(255,255,255,0.5)', pointerEvents:'none' }}/>
-                  <ChevronDown size={13} style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', color:'rgba(255,255,255,0.5)', pointerEvents:'none' }}/>
-                </div>
+                <ViewSwitcher value={vueFactures} onChange={setVueFactures}/>
               </div>
             </div>
 
@@ -835,9 +978,11 @@ export default function Abonnement() {
             </div>
 
             <div style={{ background:'rgba(255,255,255,0.02)', borderRadius:2, overflow:'hidden' }}>
-              {facturesFiltrees.length === 0 ? (
+              {vueFactures === 'graphique' ? (
+                <FactureBarChart factures={facturesFiltrees} fmt={fmt}/>
+              ) : facturesFiltrees.length === 0 ? (
                 <div style={{ textAlign:'center', padding:'60px', color:'rgba(255,255,255,0.3)' }}>
-                  <FileText size={32} style={{ marginBottom:12, opacity:0.3 }}/>
+                  <FileTextLarge style={{ marginBottom:12, opacity:0.3 }}/>
                   <div style={{ fontSize:14 }}>{factures.length===0 ? 'Aucune facture pour le moment' : 'Aucune facture ne correspond a ce filtre'}</div>
                   {factures.length===0 && <div style={{ fontSize:12.5, marginTop:6, color:'rgba(255,255,255,0.25)' }}>Vos factures apparaitront ici des qu un paiement sera effectue.</div>}
                 </div>
@@ -848,8 +993,20 @@ export default function Abonnement() {
                     <th className="fl-th" style={{ width:36 }}>
                       <FluentCheckbox checked={selectedFactures.length>0 && selectedFactures.length===facturesFiltrees.length} onChange={()=>toggleSelectAllFactures(facturesFiltrees)}/>
                     </th>
-                    {['ID de facture','Date de facture (UTC)','Periode de facturation','Profil de facturation','Montant total','Etat','Paie','Telecharger la facture'].map(h=>(
-                      <th key={h} className="fl-th"><ColHeader label={h}/></th>
+                    {[
+                      { label:'ID de facture', field:'numero' },
+                      { label:'Date de facture (UTC)', field:'created_at' },
+                      { label:'Periode de facturation', field:'periode_debut' },
+                      { label:'Profil de facturation', field:'agence_id' },
+                      { label:'Montant total', field:'montant' },
+                      { label:'Etat', field:'statut' },
+                      { label:'Paie', sortable:false },
+                      { label:'Telecharger la facture', sortable:false },
+                    ].map(c=>(
+                      <th key={c.label} className="fl-th">
+                        <ColHeader label={c.label} sortable={c.sortable!==false} active={factureSortField===c.field}
+                          onSort={()=>toggleFactureSort(c.field)}/>
+                      </th>
                     ))}
                   </tr></thead>
                   <tbody>{facturesFiltrees.map(f=>{
@@ -861,7 +1018,7 @@ export default function Abonnement() {
                       </td>
                       <td className="fl-td" style={{ fontWeight:600 }}>
                         <a href="#" onClick={e=>{e.preventDefault();setFactureDetail(f)}} style={{ color:'#4da6ff', textDecoration:'none', cursor:'pointer' }}>{f.numero}</a>{' '}
-                        <Info size={11} style={{ color:'rgba(255,255,255,0.3)', verticalAlign:-1 }}/>
+                        <Info style={{ color:'rgba(255,255,255,0.3)', verticalAlign:-1 }}/>
                       </td>
                       <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>{new Date(f.created_at).toLocaleDateString('fr-FR')}</td>
                       <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>
@@ -871,15 +1028,15 @@ export default function Abonnement() {
                       <td className="fl-td" style={{ fontWeight:600, color:'#e6edf3' }}>{fmt(f.montant)} {f.devise||'FCFA'}</td>
                       <td className="fl-td">
                         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                          {f.statut==='paye' && <CheckCircle2 size={14} style={{ color:'#00c896', flexShrink:0 }} fill="#00c896" stroke="#0d1117"/>}
+                          {f.statut==='paye' && <CheckCircle2 style={{ color:'#00c896', flexShrink:0 }} fill="#00c896" stroke="#0d1117"/>}
                           <span style={{ fontSize:12.5, color:sc.color }}>{f.statut==='paye' ? `Paye le ${f.date_paiement?new Date(f.date_paiement).toLocaleDateString('fr-FR'):new Date(f.created_at).toLocaleDateString('fr-FR')}` : sc.label}</span>
                         </div>
                       </td>
                       <td className="fl-td" style={{ color:'rgba(255,255,255,0.3)' }}>N/A</td>
                       <td className="fl-td">
                         <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                          <a href="#" onClick={e=>e.preventDefault()} style={{ color:'#4da6ff', textDecoration:'none', fontSize:12.5, display:'flex', alignItems:'center', gap:4 }}><Download size={13}/> Telecharger</a>
-                          <button onClick={e=>e.preventDefault()} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', display:'flex', padding:0 }}><MoreHorizontal size={15}/></button>
+                          <a href="#" onClick={e=>e.preventDefault()} style={{ color:'#4da6ff', textDecoration:'none', fontSize:12.5, display:'flex', alignItems:'center', gap:4 }}><Download/> Telecharger</a>
+                          <button onClick={e=>e.preventDefault()} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', display:'flex', padding:0 }}><MoreHorizontal/></button>
                         </div>
                       </td>
                     </tr>
@@ -911,7 +1068,7 @@ export default function Abonnement() {
 
             <div style={{ display:'flex', alignItems:'center', gap:24, marginBottom:16, paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
               <button onClick={ouvrirAjoutMethode} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}>+ Ajouter une methode de paiement</button>
-              <button onClick={init} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}><RefreshCw size={13}/> Actualiser</button>
+              <button onClick={init} style={{ background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }}><RefreshCw/> Actualiser</button>
             </div>
 
             <div style={{ marginBottom:36 }}>
@@ -1160,7 +1317,7 @@ export default function Abonnement() {
                 </div>
 
                 <div style={{marginBottom:20,maxWidth:140}}>
-                  <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Cryptogramme visuel * <Info size={12} title="3 chiffres au dos de la carte" style={{color:'rgba(255,255,255,0.3)',cursor:'help'}}/></label>
+                  <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12.5,color:'rgba(255,255,255,0.6)',marginBottom:6}}>Cryptogramme visuel * <Info title="3 chiffres au dos de la carte" style={{color:'rgba(255,255,255,0.3)',cursor:'help'}}/></label>
                   <input inputMode="numeric" autoComplete="off" maxLength={4} value={newCard.cvv} onChange={e=>setNewCard(p=>({...p,cvv:e.target.value}))}
                     style={fieldStyle(false)}/>
                 </div>
