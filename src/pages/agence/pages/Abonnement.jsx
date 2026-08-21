@@ -637,6 +637,7 @@ function ViewSwitcher({ value, onChange }) {
 }
 
 function FactureBarChart({ factures, fmt }) {
+  const [hoverIdx, setHoverIdx] = useState(null)
   const parMois = {}
   factures.forEach(f => {
     const d = new Date(f.created_at)
@@ -670,13 +671,28 @@ function FactureBarChart({ factures, fmt }) {
             <div key={i} style={{ position:'absolute', left:0, right:0, top:`${(i/paliers)*100}%`, borderTop:'1px solid rgba(255,255,255,0.06)' }}/>
           ))}
           <div style={{ display:'flex', alignItems:'flex-end', height:240, gap:Math.max(4, 32-entrees.length), position:'relative' }}>
-            {entrees.map(([mois,val]) => (
-              <div key={mois} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', height:'100%' }}>
+            {entrees.map(([mois,val], i) => (
+              <div key={mois}
+                onMouseEnter={()=>setHoverIdx(i)}
+                onMouseLeave={()=>setHoverIdx(null)}
+                style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', height:'100%', cursor:'pointer' }}>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', marginBottom:4 }}>{val>0 ? fmt(val) : ''}</div>
-                <div style={{ width:'60%', maxWidth:36, height:`${Math.max((val/plafond)*100, val>0?2:0)}%`, background:'#4da6ff', borderRadius:'2px 2px 0 0' }}/>
+                <div style={{ width:'60%', maxWidth:36, height:`${Math.max((val/plafond)*100, val>0?2:0)}%`, background:hoverIdx===i?'#6cb6ff':'#4da6ff', borderRadius:'2px 2px 0 0', transition:'background-color 0.1s ease' }}/>
               </div>
             ))}
           </div>
+          {hoverIdx !== null && (
+            <div style={{
+              position:'absolute', left:`${(hoverIdx+0.5)/entrees.length*100}%`,
+              bottom:`calc(${Math.max((entrees[hoverIdx][1]/plafond)*100, entrees[hoverIdx][1]>0?2:0)}% + 14px)`,
+              transform:'translateX(-50%)', background:'#1f1f1f', border:'1px solid rgba(255,255,255,0.12)', borderLeft:'3px solid #4da6ff',
+              borderRadius:2, padding:'10px 16px', boxShadow:'0 8px 24px rgba(0,0,0,0.5)', zIndex:10, pointerEvents:'none', whiteSpace:'nowrap',
+            }}>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginBottom:8 }}>{entrees[hoverIdx][0]}</div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:2 }}>Montant total</div>
+              <div style={{ fontSize:20, fontWeight:700, color:'#4da6ff' }}>{fmt(entrees[hoverIdx][1])}</div>
+            </div>
+          )}
         </div>
       </div>
       <div style={{ display:'flex', marginLeft:44 }}>
