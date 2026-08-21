@@ -432,13 +432,9 @@ const FLUENT_TABLE_CSS = `
 .fl-checkbox-checked, .fl-row:hover .fl-checkbox-checked { background:#0078d4; border-color:#0078d4; }
 .fl-th { position:relative; text-align:left; padding:0 12px; height:36px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.035); border-bottom:1px solid #2b2b2b; white-space:nowrap; overflow:hidden; }
 .fl-td { padding:0 12px; height:36px; vertical-align:middle; font-size:13px; color:#ffffff; border-bottom:1px solid #2b2b2b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-@media (max-width:640px) {
-  .page-title { font-size:20px !important; }
-  .panel-body { padding:16px !important; }
-}
-@media (max-width:420px) {
-  .page-title { font-size:18px !important; }
-}
+.page-title { font-size:clamp(18px, 3.2vw + 10px, 26px) !important; }
+.panel-body { padding:clamp(14px, 4vw, 20px) clamp(14px, 4vw, 24px) !important; }
+.panel-header-title { font-size:clamp(15px, 2.4vw + 8px, 18px) !important; }
 `
 
 const FACTURE_COL_DEFAULTS = {
@@ -1297,7 +1293,7 @@ export default function Abonnement() {
               <style>{`@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
 
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,padding:'20px 24px',borderBottom:'1px solid rgba(255,255,255,0.07)'}}>
-                <div style={{fontSize:18,fontWeight:700,color:'#e6edf3',minWidth:0}}>Ajouter une methode de paiement</div>
+                <div className="panel-header-title" style={{fontSize:18,fontWeight:700,color:'#e6edf3',minWidth:0}}>Ajouter une methode de paiement</div>
                 <button onClick={()=>setShowAddMethod(false)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:20,flexShrink:0}}>x</button>
               </div>
 

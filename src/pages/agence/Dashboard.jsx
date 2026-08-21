@@ -50,8 +50,7 @@ export default function DashboardAgence() {
 
         /* Zone de contenu */
         .ac-main{flex:1;overflow-y:auto;min-width:0}
-        .ac-inner{padding:24px 28px}
-        @media(max-width:768px){.ac-inner{padding:16px}}
+        .ac-inner{padding:clamp(16px, 3vw, 24px) clamp(16px, 3.5vw, 28px)}
       `}</style>
 
       <div className="ac-root">
