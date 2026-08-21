@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
@@ -428,7 +429,7 @@ const FLUENT_TABLE_CSS = `
 .fl-row:hover .fl-checkbox { border-color:#0078d4; }
 .fl-checkbox-checked, .fl-row:hover .fl-checkbox-checked { background:#0078d4; border-color:#0078d4; }
 .fl-th { text-align:left; padding:0 12px; height:36px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.035); border-bottom:1px solid #2b2b2b; white-space:nowrap; }
-.fl-td { padding:0 12px; height:36px; vertical-align:middle; font-size:13px; border-bottom:1px solid #2b2b2b; white-space:nowrap; }
+.fl-td { padding:0 12px; height:36px; vertical-align:middle; font-size:13px; color:#ffffff; border-bottom:1px solid #2b2b2b; white-space:nowrap; }
 `
 
 function FluentCheckbox({ checked, onChange }) {
@@ -446,33 +447,90 @@ function FluentCheckbox({ checked, onChange }) {
 
 function ColHeader({ label, sortable=true, active=false, onSort }) {
   const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState({ top:0, left:0 })
+  const btnRef = useRef(null)
+  const menuRef = useRef(null)
+  useEffect(() => {
+    if (!open) return
+    const onClick = e => {
+      if (btnRef.current?.contains(e.target)) return
+      if (menuRef.current?.contains(e.target)) return
+      setOpen(false)
+    }
+    const onScroll = () => setOpen(false)
+    document.addEventListener('mousedown', onClick)
+    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', onScroll)
+    return () => {
+      document.removeEventListener('mousedown', onClick)
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [open])
+  const toggle = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      const menuWidth = 170
+      const overflowsRight = r.left - 8 + menuWidth > window.innerWidth
+      setPos({ top: r.bottom + 9, left: overflowsRight ? r.right - menuWidth + 8 : r.left - 8, flip: overflowsRight })
+    }
+    setOpen(o => !o)
+  }
+  const menuItemStyle = { padding:'8px 14px', fontSize:13, color:'#ffffff', cursor:'pointer', whiteSpace:'nowrap' }
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:5, position:'relative' }}>
+      <span style={{ textTransform:'uppercase' }}>{label}</span>
+      {sortable && <ArrowSort style={{ opacity:active?1:0.5, flexShrink:0, color:active?'#4da6ff':undefined }}/>}
+      <button ref={btnRef} onClick={e=>{e.stopPropagation();toggle()}}
+        style={{ background:'none', border:'none', padding:0, display:'flex', cursor:'pointer', color:'inherit' }}>
+        <ChevronDown style={{ opacity:0.5, flexShrink:0 }}/>
+      </button>
+      {open && createPortal(
+        <div ref={menuRef} style={{ position:'fixed', top:pos.top, left:pos.left, background:'#202020', border:'1px solid rgba(255,255,255,0.12)', borderRadius:4, boxShadow:'0 8px 24px rgba(0,0,0,0.5)', zIndex:1000, minWidth:170, padding:'4px 0', textTransform:'none', fontWeight:400, fontFamily:'Inter,sans-serif' }}>
+          <div style={{ position:'absolute', top:-5, left:pos.flip?undefined:14, right:pos.flip?14:undefined, width:10, height:10, background:'#202020', borderLeft:'1px solid rgba(255,255,255,0.12)', borderTop:'1px solid rgba(255,255,255,0.12)', transform:'rotate(45deg)' }}/>
+          <div style={menuItemStyle}
+            onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.08)'}
+            onMouseLeave={e=>e.currentTarget.style.background='none'}
+            onClick={()=>setOpen(false)}>Redimensionner</div>
+          {sortable && (
+            <div style={menuItemStyle}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.08)'}
+              onMouseLeave={e=>e.currentTarget.style.background='none'}
+              onClick={()=>{onSort?.();setOpen(false)}}>Trier</div>
+          )}
+        </div>,
+        document.body
+      )}
+    </div>
+  )
+}
+
+function FilterPill({ label, value, options, onChange }) {
+  const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
     const onClick = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
     document.addEventListener('mousedown', onClick)
     return () => document.removeEventListener('mousedown', onClick)
   }, [])
-  const menuItemStyle = { padding:'8px 14px', fontSize:13, color:'#e6edf3', cursor:'pointer', whiteSpace:'nowrap' }
+  const current = options.find(o => o.value === value)
   return (
-    <div ref={ref} style={{ display:'flex', alignItems:'center', gap:5, position:'relative' }}>
-      <span style={{ textTransform:'uppercase' }}>{label}</span>
-      {sortable && <ArrowSort style={{ opacity:active?1:0.5, flexShrink:0, color:active?'#4da6ff':undefined }}/>}
-      <button onClick={e=>{e.stopPropagation();setOpen(o=>!o)}}
-        style={{ background:'none', border:'none', padding:0, display:'flex', cursor:'pointer', color:'inherit' }}>
-        <ChevronDown style={{ opacity:0.5, flexShrink:0 }}/>
+    <div ref={ref} style={{ position:'relative' }}>
+      <button onClick={()=>setOpen(o=>!o)}
+        style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 12px', background:'#252525', border:'1px solid rgba(255,255,255,0.1)', borderRadius:4, color:'#ffffff', fontSize:12, fontWeight:600, fontFamily:'Inter,sans-serif', cursor:'pointer' }}
+        onMouseEnter={e=>e.currentTarget.style.background='#2f2f2f'}
+        onMouseLeave={e=>e.currentTarget.style.background='#252525'}>
+        <span>{label} : {current?.label ?? value}</span>
+        <ChevronDown style={{ opacity:0.6, flexShrink:0 }}/>
       </button>
       {open && (
-        <div style={{ position:'absolute', top:'100%', left:0, marginTop:4, background:'#1f1f1f', border:'1px solid rgba(255,255,255,0.12)', borderRadius:2, boxShadow:'0 8px 24px rgba(0,0,0,0.4)', zIndex:30, minWidth:170, padding:'4px 0', textTransform:'none', fontWeight:400 }}>
-          <div style={menuItemStyle}
-            onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.06)'}
-            onMouseLeave={e=>e.currentTarget.style.background='none'}
-            onClick={()=>setOpen(false)}>Redimensionner</div>
-          {sortable && (
-            <div style={menuItemStyle}
-              onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.06)'}
-              onMouseLeave={e=>e.currentTarget.style.background='none'}
-              onClick={()=>{onSort?.();setOpen(false)}}>Trier</div>
-          )}
+        <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, background:'#202020', border:'1px solid rgba(255,255,255,0.12)', borderRadius:4, boxShadow:'0 8px 24px rgba(0,0,0,0.5)', zIndex:30, minWidth:190, padding:'4px 0' }}>
+          {options.map(o => (
+            <div key={o.value} onClick={()=>{onChange(o.value);setOpen(false)}}
+              style={{ padding:'8px 14px', fontSize:13, color:'#ffffff', cursor:'pointer', whiteSpace:'nowrap' }}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.08)'}
+              onMouseLeave={e=>e.currentTarget.style.background='none'}>{o.label}</div>
+          ))}
         </div>
       )}
     </div>
@@ -684,12 +742,12 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
       </div>
 
       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18, flexWrap:'wrap' }}>
-        <span style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', borderRadius:2, color:'#e6edf3', fontSize:12, fontWeight:600 }}>Type de transaction : Tout</span>
-        <span style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', borderRadius:2, color:'#e6edf3', fontSize:12, fontWeight:600 }}>Section facture : Tout</span>
+        <FilterPill label="Type de transaction" value="tout" onChange={()=>{}} options={[{value:'tout',label:'Tout'}]}/>
+        <FilterPill label="Section facture" value="tout" onChange={()=>{}} options={[{value:'tout',label:'Tout'}]}/>
       </div>
 
-      <div style={{ background:'rgba(255,255,255,0.02)', borderRadius:2, overflow:'hidden' }}>
-        <div style={{ overflowX:'auto' }}>
+      <div style={{ width:'100%' }}>
+        <div style={{ overflowX:'auto', overflowY:'visible' }}>
         <table style={{ width:'100%', borderCollapse:'collapse', minWidth:1100 }}>
           <thead><tr>
             {['Date','Periode de service (UTC)','Type','Famille de produit','Type de produit','Reference SKU du produit','Section facture','Prix e...','Quantite','Frais','Taxe','Total'].map(h=>(
@@ -698,18 +756,18 @@ function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
           </tr></thead>
           <tbody>
             <tr className="fl-row">
-              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>{dateFacture}</td>
-              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>{periodeLabel}</td>
-              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>Paiement</td>
-              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>Imoloc</td>
-              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>Abonnement Imoloc</td>
-              <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>{f.abonnement_id ? String(f.abonnement_id).slice(0,8) : 'N/A'}</td>
+              <td className="fl-td">{dateFacture}</td>
+              <td className="fl-td">{periodeLabel}</td>
+              <td className="fl-td">Paiement</td>
+              <td className="fl-td">Imoloc</td>
+              <td className="fl-td">Abonnement Imoloc</td>
+              <td className="fl-td">{f.abonnement_id ? String(f.abonnement_id).slice(0,8) : 'N/A'}</td>
               <td className="fl-td" style={{ color:'#4da6ff' }}>{agence?.nom}</td>
-              <td className="fl-td" style={{ color:'#e6edf3' }}>{fmt(montant)} {devise}</td>
-              <td className="fl-td" style={{ color:'#e6edf3' }}>1</td>
-              <td className="fl-td" style={{ color:'#e6edf3' }}>{fmt(montant)} {devise}</td>
-              <td className="fl-td" style={{ color:'#e6edf3' }}>0 {devise}</td>
-              <td className="fl-td" style={{ fontWeight:600, color:'#e6edf3' }}>{fmt(montant)} {devise}</td>
+              <td className="fl-td" style={{ color:'#ffffff' }}>{fmt(montant)} {devise}</td>
+              <td className="fl-td" style={{ color:'#ffffff' }}>1</td>
+              <td className="fl-td" style={{ color:'#ffffff' }}>{fmt(montant)} {devise}</td>
+              <td className="fl-td" style={{ color:'#ffffff' }}>0 {devise}</td>
+              <td className="fl-td" style={{ fontWeight:600, color:'#ffffff' }}>{fmt(montant)} {devise}</td>
             </tr>
           </tbody>
         </table>
@@ -959,25 +1017,23 @@ export default function Abonnement() {
             </div>
 
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18, flexWrap:'wrap' }}>
-              <select value={factureStatutFilter} onChange={e=>setFactureStatutFilter(e.target.value)}
-                style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', borderRadius:2, color:'#e6edf3', fontSize:12, fontWeight:600, fontFamily:'Inter,sans-serif', outline:'none' }}>
-                <option value="tout">Etat : Tout</option>
-                {Object.entries(FACTURE_STATUT_CFG).map(([k,v])=><option key={k} value={k}>Etat : {v.label}</option>)}
-              </select>
-              <span style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', borderRadius:2, color:'#e6edf3', fontSize:12, fontWeight:600 }}>Profil de facturation : {agence?.nom}</span>
-              <select value={factureDuree} onChange={e=>setFactureDuree(e.target.value)}
-                style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', borderRadius:2, color:'#e6edf3', fontSize:12, fontWeight:600, fontFamily:'Inter,sans-serif', outline:'none' }}>
-                <option value="3mois">Duree : 3 derniers mois</option>
-                <option value="12mois">Duree : 12 derniers mois</option>
-                <option value="tout">Duree : Tout</option>
-              </select>
+              <FilterPill label="Etat" value={factureStatutFilter} onChange={setFactureStatutFilter}
+                options={[{value:'tout',label:'Tout'}, ...Object.entries(FACTURE_STATUT_CFG).map(([k,v])=>({value:k,label:v.label}))]}/>
+              <FilterPill label="Profil de facturation" value={agence?.nom||''} onChange={()=>{}}
+                options={[{value:agence?.nom||'', label:agence?.nom||''}]}/>
+              <FilterPill label="Duree" value={factureDuree} onChange={setFactureDuree}
+                options={[
+                  {value:'3mois', label:'3 derniers mois'},
+                  {value:'12mois', label:'12 derniers mois'},
+                  {value:'tout', label:'Tout'},
+                ]}/>
               <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:12.5, color:'rgba(255,255,255,0.5)', cursor:'pointer', marginLeft:8 }}>
                 <input type="checkbox" checked={exclureZero} onChange={e=>setExclureZero(e.target.checked)} />
                 Exclure les factures a 0 $
               </label>
             </div>
 
-            <div style={{ background:'rgba(255,255,255,0.02)', borderRadius:2, overflow:'hidden' }}>
+            <div style={{ width:'100%' }}>
               {vueFactures === 'graphique' ? (
                 <FactureBarChart factures={facturesFiltrees} fmt={fmt}/>
               ) : facturesFiltrees.length === 0 ? (
@@ -987,7 +1043,7 @@ export default function Abonnement() {
                   {factures.length===0 && <div style={{ fontSize:12.5, marginTop:6, color:'rgba(255,255,255,0.25)' }}>Vos factures apparaitront ici des qu un paiement sera effectue.</div>}
                 </div>
               ) : (
-                <div style={{ overflowX:'auto' }}>
+                <div style={{ overflowX:'auto', overflowY:'visible' }}>
                 <table style={{ width:'100%', borderCollapse:'collapse', minWidth:900 }}>
                   <thead><tr>
                     <th className="fl-th" style={{ width:36 }}>
@@ -1020,12 +1076,12 @@ export default function Abonnement() {
                         <a href="#" onClick={e=>{e.preventDefault();setFactureDetail(f)}} style={{ color:'#4da6ff', textDecoration:'none', cursor:'pointer' }}>{f.numero}</a>{' '}
                         <Info style={{ color:'rgba(255,255,255,0.3)', verticalAlign:-1 }}/>
                       </td>
-                      <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>{new Date(f.created_at).toLocaleDateString('fr-FR')}</td>
-                      <td className="fl-td" style={{ color:'rgba(255,255,255,0.6)' }}>
+                      <td className="fl-td">{new Date(f.created_at).toLocaleDateString('fr-FR')}</td>
+                      <td className="fl-td">
                         {f.periode_debut ? new Date(f.periode_debut).toLocaleDateString('fr-FR') : new Date(f.created_at).toLocaleDateString('fr-FR')}
                       </td>
                       <td className="fl-td" style={{ color:'#4da6ff' }}>{agence?.nom}</td>
-                      <td className="fl-td" style={{ fontWeight:600, color:'#e6edf3' }}>{fmt(f.montant)} {f.devise||'FCFA'}</td>
+                      <td className="fl-td" style={{ fontWeight:600, color:'#ffffff' }}>{fmt(f.montant)} {f.devise||'FCFA'}</td>
                       <td className="fl-td">
                         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                           {f.statut==='paye' && <CheckCircle2 style={{ color:'#00c896', flexShrink:0 }} fill="#00c896" stroke="#0d1117"/>}
@@ -1111,8 +1167,8 @@ export default function Abonnement() {
               Vous pouvez remplacer le mode de paiement de ce compte en selectionnant les points, puis en selectionnant Remplacer.
             </div>
             <div style={{ marginBottom:16 }}>
-              <span style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)' }}>Filtres : </span>
-              <span style={{ fontSize:12, fontWeight:600, padding:'4px 10px', borderRadius:2, background:'rgba(255,255,255,0.06)', color:'#e6edf3' }}>Profil de facturation : Tous</span>
+              <span style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', marginRight:8 }}>Filtres : </span>
+              <FilterPill label="Profil de facturation" value="tous" onChange={()=>{}} options={[{value:'tous',label:'Tous'}]}/>
             </div>
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <thead><tr>{['Mode de paiement par defaut','Profil de facturation','Date d expiration ↑','Type'].map(h=>(
