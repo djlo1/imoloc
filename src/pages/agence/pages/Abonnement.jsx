@@ -342,7 +342,7 @@ const fmt = n => Number(n||0).toLocaleString('fr-FR')
 
 const fieldStyle = (hasError, disabled) => ({
   width:'100%', padding:'10px 34px 10px 12px', background:disabled?'rgba(255,255,255,0.02)':'rgba(255,255,255,0.06)',
-  border:`1px solid ${hasError ? '#ef4444' : 'rgba(255,255,255,0.35)'}`, borderRadius:8,
+  border:`1px solid ${hasError ? '#ef4444' : 'rgba(255,255,255,0.35)'}`, borderRadius:2,
   color:'#e6edf3', fontFamily:'Inter,sans-serif', fontSize:14, outline:'none', colorScheme:'dark', boxSizing:'border-box',
 })
 
@@ -362,8 +362,8 @@ function FieldError({ message }) {
 
 function OperateurBadge({ operateurId, size=32 }) {
   const op = OPERATEURS.find(o => o.id === operateurId)
-  if (op?.logo) return <img src={op.logo} alt={op.label} style={{ width:size, height:size, objectFit:'contain', borderRadius:6, background:'#fff', padding:3, flexShrink:0 }}/>
-  return <div style={{ width:size, height:size, borderRadius:'50%', background:'#ffcc00', display:'flex', alignItems:'center', justifyContent:'center', fontSize:size*0.26, fontWeight:800, color:'#111', flexShrink:0 }}>MTN</div>
+  if (op?.logo) return <img src={op.logo} alt={op.label} style={{ width:size, height:size, objectFit:'contain', flexShrink:0 }}/>
+  return <div style={{ width:size, height:size, background:'#ffcc00', display:'flex', alignItems:'center', justifyContent:'center', fontSize:size*0.26, fontWeight:800, color:'#111', flexShrink:0 }}>MTN</div>
 }
 
 function Combobox({ value, onChange, options, placeholder, freeText=false, disabled=false, error=false }) {
@@ -388,7 +388,7 @@ function Combobox({ value, onChange, options, placeholder, freeText=false, disab
       />
       <Chevron error={error}/>
       {open && filtered.length > 0 && (
-        <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, maxHeight:200, overflowY:'auto', background:'#161b22', border:'1px solid rgba(255,255,255,0.25)', borderRadius:8, zIndex:20, boxShadow:'0 8px 24px rgba(0,0,0,0.4)' }}>
+        <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, maxHeight:200, overflowY:'auto', background:'#161b22', border:'1px solid rgba(255,255,255,0.25)', borderRadius:2, zIndex:20, boxShadow:'0 8px 24px rgba(0,0,0,0.4)' }}>
           {filtered.map(o => (
             <div key={o} onMouseDown={() => { onChange(o); setOpen(false); setQuery('') }}
               style={{ padding:'8px 12px', fontSize:13.5, color:'#e6edf3', cursor:'pointer' }}
@@ -409,6 +409,130 @@ function Select({ value, onChange, children, error=false, style={} }) {
         {children}
       </select>
       <Chevron error={error}/>
+    </div>
+  )
+}
+
+function FactureDetail({ facture:f, agence, fmt, statutCfg }) {
+  const [bannerOuverte, setBannerOuverte] = useState(true)
+  const sc = statutCfg[f.statut] || statutCfg.en_attente
+  const paye = f.statut === 'paye'
+  const dateFacture = new Date(f.created_at).toLocaleDateString('fr-FR')
+  const datePaiement = f.date_paiement ? new Date(f.date_paiement).toLocaleDateString('fr-FR') : (paye ? dateFacture : '—')
+  const periodeDebut = f.periode_debut ? new Date(f.periode_debut) : new Date(f.created_at)
+  const periodeFinCalc = f.periode_fin ? new Date(f.periode_fin) : new Date(periodeDebut.getFullYear(), periodeDebut.getMonth()+1, periodeDebut.getDate())
+  const periodeLabel = `${periodeDebut.toLocaleDateString('fr-FR')} - ${periodeFinCalc.toLocaleDateString('fr-FR')}`
+  const montant = Number(f.montant||0)
+  const devise = f.devise || 'FCFA'
+
+  const ligneStyle = { display:'flex', justifyContent:'space-between', padding:'8px 0', fontSize:13, borderBottom:'1px solid rgba(255,255,255,0.05)' }
+  const labelStyle = { color:'rgba(255,255,255,0.45)' }
+  const valStyle = { color:'#e6edf3', textAlign:'right' }
+
+  return (
+    <div>
+      <div style={{ fontSize:26, fontWeight:700, color:'#e6edf3', marginBottom:16 }}>{f.numero}</div>
+
+      <div style={{ display:'flex', gap:24, marginBottom:20, flexWrap:'wrap' }}>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}>📄 Preparer le fichier d utilisation</a>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}>⬇ Telechargement ⌄</a>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}>🔗 Liens utiles ⌄</a>
+      </div>
+
+      {bannerOuverte && (
+        <div style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'14px 16px', background:'rgba(0,120,212,0.06)', border:'1px solid rgba(0,120,212,0.2)', borderRadius:2, marginBottom:28 }}>
+          <span style={{ fontSize:14, flexShrink:0 }}>ℹ️</span>
+          <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.6)', lineHeight:1.7, flex:1 }}>
+            Cette facture concerne les achats d abonnement, les renouvellements et les frais recurrents a la date indiquee. La periode de service que vous payez est repertoriee dans chaque abonnement ci-dessous.{' '}
+            <a href="#" onClick={e=>e.preventDefault()} style={{ color:'#4da6ff' }}>En savoir plus sur le calendrier de facturation</a>
+          </div>
+          <button onClick={()=>setBannerOuverte(false)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:14, flexShrink:0 }}>✕</button>
+        </div>
+      )}
+
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(240px, 1fr))', gap:32, marginBottom:32 }}>
+        <div>
+          <div style={{ fontSize:13, fontWeight:700, color:'#e6edf3', marginBottom:12 }}>Montant du</div>
+          <div style={{ fontSize:28, fontWeight:700, color:'#e6edf3', marginBottom:8 }}>{paye ? '0,00' : fmt(montant)} {devise}</div>
+          {paye ? (
+            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12.5, color:'#00c896' }}>✓ Cette facture a ete payee le {datePaiement}</div>
+          ) : (
+            <div style={{ fontSize:12.5, color:sc.color }}>{sc.label}</div>
+          )}
+        </div>
+
+        <div>
+          <div style={{ fontSize:13, fontWeight:700, color:'#e6edf3', marginBottom:12 }}>Details de la facture</div>
+          <div style={ligneStyle}><span style={labelStyle}>Date de facture (UTC)</span><span style={valStyle}>{dateFacture}</span></div>
+          <div style={ligneStyle}><span style={labelStyle}>Date de paiement (UTC)</span><span style={valStyle}>{datePaiement}</span></div>
+          <div style={ligneStyle}><span style={labelStyle}>Periode de facturation (UTC)</span><span style={valStyle}>{periodeLabel}</span></div>
+          <div style={ligneStyle}><span style={labelStyle}>Numero de BDC</span><span style={valStyle}>Non defini</span></div>
+          <div style={ligneStyle}><span style={labelStyle}>Profil de facturation</span><span style={{...valStyle,color:'#4da6ff'}}>{agence?.nom}</span></div>
+          <div style={ligneStyle}><span style={labelStyle}>Compte de facturation</span><span style={{...valStyle,color:'#4da6ff'}}>{agence?.nom}</span></div>
+        </div>
+
+        <div>
+          <div style={{ fontSize:13, fontWeight:700, color:'#e6edf3', marginBottom:12 }}>Recapitulatif de facturation</div>
+          <div style={ligneStyle}><span style={labelStyle}>Frais</span><span style={valStyle}>{fmt(montant)} {devise}</span></div>
+          <div style={ligneStyle}><span style={labelStyle}>Credits</span><span style={valStyle}>- 0 {devise}</span></div>
+          <div style={ligneStyle}><span style={labelStyle}>Sous-total</span><span style={valStyle}>{fmt(montant)} {devise}</span></div>
+          <div style={ligneStyle}><span style={labelStyle}>Taxe</span><span style={valStyle}>+ 0 {devise}</span></div>
+          <div style={{...ligneStyle, borderBottom:'none', fontWeight:700}}><span style={{...labelStyle,color:'#e6edf3'}}>Montant total</span><span style={valStyle}>{fmt(montant)} {devise}</span></div>
+        </div>
+      </div>
+
+      <div style={{ display:'flex', gap:32, marginBottom:24, flexWrap:'wrap' }}>
+        <div style={{ borderLeft:'3px solid #d6249f', paddingLeft:14 }}>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:4 }}>Nombre total de transactions</div>
+          <div style={{ fontSize:20, fontWeight:700, color:'#e6edf3' }}>1</div>
+        </div>
+        <div style={{ borderLeft:'3px solid #0078d4', paddingLeft:14 }}>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:4 }}>Total des frais/credits</div>
+          <div style={{ fontSize:20, fontWeight:700, color:'#e6edf3' }}>{fmt(montant)} {devise}</div>
+        </div>
+        <div style={{ borderLeft:'3px solid #00c896', paddingLeft:14 }}>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:4 }}>Montant total</div>
+          <div style={{ fontSize:20, fontWeight:700, color:'#e6edf3' }}>{fmt(montant)} {devise}</div>
+        </div>
+      </div>
+
+      <div style={{ display:'flex', alignItems:'center', gap:18, marginBottom:16, flexWrap:'wrap', paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+        <a href="#" onClick={e=>e.preventDefault()} style={{ fontSize:13, color:'#4da6ff', textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}>⬇ Exporter vers un fichier CSV</a>
+        <input placeholder="🔍 Rechercher" style={{ marginLeft:'auto', padding:'7px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:2, color:'#e6edf3', fontSize:12.5, fontFamily:'Inter,sans-serif', outline:'none', minWidth:180 }}/>
+      </div>
+
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18, flexWrap:'wrap' }}>
+        <span style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:100, color:'#e6edf3', fontSize:12, fontWeight:600 }}>Type de transaction : Tout</span>
+        <span style={{ padding:'6px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:100, color:'#e6edf3', fontSize:12, fontWeight:600 }}>Section facture : Tout</span>
+      </div>
+
+      <div style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:12, overflow:'hidden' }}>
+        <div style={{ overflowX:'auto' }}>
+        <table style={{ width:'100%', borderCollapse:'collapse', minWidth:1100 }}>
+          <thead><tr>
+            {['Date','Periode de service (UTC)','Type','Famille de produit','Type de produit','Reference SKU du produit','Section facture','Prix e...','Quantite','Frais','Taxe','Total'].map(h=>(
+              <th key={h} style={{ textAlign:'left', padding:'12px 16px', fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', borderBottom:'1px solid rgba(255,255,255,0.06)', whiteSpace:'nowrap' }}>{h} ⌄</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>{dateFacture}</td>
+              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>{periodeLabel}</td>
+              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>Paiement</td>
+              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>Imoloc</td>
+              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>Abonnement Imoloc</td>
+              <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>{f.abonnement_id ? String(f.abonnement_id).slice(0,8) : 'N/A'}</td>
+              <td style={{ padding:'12px 16px', fontSize:13, color:'#4da6ff', whiteSpace:'nowrap' }}>{agence?.nom}</td>
+              <td style={{ padding:'12px 16px', fontSize:13, color:'#e6edf3', whiteSpace:'nowrap' }}>{fmt(montant)} {devise}</td>
+              <td style={{ padding:'12px 16px', fontSize:13, color:'#e6edf3', whiteSpace:'nowrap' }}>1</td>
+              <td style={{ padding:'12px 16px', fontSize:13, color:'#e6edf3', whiteSpace:'nowrap' }}>{fmt(montant)} {devise}</td>
+              <td style={{ padding:'12px 16px', fontSize:13, color:'#e6edf3', whiteSpace:'nowrap' }}>0 {devise}</td>
+              <td style={{ padding:'12px 16px', fontSize:13, fontWeight:600, color:'#e6edf3', whiteSpace:'nowrap' }}>{fmt(montant)} {devise}</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
     </div>
   )
 }
@@ -448,6 +572,7 @@ export default function Abonnement() {
   const [factureDuree, setFactureDuree] = useState('12mois')
   const [exclureZero, setExclureZero] = useState(false)
   const [selectedFactures, setSelectedFactures] = useState([])
+  const [factureDetail, setFactureDetail] = useState(null)
 
   const toggleSelectFacture = (id) => setSelectedFactures(s => s.includes(id) ? s.filter(x=>x!==id) : [...s, id])
   const toggleSelectAllFactures = (list) => setSelectedFactures(s => s.length===list.length ? [] : list.map(f=>f.id))
@@ -568,8 +693,17 @@ export default function Abonnement() {
       <div style={{ maxWidth:1300, margin:'0 auto' }}>
 
         <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14 }}>
-          Accueil <span style={{ margin:'0 4px' }}>&gt;</span> <span style={{ color:'rgba(255,255,255,0.6)' }}>Factures et paiements</span>
+          Accueil <span style={{ margin:'0 4px' }}>&gt;</span>{' '}
+          {factureDetail ? (
+            <a href="#" onClick={e=>{e.preventDefault();setFactureDetail(null)}} style={{ color:'#4da6ff', textDecoration:'none' }}>Factures et paiements</a>
+          ) : (
+            <span style={{ color:'rgba(255,255,255,0.6)' }}>Factures et paiements</span>
+          )}
         </div>
+
+        {factureDetail ? (
+          <FactureDetail facture={factureDetail} agence={agence} fmt={fmt} statutCfg={FACTURE_STATUT_CFG}/>
+        ) : (<>
 
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:10, marginBottom:20 }}>
           <div style={{ fontSize:26, fontWeight:700, color:'#e6edf3' }}>Factures et paiements</div>
@@ -671,7 +805,10 @@ export default function Abonnement() {
                       <td style={{ padding:'12px 16px' }}>
                         <input type="checkbox" checked={selectedFactures.includes(f.id)} onChange={()=>toggleSelectFacture(f.id)} />
                       </td>
-                      <td style={{ padding:'12px 16px', fontSize:13, fontWeight:600, color:'#4da6ff', whiteSpace:'nowrap' }}>{f.numero} <span style={{ color:'rgba(255,255,255,0.25)' }}>ⓘ</span></td>
+                      <td style={{ padding:'12px 16px', fontSize:13, fontWeight:600, whiteSpace:'nowrap' }}>
+                        <a href="#" onClick={e=>{e.preventDefault();setFactureDetail(f)}} style={{ color:'#4da6ff', textDecoration:'none', cursor:'pointer' }}>{f.numero}</a>{' '}
+                        <span style={{ color:'rgba(255,255,255,0.25)' }}>ⓘ</span>
+                      </td>
                       <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>{new Date(f.created_at).toLocaleDateString('fr-FR')}</td>
                       <td style={{ padding:'12px 16px', fontSize:13, color:'rgba(255,255,255,0.6)', whiteSpace:'nowrap' }}>
                         {f.periode_debut ? new Date(f.periode_debut).toLocaleDateString('fr-FR') : new Date(f.created_at).toLocaleDateString('fr-FR')}
@@ -787,6 +924,8 @@ export default function Abonnement() {
           </div>
         )}
 
+        </>)}
+
         {/* PANNEAU LATERAL AJOUT METHODE DE PAIEMENT (style Microsoft admin) */}
         {showAddMethod && (
           <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:500}} onClick={()=>setShowAddMethod(false)}>
@@ -813,10 +952,10 @@ export default function Abonnement() {
                 </div>
 
                 <div style={{fontSize:11.5,fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10}}>Nous prenons en charge les operateurs suivants</div>
-                <div style={{display:'flex',alignItems:'stretch',marginBottom:24,width:'fit-content',borderRadius:8,overflow:'hidden',border:'1px solid rgba(255,255,255,0.1)'}}>
+                <div style={{display:'flex',alignItems:'stretch',marginBottom:24,width:'fit-content',borderRadius:2,overflow:'hidden',border:'1px solid rgba(255,255,255,0.1)'}}>
                   {OPERATEURS.map(op=>(
-                    <div key={op.id} style={{padding:6,background:'rgba(255,255,255,0.02)'}}>
-                      <OperateurBadge operateurId={op.id} size={40}/>
+                    <div key={op.id} style={{padding:8,background:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      <OperateurBadge operateurId={op.id} size={24}/>
                     </div>
                   ))}
                 </div>
@@ -830,7 +969,7 @@ export default function Abonnement() {
                 <div style={{marginBottom:20}}>
                   <label style={{display:'block',fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>Operateur Mobile Money</label>
                   {operateursDisponibles(newMethod.pays).length === 0 ? (
-                    <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)',padding:'10px 12px',background:'rgba(255,255,255,0.03)',borderRadius:8,border:'1px solid rgba(255,255,255,0.2)'}}>
+                    <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)',padding:'10px 12px',background:'rgba(255,255,255,0.03)',borderRadius:2,border:'1px solid rgba(255,255,255,0.2)'}}>
                       Mobile Money n est pas encore disponible pour ce pays. Vous pouvez ajouter une carte de credit ou de debit a la place.
                     </div>
                   ) : (<>
@@ -922,7 +1061,7 @@ export default function Abonnement() {
                 </div>
                 </>) : (<>
                 <div style={{fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Nous acceptons les cartes suivantes</div>
-                <div style={{display:'flex',alignItems:'stretch',marginBottom:24,width:'fit-content',borderRadius:8,overflow:'hidden',border:'1px solid rgba(255,255,255,0.1)'}}>
+                <div style={{display:'flex',alignItems:'stretch',marginBottom:24,width:'fit-content',borderRadius:2,overflow:'hidden',border:'1px solid rgba(255,255,255,0.1)'}}>
                   {CARTES.map(c=>(
                     <div key={c.id} style={{padding:8,background:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}}>
                       <img src={c.logo} alt={c.label} style={{height:24,width:'auto',objectFit:'contain'}}/>
