@@ -587,7 +587,17 @@ export default function Utilisateurs() {
         .us-vbtn.active{background:rgba(255,255,255,0.1);color:#e6edf3}
 
         @media(max-width:1100px){.us-stats{grid-template-columns:1fr 1fr}}
-        @media(max-width:700px){.ud-panel,.ui-panel,.up-panel{width:100%}.us-toolbar{flex-direction:column}}
+        @media(max-width:700px){
+          .ud-panel,.ui-panel,.up-panel{width:100%}
+          .us-toolbar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+          .us-toolbar::-webkit-scrollbar{height:3px}
+          .us-toolbar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+          .us-toolbar .us-btn,.us-toolbar .us-sep{flex-shrink:0}
+          .us-sr{margin-left:0;flex-shrink:0}
+          .us-sr input{width:150px}
+          .us-thead-bar{flex-wrap:wrap;gap:8px}
+        }
+        @media(max-width:480px){.us-stats{grid-template-columns:1fr}}
       `}</style>
 
       <div className="us-page">
