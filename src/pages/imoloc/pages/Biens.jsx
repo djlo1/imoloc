@@ -691,11 +691,12 @@ export default function ImolocBiens() {
                   <div className="pb-sec">Statut actuel</div>
                   <div className="pb-statut-row">
                     {[
-                      ['disponible',  'Disponible'],
-                      ['loue',        'Loue'],
-                      ['maintenance', 'Maintenance'],
-                      ['reserve',     'Reserve'],
-                      ['indisponible','Indisponible'],
+                      ['disponible',   'Disponible'],
+                      ['occupe',       'Occupe'],
+                      ['maintenance',  'Maintenance'],
+                      ['renovation',   'Renovation'],
+                      ['reserve',      'Reserve'],
+                      ['hors_service', 'Hors service'],
                     ].map(([k,lbl])=>{
                       const cfg = STATUT_CFG[k] || STATUT_CFG.disponible
                       return (

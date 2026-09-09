@@ -6,10 +6,11 @@ import toast from 'react-hot-toast'
 import ProgressBar from '../../../components/ui/ProgressBar'
 
 const TYPES = ['Appartement','Villa','Bureau','Terrain','Local commercial','Studio','Duplex']
-const STATUTS = ['libre','occupé','maintenance','réservé']
-// Couvre aussi le vocabulaire utilise par l espace /imoloc (disponible/occupe/renovation/reserve)
-// qui ecrit dans la meme table biens avec des valeurs de statut differentes.
-const STATUT_COLORS = { libre:'#00c896', disponible:'#00c896', occupé:'#0078d4', occupe:'#0078d4', maintenance:'#f59e0b', réservé:'#6c63ff', reserve:'#6c63ff', renovation:'#f97316' }
+// Vocabulaire de statut unifie avec l espace /imoloc (meme table `biens`, meme cles) :
+// voir STATUT_CFG dans src/pages/imoloc/pages/Biens.jsx, la reference canonique.
+const STATUTS = ['disponible','occupe','maintenance','renovation','reserve','hors_service']
+const STATUT_LABELS = { disponible:'Disponible', occupe:'Occupé', maintenance:'Maintenance', renovation:'Rénovation', reserve:'Réservé', hors_service:'Hors service' }
+const STATUT_COLORS = { disponible:'#00c896', occupe:'#0078d4', maintenance:'#f59e0b', renovation:'#8b5cf6', reserve:'#6c63ff', hors_service:'#ef4444' }
 
 export default function Biens() {
   const [biens, setBiens] = useState([])
@@ -18,7 +19,7 @@ export default function Biens() {
   const [agenceId, setAgenceId] = useState(null)
   const [search, setSearch] = useState('')
   const [filterStatut, setFilterStatut] = useState('tous')
-  const [form, setForm] = useState({ nom:'', type:'Appartement', adresse:'', ville:'', superficie:'', loyer:'', statut:'libre', description:'' })
+  const [form, setForm] = useState({ nom:'', type:'Appartement', adresse:'', ville:'', superficie:'', loyer:'', statut:'disponible', description:'' })
   const set = (k,v) => setForm(f=>({...f,[k]:v}))
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export default function Biens() {
     if (error) { toast.error(error.message); return }
     toast.success('Bien ajouté !')
     setShowModal(false)
-    setForm({ nom:'', type:'Appartement', adresse:'', ville:'', superficie:'', loyer:'', statut:'libre', description:'' })
+    setForm({ nom:'', type:'Appartement', adresse:'', ville:'', superficie:'', loyer:'', statut:'disponible', description:'' })
     fetchBiens(agenceId)
   }
 
@@ -112,7 +113,7 @@ export default function Biens() {
       </div>
 
       {biens.length>0 && (()=>{
-        const occ = biens.filter(b=>b.statut==='occupé'||b.statut==='occupe').length
+        const occ = biens.filter(b=>b.statut==='occupe').length
         const taux = Math.round((occ/biens.length)*100)
         return (
           <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
@@ -129,7 +130,7 @@ export default function Biens() {
         </div>
         {['tous',...STATUTS].map(s => (
           <button key={s} className={`pg-filter-btn ${filterStatut===s?'active':''}`} onClick={()=>setFilterStatut(s)}>
-            {s.charAt(0).toUpperCase()+s.slice(1)}
+            {s==='tous' ? 'Tous' : STATUT_LABELS[s]}
           </button>
         ))}
       </div>
@@ -152,7 +153,7 @@ export default function Biens() {
               <div className="bien-card-top">
                 <div className="bien-card-type">{b.type}</div>
                 <div className="bien-statut" style={{background:`${bc}18`,color:bc}}>
-                  {b.statut}
+                  {STATUT_LABELS[b.statut] || b.statut}
                 </div>
               </div>
               <div className="bien-card-nom">{b.nom}</div>

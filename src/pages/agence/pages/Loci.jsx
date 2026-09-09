@@ -75,27 +75,27 @@ export default function Loci() {
           ])
 
           const bD=b||[], lD=l||[], pD=p||[], auD=au||[], eqD=eq||[], invD=inv||[]
-          const rev = pD.filter(x=>x.statut==='payé').reduce((s,x)=>s+Number(x.montant||0),0)
-          const ret = pD.filter(x=>x.statut==='retard').length
+          const rev = pD.filter(x=>x.statut==='paye'||x.statut==='partiel').reduce((s,x)=>s+Number(x.montant||0),0)
+          const ret = pD.filter(x=>x.statut==='en_retard').length
           const occ = bD.length>0 ? Math.round((lD.length/bD.length)*100) : 0
-          const revMois = pD.filter(x=>x.statut==='payé'&&new Date(x.date_paiement).getMonth()===new Date().getMonth()).reduce((s,x)=>s+Number(x.montant||0),0)
+          const revMois = pD.filter(x=>(x.statut==='paye'||x.statut==='partiel')&&new Date(x.date_paiement).getMonth()===new Date().getMonth()).reduce((s,x)=>s+Number(x.montant||0),0)
 
           setStats({
             biens:bD.length,
-            biensLibres: bD.filter(x=>x.statut==='libre').length,
-            biensOccupes: bD.filter(x=>x.statut==='occupé').length,
-            biensMaintenance: bD.filter(x=>x.statut==='maintenance').length,
+            biensLibres: bD.filter(x=>x.statut==='disponible').length,
+            biensOccupes: bD.filter(x=>x.statut==='occupe').length,
+            biensMaintenance: bD.filter(x=>x.statut==='maintenance'||x.statut==='renovation').length,
             locataires:lD.length,
             revenus:rev,
             revenusMois:revMois,
             retards:ret,
-            enAttente: pD.filter(x=>x.statut==='en attente').length,
+            enAttente: pD.filter(x=>x.statut==='en_attente').length,
             taux:occ,
             utilisateurs: auD.length + 1,
             equipes: eqD.length,
             invitationsEnAttente: invD.filter(x=>x.statut==='en_attente').length,
             totalPaiements: pD.length,
-            paiementsPayes: pD.filter(x=>x.statut==='payé').length,
+            paiementsPayes: pD.filter(x=>x.statut==='paye').length,
             _biens: bD.map(x=>({nom:x.nom,type:x.type,ville:x.ville,loyer:x.loyer,statut:x.statut})),
             _utilisateurs: auD.map(x=>({role:x.role,poste:x.poste,departement:x.departement,email:x.email,prenom:x.prenom,nom:x.nom})),
             _equipes: eqD.map(x=>({nom:x.nom,confidentialite:x.confidentialite,membres:x.equipe_membres?.length||0})),
