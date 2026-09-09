@@ -114,6 +114,8 @@ const PLANS = [
 
 export default function Landing() {
   const [openMenu, setOpenMenu] = useState(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileSection, setMobileSection] = useState(null)
   const [featTab, setFeatTab] = useState("gestion")
   const [openAcc, setOpenAcc] = useState(0)
   const [billing, setBilling] = useState("mois")
@@ -197,20 +199,43 @@ export default function Landing() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         @keyframes slideRight{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
-        .anim{opacity:0;transform:translateY(30px);transition:opacity 0.6s ease,transform 0.6s ease}
-        .anim.visible{opacity:1;transform:none}
-        .anim-d1{transition-delay:0.1s}
-        .anim-d2{transition-delay:0.2s}
-        .anim-d3{transition-delay:0.3s}
-        .anim-d4{transition-delay:0.4s}
+        /* Le contenu reste toujours visible : l animation d apparition (si elle se declenche)
+           est un bonus, jamais une condition d affichage (evite le contenu bloque invisible
+           sur connexion lente, ou l IntersectionObserver ne se declenche pas a temps). */
+        .anim{opacity:1;transform:none}
+        .anim:not(.visible){animation:fadeUp 0.8s ease both}
+        .anim-d1{animation-delay:0.1s}
+        .anim-d2{animation-delay:0.2s}
+        .anim-d3{animation-delay:0.3s}
+        .anim-d4{animation-delay:0.4s}
         /* HERO FLOATING CARD */
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
         .float{animation:float 4s ease-in-out infinite}
         /* STAT COUNTER */
         .stat-num{font-size:28px;font-weight:700;color:#1a1a1a;font-variant-numeric:tabular-nums}
         @media(max-width:768px){.hide-mobile{display:none!important}}
+        /* MENU MOBILE (remplace les liens Produits/Tarifs/Ressources/Support caches sous 768px) */
+        .lp-mobile-toggle{display:none}
+        .lp-mobile-panel{display:none}
+        @media(max-width:768px){
+          .lp-mobile-toggle{display:flex}
+          .lp-mobile-panel.open{display:block}
+        }
+        .lp-mobile-toggle{align-items:center;justify-content:center;width:36px;height:36px;border:none;background:none;cursor:pointer;color:#1a1a1a;flex-shrink:0}
+        .lp-mobile-panel{position:fixed;top:48px;left:0;right:0;bottom:0;background:#fff;z-index:400;overflow-y:auto;animation:fadeDown 0.15s ease}
+        .lp-mobile-item{display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px 24px;border:none;background:none;border-bottom:1px solid #f0f0f0;font-size:15px;font-family:inherit;color:#1a1a1a;text-align:left;cursor:pointer}
+        .lp-mobile-sub{background:#fafafa;border-bottom:1px solid #f0f0f0}
+        .lp-mobile-sub a{display:block;padding:13px 24px 13px 36px;font-size:14px;color:#444;border-bottom:1px solid #f0f0f0}
+        .lp-mobile-sub a:last-child{border-bottom:none}
+        .lp-mobile-actions{padding:20px 24px;display:flex;flex-direction:column;gap:10px}
 
         /* ── RESPONSIVE MOBILE/TABLETTE ── */
+        /* Sans ca, un enfant de grid/flex ne se retreint jamais sous la largeur de son
+           contenu (ex: un tableau large) et force tout le conteneur - et donc la page -
+           a deborder horizontalement, meme quand la grille est deja passee en 1 colonne. */
+        .lp-hero-grid > *, .lp-feat-grid > *, .lp-why-grid > *, .lp-try-grid > *,
+        .lp-try-main > *, .lp-try-small > *, .lp-steps-grid > *, .lp-testim-grid > *,
+        .lp-footer-grid > *, .lp-stats-row > * { min-width:0 }
         @media(max-width:900px){
           .lp-hero-grid{grid-template-columns:1fr!important;gap:40px!important}
           .lp-feat-grid{grid-template-columns:1fr!important;gap:32px!important}
@@ -321,8 +346,43 @@ export default function Landing() {
             </div>
           </div>
           <div className="lp-nav-actions" style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
+            <button className="lp-mobile-toggle" onClick={()=>setMobileMenuOpen(v=>!v)} aria-label="Menu">
+              {mobileMenuOpen
+                ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>}
+            </button>
             <Link to="/register"><button className="btn-dark" style={{fontSize:13,padding:"7px 16px"}}>Essayer gratuitement</button></Link>
             <Link to="/login" className="lp-btn-secondary"><button className="btn-out" style={{fontSize:13,padding:"7px 16px"}}>Se connecter</button></Link>
+          </div>
+        </div>
+
+        {/* MENU MOBILE */}
+        <div className={"lp-mobile-panel"+(mobileMenuOpen?" open":"")}>
+          {[
+            {id:"produits",label:"Produits",links:MEGA_PRODUITS.flatMap(s=>s.items).map(it=>[it.label,it.path])},
+            {id:"ressources",label:"Ressources",links:[["Documentation","#"],["Formation","#"],["Communaut&#233;","#"],["Blog","#"],["Nouveaut&#233;s","#"]]},
+            {id:"support",label:"Support",links:[["Aide et support","#"],["Support technique","#"],["Nous contacter","#"],["Partenaires","#"]]},
+          ].map(sec => (
+            <div key={sec.id}>
+              <button className="lp-mobile-item" onClick={()=>setMobileSection(mobileSection===sec.id?null:sec.id)}>
+                {sec.label}
+                <Chev open={mobileSection===sec.id}/>
+              </button>
+              {mobileSection===sec.id && (
+                <div className="lp-mobile-sub">
+                  {sec.links.map(([l,p])=>
+                    p.startsWith("#")
+                      ? <a key={l} href={p} dangerouslySetInnerHTML={{__html:l}} onClick={()=>{setMobileMenuOpen(false);setMobileSection(null)}}/>
+                      : <Link key={l} to={p} dangerouslySetInnerHTML={{__html:l}} onClick={()=>{setMobileMenuOpen(false);setMobileSection(null)}}/>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          <a href="#tarifs" className="lp-mobile-item" style={{textDecoration:"none"}} onClick={()=>setMobileMenuOpen(false)}>Offres &amp; Tarifs</a>
+          <div className="lp-mobile-actions">
+            <Link to="/register" onClick={()=>setMobileMenuOpen(false)}><button className="btn-dark" style={{width:"100%"}}>Essayer gratuitement</button></Link>
+            <Link to="/login" onClick={()=>setMobileMenuOpen(false)}><button className="btn-out" style={{width:"100%"}}>Se connecter</button></Link>
           </div>
         </div>
 
