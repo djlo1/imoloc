@@ -12,7 +12,7 @@ const Logo = () => (
     </div>
     <div>
       <div style={{fontSize:16,fontWeight:700,color:"#1a1a1a",letterSpacing:"-0.02em",lineHeight:1}}>Imoloc</div>
-      <div style={{fontSize:10,color:"#888",letterSpacing:"0.05em",lineHeight:1,marginTop:2}}>GESTION IMMOBILI&#200;RE</div>
+      <div className="lp-logo-sub" style={{fontSize:10,color:"#888",letterSpacing:"0.05em",lineHeight:1,marginTop:2}}>GESTION IMMOBILI&#200;RE</div>
     </div>
   </div>
 )
@@ -209,13 +209,52 @@ export default function Landing() {
         /* STAT COUNTER */
         .stat-num{font-size:28px;font-weight:700;color:#1a1a1a;font-variant-numeric:tabular-nums}
         @media(max-width:768px){.hide-mobile{display:none!important}}
+
+        /* ── RESPONSIVE MOBILE/TABLETTE ── */
+        @media(max-width:900px){
+          .lp-hero-grid{grid-template-columns:1fr!important;gap:40px!important}
+          .lp-feat-grid{grid-template-columns:1fr!important;gap:32px!important}
+          .lp-feat-grid > div:last-child{position:static!important}
+          .lp-why-grid{grid-template-columns:1fr!important;gap:32px!important}
+          .lp-float-card{position:static!important;margin-top:16px!important;left:auto!important;bottom:auto!important;width:fit-content}
+        }
+        @media(max-width:768px){
+          .lp-stats-row{flex-wrap:wrap}
+          .lp-stat-item{flex:1 1 50%!important;border-left:none!important}
+          .lp-stat-item:nth-child(even){border-left:1px solid #e5e5e5!important}
+          .lp-stat-item:nth-child(n+3){border-top:1px solid #e5e5e5}
+          .lp-stats-actions{flex:1 1 100%!important;justify-content:flex-start!important;border-left:none!important;border-top:1px solid #e5e5e5;padding:16px 0!important;flex-wrap:wrap!important}
+          .lp-steps-grid{grid-template-columns:1fr!important}
+          .lp-testim-grid{grid-template-columns:1fr!important}
+          .lp-try-grid{grid-template-columns:1fr!important}
+          .lp-footer-grid{grid-template-columns:1fr 1fr!important}
+          .lp-footer-grid > div:first-child{grid-column:1/-1}
+          .lp-why-table-wrap{overflow-x:auto}
+        }
+        @media(max-width:640px){
+          .lp-logo-sub{display:none}
+          .lp-nav-sep{margin:0 10px!important}
+          .lp-nav-actions{gap:6px!important}
+          .lp-nav-actions button{padding:6px 10px!important;font-size:12px!important}
+          .lp-try-main{grid-template-columns:1fr!important}
+          .lp-try-main > div:last-child{height:200px!important}
+          .lp-try-small{grid-template-columns:1fr!important}
+          .lp-try-small > div:last-child{width:100%!important;height:140px!important}
+        }
+        @media(max-width:480px){
+          .lp-footer-grid{grid-template-columns:1fr!important}
+          .lp-footer-grid > div:first-child{grid-column:auto}
+        }
+        @media(max-width:480px){
+          .lp-nav-actions .lp-btn-secondary{display:none!important}
+        }
       `}</style>
 
       {/* ── NAVBAR ── */}
       <nav style={{background:"#fff",borderBottom:"1px solid #e5e5e5",position:"sticky",top:0,zIndex:300}}>
-        <div style={{maxWidth:1280,margin:"0 auto",display:"flex",alignItems:"center",height:48,padding:"0 24px",gap:0}}>
+        <div className="lp-nav-row" style={{maxWidth:1280,margin:"0 auto",display:"flex",alignItems:"center",height:48,padding:"0 24px",gap:0}}>
           <Link to="/"><Logo/></Link>
-          <span style={{width:1,height:20,background:"#e5e5e5",margin:"0 20px",flexShrink:0}}/>
+          <span className="lp-nav-sep" style={{width:1,height:20,background:"#e5e5e5",margin:"0 20px",flexShrink:0}}/>
           <div style={{display:"flex",flex:1,alignItems:"center"}} className="hide-mobile">
             {/* Produits */}
             <div className="nav-wrap" onMouseLeave={()=>setOpenMenu(null)}>
@@ -281,9 +320,9 @@ export default function Landing() {
               )}
             </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
+          <div className="lp-nav-actions" style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
             <Link to="/register"><button className="btn-dark" style={{fontSize:13,padding:"7px 16px"}}>Essayer gratuitement</button></Link>
-            <Link to="/login"><button className="btn-out" style={{fontSize:13,padding:"7px 16px"}}>Se connecter</button></Link>
+            <Link to="/login" className="lp-btn-secondary"><button className="btn-out" style={{fontSize:13,padding:"7px 16px"}}>Se connecter</button></Link>
           </div>
         </div>
 
@@ -295,7 +334,7 @@ export default function Landing() {
       {/* ── HERO ── */}
       <section style={{background:"linear-gradient(135deg,#fdf8f5 0%,#f5f0fd 40%,#eef5ff 100%)",padding:"80px 24px 90px",overflow:"hidden",position:"relative"}}>
         <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle at 70% 30%,rgba(108,99,255,0.06) 0%,transparent 50%),radial-gradient(circle at 20% 70%,rgba(0,120,212,0.06) 0%,transparent 50%)",pointerEvents:"none"}}/>
-        <div style={{maxWidth:1280,margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:60,alignItems:"center",position:"relative",zIndex:1}}>
+        <div className="lp-hero-grid" style={{maxWidth:1280,margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:60,alignItems:"center",position:"relative",zIndex:1}}>
           <div className="anim">
             <div style={{fontSize:11,fontWeight:700,color:"#0078d4",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:16}}>LA PLATEFORME DE GESTION IMMOBILI&#200;RE</div>
             <h1 style={{fontSize:"clamp(30px,4vw,50px)",fontWeight:300,color:"#1a1a1a",lineHeight:1.15,marginBottom:20,letterSpacing:"-0.02em"}}>
@@ -322,7 +361,7 @@ export default function Landing() {
                 onError={e=>{e.target.parentElement.style.background="linear-gradient(135deg,#e8f4ff,#f0f9ff)";e.target.style.display="none"}}/>
             </div>
             {/* Floating notification card */}
-            <div className="float" style={{position:"absolute",bottom:-20,left:-24,background:"#fff",border:"1px solid #e5e5e5",borderRadius:10,padding:"14px 18px",boxShadow:"0 8px 24px rgba(0,0,0,0.12)",display:"flex",alignItems:"center",gap:12,minWidth:220}}>
+            <div className="float lp-float-card" style={{position:"absolute",bottom:-20,left:-24,background:"#fff",border:"1px solid #e5e5e5",borderRadius:10,padding:"14px 18px",boxShadow:"0 8px 24px rgba(0,0,0,0.12)",display:"flex",alignItems:"center",gap:12,minWidth:220}}>
               <div style={{width:38,height:38,borderRadius:"50%",background:"#d4edda",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 <Check color="#28a745"/>
               </div>
@@ -337,14 +376,14 @@ export default function Landing() {
 
       {/* ── STATS + ACCES RAPIDE ── */}
       <section style={{borderBottom:"1px solid #e5e5e5",padding:"0 24px",background:"#fff"}}>
-        <div style={{maxWidth:1280,margin:"0 auto",display:"flex",alignItems:"stretch",minHeight:64}}>
+        <div className="lp-stats-row" style={{maxWidth:1280,margin:"0 auto",display:"flex",alignItems:"stretch",minHeight:64}}>
           {[["2 500+","Biens g&#233;r&#233;s"],["450+","Agences actives"],["8","Pays couverts"],["98%","Satisfaction"]].map(([v,l],i) => (
-            <div key={l} style={{flex:1,padding:"16px 24px",borderLeft:i>0?"1px solid #e5e5e5":"none",display:"flex",alignItems:"center",gap:12}}>
+            <div key={l} className="lp-stat-item" style={{flex:1,padding:"16px 24px",borderLeft:i>0?"1px solid #e5e5e5":"none",display:"flex",alignItems:"center",gap:12}}>
               <div className="stat-num" dangerouslySetInnerHTML={{__html:v}}/>
               <div style={{fontSize:12,color:"#888"}} dangerouslySetInnerHTML={{__html:l}}/>
             </div>
           ))}
-          <div style={{flex:2,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,borderLeft:"1px solid #e5e5e5",padding:"0 0 0 24px"}}>
+          <div className="lp-stats-actions" style={{flex:2,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,borderLeft:"1px solid #e5e5e5",padding:"0 0 0 24px"}}>
             <Link to="/agence"><button className="btn-dark" style={{fontSize:13,padding:"8px 16px"}}>Se connecter en tant qu&#8217;admin</button></Link>
             <Link to="#tarifs"><button className="btn-out" style={{fontSize:13,padding:"8px 16px"}}>Comparer les plans</button></Link>
           </div>
@@ -363,7 +402,7 @@ export default function Landing() {
 
         {/* GESTION SIMPLIFIEE - accordion + image sticky */}
         {featTab === "gestion" && (
-          <div style={{maxWidth:1280,margin:"0 auto",padding:"60px 24px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:80,alignItems:"flex-start"}}>
+          <div className="lp-feat-grid" style={{maxWidth:1280,margin:"0 auto",padding:"60px 24px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:80,alignItems:"flex-start"}}>
             <div className="anim">
               <div style={{fontSize:11,fontWeight:700,color:"#888",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>FONCTIONNALIT&#201;S</div>
               <h2 style={{fontSize:"clamp(22px,3vw,34px)",fontWeight:300,color:"#1a1a1a",marginBottom:24,lineHeight:1.2}}>R&#233;pondre aux besoins uniques de votre organisation</h2>
@@ -537,9 +576,9 @@ export default function Landing() {
           <div style={{textAlign:"center",marginBottom:48}} className="anim">
             <h2 style={{fontSize:"clamp(24px,3vw,36px)",fontWeight:300,color:"#1a1a1a"}}>Essayez l&#8217;exp&#233;rience d&#8217;administration Imoloc</h2>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}} className="anim">
+          <div className="lp-try-grid anim" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}}>
             {/* Carte principale */}
-            <div style={{border:"1px solid #e5e5e5",borderRadius:8,overflow:"hidden",display:"grid",gridTemplateColumns:"1fr 1fr"}}>
+            <div className="lp-try-main" style={{border:"1px solid #e5e5e5",borderRadius:8,overflow:"hidden",display:"grid",gridTemplateColumns:"1fr 1fr"}}>
               <div style={{padding:32}}>
                 <div style={{fontSize:11,fontWeight:700,color:"#888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:16}}>Essayer gratuitement</div>
                 <h3 style={{fontSize:22,fontWeight:300,color:"#1a1a1a",marginBottom:12,lineHeight:1.3}}>D&#233;marrez votre essai gratuit de 30 jours sans risque</h3>
@@ -561,7 +600,7 @@ export default function Landing() {
                 {titre:"Cr&#233;ez un ticket de support technique",desc:"Obtenez une assistance pour l&#8217;installation et la configuration d&#8217;Imoloc.",btn:"D&#233;marrez un ticket",img:"https://images.unsplash.com/photo-1560250097-0b93528c311a?w=300&q=80"},
                 {titre:"Parcourez les rubriques d&#8217;aide",desc:"Prenez de l&#8217;avance sur l&#8217;installation et la gestion de votre organisation.",btn:"Acc&#233;dez aux ressources",img:"https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=300&q=80"},
               ].map((c,i) => (
-                <div key={i} style={{border:"1px solid #e5e5e5",borderRadius:8,overflow:"hidden",display:"grid",gridTemplateColumns:"1fr auto"}}>
+                <div key={i} className="lp-try-small" style={{border:"1px solid #e5e5e5",borderRadius:8,overflow:"hidden",display:"grid",gridTemplateColumns:"1fr auto"}}>
                   <div style={{padding:24}}>
                     <div style={{fontSize:11,fontWeight:700,color:"#888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:10}}>Support Imoloc</div>
                     <h3 style={{fontSize:16,fontWeight:500,color:"#1a1a1a",marginBottom:8,lineHeight:1.3}} dangerouslySetInnerHTML={{__html:c.titre}}/>
@@ -625,7 +664,7 @@ export default function Landing() {
             <h2 style={{fontSize:"clamp(24px,3vw,36px)",fontWeight:300,color:"#1a1a1a",marginBottom:12}}>Op&#233;rationnel en moins de 10 minutes</h2>
             <p style={{fontSize:15,color:"#555",maxWidth:520,margin:"0 auto"}}>Pas de formation complexe. Imoloc est con&#231;u pour &#234;tre simple et intuitif d&#232;s le premier jour.</p>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1,background:"#e5e5e5",border:"1px solid #e5e5e5"}}>
+          <div className="lp-steps-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1,background:"#e5e5e5",border:"1px solid #e5e5e5"}}>
             {[
               {num:"01",titre:"Cr&#233;ez votre compte",desc:"Inscrivez-vous en 2 minutes. Choisissez votre type de compte (agence, propri&#233;taire ou locataire) et configurez votre profil.",color:"#0078d4",
                points:["Inscription gratuite 30 jours","Aucune carte bancaire","Configuration guid&#233;e pas &#224; pas"]},
@@ -660,7 +699,7 @@ export default function Landing() {
       {/* ── POURQUOI IMOLOC ── */}
       <section style={{padding:"80px 24px",background:"#f9f5f2"}}>
         <div style={{maxWidth:1280,margin:"0 auto"}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:80,alignItems:"center"}}>
+          <div className="lp-why-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:80,alignItems:"center"}}>
             <div className="anim">
               <div style={{fontSize:11,fontWeight:700,color:"#0078d4",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:16}}>POURQUOI IMOLOC</div>
               <h2 style={{fontSize:"clamp(24px,3vw,36px)",fontWeight:300,color:"#1a1a1a",marginBottom:20,lineHeight:1.2}}>Con&#231;u sp&#233;cifiquement pour l&#8217;Afrique francophone</h2>
@@ -687,7 +726,8 @@ export default function Landing() {
             <div className="anim anim-d2">
               <div style={{background:"#fff",border:"1px solid #e5e5e5",borderRadius:12,padding:32,boxShadow:"0 8px 32px rgba(0,0,0,0.08)"}}>
                 <div style={{fontSize:13,fontWeight:700,color:"#888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:20}}>Comparatif</div>
-                <table style={{width:"100%",borderCollapse:"collapse"}}>
+                <div className="lp-why-table-wrap">
+                <table style={{width:"100%",borderCollapse:"collapse",minWidth:380}}>
                   <thead>
                     <tr>
                       <th style={{textAlign:"left",padding:"8px 0",fontSize:12,color:"#888",fontWeight:600,borderBottom:"1px solid #f0f0f0"}}>Fonctionnalit&#233;</th>
@@ -712,6 +752,7 @@ export default function Landing() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           </div>
@@ -725,7 +766,7 @@ export default function Landing() {
             <div style={{fontSize:11,fontWeight:700,color:"#0078d4",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:12}}>T&#201;MOIGNAGES CLIENTS</div>
             <h2 style={{fontSize:"clamp(24px,3vw,36px)",fontWeight:300,color:"#1a1a1a"}}>Ils font confiance &#224; Imoloc</h2>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24}}>
+          <div className="lp-testim-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24}}>
             {[
               {nom:"Kossi Agbodjan",role:"Directeur",entreprise:"Agence Immovie, Lom&#233;",avis:"Depuis qu&#8217;on utilise Imoloc, nos locataires paient via MTN Money sans qu&#8217;on ait &#224; relancer. Les quittances sont g&#233;n&#233;r&#233;es automatiquement. Un gain de temps immense.",initiales:"KA",color:"#0078d4"},
               {nom:"Adjoua Koffi",role:"Propri&#233;taire",entreprise:"12 appartements &#224; Abidjan",avis:"Je suis propri&#233;taire et je vis en France. Gr&#226;ce &#224; Imoloc je suis mes loyers en temps r&#233;el et mon gestionnaire peut tout faire depuis son t&#233;l&#233;phone. Parfait.",initiales:"AK",color:"#10b981"},
@@ -781,7 +822,7 @@ export default function Landing() {
         </div>
         {/* Links */}
         <div style={{maxWidth:1280,margin:"0 auto",padding:"48px 24px 0"}}>
-          <div style={{display:"grid",gridTemplateColumns:"2fr repeat(5,1fr)",gap:32,marginBottom:40}}>
+          <div className="lp-footer-grid" style={{display:"grid",gridTemplateColumns:"2fr repeat(5,1fr)",gap:32,marginBottom:40}}>
             <div>
               <Link to="/"><Logo/></Link>
               <p style={{fontSize:13,color:"#555",lineHeight:1.7,maxWidth:220,marginTop:14}}>La plateforme de gestion immobili&#232;re pour l&#8217;Afrique francophone.</p>
