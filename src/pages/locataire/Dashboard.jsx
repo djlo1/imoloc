@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { Home, Wallet, FileText, Megaphone, User, Bell, CreditCard, CheckCircle2, Key, ClipboardList, Download, DoorOpen, Briefcase, Building2, IdCard, Smartphone, XCircle, Hourglass } from 'lucide-react'
 
 const TABS = [
-  { id:'accueil',    icon:'🏠', label:'Accueil' },
-  { id:'paiements',  icon:'💰', label:'Paiements' },
-  { id:'documents',  icon:'📄', label:'Documents' },
-  { id:'plaintes',   icon:'📢', label:'Plaintes' },
-  { id:'profil',     icon:'👤', label:'Profil' },
+  { id:'accueil',    icon:Home, label:'Accueil' },
+  { id:'paiements',  icon:Wallet, label:'Paiements' },
+  { id:'documents',  icon:FileText, label:'Documents' },
+  { id:'plaintes',   icon:Megaphone, label:'Plaintes' },
+  { id:'profil',     icon:User, label:'Profil' },
 ]
 
 const STATUT_PAY = {
@@ -237,7 +238,7 @@ export default function DashboardLocataire() {
             </div>
           </div>
           <div style={{position:'relative'}}>
-            <button onClick={()=>setTab('profil')} style={{width:36,height:36,borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>🔔</button>
+            <button onClick={()=>setTab('profil')} style={{width:36,height:36,borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><Bell size={16}/></button>
             {unread > 0 && <div style={{position:'absolute',top:-4,right:-4,width:18,height:18,borderRadius:'50%',background:'#ef4444',fontSize:10,fontWeight:700,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}}>{unread}</div>}
           </div>
         </div>
@@ -266,7 +267,7 @@ export default function DashboardLocataire() {
                     </div>
                   </div>
                   <div style={{display:'flex',gap:10}}>
-                    {[['📅','Debut',bail.date_debut?new Date(bail.date_debut).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}):'—'],['📅','Fin',bail.date_fin?new Date(bail.date_fin).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}):'Indefinie']].map(([ic,l,v])=>(
+                    {[['Debut',bail.date_debut?new Date(bail.date_debut).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}):'—'],['Fin',bail.date_fin?new Date(bail.date_fin).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}):'Indefinie']].map(([l,v])=>(
                       <div key={l} style={{flex:1,background:'rgba(0,0,0,0.2)',borderRadius:10,padding:'10px 12px'}}>
                         <div style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginBottom:2}}>{l}</div>
                         <div style={{fontSize:12.5,fontWeight:600,color:'#e6edf3'}}>{v}</div>
@@ -285,10 +286,10 @@ export default function DashboardLocataire() {
                     {paieMois ? <Badge statut={paieMois.statut}/> : <Badge statut="en_attente"/>}
                   </div>
                   {(!paieMois || paieMois.statut!=='paye') && (
-                    <button style={bP} onClick={()=>setShowPayModal(true)}>💳 Payer maintenant</button>
+                    <button style={{...bP,display:'flex',alignItems:'center',justifyContent:'center',gap:8}} onClick={()=>setShowPayModal(true)}><CreditCard size={16}/> Payer maintenant</button>
                   )}
                   {paieMois?.statut==='paye' && (
-                    <div style={{padding:'12px',background:'rgba(16,185,129,0.08)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:10,textAlign:'center',fontSize:13,color:'#10b981',fontWeight:600}}>✅ Loyer paye ce mois</div>
+                    <div style={{padding:'12px',background:'rgba(16,185,129,0.08)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:10,textAlign:'center',fontSize:13,color:'#10b981',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><CheckCircle2 size={16}/> Loyer paye ce mois</div>
                   )}
                 </div>
 
@@ -315,11 +316,11 @@ export default function DashboardLocataire() {
                 {/* Actions rapides */}
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:14}}>
                   {[
-                    {icon:'📢',label:'Signaler un probleme',color:'#f59e0b',action:()=>setShowPlainteModal(true)},
-                    {icon:'📄',label:'Mes documents',color:'#0078d4',action:()=>setTab('documents')},
-                  ].map(({icon,label,color,action})=>(
+                    {icon:Megaphone,label:'Signaler un probleme',color:'#f59e0b',action:()=>setShowPlainteModal(true)},
+                    {icon:FileText,label:'Mes documents',color:'#0078d4',action:()=>setTab('documents')},
+                  ].map(({icon:Icon,label,color,action})=>(
                     <button key={label} onClick={action} style={{padding:'16px 12px',borderRadius:14,border:`1px solid ${color}33`,background:color+'0d',cursor:'pointer',textAlign:'center',fontFamily:'Inter,sans-serif'}}>
-                      <div style={{fontSize:26,marginBottom:6}}>{icon}</div>
+                      <div style={{marginBottom:6,display:'flex',justifyContent:'center',color}}><Icon size={26}/></div>
                       <div style={{fontSize:12,fontWeight:600,color,lineHeight:1.3}}>{label}</div>
                     </button>
                   ))}
@@ -327,7 +328,7 @@ export default function DashboardLocataire() {
               </>
             ) : (
               <div style={{textAlign:'center',padding:'60px 20px'}}>
-                <div style={{fontSize:48,marginBottom:16,opacity:0.3}}>🏠</div>
+                <div style={{marginBottom:16,opacity:0.3,display:'flex',justifyContent:'center'}}><Home size={48}/></div>
                 <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.5)',marginBottom:8}}>Aucun bail actif</div>
                 <div style={{fontSize:13,color:'rgba(255,255,255,0.3)',lineHeight:1.7}}>Votre agence n a pas encore cree de bail pour vous.</div>
               </div>
@@ -344,14 +345,14 @@ export default function DashboardLocataire() {
             </div>
             {paiements.length===0 ? (
               <div style={{textAlign:'center',padding:'50px 20px',color:'rgba(255,255,255,0.3)',fontSize:14}}>
-                <div style={{fontSize:36,marginBottom:12,opacity:0.3}}>💰</div>
+                <div style={{marginBottom:12,opacity:0.3,display:'flex',justifyContent:'center'}}><Wallet size={36}/></div>
                 Aucun paiement enregistre
               </div>
             ) : paiements.map(p=>(
               <div key={p.id} style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:14,padding:'16px',marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                 <div style={{display:'flex',alignItems:'center',gap:12}}>
-                  <div style={{width:42,height:42,borderRadius:12,background:(STATUT_PAY[p.statut]||STATUT_PAY.en_attente).color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>
-                    {p.statut==='paye'?'✅':'⏳'}
+                  <div style={{width:42,height:42,borderRadius:12,background:(STATUT_PAY[p.statut]||STATUT_PAY.en_attente).color+'18',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    {p.statut==='paye'?<CheckCircle2 size={18}/>:<Hourglass size={18}/>}
                   </div>
                   <div>
                     <div style={{fontSize:14,fontWeight:600,color:'#e6edf3'}}>{p.periode_mois?'Loyer '+String(p.periode_mois).padStart(2,'0')+'/'+p.periode_annee:new Date(p.date_echeance).toLocaleDateString('fr-FR')}</div>
@@ -372,12 +373,12 @@ export default function DashboardLocataire() {
           <div>
             <div style={{fontSize:18,fontWeight:700,color:'#e6edf3',marginBottom:16}}>Documents</div>
             {[
-              {icon:'📑',label:'Contrat de bail',sub:bail?'Signe':'Non disponible',available:!!bail?.contrat_html,color:'#0078d4'},
-              {icon:'🔑',label:'Etat des lieux entree',sub:'Document PDF',available:false,color:'#10b981'},
-              {icon:'🚪',label:'Etat des lieux sortie',sub:'Non encore realise',available:false,color:'#f59e0b'},
-            ].map(({icon,label,sub,available,color})=>(
+              {icon:ClipboardList,label:'Contrat de bail',sub:bail?'Signe':'Non disponible',available:!!bail?.contrat_html,color:'#0078d4'},
+              {icon:Key,label:'Etat des lieux entree',sub:'Document PDF',available:false,color:'#10b981'},
+              {icon:DoorOpen,label:'Etat des lieux sortie',sub:'Non encore realise',available:false,color:'#f59e0b'},
+            ].map(({icon:Icon,label,sub,available,color})=>(
               <div key={label} style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:14,padding:'16px',marginBottom:10,display:'flex',alignItems:'center',gap:14,opacity:available?1:0.5}}>
-                <div style={{width:46,height:46,borderRadius:12,background:color+'18',border:`1px solid ${color}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>{icon}</div>
+                <div style={{width:46,height:46,borderRadius:12,background:color+'18',border:`1px solid ${color}33`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,color}}><Icon size={22}/></div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:14,fontWeight:600,color:'#e6edf3'}}>{label}</div>
                   <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:2}}>{sub}</div>
@@ -395,7 +396,7 @@ export default function DashboardLocataire() {
                     <div style={{fontSize:13.5,fontWeight:500,color:'#e6edf3'}}>Quittance {p.periode_mois?String(p.periode_mois).padStart(2,'0')+'/'+p.periode_annee:new Date(p.date_echeance).toLocaleDateString('fr-FR')}</div>
                     <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)',marginTop:2}}>{fmt(p.montant)} FCFA</div>
                   </div>
-                  <span style={{fontSize:20}}>📥</span>
+                  <span style={{display:'flex'}}><Download size={20}/></span>
                 </div>
               ))}
             </div>
@@ -411,7 +412,7 @@ export default function DashboardLocataire() {
             </div>
             {plaintes.length===0 ? (
               <div style={{textAlign:'center',padding:'50px 20px'}}>
-                <div style={{fontSize:40,marginBottom:12,opacity:0.3}}>📢</div>
+                <div style={{marginBottom:12,opacity:0.3,display:'flex',justifyContent:'center'}}><Megaphone size={40}/></div>
                 <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Aucune plainte</div>
                 <div style={{fontSize:13,color:'rgba(255,255,255,0.3)'}}>Signalez un probleme dans votre logement</div>
               </div>
@@ -452,9 +453,9 @@ export default function DashboardLocataire() {
             {locataire && (
               <div className="card" style={{marginBottom:14}}>
                 <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Informations</div>
-                {[['📱','Telephone',locataire.telephone||'—'],['🪪','CIN',locataire.cin||'—'],['💼','Profession',locataire.profession||'—'],['🏙️','Ville',locataire.ville||'—']].map(([ic,l,v])=>(
+                {[[Smartphone,'Telephone',locataire.telephone||'—'],[IdCard,'CIN',locataire.cin||'—'],[Briefcase,'Profession',locataire.profession||'—'],[Building2,'Ville',locataire.ville||'—']].map(([Ic,l,v])=>(
                   <div key={l} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-                    <span style={{fontSize:18,width:28,textAlign:'center'}}>{ic}</span>
+                    <span style={{width:28,display:'flex',justifyContent:'center'}}><Ic size={18}/></span>
                     <div style={{flex:1}}>
                       <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{l}</div>
                       <div style={{fontSize:13.5,color:'#e6edf3',fontWeight:500}}>{v}</div>
@@ -489,7 +490,7 @@ export default function DashboardLocataire() {
         {TABS.map(t=>(
           <button key={t.id} className="tab-btn" onClick={()=>setTab(t.id)}
             style={{color:tab===t.id?'#10b981':'rgba(255,255,255,0.35)'}}>
-            <span className="tab-icon" style={{filter:tab===t.id?'none':'grayscale(1)',opacity:tab===t.id?1:0.5}}>{t.icon}</span>
+            <span className="tab-icon" style={{opacity:tab===t.id?1:0.5,display:'flex'}}><t.icon size={20}/></span>
             <span className="tab-label" style={{fontWeight:tab===t.id?700:400}}>{t.label}</span>
             {t.id==='plaintes'&&plaintes.filter(p=>p.statut==='ouverte').length>0&&<div style={{position:'absolute',top:6,right:'calc(50% - 14px)',width:7,height:7,borderRadius:'50%',background:'#f59e0b'}}/>}
           </button>
@@ -526,7 +527,7 @@ export default function DashboardLocataire() {
             )}
             {payStatus==='pending' && (
               <div style={{textAlign:'center',padding:'20px 0'}}>
-                <div style={{fontSize:48,marginBottom:16}}>📱</div>
+                <div style={{marginBottom:16,display:'flex',justifyContent:'center'}}><Smartphone size={48}/></div>
                 <div style={{fontSize:17,fontWeight:700,color:'#e6edf3',marginBottom:8}}>En attente de confirmation</div>
                 <div style={{fontSize:14,color:'rgba(255,255,255,0.45)',lineHeight:1.7,marginBottom:24}}>Approuvez le paiement USSD sur votre telephone pour finaliser.</div>
                 <div style={{display:'flex',justifyContent:'center',gap:8}}>
@@ -536,14 +537,14 @@ export default function DashboardLocataire() {
             )}
             {payStatus==='success' && (
               <div style={{textAlign:'center',padding:'20px 0'}}>
-                <div style={{fontSize:52,marginBottom:14}}>✅</div>
+                <div style={{marginBottom:14,display:'flex',justifyContent:'center',color:'#10b981'}}><CheckCircle2 size={52}/></div>
                 <div style={{fontSize:18,fontWeight:700,color:'#10b981',marginBottom:8}}>Paiement confirme !</div>
                 <div style={{fontSize:14,color:'rgba(255,255,255,0.4)'}}>Votre loyer a ete paye avec succes.</div>
               </div>
             )}
             {payStatus==='failed' && (
               <div style={{textAlign:'center',padding:'20px 0'}}>
-                <div style={{fontSize:52,marginBottom:14}}>❌</div>
+                <div style={{marginBottom:14,display:'flex',justifyContent:'center',color:'#ef4444'}}><XCircle size={52}/></div>
                 <div style={{fontSize:18,fontWeight:700,color:'#ef4444',marginBottom:8}}>Paiement echoue</div>
                 <div style={{fontSize:14,color:'rgba(255,255,255,0.4)',marginBottom:20}}>Le paiement n a pas pu etre traite.</div>
                 <button style={bP} onClick={()=>setPayStatus(null)}>Reessayer</button>

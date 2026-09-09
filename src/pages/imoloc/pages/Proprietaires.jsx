@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { User, Building2, Factory, Hourglass, RefreshCw, Download, Link2, Search, UserPlus, AlertTriangle, FileText, Pencil, Folder, Wallet, Check } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
@@ -493,14 +494,14 @@ export default function ImolocProprietaires() {
         {/* Stats */}
         <div className="pp-stats">
           {[
-            {ic:'👤',lbl:'Total',val:proprietaires.length,col:'#0078d4'},
-            {ic:'🏢',lbl:'Individuels',val:proprietaires.filter(p=>p.type_proprietaire==='individuel').length,col:'#6c63ff'},
-            {ic:'🏭',lbl:'Societes',val:proprietaires.filter(p=>p.type_proprietaire==='societe').length,col:'#f59e0b'},
-            {ic:'⏳',lbl:'En attente',val:proprietaires.filter(p=>p.statut_lien==='en_attente_validation').length,col:'#f59e0b'},
+            {ic:User,lbl:'Total',val:proprietaires.length,col:'#0078d4'},
+            {ic:Building2,lbl:'Individuels',val:proprietaires.filter(p=>p.type_proprietaire==='individuel').length,col:'#6c63ff'},
+            {ic:Factory,lbl:'Societes',val:proprietaires.filter(p=>p.type_proprietaire==='societe').length,col:'#f59e0b'},
+            {ic:Hourglass,lbl:'En attente',val:proprietaires.filter(p=>p.statut_lien==='en_attente_validation').length,col:'#f59e0b'},
           ].map((s,i)=>(
             <div key={i} className="pp-stat">
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                <span style={{fontSize:18}}>{s.ic}</span>
+                <s.ic size={18}/>
                 <span className="pp-stat-lbl">{s.lbl}</span>
               </div>
               <div className="pp-stat-val" style={{color:s.col}}>{s.val}</div>
@@ -514,16 +515,16 @@ export default function ImolocProprietaires() {
             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
             Ajouter un proprietaire
           </button>
-          <button className="pp-btn" onClick={initData}>🔄</button>
+          <button className="pp-btn" onClick={initData}><RefreshCw size={14}/></button>
           <div className="pp-sep"/>
-          <button className="pp-btn pp-btn-g" onClick={exportCSV}>📥 Exporter{selected.length>0&&` (${selected.length})`}</button>
+          <button className="pp-btn pp-btn-g" onClick={exportCSV}><Download size={14}/> Exporter{selected.length>0&&` (${selected.length})`}</button>
           {selected.length>0&&(
             <button className="pp-btn pp-btn-r" onClick={async()=>{
               if(!confirm(`Dissocier ${selected.length} proprietaire(s) ?`)) return
               for(const id of selected) await supabase.from('agence_proprietaires').delete().eq('proprietaire_id',id).eq('agence_id',agence?.id)
               toast.success(`${selected.length} dissociations effectuees`)
               setSelected([]); initData()
-            }}>🔗 Dissocier ({selected.length})</button>
+            }}><Link2 size={14}/> Dissocier ({selected.length})</button>
           )}
           <div className="pp-search">
             <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
@@ -585,7 +586,7 @@ export default function ImolocProprietaires() {
                 ):filtered.length===0?(
                   <tr><td colSpan={20}>
                     <div className="pp-empty">
-                      <div style={{fontSize:44,marginBottom:14,opacity:0.3}}>👤</div>
+                      <div style={{marginBottom:14,opacity:0.3,display:'flex',justifyContent:'center'}}><User size={44}/></div>
                       <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>
                         {search?`Aucun resultat pour "${search}"`:'Aucun proprietaire'}
                       </div>
@@ -632,7 +633,7 @@ export default function ImolocProprietaires() {
                       {cols.includes('email')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{p.email||'—'}</td>}
                       {cols.includes('type_proprietaire')&&<td>
                         <span className="pp-badge" style={{background:p.type_proprietaire==='societe'?'rgba(245,158,11,0.12)':'rgba(0,120,212,0.12)',color:p.type_proprietaire==='societe'?'#f59e0b':'#4da6ff'}}>
-                          {p.type_proprietaire==='societe'?'🏭 Societe':'👤 Individuel'}
+                          {p.type_proprietaire==='societe'?<><Factory size={11}/> Societe</>:<><User size={11}/> Individuel</>}
                         </span>
                       </td>}
                       {cols.includes('ville')&&<td style={{fontSize:12.5,color:'rgba(255,255,255,0.5)'}}>{p.ville||'—'}</td>}
@@ -738,12 +739,12 @@ export default function ImolocProprietaires() {
 
                     <div className="pp-choice-row">
                       <div className={`pp-choice ${addMode==='existing'?'on':''}`} onClick={()=>setAddMode('existing')}>
-                        <div className="pp-choice-ic">🔍</div>
+                        <div className="pp-choice-ic"><Search size={22}/></div>
                         <div className="pp-choice-title">Proprietaire existant</div>
                         <div className="pp-choice-desc">Il a deja un compte Imoloc. Recherchez-le par nom, email ou telephone.</div>
                       </div>
                       <div className={`pp-choice ${addMode==='new'?'on':''}`} onClick={()=>{setAddMode('new');setStep(2)}}>
-                        <div className="pp-choice-ic">➕</div>
+                        <div className="pp-choice-ic"><UserPlus size={22}/></div>
                         <div className="pp-choice-title">Nouveau proprietaire</div>
                         <div className="pp-choice-desc">Il n'a pas encore de compte. Saisissez toutes ses informations.</div>
                       </div>
@@ -777,7 +778,7 @@ export default function ImolocProprietaires() {
                               <div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)',marginTop:2}}>Role actuel: {u.role||'Non defini'} · {u.ville||'Ville inconnue'}</div>
                             </div>
                             {selectedExisting?.id===u.id
-                              ?<span style={{color:'#00c896',fontSize:20}}>✓</span>
+                              ?<span style={{color:'#00c896',display:'flex'}}><Check size={20}/></span>
                               :<span style={{color:'rgba(255,255,255,0.2)',fontSize:20}}>○</span>}
                           </div>
                         ))}
@@ -800,7 +801,7 @@ export default function ImolocProprietaires() {
 
                               {importBiens&&(
                                 <div style={{marginTop:16,padding:'14px 16px',borderRadius:8,background:'rgba(245,158,11,0.07)',border:'1px solid rgba(245,158,11,0.2)'}}>
-                                  <div style={{fontSize:13,fontWeight:600,color:'#f59e0b',marginBottom:8}}>⚠️ Ce qui va se passer :</div>
+                                  <div style={{fontSize:13,fontWeight:600,color:'#f59e0b',marginBottom:8,display:'flex',alignItems:'center',gap:6}}><AlertTriangle size={14}/> Ce qui va se passer :</div>
                                   <div style={{display:'flex',flexDirection:'column',gap:6}}>
                                     {[
                                       '1. Le proprietaire sera ajoute avec le statut "En attente de validation"',
@@ -880,9 +881,9 @@ export default function ImolocProprietaires() {
                     </div>
                     <div className="pp-sec">Type de proprietaire</div>
                     <div className="pp-choice-row">
-                      {[['individuel','👤','Individuel','Personne physique'],['societe','🏭','Societe','Personne morale / Entreprise']].map(([v,ic,lbl,desc])=>(
+                      {[['individuel',User,'Individuel','Personne physique'],['societe',Factory,'Societe','Personne morale / Entreprise']].map(([v,Ic,lbl,desc])=>(
                         <div key={v} className={`pp-choice ${form.type_proprietaire===v?'on':''}`} style={{padding:16}} onClick={()=>setF('type_proprietaire',v)}>
-                          <div style={{fontSize:28,marginBottom:8}}>{ic}</div>
+                          <div style={{marginBottom:8}}><Ic size={28}/></div>
                           <div style={{fontSize:14,fontWeight:700,color:'#e6edf3',marginBottom:4}}>{lbl}</div>
                           <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>{desc}</div>
                         </div>
@@ -1119,10 +1120,10 @@ export default function ImolocProprietaires() {
                     </div>
                     <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                       <span style={{padding:'2px 9px',borderRadius:'100px',fontSize:11,fontWeight:600,background:'rgba(0,120,212,0.12)',color:'#4da6ff'}}>
-                        {selectedProp.type_proprietaire==='societe'?'🏭 Societe':'👤 Individuel'}
+                        {selectedProp.type_proprietaire==='societe'?<><Factory size={11}/> Societe</>:<><User size={11}/> Individuel</>}
                       </span>
                       {selectedProp.statut_lien==='en_attente_validation'
-                        ?<span style={{padding:'2px 9px',borderRadius:'100px',fontSize:11,fontWeight:600,background:'rgba(245,158,11,0.12)',border:'1px solid rgba(245,158,11,0.25)',color:'#f59e0b'}}>⏳ En attente de validation</span>
+                        ?<span style={{display:'inline-flex',alignItems:'center',gap:5,padding:'2px 9px',borderRadius:'100px',fontSize:11,fontWeight:600,background:'rgba(245,158,11,0.12)',border:'1px solid rgba(245,158,11,0.25)',color:'#f59e0b'}}><Hourglass size={11}/> En attente de validation</span>
                         :<span style={{display:'inline-flex',alignItems:'center',gap:5,padding:'2px 9px',borderRadius:'100px',fontSize:11,fontWeight:600,background:'rgba(0,200,150,0.1)',color:'#00c896'}}>
                           <span style={{width:6,height:6,borderRadius:'50%',background:'#00c896'}}/> Actif
                         </span>
@@ -1138,10 +1139,10 @@ export default function ImolocProprietaires() {
               {/* Actions */}
               <div style={{display:'flex',alignItems:'center',gap:20,marginBottom:18,flexWrap:'wrap'}}>
                 {[
-                  {ic:'🏢',lbl:'Voir les biens',action:()=>navigate('/imoloc/biens')},
-                  {ic:'📄',lbl:'Voir les baux',action:()=>navigate('/imoloc/baux')},
-                  {ic:'✏️',lbl:'Modifier',action:()=>{}},
-                  {ic:'🔗',lbl:'Dissocier',action:async()=>{
+                  {ic:Building2,lbl:'Voir les biens',action:()=>navigate('/imoloc/biens')},
+                  {ic:FileText,lbl:'Voir les baux',action:()=>navigate('/imoloc/baux')},
+                  {ic:Pencil,lbl:'Modifier',action:()=>{}},
+                  {ic:Link2,lbl:'Dissocier',action:async()=>{
                     if(!confirm('Dissocier ce proprietaire de votre agence ?')) return
                     await supabase.from('agence_proprietaires').delete().eq('proprietaire_id',selectedProp.id).eq('agence_id',agence?.id)
                     toast.success('Proprietaire dissocie'); setSelectedProp(null); initData()
@@ -1151,7 +1152,7 @@ export default function ImolocProprietaires() {
                     onClick={a.action}
                     onMouseEnter={e=>e.currentTarget.style.color='#e6edf3'}
                     onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.6)'}>
-                    {a.ic} {a.lbl}
+                    <a.ic size={14}/> {a.lbl}
                   </span>
                 ))}
               </div>
@@ -1168,7 +1169,7 @@ export default function ImolocProprietaires() {
               {detailTab==='profil'&&(<>
               {selectedProp.statut_lien==='en_attente_validation'&&(
                 <div style={{padding:'14px 16px',borderRadius:10,background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.2)',marginBottom:20}}>
-                  <div style={{fontSize:13.5,fontWeight:600,color:'#f59e0b',marginBottom:6}}>⏳ Transfert en attente de validation</div>
+                  <div style={{fontSize:13.5,fontWeight:600,color:'#f59e0b',marginBottom:6,display:'flex',alignItems:'center',gap:6}}><Hourglass size={13}/> Transfert en attente de validation</div>
                   <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
                     Un email de confirmation a ete envoye au proprietaire. Des qu'il accepte, ses biens et locataires seront automatiquement transferes vers votre agence.
                   </div>
@@ -1249,7 +1250,7 @@ export default function ImolocProprietaires() {
               {/* ── Tab Biens ── */}
               {detailTab==='biens'&&(
                 <div style={{textAlign:'center',padding:'60px 20px',color:'rgba(255,255,255,0.25)'}}>
-                  <div style={{fontSize:36,marginBottom:14,opacity:0.4}}>🏢</div>
+                  <div style={{marginBottom:14,opacity:0.4,display:'flex',justifyContent:'center'}}><Building2 size={36}/></div>
                   <div style={{fontSize:15,fontWeight:600,marginBottom:8,color:'rgba(255,255,255,0.35)'}}>
                     {selectedProp.nb_biens||0} bien{(selectedProp.nb_biens||0)!==1?'s':''} confie{(selectedProp.nb_biens||0)!==1?'s':''}
                   </div>
@@ -1262,7 +1263,7 @@ export default function ImolocProprietaires() {
               {/* ── Tab Documents ── */}
               {detailTab==='documents'&&(
                 <div style={{textAlign:'center',padding:'60px 20px',color:'rgba(255,255,255,0.25)'}}>
-                  <div style={{fontSize:36,marginBottom:14,opacity:0.4}}>📁</div>
+                  <div style={{marginBottom:14,opacity:0.4,display:'flex',justifyContent:'center'}}><Folder size={36}/></div>
                   <div style={{fontSize:14,color:'rgba(255,255,255,0.3)'}}>Module documents en cours de developpement</div>
                 </div>
               )}
@@ -1270,7 +1271,7 @@ export default function ImolocProprietaires() {
               {/* ── Tab Paiements ── */}
               {detailTab==='paiements'&&(
                 <div style={{textAlign:'center',padding:'60px 20px',color:'rgba(255,255,255,0.25)'}}>
-                  <div style={{fontSize:36,marginBottom:14,opacity:0.4}}>💰</div>
+                  <div style={{marginBottom:14,opacity:0.4,display:'flex',justifyContent:'center'}}><Wallet size={36}/></div>
                   <div style={{fontSize:14,color:'rgba(255,255,255,0.3)'}}>Module paiements en cours de developpement</div>
                 </div>
               )}
