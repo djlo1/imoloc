@@ -53,6 +53,14 @@ select {
 /* Conteneur standard : largeur max + marge laterale fluide qui ne touche jamais les bords */
 .rs-container{ width:100%; max-width:1280px; margin:0 auto; padding-left:var(--sp-4); padding-right:var(--sp-4); box-sizing:border-box; }
 
+/* Filet de securite universel : neutralise le piege CSS classique ou un enfant de grid ne se
+   retreint jamais sous la largeur de son contenu (min-width:auto implicite), forcant toute la
+   grille - et la page - a deborder au lieu de s empiler proprement. S applique a TOUTES les
+   grilles de l app (via l attribut style inline utilise partout ici), pas seulement a celles
+   qui utilisent .rs-grid, pour couvrir les grid-template-columns fixes deja presents dans les
+   pages existantes sans devoir les migrer un par un. */
+[style*="display:grid"] > *, [style*="display: grid"] > *{ min-width:0; }
+
 /* Grilles auto-adaptatives : le nombre de colonnes se recalcule en continu selon la largeur
    disponible - jamais de "saut" a un point de rupture, jamais de debordement. A privilegier
    par defaut a la place d un grid-template-columns fixe (1fr 1fr, repeat(3,1fr)...). */
