@@ -56,6 +56,7 @@ export default function ImolocCenter() {
   const [agence, setAgence] = useState(null)
   const [stats, setStats] = useState({ biens:0, locataires:0, baux:0, retards:0 })
   const [expanded, setExpanded] = useState({ biens:true, locataires:false, baux:false, paiements:false })
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
@@ -81,6 +82,8 @@ export default function ImolocCenter() {
     e.preventDefault(); e.stopPropagation()
     setExpanded(prev => ({...prev, [id]: !prev[id]}))
   }
+
+  const closeMobile = () => setMobileOpen(false)
 
   return (
     <>
@@ -109,12 +112,23 @@ export default function ImolocCenter() {
         .ic-stat-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:12px}
         .ic-stat-lbl{color:rgba(255,255,255,0.35)}
         .ic-stat-val{font-weight:700;color:#e6edf3}
-        .ic-content{flex:1;overflow-y:auto;padding:28px 32px}
+        .ic-content{flex:1;overflow-y:auto;padding:28px 32px;min-width:0}
         .ic-content::-webkit-scrollbar{width:6px}
         .ic-content::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}
+        .ic-mobile-bar{display:none}
+        .ic-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;backdrop-filter:blur(4px)}
+        @media(max-width:768px){
+          .ic-root{position:relative}
+          .ic-sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);transition:transform 0.25s ease;z-index:100}
+          .ic-sidebar.mobile-open{transform:translateX(0)}
+          .ic-mobile-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0}
+          .ic-mobile-toggle{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:6px;border:none;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);cursor:pointer;flex-shrink:0}
+          .ic-content{padding:20px}
+        }
       `}</style>
       <div className="ic-root">
-        <div className="ic-sidebar">
+        {mobileOpen && <div className="ic-overlay" onClick={closeMobile}/>}
+        <div className={`ic-sidebar ${mobileOpen?'mobile-open':''}`}>
           <div className="ic-sidebar-header">
             <button className="ic-back" onClick={()=>navigate('/agence')}>
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
@@ -136,7 +150,7 @@ export default function ImolocCenter() {
                   {hasChildren ? (
                     <>
                       <button className={`ic-nav-item ${isActive?'active':''}`}
-                        onClick={(e)=>{ navigate(item.path); toggleExpand(item.id, e) }}>
+                        onClick={(e)=>{ navigate(item.path); toggleExpand(item.id, e); closeMobile() }}>
                         <span className="ic-nav-left">
                           <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d={item.icon}/></svg>
                           {item.label}
@@ -146,13 +160,13 @@ export default function ImolocCenter() {
                       {isExpanded && (
                         <div className="ic-nav-sub">
                           {item.children.map(child=>(
-                            <NavLink key={child.path} to={child.path} end className={({isActive})=>`ic-nav-sub-item ${isActive?'active':''}`}>{child.label}</NavLink>
+                            <NavLink key={child.path} to={child.path} end onClick={closeMobile} className={({isActive})=>`ic-nav-sub-item ${isActive?'active':''}`}>{child.label}</NavLink>
                           ))}
                         </div>
                       )}
                     </>
                   ) : (
-                    <NavLink to={item.path} end={item.exact} className={({isActive})=>`ic-nav-item ${isActive?'active':''}`}>
+                    <NavLink to={item.path} end={item.exact} onClick={closeMobile} className={({isActive})=>`ic-nav-item ${isActive?'active':''}`}>
                       <span className="ic-nav-left">
                         <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d={item.icon}/></svg>
                         {item.label}
@@ -179,6 +193,15 @@ export default function ImolocCenter() {
           </div>
         </div>
         <div className="ic-content">
+          <div className="ic-mobile-bar">
+            <button className="ic-mobile-toggle" onClick={()=>setMobileOpen(true)}>
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+            </button>
+            <div className="ic-sidebar-title">
+              <span style={{fontSize:16}}>🏢</span>
+              Centre Imoloc
+            </div>
+          </div>
           <Routes>
             <Route index element={<ImolocDashboard agence={agence} stats={stats} />} />
             <Route path="proprietaires/*" element={<ComingSoon title="Proprietaires" icon="👤"/>} />
