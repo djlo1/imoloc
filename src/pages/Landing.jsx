@@ -262,13 +262,9 @@ export default function Landing() {
           .lp-nav-actions{gap:6px!important}
           .lp-nav-actions button{padding:6px 10px!important;font-size:12px!important}
           .lp-try-main{grid-template-columns:1fr!important}
-          .lp-try-main > div:last-child{height:200px!important}
+          .lp-try-main > div:last-child{height:260px!important}
           .lp-try-small{grid-template-columns:1fr!important}
-          .lp-try-small > div:last-child{width:100%!important;height:140px!important}
-        }
-        @media(max-width:480px){
-          .lp-footer-grid{grid-template-columns:1fr!important}
-          .lp-footer-grid > div:first-child{grid-column:auto}
+          .lp-try-small > div:last-child{width:100%!important;height:180px!important}
         }
         @media(max-width:480px){
           .lp-nav-actions .lp-btn-secondary{display:none!important}
@@ -417,7 +413,7 @@ export default function Landing() {
           <div style={{position:"relative"}} className="anim anim-d2">
             <div style={{borderRadius:12,overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.15)",border:"1px solid #e5e5e5"}}>
               <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=700&q=80" alt="Gestion immobiliere"
-                style={{width:"100%",height:380,objectFit:"cover",display:"block"}}
+                style={{width:"100%",height:380,objectFit:"cover",objectPosition:"center 20%",display:"block"}}
                 onError={e=>{e.target.parentElement.style.background="linear-gradient(135deg,#e8f4ff,#f0f9ff)";e.target.style.display="none"}}/>
             </div>
             {/* Floating notification card */}
@@ -490,7 +486,7 @@ export default function Landing() {
               <div style={{borderRadius:8,overflow:"hidden",border:"1px solid #e5e5e5",boxShadow:"0 12px 40px rgba(0,0,0,0.1)",background:acc.bg,minHeight:400,display:"flex",alignItems:"center",justifyContent:"center",transition:"background 0.4s"}}>
                 <img key={openAcc}
                   src={["https://images.unsplash.com/photo-1551434678-e076c223a692?w=640&q=80","https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=640&q=80","https://images.unsplash.com/photo-1563986768609-322da13575f3?w=640&q=80"][openAcc>=0?openAcc:0]}
-                  alt="" style={{width:"100%",height:400,objectFit:"cover",animation:"fadeIn 0.4s ease"}}
+                  alt="" style={{width:"100%",height:400,objectFit:"cover",objectPosition:"center 20%",animation:"fadeIn 0.4s ease"}}
                   onError={e=>{e.target.style.display="none"}}/>
               </div>
             </div>
@@ -580,7 +576,7 @@ export default function Landing() {
                 {RESSOURCES.map((r,i) => (
                   <div key={i} className="rcard anim" style={{animationDelay:i*0.1+"s"}}>
                     <div style={{height:200,overflow:"hidden",background:"#f5f5f5"}}>
-                      <img src={r.img} alt={r.titre} style={{width:"100%",height:"100%",objectFit:"cover",display:"block",transition:"transform 0.4s"}}
+                      <img src={r.img} alt={r.titre} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 20%",display:"block",transition:"transform 0.4s"}}
                         onMouseOver={e=>e.target.style.transform="scale(1.05)"}
                         onMouseOut={e=>e.target.style.transform="scale(1)"}
                         onError={e=>{e.target.style.display="none"}}/>
@@ -650,7 +646,7 @@ export default function Landing() {
               </div>
               <div style={{background:"#f5f5f5",overflow:"hidden"}}>
                 <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80" alt=""
-                  style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
+                  style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 20%",display:"block"}}
                   onError={e=>{e.target.style.display="none"}}/>
               </div>
             </div>
@@ -670,7 +666,7 @@ export default function Landing() {
                     </a>
                   </div>
                   <div style={{width:120,background:"#f5f5f5",overflow:"hidden"}}>
-                    <img src={c.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
+                    <img src={c.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 20%",display:"block"}}
                       onError={e=>{e.target.style.display="none"}}/>
                   </div>
                 </div>
