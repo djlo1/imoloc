@@ -220,7 +220,13 @@ export default function Register() {
 
   return (
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Segoe UI','Helvetica Neue',sans-serif",color:C.text}}>
-      <style>{`*{box-sizing:border-box;margin:0;padding:0}a{color:${C.blue};text-decoration:none}a:hover{text-decoration:underline}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0}a{color:${C.blue};text-decoration:none}a:hover{text-decoration:underline}@keyframes spin{to{transform:rotate(360deg)}}
+        @media(max-width:860px){
+          .reg-grid{grid-template-columns:1fr!important}
+          .reg-form-pad{padding:24px 20px!important}
+          .reg-2col{grid-template-columns:1fr!important}
+        }
+      `}</style>
 
       <div style={{background:"#fff",borderBottom:"1px solid "+C.sep,padding:"11px 32px"}}>
         <Link to="/" style={{display:"flex",alignItems:"center",gap:8}}>
@@ -237,9 +243,9 @@ export default function Register() {
       </div>
 
       <div style={{maxWidth:1100,margin:"24px auto 48px",padding:"0 20px"}}>
-        <div style={{background:"#fff",borderRadius:2,boxShadow:"0 1.6px 3.6px rgba(0,0,0,0.13),0 0.3px 0.9px rgba(0,0,0,0.11)",border:"1px solid "+C.sep,display:"grid",gridTemplateColumns:"1fr 320px",overflow:"hidden"}}>
+        <div className="reg-grid" style={{background:"#fff",borderRadius:2,boxShadow:"0 1.6px 3.6px rgba(0,0,0,0.13),0 0.3px 0.9px rgba(0,0,0,0.11)",border:"1px solid "+C.sep,display:"grid",gridTemplateColumns:"1fr 320px",overflow:"hidden"}}>
 
-          <div style={{padding:"36px 40px"}}>
+          <div className="reg-form-pad" style={{padding:"36px 40px"}}>
 
             {/* SUCCES */}
             {success && (
