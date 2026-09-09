@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { Sparkles, MessageCircle, Wrench, LayoutDashboard, Star, Trash2, Play, Building2, Users, BarChart3, Zap, Wallet, Lightbulb, AlertTriangle, CheckCircle2, Wand2, Target, Map, Scale, User, ClipboardList, Bell, TrendingUp, Handshake, Shield, Gem, Timer } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 
@@ -277,30 +278,30 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
   }
 
   const KPI = [
-    { label:'Biens gérés', val:stats.biens, color:'#0078d4', icon:'🏢', sub:`${Math.max(0,stats.biens-stats.locataires)} libres` },
-    { label:'Locataires', val:stats.locataires, color:'#a78bfa', icon:'👥', sub:'actifs' },
-    { label:'Taux occupation', val:`${stats.taux}%`, color:stats.taux>70?'#34d399':'#f59e0b', icon:'📊', sub:stats.taux>70?'Bon niveau':'À améliorer' },
-    { label:'Loyers en retard', val:stats.retards, color:stats.retards>0?'#ef4444':'#34d399', icon:'⚡', sub:stats.retards>0?'Action requise':'Tout à jour' },
-    { label:'Revenus encaissés', val:`${(stats.revenus/1000).toFixed(0)}K`, color:'#34d399', icon:'💰', sub:'FCFA' },
+    { label:'Biens gérés', val:stats.biens, color:'#0078d4', icon:Building2, sub:`${Math.max(0,stats.biens-stats.locataires)} libres` },
+    { label:'Locataires', val:stats.locataires, color:'#a78bfa', icon:Users, sub:'actifs' },
+    { label:'Taux occupation', val:`${stats.taux}%`, color:stats.taux>70?'#34d399':'#f59e0b', icon:BarChart3, sub:stats.taux>70?'Bon niveau':'À améliorer' },
+    { label:'Loyers en retard', val:stats.retards, color:stats.retards>0?'#ef4444':'#34d399', icon:Zap, sub:stats.retards>0?'Action requise':'Tout à jour' },
+    { label:'Revenus encaissés', val:`${(stats.revenus/1000).toFixed(0)}K`, color:'#34d399', icon:Wallet, sub:'FCFA' },
   ]
 
   const INSIGHTS = [
-    { icon:'💡', title:'Optimisation des loyers', desc:`Taux d'occupation ${stats.taux}%. ${stats.taux<80?'Potentiel d\'amélioration détecté.':'Excellent niveau !'}`, color:'#0078d4', action:'Analyser avec Loci' },
-    { icon:stats.retards>0?'⚠️':'✅', title:stats.retards>0?`${stats.retards} loyer(s) en retard`:'Paiements à jour', desc:stats.retards>0?'Relance automatique recommandée.':'Excellente gestion des encaissements !', color:stats.retards>0?'#f59e0b':'#34d399', action:stats.retards>0?'Voir les impayés':'Voir les détails' },
-    { icon:'🔮', title:'Prévision mensuelle', desc:`Revenu estimé : ${(stats.revenus).toLocaleString()} FCFA/mois si taux stable.`, color:'#a78bfa', action:'Voir les projections' },
-    { icon:'🎯', title:'Recommandation IA', desc:'Ajoutez des photos HD à vos annonces pour +25% de demandes de visite.', color:'#34d399', action:'Appliquer' },
+    { icon:Lightbulb, title:'Optimisation des loyers', desc:`Taux d'occupation ${stats.taux}%. ${stats.taux<80?'Potentiel d\'amélioration détecté.':'Excellent niveau !'}`, color:'#0078d4', action:'Analyser avec Loci' },
+    { icon:stats.retards>0?AlertTriangle:CheckCircle2, title:stats.retards>0?`${stats.retards} loyer(s) en retard`:'Paiements à jour', desc:stats.retards>0?'Relance automatique recommandée.':'Excellente gestion des encaissements !', color:stats.retards>0?'#f59e0b':'#34d399', action:stats.retards>0?'Voir les impayés':'Voir les détails' },
+    { icon:Wand2, title:'Prévision mensuelle', desc:`Revenu estimé : ${(stats.revenus).toLocaleString()} FCFA/mois si taux stable.`, color:'#a78bfa', action:'Voir les projections' },
+    { icon:Target, title:'Recommandation IA', desc:'Ajoutez des photos HD à vos annonces pour +25% de demandes de visite.', color:'#34d399', action:'Appliquer' },
   ]
 
   const OUTILS_BI = [
-    { icon:'📊', title:'Rapport de performance', desc:'KPIs complets, tendances et benchmarks du marché local', color:'#0078d4', badge:'Disponible' },
-    { icon:'🔮', title:'Prévisions de revenus', desc:'Modèle prédictif sur 3, 6 et 12 mois avec intervalles de confiance', color:'#a78bfa', badge:'IA' },
-    { icon:'🗺️', title:'Analyse géographique', desc:'Cartographie de vos biens et analyse de la demande par zone', color:'#34d399', badge:'Disponible' },
-    { icon:'⚖️', title:'Optimisation des loyers', desc:'Comparaison avec le marché et suggestions de révision tarifaire', color:'#f59e0b', badge:'IA' },
-    { icon:'👤', title:'Scoring locataires', desc:'Analyse comportementale et score de fiabilité de paiement', color:'#ef4444', badge:'IA' },
-    { icon:'📋', title:'Rapport d\'audit', desc:'Audit complet de votre portefeuille immobilier', color:'#4da6ff', badge:'Disponible' },
-    { icon:'🔔', title:'Alertes intelligentes', desc:'Notifications proactives basées sur vos données en temps réel', color:'#34d399', badge:'Actif' },
-    { icon:'📈', title:'Dashboard exécutif', desc:'Vue synthétique pour la prise de décision rapide', color:'#a78bfa', badge:'Disponible' },
-    { icon:'🤝', title:'Analyse locataires', desc:'Historique, comportement et recommandations par locataire', color:'#0078d4', badge:'IA' },
+    { icon:BarChart3, title:'Rapport de performance', desc:'KPIs complets, tendances et benchmarks du marché local', color:'#0078d4', badge:'Disponible' },
+    { icon:Wand2, title:'Prévisions de revenus', desc:'Modèle prédictif sur 3, 6 et 12 mois avec intervalles de confiance', color:'#a78bfa', badge:'IA' },
+    { icon:Map, title:'Analyse géographique', desc:'Cartographie de vos biens et analyse de la demande par zone', color:'#34d399', badge:'Disponible' },
+    { icon:Scale, title:'Optimisation des loyers', desc:'Comparaison avec le marché et suggestions de révision tarifaire', color:'#f59e0b', badge:'IA' },
+    { icon:User, title:'Scoring locataires', desc:'Analyse comportementale et score de fiabilité de paiement', color:'#ef4444', badge:'IA' },
+    { icon:ClipboardList, title:'Rapport d\'audit', desc:'Audit complet de votre portefeuille immobilier', color:'#4da6ff', badge:'Disponible' },
+    { icon:Bell, title:'Alertes intelligentes', desc:'Notifications proactives basées sur vos données en temps réel', color:'#34d399', badge:'Actif' },
+    { icon:TrendingUp, title:'Dashboard exécutif', desc:'Vue synthétique pour la prise de décision rapide', color:'#a78bfa', badge:'Disponible' },
+    { icon:Handshake, title:'Analyse locataires', desc:'Historique, comportement et recommandations par locataire', color:'#0078d4', badge:'IA' },
   ]
 
   // Composant item conversation
@@ -316,7 +317,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
             <div style={{display:'flex',gap:4,flexShrink:0}}>
               <button onClick={e=>{e.stopPropagation();onFav()}}
                 style={{background:'none',border:'none',cursor:'pointer',fontSize:12,opacity:isFav?1:0.3,padding:'1px 2px',transition:'opacity 0.15s'}}
-                title={isFav?'Retirer des favoris':'Ajouter aux favoris'}>⭐</button>
+                title={isFav?'Retirer des favoris':'Ajouter aux favoris'}><Star size={11}/></button>
               <button onClick={e=>{e.stopPropagation();setMenuOpen(m=>!m)}}
                 style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:14,padding:'1px 2px',lineHeight:1}}>···</button>
             </div>
@@ -329,16 +330,16 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
           <div style={{position:'absolute',right:0,top:'100%',background:'#1c2434',border:'1px solid rgba(255,255,255,0.09)',borderRadius:7,zIndex:10,minWidth:160,boxShadow:'0 8px 24px rgba(0,0,0,0.5)',overflow:'hidden'}}>
             <button onClick={()=>{onOpen();setMenuOpen(false)}}
               style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.65)',fontSize:13,fontFamily:'Inter',width:'100%',textAlign:'left'}}>
-              ▶ Continuer la conversation
+              <Play size={11}/> Continuer la conversation
             </button>
             <button onClick={()=>{onFav();setMenuOpen(false)}}
               style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.65)',fontSize:13,fontFamily:'Inter',width:'100%',textAlign:'left'}}>
-              ⭐ {isFav?'Retirer des favoris':'Mettre en favori'}
+              <Star size={11}/> {isFav?'Retirer des favoris':'Mettre en favori'}
             </button>
             <div style={{height:'1px',background:'rgba(255,255,255,0.06)'}}/>
             <button onClick={()=>{onArchive();setMenuOpen(false)}}
               style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(239,68,68,0.7)',fontSize:13,fontFamily:'Inter',width:'100%',textAlign:'left'}}>
-              🗑️ Archiver / Supprimer
+              <Trash2 size={11}/> Archiver / Supprimer
             </button>
           </div>
         )}
@@ -524,13 +525,13 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
       <div className="loci-page">
         {/* ── HERO ── */}
         <div className="loci-hero">
-          <div className="loci-hero-orb">✨</div>
+          <div className="loci-hero-orb"><Sparkles size={22}/></div>
           <div>
             <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
               <span className="loci-hero-name">Loci</span>
               <span className="loci-hero-badge">IA Immobilier</span>
             </div>
-            <div className="loci-hero-sub">Intelligence artificielle · {agence?.nom || 'Mon organisation'} · Bonjour, {profile?.prenom || 'Admin'} 👋</div>
+            <div className="loci-hero-sub">Intelligence artificielle · {agence?.nom || 'Mon organisation'} · Bonjour, {profile?.prenom || 'Admin'}</div>
           </div>
           <div className="loci-hero-right">
             <div className="loci-hero-stat">Modèles actifs</div>
@@ -541,13 +542,14 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
         {/* ── NAVIGATION ── */}
         <div className="loci-nav">
           {[
-            { path:'/agence/loci', label:'📊 Tableau de bord', id:'dashboard' },
-            { path:'/agence/loci/chat', label:'💬 Loci Chat', id:'chat' },
-            { path:'/agence/loci/outils', label:'🛠️ Outils BI', id:'outils' },
+            { path:'/agence/loci', label:'Tableau de bord', id:'dashboard', icon:LayoutDashboard },
+            { path:'/agence/loci/chat', label:'Loci Chat', id:'chat', icon:MessageCircle },
+            { path:'/agence/loci/outils', label:'Outils BI', id:'outils', icon:Wrench },
           ].map(tab => (
             <button key={tab.id}
               className={`loci-nav-tab ${currentTab===tab.id?'active':''}`}
               onClick={()=>navigate(tab.path)}>
+              <tab.icon size={15}/>
               {tab.label}
             </button>
           ))}
@@ -560,7 +562,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
             <div className="loci-kpis">
               {KPI.map((k,i)=>(
                 <div key={i} className="loci-kpi" onClick={()=>navigate('/agence/loci/chat')}>
-                  <span className="loci-kpi-icon">{k.icon}</span>
+                  <span className="loci-kpi-icon"><k.icon size={20}/></span>
                   <div className="loci-kpi-val" style={{color:k.color}}>{k.val}</div>
                   <div className="loci-kpi-lbl">{k.label}</div>
                   <div className="loci-kpi-sub">{k.sub}</div>
@@ -572,14 +574,14 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
               {/* Insights */}
               <div className="loci-card">
                 <div className="loci-card-title">
-                  ✨ Insights IA temps réel
+                  <Sparkles size={15} style={{display:'inline',verticalAlign:'-2px',marginRight:6}}/>Insights IA temps réel
                   <button className="loci-card-action" onClick={()=>navigate('/agence/loci/chat')}>Demander à Loci →</button>
                 </div>
                 {INSIGHTS.map((ins,i)=>(
                   <div key={i} className="loci-insight"
                     style={{borderColor:ins.color==='#f59e0b'?'rgba(245,158,11,0.2)':ins.color==='#34d399'?'rgba(52,211,153,0.2)':'rgba(108,99,255,0.15)',background:ins.color==='#f59e0b'?'rgba(245,158,11,0.04)':ins.color==='#34d399'?'rgba(52,211,153,0.04)':'rgba(108,99,255,0.04)'}}
                     onClick={()=>navigate('/agence/loci/chat')}>
-                    <span className="loci-insight-icon">{ins.icon}</span>
+                    <span className="loci-insight-icon"><ins.icon size={18}/></span>
                     <div style={{flex:1}}>
                       <div className="loci-insight-title">{ins.title}</div>
                       <div className="loci-insight-desc">{ins.desc}</div>
@@ -616,8 +618,8 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                       </div>
                     </div>
                     <div className="loci-donut-legend">
-                      <span style={{color:'#a78bfa'}}>■ Occupés: {stats.locataires}</span>
-                      <span>■ Libres: {Math.max(0,stats.biens-stats.locataires)}</span>
+                      <span style={{color:'#a78bfa',display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:8,height:8,borderRadius:2,background:'#a78bfa',display:'inline-block'}}/>Occupés: {stats.locataires}</span>
+                      <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:8,height:8,borderRadius:2,background:'currentColor',display:'inline-block'}}/>Libres: {Math.max(0,stats.biens-stats.locataires)}</span>
                     </div>
                   </div>
                 </div>
@@ -651,7 +653,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
             {/* Prévisions */}
             <div className="loci-card" style={{marginBottom:16}}>
               <div className="loci-card-title">
-                🔮 Prévisions de revenus IA
+                <Wand2 size={15} style={{display:'inline',verticalAlign:'-2px',marginRight:6}}/>Prévisions de revenus IA
                 <button className="loci-card-action" onClick={()=>navigate('/agence/loci/outils')}>Voir l'analyse complète →</button>
               </div>
               <div className="loci-previsions">
@@ -673,13 +675,13 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
             {/* Score cards */}
             <div className="loci-grid3">
               {[
-                {icon:'⭐',title:'Score de gestion',val:'87/100',desc:'Excellente performance globale',color:'#f59e0b'},
-                {icon:'🛡️',title:'Risque locataire',val:stats.retards>0?'Moyen':'Faible',desc:stats.retards>0?`${stats.retards} impayé(s) détecté(s)`:'Aucun risque détecté',color:stats.retards>0?'#f59e0b':'#34d399'},
-                {icon:'📈',title:'Potentiel optimisation',val:'+15%',desc:'Revenus supplémentaires possibles',color:'#a78bfa'},
+                {icon:Star,title:'Score de gestion',val:'87/100',desc:'Excellente performance globale',color:'#f59e0b'},
+                {icon:Shield,title:'Risque locataire',val:stats.retards>0?'Moyen':'Faible',desc:stats.retards>0?`${stats.retards} impayé(s) détecté(s)`:'Aucun risque détecté',color:stats.retards>0?'#f59e0b':'#34d399'},
+                {icon:TrendingUp,title:'Potentiel optimisation',val:'+15%',desc:'Revenus supplémentaires possibles',color:'#a78bfa'},
               ].map((s,i)=>(
                 <div key={i} className="loci-score-card" style={{animationDelay:`${i*0.1}s`}} onClick={()=>navigate('/agence/loci/chat')}>
                   <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
-                    <span style={{fontSize:24}}>{s.icon}</span>
+                    <span style={{color:s.color,display:'flex'}}><s.icon size={24}/></span>
                     <span style={{fontSize:12,fontWeight:600,color:'rgba(255,255,255,0.4)'}}>{s.title}</span>
                   </div>
                   <div style={{fontSize:22,fontWeight:800,color:s.color,marginBottom:4,letterSpacing:'-0.02em'}}>{s.val}</div>
@@ -697,14 +699,14 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
               {/* Chat principal */}
               <div className="loci-chat-main">
                 <div className="loci-chat-header">
-                  <div className="loci-chat-avatar">✨</div>
+                  <div className="loci-chat-avatar"><Sparkles size={16}/></div>
                   <div>
                     <div style={{fontSize:14,fontWeight:700,background:'linear-gradient(135deg,#a78bfa,#34d399)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Loci</div>
                     <div className="loci-chat-status">En ligne · Données org. en temps réel</div>
                   </div>
                   <div style={{marginLeft:'auto',display:'flex',gap:8}}>
                     <button className="loci-hist-btn" onClick={()=>setShowHistory(h=>!h)}>
-                      💬 Mes conversations
+                      <MessageCircle size={14} style={{display:'inline',verticalAlign:'-2px',marginRight:6}}/>Mes conversations
                     </button>
                     <button className="loci-hist-btn" onClick={()=>{ setMessages([WELCOME]); setActiveConvId(null) }}>
                       + Nouveau
@@ -716,7 +718,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                   {messages.map((msg,i)=>(
                     <div key={i} className={`loci-msg ${msg.role}`}>
                       {msg.role==='assistant'
-                        ? <div className="loci-msg-av" style={{background:'linear-gradient(135deg,#6c63ff,#00c896)'}}>✨</div>
+                        ? <div className="loci-msg-av" style={{background:'linear-gradient(135deg,#6c63ff,#00c896)',display:'flex',alignItems:'center',justifyContent:'center'}}><Sparkles size={14}/></div>
                         : <div className="loci-msg-av" style={{background:'linear-gradient(135deg,#0078d4,#6c63ff)'}}>{profile?.prenom?.[0]?.toUpperCase()||'A'}</div>
                       }
                       <div className="loci-bubble">
@@ -732,7 +734,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                   ))}
                   {thinking && (
                     <div className="loci-msg assistant">
-                      <div className="loci-msg-av" style={{background:'linear-gradient(135deg,#6c63ff,#00c896)'}}>✨</div>
+                      <div className="loci-msg-av" style={{background:'linear-gradient(135deg,#6c63ff,#00c896)',display:'flex',alignItems:'center',justifyContent:'center'}}><Sparkles size={14}/></div>
                       <div className="loci-thinking">
                         <span/><span/><span/>
                       </div>
@@ -770,7 +772,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
               {showHistory && (
                 <div className="loci-hist-panel">
                   <div className="loci-hist-head">
-                    <span className="loci-hist-title">💬 Mes conversations</span>
+                    <span className="loci-hist-title" style={{display:'flex',alignItems:'center',gap:6}}><MessageCircle size={13}/> Mes conversations</span>
                     <span style={{fontSize:10,padding:'2px 7px',borderRadius:'100px',background:'rgba(108,99,255,0.12)',color:'#a78bfa',border:'1px solid rgba(108,99,255,0.2)'}}>3 mois</span>
                   </div>
 
@@ -797,7 +799,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                     {/* Favoris */}
                     {favorites.length > 0 && (
                       <>
-                        <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.25)',textTransform:'uppercase',letterSpacing:'0.08em',padding:'4px 6px',marginBottom:4}}>⭐ Favoris</div>
+                        <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.25)',textTransform:'uppercase',letterSpacing:'0.08em',padding:'4px 6px',marginBottom:4,display:'flex',alignItems:'center',gap:5}}><Star size={10}/> Favoris</div>
                         {conversations
                           .filter(c=>favorites.includes(c.id) && c.titre?.toLowerCase().includes(histSearch.toLowerCase()))
                           .map((conv,i)=>(
@@ -821,7 +823,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                     {/* Toutes les conversations */}
                     {conversations.length === 0 ? (
                       <div className="loci-hist-empty">
-                        <div style={{fontSize:24,marginBottom:8,opacity:0.3}}>💬</div>
+                        <div style={{marginBottom:8,opacity:0.3,display:'flex',justifyContent:'center'}}><MessageCircle size={24}/></div>
                         Aucune conversation sauvegardée
                       </div>
                     ) : conversations
@@ -852,14 +854,14 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
               <div className="loci-chat-sidebar">
                 <div style={{fontSize:12,fontWeight:700,color:'rgba(255,255,255,0.3)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:4}}>Données org.</div>
                 {[
-                  {icon:'🏢',val:stats.biens,lbl:'Biens',color:'#0078d4'},
-                  {icon:'👥',val:stats.locataires,lbl:'Locataires',color:'#a78bfa'},
-                  {icon:'📊',val:`${stats.taux}%`,lbl:'Occupation',color:stats.taux>70?'#34d399':'#f59e0b'},
-                  {icon:'⚡',val:stats.retards,lbl:'Retards',color:stats.retards>0?'#ef4444':'#34d399'},
-                  {icon:'💰',val:`${(stats.revenus/1000).toFixed(0)}K`,lbl:'FCFA',color:'#34d399'},
+                  {icon:Building2,val:stats.biens,lbl:'Biens',color:'#0078d4'},
+                  {icon:Users,val:stats.locataires,lbl:'Locataires',color:'#a78bfa'},
+                  {icon:BarChart3,val:`${stats.taux}%`,lbl:'Occupation',color:stats.taux>70?'#34d399':'#f59e0b'},
+                  {icon:Zap,val:stats.retards,lbl:'Retards',color:stats.retards>0?'#ef4444':'#34d399'},
+                  {icon:Wallet,val:`${(stats.revenus/1000).toFixed(0)}K`,lbl:'FCFA',color:'#34d399'},
                 ].map((s,i)=>(
                   <div key={i} className="loci-chat-stat">
-                    <div className="loci-chat-stat-icon">{s.icon}</div>
+                    <div className="loci-chat-stat-icon" style={{color:s.color}}><s.icon size={18}/></div>
                     <div className="loci-chat-stat-val" style={{color:s.color}}>{s.val}</div>
                     <div className="loci-chat-stat-lbl">{s.lbl}</div>
                   </div>
@@ -874,28 +876,28 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
           <>
             <div className="loci-bi-header">
               <div>
-                <div style={{fontSize:20,fontWeight:800,color:'#e6edf3',marginBottom:6,letterSpacing:'-0.02em'}}>🛠️ Outils décisionnels & BI</div>
+                <div style={{fontSize:20,fontWeight:800,color:'#e6edf3',marginBottom:6,letterSpacing:'-0.02em'}}><Wrench size={18} style={{display:'inline',verticalAlign:'-3px',marginRight:8}}/>Outils décisionnels & BI</div>
                 <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',maxWidth:600}}>Exploitez vos données immobilières avec des outils d'analyse avancés alimentés par l'IA.</div>
               </div>
               <button onClick={()=>navigate('/agence/loci/chat')}
                 style={{display:'flex',alignItems:'center',gap:8,padding:'10px 18px',borderRadius:8,background:'linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,200,150,0.1))',border:'1px solid rgba(108,99,255,0.3)',color:'#a78bfa',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter',flexShrink:0}}>
-                ✨ Analyser avec Loci
+                <Sparkles size={14}/> Analyser avec Loci
               </button>
             </div>
 
             {/* Stats BI */}
             <div className="loci-bi-stats">
               {[
-                {lbl:'Rentabilité brute',val:'8.2%',trend:'+0.3%',color:'#34d399',icon:'📈'},
-                {lbl:'Délai moyen paiement',val:'3.2j',trend:'-0.5j',color:'#0078d4',icon:'⏱️'},
-                {lbl:'Taux d\'impayés',val:stats.retards>0?`${((stats.retards/Math.max(stats.locataires,1))*100).toFixed(1)}%`:'0%',trend:stats.retards>0?'À surveiller':'Excellent',color:stats.retards>0?'#f59e0b':'#34d399',icon:'🛡️'},
-                {lbl:'Valeur parc/an',val:`${(stats.revenus*12/1000).toFixed(0)}K FCFA`,trend:'Estimation',color:'#a78bfa',icon:'💎'},
-                {lbl:'Score Loci',val:'87/100',trend:'Excellent',color:'#f59e0b',icon:'⭐'},
-                {lbl:'Potentiel non réalisé',val:'+15%',trend:'Optimisable',color:'#34d399',icon:'🎯'},
+                {lbl:'Rentabilité brute',val:'8.2%',trend:'+0.3%',color:'#34d399',icon:TrendingUp},
+                {lbl:'Délai moyen paiement',val:'3.2j',trend:'-0.5j',color:'#0078d4',icon:Timer},
+                {lbl:'Taux d\'impayés',val:stats.retards>0?`${((stats.retards/Math.max(stats.locataires,1))*100).toFixed(1)}%`:'0%',trend:stats.retards>0?'À surveiller':'Excellent',color:stats.retards>0?'#f59e0b':'#34d399',icon:Shield},
+                {lbl:'Valeur parc/an',val:`${(stats.revenus*12/1000).toFixed(0)}K FCFA`,trend:'Estimation',color:'#a78bfa',icon:Gem},
+                {lbl:'Score Loci',val:'87/100',trend:'Excellent',color:'#f59e0b',icon:Star},
+                {lbl:'Potentiel non réalisé',val:'+15%',trend:'Optimisable',color:'#34d399',icon:Target},
               ].map((s,i)=>(
                 <div key={i} className="loci-bi-stat" style={{animationDelay:`${i*0.08}s`}}>
-                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-                    <span style={{fontSize:18}}>{s.icon}</span>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,color:s.color}}>
+                    <s.icon size={18}/>
                     <span style={{fontSize:12,color:'rgba(255,255,255,0.35)',fontWeight:500}}>{s.lbl}</span>
                   </div>
                   <div style={{fontSize:20,fontWeight:800,color:s.color,marginBottom:3,letterSpacing:'-0.02em'}}>{s.val}</div>
@@ -911,7 +913,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                   onMouseOver={e=>e.currentTarget.style.borderColor=`${o.color}44`}
                   onMouseOut={e=>e.currentTarget.style.borderColor=`${o.color}22`}>
                   <div className="loci-bi-card-top">
-                    <div className="loci-bi-icon" style={{background:`${o.color}18`}}>{o.icon}</div>
+                    <div className="loci-bi-icon" style={{background:`${o.color}18`,color:o.color}}><o.icon size={20}/></div>
                     <span className="loci-bi-badge" style={{
                       background:o.badge==='IA'?'linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,200,150,0.2))':o.badge==='Actif'?'rgba(52,211,153,0.1)':'rgba(255,255,255,0.06)',
                       color:o.badge==='IA'?'#a78bfa':o.badge==='Actif'?'#34d399':'rgba(255,255,255,0.4)',
@@ -929,7 +931,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
 
             {/* Note IA */}
             <div style={{padding:'18px 22px',borderRadius:12,background:'linear-gradient(135deg,rgba(108,99,255,0.08),rgba(0,200,150,0.05))',border:'1px solid rgba(108,99,255,0.2)',display:'flex',alignItems:'flex-start',gap:14}}>
-              <span style={{fontSize:24,flexShrink:0}}>✨</span>
+              <span style={{flexShrink:0,display:'flex'}}><Sparkles size={24}/></span>
               <div>
                 <div style={{fontSize:14,fontWeight:700,background:'linear-gradient(135deg,#a78bfa,#34d399)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',marginBottom:6}}>Loci vous recommande</div>
                 <div style={{fontSize:13.5,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
