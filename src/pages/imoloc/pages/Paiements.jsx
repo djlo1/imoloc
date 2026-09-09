@@ -4,6 +4,8 @@ import { Wallet, CheckCircle2, AlertTriangle, Hourglass, RefreshCw, Home, User, 
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
+import Trend from '../../../components/ui/Trend'
+import ProgressBar from '../../../components/ui/ProgressBar'
 
 // statut_paiement enum: en_attente, paye, en_retard, partiel, annule
 const S_CFG = {
@@ -113,6 +115,12 @@ export default function ImolocPaiements() {
     retard:   paiements.filter(p=>p.statut==='en_retard').length,
     attente:  paiements.filter(p=>p.statut==='en_attente').length,
   }
+  const now = new Date()
+  const moisPrec = new Date(now.getFullYear(), now.getMonth()-1)
+  const encaisseCeMois = paiements.filter(p=>p.date_paiement && (p.statut==='paye'||p.statut==='partiel') && new Date(p.date_paiement).getMonth()===now.getMonth() && new Date(p.date_paiement).getFullYear()===now.getFullYear()).reduce((a,p)=>a+(p.montant||0),0)
+  const encaisseMoisPrec = paiements.filter(p=>p.date_paiement && (p.statut==='paye'||p.statut==='partiel') && new Date(p.date_paiement).getMonth()===moisPrec.getMonth() && new Date(p.date_paiement).getFullYear()===moisPrec.getFullYear()).reduce((a,p)=>a+(p.montant||0),0)
+  const encaisseTrend = encaisseMoisPrec>0 ? Math.round(((encaisseCeMois-encaisseMoisPrec)/encaisseMoisPrec)*100) : (encaisseCeMois>0?100:0)
+  const tauxRecouvrement = stats.attendu>0 ? Math.round((stats.encaisse/stats.attendu)*100) : 0
 
   const SBadge = ({s}) => { const c=S_CFG[s]||S_CFG.en_attente; return <span style={{display:'inline-flex',alignItems:'center',gap:5,padding:'2px 9px',borderRadius:'100px',fontSize:11,fontWeight:600,background:c.bg,color:c.color}}><span style={{width:6,height:6,borderRadius:'50%',background:c.dot,flexShrink:0}}/>{c.label}</span> }
 
@@ -137,11 +145,9 @@ export default function ImolocPaiements() {
         .px-fld{margin-bottom:14px}
         .px-ftab{padding:5px 14px;border-radius:100px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.09);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.45);font-family:Inter,sans-serif;transition:all 0.15s}
         .px-ftab.on{background:rgba(0,120,212,0.12);border-color:rgba(0,120,212,0.3);color:#4da6ff}
-        .px-row{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.08s;cursor:pointer}
+        .px-row{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.08s;cursor:pointer;border-left:3px solid var(--ind-c, transparent)}
         .px-row:hover{background:rgba(255,255,255,0.025)}
         .px-row:last-child{border-bottom:none}
-        .px-row.retard{border-left:3px solid #ef4444}
-        .px-row.paye{border-left:3px solid #00c896}
         @media(max-width:700px){.px-g2{grid-template-columns:1fr}}
         @media(max-width:560px){.px-stats4{grid-template-columns:repeat(2,1fr)!important}}
       `}</style>
@@ -159,15 +165,27 @@ export default function ImolocPaiements() {
         <div className="px-stats4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:24}}>
           {[
             {ic:Wallet,l:'Total attendu',     v:fmt(stats.attendu)+' FCFA',   c:'#e6edf3',sm:true},
-            {ic:CheckCircle2,l:'Encaisse',          v:fmt(stats.encaisse)+' FCFA',  c:'#00c896',sm:true},
+            {ic:CheckCircle2,l:'Encaisse',          v:fmt(stats.encaisse)+' FCFA',  c:'#00c896',sm:true,trend:encaisseTrend},
             {ic:AlertTriangle,l:'En retard',         v:stats.retard,                  c:stats.retard>0?'#ef4444':'rgba(255,255,255,0.3)'},
             {ic:Hourglass,l:'A venir',           v:stats.attente,                 c:'#f59e0b'},
           ].map((s,i)=>(
-            <div key={i} style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'14px 16px'}}>
+            <div key={i} className="ind-left" style={{'--ind-c':s.c,background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'14px 16px'}}>
               <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}><s.ic size={15}/><span style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{s.l}</span></div>
-              <div style={{fontSize:s.sm?14:22,fontWeight:800,color:s.c}}>{s.v}</div>
+              <div style={{display:'flex',alignItems:'baseline',gap:8,flexWrap:'wrap'}}>
+                <div style={{fontSize:s.sm?14:22,fontWeight:800,color:s.c}}>{s.v}</div>
+                {s.trend!==undefined && <Trend value={s.trend}/>}
+              </div>
             </div>
           ))}
+        </div>
+
+        {/* Taux de recouvrement */}
+        <div style={{marginBottom:20,padding:'12px 16px',background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10}}>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:7}}>
+            <span style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>Taux de recouvrement</span>
+            <span style={{fontSize:13,fontWeight:700,color:tauxRecouvrement>=80?'#00c896':tauxRecouvrement>=50?'#f59e0b':'#ef4444'}}>{tauxRecouvrement}%</span>
+          </div>
+          <ProgressBar value={tauxRecouvrement}/>
         </div>
 
         {/* Filtres */}
@@ -212,7 +230,7 @@ export default function ImolocPaiements() {
             const cfg = S_CFG[p.statut]||S_CFG.en_attente
             const moisLabel = p.periode_mois ? MOIS[p.periode_mois-1] : '—'
             return (
-              <div key={p.id} className={'px-row '+(p.statut||'')} onClick={()=>setSelPaie(p)}>
+              <div key={p.id} className="px-row" style={{'--ind-c':cfg.color}} onClick={()=>setSelPaie(p)}>
                 <div style={{display:'flex',alignItems:'center',gap:14,flex:1,minWidth:0}}>
                   <div style={{width:42,height:42,borderRadius:10,background:cfg.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                     {p.statut==='paye'?<CheckCircle2 size={18} color={cfg.color}/>:p.statut==='en_retard'?<AlertTriangle size={18} color={cfg.color}/>:<Hourglass size={18} color={cfg.color}/>}

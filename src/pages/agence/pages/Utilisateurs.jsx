@@ -641,7 +641,7 @@ export default function Utilisateurs() {
                 {ic:Briefcase,lbl:'Agents & Comptables',val:actifs.filter(u=>['agent','comptable'].includes(u.role)).length,col:'#6c63ff'},
                 {ic:Eye,lbl:'Lecteurs',val:actifs.filter(u=>u.role==='lecteur').length,col:'rgba(255,255,255,0.4)'},
               ].map((s,i)=>(
-                <div key={i} className="us-sc">
+                <div key={i} className="us-sc ind-left" style={{'--ind-c':s.col}}>
                   <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}>
                     <s.ic size={16} color={s.col}/>
                     <span className="us-sl">{s.lbl}</span>
@@ -811,9 +811,10 @@ export default function Utilisateurs() {
                       const col = ROLES_COLORS[u.role]||'#0078d4'
                       const avSize = viewMode==='compact' ? 26 : 34
                       const fontSize = viewMode==='compact' ? 10 : 12
+                      const statusColor = blockedUsers.includes(u.id) ? '#f59e0b' : (!u.statut||u.statut==='actif') ? '#00c896' : '#8b949e'
                       return (
                         <tr key={i} className={isSel?'sel':''} onClick={()=>{ if(rowMenu!==u.id){ setSelectedUser(u); setUserPanelTab('compte'); loadUserData(u) } }}>
-                          <td onClick={e=>{e.stopPropagation();toggleSelect(u.id)}}>
+                          <td className="ind-td" style={{'--ind-c':statusColor}} onClick={e=>{e.stopPropagation();toggleSelect(u.id)}}>
                             <div className={`us-cb ${isSel?'on':''}`}>
                               {isSel&&<svg width="8" height="8" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
                             </div>
@@ -822,7 +823,7 @@ export default function Utilisateurs() {
                             <div style={{display:'flex',alignItems:'center',gap:10}}>
                               <div className="us-av" style={{width:avSize,height:avSize,background:`linear-gradient(135deg,${col},${col}88)`,fontSize}}>
                                 {getInitials(u)}
-                                {viewMode==='normal'&&<div className="us-avdot"/>}
+                                {viewMode==='normal'&&<div className="us-avdot" style={{background:statusColor}}/>}
                               </div>
                               <div>
                                 <div className="us-uname" style={{fontSize:viewMode==='compact'?12.5:13.5}}>

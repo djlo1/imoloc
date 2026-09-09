@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Users } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
+import StatusDot from '../../../components/ui/StatusDot'
 
 export default function Locataires() {
   const [locataires, setLocataires] = useState([])
@@ -113,15 +114,22 @@ export default function Locataires() {
                 <th>Locataire</th>
                 <th>Téléphone</th>
                 <th>Profession</th>
+                <th>Statut</th>
                 <th>Date d'ajout</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((l,i) => (
+              {filtered.map((l,i) => {
+                const sc = l.statut_global==='blackliste' ? '#ef4444' : l.statut_global==='inactif' ? '#8b949e' : '#00c896'
+                const sl = l.statut_global==='blackliste' ? 'Blacklisté' : l.statut_global==='inactif' ? 'Inactif' : 'Actif'
+                return (
                 <tr key={i}>
-                  <td>
+                  <td className="ind-td" style={{'--ind-c':sc}}>
                     <div style={{display:'flex',alignItems:'center',gap:12}}>
-                      <div className="loc-avatar">{l.prenom?.[0]?.toUpperCase()}{l.nom?.[0]?.toUpperCase()}</div>
+                      <div style={{position:'relative'}}>
+                        <div className="loc-avatar">{l.prenom?.[0]?.toUpperCase()}{l.nom?.[0]?.toUpperCase()}</div>
+                        <StatusDot color={sc}/>
+                      </div>
                       <div>
                         <div className="loc-name">{l.prenom} {l.nom}</div>
                         <div className="loc-email">{l.email}</div>
@@ -130,9 +138,10 @@ export default function Locataires() {
                   </td>
                   <td>{l.telephone || '—'}</td>
                   <td>{l.profession || '—'}</td>
+                  <td><span style={{display:'inline-flex',alignItems:'center',padding:'2px 9px',borderRadius:100,fontSize:11,fontWeight:600,background:sc+'18',color:sc}}>{sl}</span></td>
                   <td>{new Date(l.created_at).toLocaleDateString('fr-FR')}</td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         )}

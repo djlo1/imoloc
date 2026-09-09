@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react'
 import { Wallet, Calendar, Hourglass, AlertTriangle, Home, CheckCircle2, Key, BarChart3, Users, Wrench, ClipboardList } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
+import Trend from '../../../components/ui/Trend'
 
 const MOIS = ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec']
 
-function StatCard({ label, value, sub, color, icon:Icon }) {
+function StatCard({ label, value, sub, color, icon:Icon, trend, trendInvert }) {
   return (
     <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'16px 20px'}}>
       <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:10}}>
         <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',fontWeight:500}}>{label}</div>
         {Icon&&<Icon size={20} style={{opacity:0.6}}/>}
       </div>
-      <div style={{fontSize:28,fontWeight:700,color:color||'#4da6ff',marginBottom:4}}>{value}</div>
+      <div style={{display:'flex',alignItems:'baseline',gap:8,flexWrap:'wrap'}}>
+        <div style={{fontSize:28,fontWeight:700,color:color||'#4da6ff',marginBottom:4}}>{value}</div>
+        {trend!==undefined&&<Trend value={trend} invert={trendInvert}/>}
+      </div>
       {sub&&<div style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{sub}</div>}
     </div>
   )
@@ -84,6 +88,15 @@ export default function Rapports() {
   }
 
   const fmt = n => Number(n).toLocaleString('fr-FR')
+  // Tendance revenus : mois courant vs mois precedent, calculee a partir des vraies donnees
+  // mensuelles deja chargees (revenus_mois). Uniquement affichee si l annee selectionnee est
+  // l annee en cours et qu on a un mois precedent avec des donnees non nulles.
+  const nowIdx = new Date().getMonth()
+  const isCurrentYear = annee === new Date().getFullYear()
+  const moisPrec = revenus_mois[nowIdx-1]?.value
+  const revenusTrend = (isCurrentYear && nowIdx>0 && moisPrec>0)
+    ? Math.round(((stats.revenus_mois-moisPrec)/moisPrec)*100)
+    : undefined
   const exportCSV = () => {
     const rows=[['Mois','Revenus (FCFA)'],...revenus_mois.map(m=>[m.label,m.value])]
     const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));a.download=`rapports_${annee}.csv`;a.click()
@@ -120,7 +133,7 @@ export default function Rapports() {
           <div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,marginBottom:20}}>
               <StatCard label="Revenus totaux" value={fmt(stats.revenus_total)+' F'} sub="Tous paiements recus" color="#00c896" icon={Wallet}/>
-              <StatCard label="Revenus ce mois" value={fmt(stats.revenus_mois)+' F'} sub={new Date().toLocaleString('fr-FR',{month:'long',year:'numeric'})} color="#4da6ff" icon={Calendar}/>
+              <StatCard label="Revenus ce mois" value={fmt(stats.revenus_mois)+' F'} sub={new Date().toLocaleString('fr-FR',{month:'long',year:'numeric'})} color="#4da6ff" icon={Calendar} trend={revenusTrend}/>
               <StatCard label="En attente" value={fmt(stats.paiements_en_attente)+' F'} sub="Paiements non encaisses" color="#f59e0b" icon={Hourglass}/>
               <StatCard label="Retards" value={stats.retards_total} sub="Paiements en retard" color="#ef4444" icon={AlertTriangle}/>
             </div>
@@ -202,14 +215,16 @@ export default function Rapports() {
                   <thead><tr>{['Bail','Montant','Echeance','Retard'].map(h=>(
                     <th key={h} style={{textAlign:'left',padding:'8px 12px',fontSize:11,fontWeight:600,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
                   ))}</tr></thead>
-                  <tbody>{retards_list.map((r,i)=>(
+                  <tbody>{retards_list.map((r,i)=>{
+                    const sev = (r.retard_jours||0)>30?'#ef4444':(r.retard_jours||0)>7?'#f59e0b':'#8b949e'
+                    return (
                     <tr key={i}>
-                      <td style={{padding:'10px 12px',borderBottom:'1px solid rgba(255,255,255,0.04)',fontSize:13,color:'#e6edf3'}}>{r.bail_id?.slice(0,8)}...</td>
+                      <td className="ind-td" style={{padding:'10px 12px',borderBottom:'1px solid rgba(255,255,255,0.04)',fontSize:13,color:'#e6edf3','--ind-c':sev}}>{r.bail_id?.slice(0,8)}...</td>
                       <td style={{padding:'10px 12px',borderBottom:'1px solid rgba(255,255,255,0.04)',fontSize:13,color:'#ef4444',fontWeight:600}}>{fmt(r.montant)} F</td>
                       <td style={{padding:'10px 12px',borderBottom:'1px solid rgba(255,255,255,0.04)',fontSize:12.5,color:'rgba(255,255,255,0.5)'}}>{new Date(r.date_echeance).toLocaleDateString('fr-FR')}</td>
-                      <td style={{padding:'10px 12px',borderBottom:'1px solid rgba(255,255,255,0.04)',fontSize:12,color:'#f59e0b'}}>{r.retard_jours||'—'} j</td>
+                      <td style={{padding:'10px 12px',borderBottom:'1px solid rgba(255,255,255,0.04)',fontSize:12,color:sev,fontWeight:600}}>{r.retard_jours||'—'} j</td>
                     </tr>
-                  ))}</tbody>
+                  )})}</tbody>
                 </table>
                 </div>
               )}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Check, Smartphone, CheckCircle2, XCircle, Mail } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
+import ProgressBar from '../../../components/ui/ProgressBar'
 
 const PLANS = {
   particulier: [
@@ -224,20 +225,20 @@ export default function AbonnementPlan() {
               <div style={{ fontSize:14, fontWeight:600, color:'#e6edf3', marginBottom:16 }}>Utilisation de votre plan</div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:16 }}>
                 {[
-                  { label:'Biens', val:agence?._count?.biens||0, max:planInfo?.id?.includes('starter')?50:planInfo?.id?.includes('pro')?null:500, color:'#0078d4' },
-                  { label:'Utilisateurs', val:1, max:planInfo?.id?.includes('starter_o')?3:planInfo?.id?.includes('business')?10:null, color:'#00c896' },
-                  { label:'Stockage', val:'2.1 GB', max:'5 GB', color:'#f59e0b', nobar:true },
-                ].map(({label,val,max,color,nobar})=>(
+                  { label:'Biens', val:agence?._count?.biens||0, max:planInfo?.id?.includes('starter')?50:planInfo?.id?.includes('pro')?null:500 },
+                  { label:'Utilisateurs', val:1, max:planInfo?.id?.includes('starter_o')?3:planInfo?.id?.includes('business')?10:null },
+                  { label:'Stockage', val:'2.1 GB', max:'5 GB', nobar:true },
+                ].map(({label,val,max,nobar})=>{
+                  const pct = !nobar && max ? Math.min((Number(val)/Number(max))*100,100) : 0
+                  return (
                   <div key={label}>
                     <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
                       <span style={{ fontSize:13, color:'rgba(255,255,255,0.5)' }}>{label}</span>
-                      <span style={{ fontSize:13, fontWeight:600, color:'#e6edf3' }}>{val}{max&&!nobar?' / '+max:''}</span>
+                      <span style={{ fontSize:13, fontWeight:600, color: pct>=80?'#ef4444':'#e6edf3' }}>{val}{max&&!nobar?' / '+max:''}</span>
                     </div>
-                    {!nobar && max && <div style={{ height:5, background:'rgba(255,255,255,0.06)', borderRadius:3 }}>
-                      <div style={{ height:'100%', width:`${Math.min((Number(val)/Number(max))*100,100)}%`, background:color, borderRadius:3 }}/>
-                    </div>}
+                    {!nobar && max && <ProgressBar value={Number(val)} max={Number(max)} height={5}/>}
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           </div>

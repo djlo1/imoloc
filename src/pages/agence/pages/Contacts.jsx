@@ -334,9 +334,10 @@ export default function Contacts() {
                 </td></tr>
               ) : filtered.map((c,i)=>{
                 const isSel = selected.includes(c.id)
+                const cc = c.masquer ? '#8b949e' : '#00c896'
                 return (
                   <tr key={i} style={{background:isSel?'rgba(0,120,212,0.05)':'transparent'}}>
-                    <td className="ct-cb-cell">
+                    <td className="ct-cb-cell ind-td" style={{'--ind-c':cc}}>
                       <div className={`ct-cb2 ${isSel?'on':''}`} onClick={()=>toggleSelect(c.id)}>
                         {isSel&&<svg width="8" height="8" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
                       </div>
@@ -350,7 +351,7 @@ export default function Contacts() {
                     {visibleCols.includes('ville')&&<td>{c.ville||'—'}</td>}
                     {visibleCols.includes('pays')&&<td>{c.pays||'—'}</td>}
                     {visibleCols.includes('synch')&&(
-                      <td><span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12.5}}><span style={{width:7,height:7,borderRadius:'50%',background:'#00c896'}}/>Actif</span></td>
+                      <td><span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12.5,color:cc}}><span style={{width:7,height:7,borderRadius:'50%',background:cc}}/>{c.masquer?'Masqué':'Visible'}</span></td>
                     )}
                     <td style={{position:'relative'}}>
                       <button className="ct-action-btn" style={{padding:'4px 8px',fontSize:13}} onClick={e=>{e.stopPropagation();setRowMenu(rowMenu===c.id?null:c.id)}}>···</button>

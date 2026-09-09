@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Users, AlertTriangle, Check, CheckCircle2, ArrowRight, ArrowLeft, Paperclip } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
+import StatusDot from '../../../components/ui/StatusDot'
 
 const STATUT_CFG = {
   actif:       { color:'#00c896', bg:'rgba(0,200,150,0.1)',  label:'Actif'       },
@@ -19,12 +20,19 @@ function Badge({ statut }) {
   )
 }
 
-function Avatar({ loc, size=36 }) {
+function Avatar({ loc, size=36, showStatus=false }) {
   const initials = `${(loc.prenom||'')[0]||''}${(loc.nom||'')[0]||''}`.toUpperCase()
   const colors = ['#0078d4','#059669','#6b21a8','#c0392b','#b8860b','#1a237e']
   const col = colors[(loc.nom||'').charCodeAt(0) % colors.length]
-  if (loc.photo_url) return <img src={loc.photo_url} alt="" style={{width:size,height:size,borderRadius:'50%',objectFit:'cover',flexShrink:0}}/>
-  return <div style={{width:size,height:size,borderRadius:'50%',background:col,display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*0.35,fontWeight:700,color:'#fff',flexShrink:0}}>{initials||'?'}</div>
+  const statutColor = (STATUT_CFG[loc.statut_global] || STATUT_CFG.actif).color
+  return (
+    <div style={{position:'relative',flexShrink:0}}>
+      {loc.photo_url
+        ? <img src={loc.photo_url} alt="" style={{width:size,height:size,borderRadius:'50%',objectFit:'cover',display:'block'}}/>
+        : <div style={{width:size,height:size,borderRadius:'50%',background:col,display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*0.35,fontWeight:700,color:'#fff'}}>{initials||'?'}</div>}
+      {showStatus && <StatusDot color={statutColor} size={Math.max(7,size*0.24)} ring="#161b22"/>}
+    </div>
+  )
 }
 
 export default function Locataires() {
@@ -323,11 +331,13 @@ export default function Locataires() {
                 </tr>
               </thead>
               <tbody>
-                {filteredList.map(loc=>(
+                {filteredList.map(loc=>{
+                  const statutColor = (STATUT_CFG[loc.statut_global] || STATUT_CFG.actif).color
+                  return (
                   <tr key={loc.id} onClick={()=>ouvrirDetail(loc)}>
-                    <td>
+                    <td className="ind-td" style={{'--ind-c':statutColor}}>
                       <div style={{display:'flex',alignItems:'center',gap:10}}>
-                        <Avatar loc={loc} size={36}/>
+                        <Avatar loc={loc} size={36} showStatus/>
                         <div>
                           <div style={{fontWeight:600}}>{loc.prenom} {loc.nom}</div>
                           <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginTop:1}}>{loc.ville||'—'}</div>
@@ -348,7 +358,7 @@ export default function Locataires() {
                       <button className="lc-btn" style={{padding:'4px 10px',fontSize:11}} onClick={()=>ouvrirDetail(loc)}>Voir</button>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
             </div>
@@ -363,7 +373,7 @@ export default function Locataires() {
           <div style={{padding:'20px 24px',borderBottom:'1px solid rgba(255,255,255,0.07)',flexShrink:0}}>
             <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:14}}>
               <div style={{display:'flex',alignItems:'center',gap:12}}>
-                <Avatar loc={selLoc} size={48}/>
+                <Avatar loc={selLoc} size={48} showStatus/>
                 <div>
                   <div style={{fontSize:17,fontWeight:700,color:'#e6edf3'}}>{selLoc.prenom} {selLoc.nom}</div>
                   <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)',marginTop:2}}>{selLoc.telephone} {selLoc.email?`· ${selLoc.email}`:''}</div>

@@ -3,10 +3,13 @@ import { Building2, Home } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
+import ProgressBar from '../../../components/ui/ProgressBar'
 
 const TYPES = ['Appartement','Villa','Bureau','Terrain','Local commercial','Studio','Duplex']
 const STATUTS = ['libre','occupé','maintenance','réservé']
-const STATUT_COLORS = { libre:'#00c896', occupé:'#0078d4', maintenance:'#f59e0b', réservé:'#6c63ff' }
+// Couvre aussi le vocabulaire utilise par l espace /imoloc (disponible/occupe/renovation/reserve)
+// qui ecrit dans la meme table biens avec des valeurs de statut differentes.
+const STATUT_COLORS = { libre:'#00c896', disponible:'#00c896', occupé:'#0078d4', occupe:'#0078d4', maintenance:'#f59e0b', réservé:'#6c63ff', reserve:'#6c63ff', renovation:'#f97316' }
 
 export default function Biens() {
   const [biens, setBiens] = useState([])
@@ -108,6 +111,17 @@ export default function Biens() {
         </button>
       </div>
 
+      {biens.length>0 && (()=>{
+        const occ = biens.filter(b=>b.statut==='occupé'||b.statut==='occupe').length
+        const taux = Math.round((occ/biens.length)*100)
+        return (
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+            <span style={{fontSize:12.5,color:'rgba(255,255,255,0.4)',whiteSpace:'nowrap'}}>Taux d'occupation : <strong style={{color:'#e6edf3'}}>{taux}%</strong></span>
+            <div style={{flex:1,maxWidth:240}}><ProgressBar value={occ} max={biens.length} color={taux>=70?'#00c896':taux>=40?'#f59e0b':'#ef4444'}/></div>
+          </div>
+        )
+      })()}
+
       <div className="pg-filters">
         <div className="pg-search">
           <svg width="15" height="15" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
@@ -131,11 +145,13 @@ export default function Biens() {
         </div>
       ) : (
         <div className="pg-grid">
-          {filtered.map((b,i) => (
-            <div key={i} className="bien-card">
+          {filtered.map((b,i) => {
+            const bc = STATUT_COLORS[b.statut] || '#8b949e'
+            return (
+            <div key={i} className="bien-card ind-left" style={{'--ind-c':bc}}>
               <div className="bien-card-top">
                 <div className="bien-card-type">{b.type}</div>
-                <div className="bien-statut" style={{background:`${STATUT_COLORS[b.statut]}18`,color:STATUT_COLORS[b.statut]}}>
+                <div className="bien-statut" style={{background:`${bc}18`,color:bc}}>
                   {b.statut}
                 </div>
               </div>
@@ -146,7 +162,7 @@ export default function Biens() {
                 <div className="bien-superficie">{b.superficie} m²</div>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       )}
 

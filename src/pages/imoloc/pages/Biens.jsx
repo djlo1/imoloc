@@ -8,6 +8,8 @@ import {
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
+import StatusDot from '../../../components/ui/StatusDot'
+import ProgressBar from '../../../components/ui/ProgressBar'
 
 // ─── Constants — alignees avec les enums Supabase ─────────
 // type_bien enum: appartement, maison, villa, studio, bureau, entrepot, local_commercial, terrain, parking, hotel, autre
@@ -262,7 +264,7 @@ export default function ImolocBiens() {
   }
 
   const StatutBadge = ({ statut, size=12 }) => {
-    const cfg = STATUT_CFG[statut] || STATUT_CFG.libre
+    const cfg = STATUT_CFG[statut] || STATUT_CFG.disponible
     return (
       <span style={{display:'inline-flex',alignItems:'center',gap:5,padding:'2px 9px',borderRadius:'100px',fontSize:size,fontWeight:600,background:cfg.bg,color:cfg.color}}>
         <span style={{width:6,height:6,borderRadius:'50%',background:cfg.dot,flexShrink:0}}/>
@@ -442,6 +444,13 @@ export default function ImolocBiens() {
             </div>
           ))}
         </div>
+        {stats.total>0 && (
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:24,fontSize:12,color:'rgba(255,255,255,0.4)'}}>
+            <span style={{flexShrink:0}}>Taux d'occupation</span>
+            <ProgressBar value={stats.occupes} max={stats.total} color="#0078d4" style={{flex:1}}/>
+            <span style={{flexShrink:0,fontWeight:700,color:'#e6edf3'}}>{Math.round((stats.occupes/stats.total)*100)}%</span>
+          </div>
+        )}
 
         {/* Toolbar */}
         <div className="pb-toolbar">
@@ -547,17 +556,19 @@ export default function ImolocBiens() {
                   const isSel = selected.includes(b.id)
                   const IcComp = TYPE_ICONS[b.type_bien] || TYPE_ICONS[b.type] || Home
                   const avH   = viewMode==='compact' ? 26 : 32
+                  const statutColor = (STATUT_CFG[b.statut] || STATUT_CFG.disponible).color
                   return (
                     <tr key={b.id} className={isSel?'sel':''} onClick={()=>{setSelectedBien(b);setDetailTab('infos')}}>
-                      <td onClick={e=>{e.stopPropagation();toggleSelect(b.id)}}>
+                      <td className="ind-td" style={{'--ind-c':statutColor}} onClick={e=>{e.stopPropagation();toggleSelect(b.id)}}>
                         <div className={`pb-cb ${isSel?'on':''}`}>
                           {isSel&&<svg width="8" height="8" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
                         </div>
                       </td>
                       <td>
                         <div style={{display:'flex',alignItems:'center',gap:10}}>
-                          <div style={{width:avH,height:avH,borderRadius:7,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                          <div style={{position:'relative',width:avH,height:avH,borderRadius:7,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                             <IcComp size={viewMode==='compact'?13:17}/>
+                            <StatusDot color={statutColor} size={7} ring="#161b22"/>
                           </div>
                           <div>
                             <div style={{fontWeight:600,color:'#e6edf3',fontSize:viewMode==='compact'?12.5:13.5}}>{b.nom}</div>

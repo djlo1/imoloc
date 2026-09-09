@@ -154,7 +154,7 @@ export default function BailDetail() {
   return (
     <>
       <style>{`.bd-tab{padding:10px 18px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.4);transition:all 0.15s;white-space:nowrap}.bd-tab.on{background:rgba(255,255,255,0.08);color:#e6edf3}.bd-tr:hover td{background:rgba(255,255,255,0.02)}`}</style>
-      <div style={{ maxWidth:1100, margin:'0 auto' }}>
+      <div style={{ maxWidth:1100, margin:'0 auto', borderTop:`3px solid ${sc.color}`, paddingTop:16 }}>
 
         <button onClick={() => navigate('/imoloc/baux')} style={{ ...bB, fontSize:12, padding:'5px 12px', marginBottom:20 }}><ArrowLeft size={12}/> Retour aux baux</button>
 
@@ -241,7 +241,7 @@ export default function BailDetail() {
                   <tbody>{paiements.map(p => {
                     const c = { paye:'#00c896', en_attente:'#f59e0b', en_retard:'#ef4444' }
                     return <tr key={p.id} className="bd-tr">
-                      <td style={{ padding:'10px 14px', borderBottom:'1px solid rgba(255,255,255,0.04)', fontSize:13, color:'#e6edf3' }}>{p.periode_mois?String(p.periode_mois).padStart(2,'0')+'/'+p.periode_annee:new Date(p.date_echeance).toLocaleDateString('fr-FR')}</td>
+                      <td className="ind-td" style={{ padding:'10px 14px', borderBottom:'1px solid rgba(255,255,255,0.04)', fontSize:13, color:'#e6edf3', '--ind-c':c[p.statut]||'#8b949e' }}>{p.periode_mois?String(p.periode_mois).padStart(2,'0')+'/'+p.periode_annee:new Date(p.date_echeance).toLocaleDateString('fr-FR')}</td>
                       <td style={{ padding:'10px 14px', borderBottom:'1px solid rgba(255,255,255,0.04)', fontSize:13, fontWeight:600, color:'#00c896' }}>{fmt(p.montant)} {p.devise||'FCFA'}</td>
                       <td style={{ padding:'10px 14px', borderBottom:'1px solid rgba(255,255,255,0.04)', fontSize:12.5, color:'rgba(255,255,255,0.5)' }}>{p.mode_paiement||'—'}</td>
                       <td style={{ padding:'10px 14px', borderBottom:'1px solid rgba(255,255,255,0.04)' }}><span style={{ fontSize:11, padding:'2px 8px', borderRadius:100, fontWeight:600, color:c[p.statut]||'#8b949e', background:(c[p.statut]||'#8b949e')+'18' }}>{p.statut}</span></td>

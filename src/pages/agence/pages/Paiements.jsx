@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { CreditCard } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
+import Trend from '../../../components/ui/Trend'
 
 const MODES = ['Mobile Money','Virement bancaire','Espèces','Chèque','Carte bancaire']
 const STATUTS = ['payé','en attente','retard']
@@ -46,7 +47,11 @@ export default function Paiements() {
     setPaiements(data||[])
   }
 
-  const totalMois = paiements.filter(p => p.statut === 'payé' && new Date(p.date_paiement).getMonth() === new Date().getMonth()).reduce((s,p) => s + Number(p.montant), 0)
+  const now = new Date()
+  const moisPrecedent = new Date(now.getFullYear(), now.getMonth()-1)
+  const totalMois = paiements.filter(p => p.statut === 'payé' && new Date(p.date_paiement).getMonth() === now.getMonth() && new Date(p.date_paiement).getFullYear() === now.getFullYear()).reduce((s,p) => s + Number(p.montant), 0)
+  const totalMoisPrecedent = paiements.filter(p => p.statut === 'payé' && new Date(p.date_paiement).getMonth() === moisPrecedent.getMonth() && new Date(p.date_paiement).getFullYear() === moisPrecedent.getFullYear()).reduce((s,p) => s + Number(p.montant), 0)
+  const totalMoisTrend = totalMoisPrecedent>0 ? Math.round(((totalMois-totalMoisPrecedent)/totalMoisPrecedent)*100) : (totalMois>0?100:0)
   const filtered = filterStatut === 'tous' ? paiements : paiements.filter(p => p.statut === filterStatut)
 
   return (
@@ -97,15 +102,18 @@ export default function Paiements() {
         </button>
       </div>
       <div className="pai-stats">
-        <div className="pai-stat">
-          <div className="pai-stat-val" style={{color:'#00c896'}}>{totalMois.toLocaleString()} FCFA</div>
+        <div className="pai-stat ind-left" style={{'--ind-c':'#00c896'}}>
+          <div style={{display:'flex',alignItems:'baseline',gap:10,flexWrap:'wrap'}}>
+            <div className="pai-stat-val" style={{color:'#00c896',marginBottom:0}}>{totalMois.toLocaleString()} FCFA</div>
+            <Trend value={totalMoisTrend}/>
+          </div>
           <div className="pai-stat-lbl">Encaissé ce mois</div>
         </div>
-        <div className="pai-stat">
+        <div className="pai-stat ind-left" style={{'--ind-c':'#ef4444'}}>
           <div className="pai-stat-val" style={{color:'#ef4444'}}>{paiements.filter(p=>p.statut==='retard').length}</div>
           <div className="pai-stat-lbl">Loyers en retard</div>
         </div>
-        <div className="pai-stat">
+        <div className="pai-stat ind-left" style={{'--ind-c':'#f59e0b'}}>
           <div className="pai-stat-val" style={{color:'#f59e0b'}}>{paiements.filter(p=>p.statut==='en attente').length}</div>
           <div className="pai-stat-lbl">En attente</div>
         </div>
@@ -129,7 +137,7 @@ export default function Paiements() {
             <tbody>
               {filtered.map((p,i) => (
                 <tr key={i}>
-                  <td>{p.locataires ? `${p.locataires.prenom} ${p.locataires.nom}` : '—'}</td>
+                  <td className="ind-td" style={{'--ind-c':STATUT_COLORS[p.statut]}}>{p.locataires ? `${p.locataires.prenom} ${p.locataires.nom}` : '—'}</td>
                   <td>{p.biens?.nom || '—'}</td>
                   <td style={{fontWeight:600,color:'#00c896'}}>{Number(p.montant).toLocaleString()} FCFA</td>
                   <td>{p.mode}</td>

@@ -462,9 +462,10 @@ export default function ImolocBaux() {
                 ):filtered.map(b=>{
                   const fin=b.date_fin?new Date(b.date_fin):null
                   const exp=b.statut==='actif'&&fin&&fin<=in30&&fin>=now
+                  const rowColor = exp ? '#f59e0b' : (STATUT_CFG[b.statut]||STATUT_CFG.en_attente).color
                   return(
                     <tr key={b.id} onClick={()=>navigate('/imoloc/baux/'+b.id)}>
-                      <td><div style={{fontWeight:600,color:'#e6edf3',fontSize:13}}>{b.titre||b.biens?.nom||'—'}</div><div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>{b.biens?.nom||'—'} · {b.biens?.ville||'—'}</div></td>
+                      <td className="ind-td" style={{'--ind-c':rowColor}}><div style={{fontWeight:600,color:'#e6edf3',fontSize:13}}>{b.titre||b.biens?.nom||'—'}</div><div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>{b.biens?.nom||'—'} · {b.biens?.ville||'—'}</div></td>
                       <td style={{fontSize:12.5}}>{b.locataires?.prenom||''} {b.locataires?.nom||'—'}</td>
                       <td style={{fontSize:13,fontWeight:600,color:'#0078d4'}}>{fmt(b.loyer_mensuel)} FCFA</td>
                       <td style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>{b.date_debut?new Date(b.date_debut).toLocaleDateString('fr-FR'):'—'}</td>

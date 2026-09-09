@@ -63,7 +63,7 @@ export default function ImolocDashboard({ agence, stats }) {
             {ic:FileText,lbl:'Baux actifs',val:stats?.baux||0,col:'#00c896',path:'/agence/imoloc/baux'},
             {ic:AlertTriangle,lbl:'Retards paiement',val:stats?.retards||0,col:stats?.retards>0?'#f59e0b':'rgba(255,255,255,0.4)',path:'/agence/imoloc/paiements/retard'},
           ].map((s,i)=>(
-            <div key={i} className="imd-stat" onClick={()=>navigate(s.path)}>
+            <div key={i} className="imd-stat ind-left" style={{'--ind-c':s.col}} onClick={()=>navigate(s.path)}>
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
                 <s.ic size={20} color={s.col}/>
                 <span className="imd-stat-lbl">{s.lbl}</span>
@@ -76,11 +76,11 @@ export default function ImolocDashboard({ agence, stats }) {
         <div className="imd-section-title">Modules disponibles</div>
         <div className="imd-grid">
           {MODULES.map((m,i)=>(
-            <div key={i} className="imd-module"
+            <div key={i} className="imd-module ind-left" style={{'--ind-c':m.col+'55'}}
               onClick={()=>navigate(m.path)}
               onMouseEnter={e=>e.currentTarget.style.borderColor=m.col+"44"}
               onMouseLeave={e=>e.currentTarget.style.borderColor="rgba(255,255,255,0.07)"}>
-              <div className="imd-module-icon" style={{background:m.col+"18",border:`1px solid ${m.col}30`}}>{m.icon}</div>
+              <div className="imd-module-icon" style={{background:m.col+"18",border:`1px solid ${m.col}30`,color:m.col}}><m.icon size={20}/></div>
               <div className="imd-module-title">{m.label}</div>
               <div className="imd-module-desc">{m.desc}</div>
               <div className="imd-module-arrow">

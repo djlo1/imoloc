@@ -3,6 +3,7 @@ import { Wrench, Zap, Paintbrush, Hammer, Snowflake, Blocks, SprayCan, Package, 
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 import { notifierNouveauTicket } from '../../../lib/notifications'
+import Trend from '../../../components/ui/Trend'
 
 const TYPE_CFG = {
   plomberie:    { icon:Wrench, color:'#0078d4', label:'Plomberie' },
@@ -154,6 +155,12 @@ export default function Maintenance() {
       return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear()
     }).length,
   }
+  const resolusMoisPrec = tickets.filter(t=>{
+    if(t.statut!=='resolu'&&t.statut!=='ferme') return false
+    const d=new Date(t.updated_at); const n=new Date(); const p=new Date(n.getFullYear(),n.getMonth()-1)
+    return d.getMonth()===p.getMonth()&&d.getFullYear()===p.getFullYear()
+  }).length
+  const resolusTrend = resolusMoisPrec>0 ? Math.round(((stats.resolus_mois-resolusMoisPrec)/resolusMoisPrec)*100) : (stats.resolus_mois>0?100:0)
 
   const inp = {width:'100%',padding:'8px 11px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:6,fontFamily:'Inter,sans-serif',fontSize:13,color:'#e6edf3',outline:'none',colorScheme:'dark',boxSizing:'border-box'}
   const sel2 = {...inp,cursor:'pointer',background:'rgba(20,27,40,0.95)'}
@@ -182,9 +189,12 @@ export default function Maintenance() {
           <button style={btnP} onClick={()=>setShowAdd(true)}>+ Nouveau ticket</button>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:12,marginBottom:20}}>
-          {[{label:'Total',val:stats.total,color:'#4da6ff'},{label:'Urgents actifs',val:stats.urgents,color:'#ef4444'},{label:'En cours',val:stats.en_cours,color:'#0078d4'},{label:'Resolus ce mois',val:stats.resolus_mois,color:'#00c896'}].map(({label,val,color})=>(
-            <div key={label} style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'14px 18px'}}>
-              <div style={{fontSize:26,fontWeight:700,color,marginBottom:3}}>{val}</div>
+          {[{label:'Total',val:stats.total,color:'#4da6ff'},{label:'Urgents actifs',val:stats.urgents,color:'#ef4444'},{label:'En cours',val:stats.en_cours,color:'#0078d4'},{label:'Resolus ce mois',val:stats.resolus_mois,color:'#00c896',trend:resolusTrend}].map(({label,val,color,trend})=>(
+            <div key={label} className="ind-left" style={{'--ind-c':color,background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'14px 18px'}}>
+              <div style={{display:'flex',alignItems:'baseline',gap:8,flexWrap:'wrap'}}>
+                <div style={{fontSize:26,fontWeight:700,color,marginBottom:3}}>{val}</div>
+                {trend!==undefined && <Trend value={trend}/>}
+              </div>
               <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>{label}</div>
             </div>
           ))}
@@ -218,9 +228,10 @@ export default function Maintenance() {
               ))}</tr></thead>
               <tbody>{filtered.map(t=>{
                 const tc=TYPE_CFG[t.type]||TYPE_CFG.autre
+                const sc=STATUT_CFG[t.statut]||STATUT_CFG.ouvert
                 return (
                   <tr key={t.id} className="mt-row" onClick={()=>{setSel(t);setTab('details')}}>
-                    <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+                    <td className="ind-td" style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)','--ind-c':sc.color}}>
                       <div style={{fontWeight:600,color:'#e6edf3',fontSize:13}}>{t.titre}</div>
                       <div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{new Date(t.created_at).toLocaleDateString('fr-FR')}</div>
                     </td>
@@ -331,7 +342,7 @@ export default function Maintenance() {
             {step===1&&(<div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
                 <div style={{gridColumn:'1/-1'}}><label style={lbl}>Titre *</label><input style={inp} value={form.titre} onChange={e=>setF('titre',e.target.value)} placeholder="Ex: Fuite robinet cuisine"/></div>
-                <div><label style={lbl}>Type</label><select style={sel2} value={form.type} onChange={e=>setF('type',e.target.value)}>{Object.entries(TYPE_CFG).map(([k,v])=><option key={k} value={k} style={{background:'#161b22'}}>{v.icon} {v.label}</option>)}</select></div>
+                <div><label style={lbl}>Type</label><select style={sel2} value={form.type} onChange={e=>setF('type',e.target.value)}>{Object.entries(TYPE_CFG).map(([k,v])=><option key={k} value={k} style={{background:'#161b22'}}>{v.label}</option>)}</select></div>
                 <div><label style={lbl}>Priorite</label><select style={sel2} value={form.priorite} onChange={e=>setF('priorite',e.target.value)}>{Object.entries(PRIO_CFG).map(([k,v])=><option key={k} value={k} style={{background:'#161b22'}}>{v.label}</option>)}</select></div>
                 <div style={{gridColumn:'1/-1'}}><label style={lbl}>Bien concerne *</label><select style={sel2} value={form.bien_id} onChange={e=>setF('bien_id',e.target.value)}><option value="">Selectionner un bien</option>{biens.map(b=><option key={b.id} value={b.id} style={{background:'#161b22'}}>{b.nom}{b.ville?` (${b.ville})`:''}</option>)}</select></div>
                 <div style={{gridColumn:'1/-1'}}><label style={lbl}>Locataire (optionnel)</label><select style={sel2} value={form.locataire_id} onChange={e=>setF('locataire_id',e.target.value)}><option value="">Aucun</option>{locataires.map(l=><option key={l.id} value={l.id} style={{background:'#161b22'}}>{l.prenom} {l.nom}</option>)}</select></div>

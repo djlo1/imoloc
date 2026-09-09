@@ -1158,7 +1158,7 @@ export default function Abonnement() {
                       <td className="fl-td">
                         <FluentCheckbox checked={selected} onChange={()=>toggleSelectFacture(f.id)}/>
                       </td>
-                      <td className="fl-td" style={{ fontWeight:600 }}>
+                      <td className="fl-td ind-td" style={{ fontWeight:600, '--ind-c':sc.color }}>
                         <a href="#" onClick={e=>{e.preventDefault();setFactureDetail(f)}} style={{ color:'#4da6ff', textDecoration:'none', cursor:'pointer' }}>{f.numero}</a>{' '}
                         <Info style={{ color:'rgba(255,255,255,0.3)', verticalAlign:-1 }}/>
                       </td>

@@ -194,7 +194,7 @@ export default function EtatsDesLieux() {
         {/* OVERVIEW */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:12,marginBottom:20}}>
           {[{label:'Total',val:stats.total,color:'#4da6ff'},{label:'Entrees',val:stats.entrees,color:'#00c896'},{label:'Sorties',val:stats.sorties,color:'#ef4444'},{label:'Signes',val:stats.signes,color:'#f59e0b'}].map(({label,val,color})=>(
-            <div key={label} style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'14px 18px'}}>
+            <div key={label} className="ind-left" style={{'--ind-c':color,background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'14px 18px'}}>
               <div style={{fontSize:26,fontWeight:700,color,marginBottom:3}}>{val}</div>
               <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>{label}</div>
             </div>
@@ -233,10 +233,11 @@ export default function EtatsDesLieux() {
               ))}</tr></thead>
               <tbody>{filtered.map(e=>{
                 const tc=TYPE_CFG[e.type]||TYPE_CFG.entree
+                const sc=STATUT_CFG[e.statut||'en_cours']||STATUT_CFG.en_cours
                 const nbPieces=(e.pieces||[]).length
                 return (
                   <tr key={e.id} className="edl-row" onClick={()=>{setSel(e);setTab('pieces')}}>
-                    <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+                    <td className="ind-td" style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)','--ind-c':sc.color}}>
                       <tc.icon size={16} style={{marginRight:6}}/>
                       <span style={{fontSize:12,fontWeight:600,color:tc.color}}>{tc.label}</span>
                     </td>

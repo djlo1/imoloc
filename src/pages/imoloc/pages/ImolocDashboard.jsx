@@ -144,8 +144,9 @@ export default function ImolocDashboard({ agence, stats, navigate }) {
                 <div className="imd2-empty">Aucun bail n'expire dans les 60 prochains jours</div>
               ):baux_exp.map(b=>{
                 const jours = Math.ceil((new Date(b.date_fin)-new Date())/(1000*60*60*24))
+                const jc = jours<=15?'#ef4444':'#f59e0b'
                 return (
-                  <div key={b.id} className="imd2-item">
+                  <div key={b.id} className="imd2-item ind-left" style={{'--ind-c':jc,paddingLeft:10}}>
                     <div style={{width:34,height:34,borderRadius:8,background:jours<=15?'rgba(239,68,68,0.12)':'rgba(245,158,11,0.12)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                       <FileText size={16} color={jours<=15?'#ef4444':'#f59e0b'}/>
                     </div>
@@ -170,7 +171,7 @@ export default function ImolocDashboard({ agence, stats, navigate }) {
               {derniers_paiements.length===0?(
                 <div className="imd2-empty">Aucun paiement enregistre</div>
               ):derniers_paiements.map(p=>(
-                <div key={p.id} className="imd2-item">
+                <div key={p.id} className="imd2-item ind-left" style={{'--ind-c':statutPColor[p.statut]||'#4da6ff',paddingLeft:10}}>
                   <div style={{width:34,height:34,borderRadius:8,background:(statutPColor[p.statut]||'#4da6ff')+'18',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                     <Wallet size={15} color={statutPColor[p.statut]||'#4da6ff'}/>
                   </div>
@@ -198,7 +199,7 @@ export default function ImolocDashboard({ agence, stats, navigate }) {
               {activite.length===0?(
                 <div className="imd2-empty">Aucune activite recente</div>
               ):activite.map((a,i)=>(
-                <div key={i} className="imd2-item">
+                <div key={i} className="imd2-item ind-left" style={{'--ind-c':a.color,paddingLeft:10}}>
                   <div style={{width:34,height:34,borderRadius:8,background:a.color+'18',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                     <a.icon size={16} color={a.color}/>
                   </div>

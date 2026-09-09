@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { User, Building2, Factory, Hourglass, RefreshCw, Download, Link2, Search, UserPlus, AlertTriangle, FileText, Pencil, Folder, Wallet, Check } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
+import StatusDot from '../../../components/ui/StatusDot'
 import toast from 'react-hot-toast'
 
 const getInitials = (p) => ((p?.prenom?.[0]||'')+(p?.nom?.[0]||'')).toUpperCase() || '?'
@@ -499,8 +500,8 @@ export default function ImolocProprietaires() {
             {ic:Factory,lbl:'Societes',val:proprietaires.filter(p=>p.type_proprietaire==='societe').length,col:'#f59e0b'},
             {ic:Hourglass,lbl:'En attente',val:proprietaires.filter(p=>p.statut_lien==='en_attente_validation').length,col:'#f59e0b'},
           ].map((s,i)=>(
-            <div key={i} className="pp-stat">
-              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+            <div key={i} className="pp-stat ind-left" style={{'--ind-c':s.col}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8,color:s.col}}>
                 <s.ic size={18}/>
                 <span className="pp-stat-lbl">{s.lbl}</span>
               </div>
@@ -600,17 +601,21 @@ export default function ImolocProprietaires() {
                   const col = getColor(i)
                   const avSize = viewMode==='compact'?26:34
                   const isPending = p.statut_lien === 'en_attente_validation'
+                  const statutColor = isPending?'#f59e0b':p.statut_lien==='actif'?'#00c896':'#ef4444'
                   return (
                     <tr key={p.id} className={isSel?'sel':''} onClick={()=>setSelectedProp(p)}>
-                      <td onClick={e=>{e.stopPropagation();toggleSelect(p.id)}}>
+                      <td className="ind-td" onClick={e=>{e.stopPropagation();toggleSelect(p.id)}} style={{'--ind-c':statutColor}}>
                         <div className={`pp-cb ${isSel?'on':''}`}>
                           {isSel&&<svg width="8" height="8" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
                         </div>
                       </td>
                       <td>
                         <div style={{display:'flex',alignItems:'center',gap:10}}>
-                          <div className="pp-av" style={{width:avSize,height:avSize,background:`linear-gradient(135deg,${col},${col}88)`,fontSize:viewMode==='compact'?10:12}}>
-                            {getInitials(p)}
+                          <div style={{position:'relative',flexShrink:0}}>
+                            <div className="pp-av" style={{width:avSize,height:avSize,background:`linear-gradient(135deg,${col},${col}88)`,fontSize:viewMode==='compact'?10:12}}>
+                              {getInitials(p)}
+                            </div>
+                            <StatusDot color={statutColor} size={9} ring="#0d1117"/>
                           </div>
                           <div>
                             <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -619,7 +624,7 @@ export default function ImolocProprietaires() {
                               </span>
                               {isPending&&(
                                 <span style={{display:'inline-flex',alignItems:'center',gap:4,padding:'1px 8px',borderRadius:'100px',background:'rgba(245,158,11,0.12)',border:'1px solid rgba(245,158,11,0.25)',fontSize:11,fontWeight:600,color:'#f59e0b',whiteSpace:'nowrap'}}>
-                                  ⏳ En attente de validation
+                                  <Hourglass size={10}/> En attente de validation
                                 </span>
                               )}
                             </div>
