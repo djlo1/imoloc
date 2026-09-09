@@ -225,6 +225,7 @@ export default function EtatsDesLieux() {
               <button style={{...btnP,margin:'0 auto'}} onClick={()=>setShowAdd(true)}>+ Nouvel etat des lieux</button>
             </div>
           ):(
+            <div style={{overflowX:'auto'}}>
             <table style={{width:'100%',borderCollapse:'collapse'}}>
               <thead><tr>{['Type','Bien','Locataire','Date visite','Pieces','Statut','Signatures',''].map(h=>(
                 <th key={h} style={{textAlign:'left',padding:'10px 12px',fontSize:11,fontWeight:600,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.06em',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
@@ -257,6 +258,7 @@ export default function EtatsDesLieux() {
                 )
               })}</tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

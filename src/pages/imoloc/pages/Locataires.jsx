@@ -308,6 +308,7 @@ export default function Locataires() {
               <button className="lc-btn lc-btn-p" style={{margin:'0 auto'}} onClick={()=>setShowAdd(true)}>+ Ajouter un locataire</button>
             </div>
           ):(
+            <div style={{overflowX:'auto'}}>
             <table className="lc-table">
               <thead>
                 <tr>
@@ -349,6 +350,7 @@ export default function Locataires() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

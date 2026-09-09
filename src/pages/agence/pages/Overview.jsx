@@ -443,6 +443,7 @@ export default function Overview() {
             </div>
             {orgTab==='biens' && (
               biens.length===0 ? <div className="ov-empty">Aucun bien. <Link to="/agence/biens" className="ov-link">Ajouter un bien →</Link></div> :
+              <div style={{overflowX:'auto'}}>
               <table className="ov-table">
                 <thead><tr><th>Nom</th><th>Type</th><th>Ville</th><th>Loyer/mois</th><th>Statut</th></tr></thead>
                 <tbody>{biens.slice(0,5).map((b,i)=>(
@@ -455,9 +456,11 @@ export default function Overview() {
                   </tr>
                 ))}</tbody>
               </table>
+              </div>
             )}
             {orgTab==='locataires' && (
               locataires.length===0 ? <div className="ov-empty">Aucun locataire. <Link to="/agence/locataires" className="ov-link">Ajouter →</Link></div> :
+              <div style={{overflowX:'auto'}}>
               <table className="ov-table">
                 <thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Ajouté le</th></tr></thead>
                 <tbody>{locataires.slice(0,5).map((l,i)=>(
@@ -469,9 +472,11 @@ export default function Overview() {
                   </tr>
                 ))}</tbody>
               </table>
+              </div>
             )}
             {orgTab==='paiements' && (
               paiements.length===0 ? <div className="ov-empty">Aucun paiement. <Link to="/agence/paiements" className="ov-link">Enregistrer →</Link></div> :
+              <div style={{overflowX:'auto'}}>
               <table className="ov-table">
                 <thead><tr><th>Date</th><th>Montant</th><th>Mode</th><th>Statut</th></tr></thead>
                 <tbody>{paiements.slice(0,5).map((p,i)=>(
@@ -483,6 +488,7 @@ export default function Overview() {
                   </tr>
                 ))}</tbody>
               </table>
+              </div>
             )}
             {orgTab==='baux' && <div className="ov-empty">Aucun bail. <Link to="/agence/baux" className="ov-link">Créer un bail →</Link></div>}
           </div>

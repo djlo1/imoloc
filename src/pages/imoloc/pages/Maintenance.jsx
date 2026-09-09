@@ -210,6 +210,7 @@ export default function Maintenance() {
               <button style={{...btnP,margin:'0 auto'}} onClick={()=>setShowAdd(true)}>+ Nouveau ticket</button>
             </div>
           ):(
+            <div style={{overflowX:'auto'}}>
             <table style={{width:'100%',borderCollapse:'collapse'}}>
               <thead><tr>{['Ticket','Bien','Type','Priorite','Statut','Prestataire','Cout',''].map(h=>(
                 <th key={h} style={{textAlign:'left',padding:'10px 12px',fontSize:11,fontWeight:600,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.06em',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
@@ -236,6 +237,7 @@ export default function Maintenance() {
                 )
               })}</tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

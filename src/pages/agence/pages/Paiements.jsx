@@ -122,6 +122,7 @@ export default function Paiements() {
         ) : filtered.length === 0 ? (
           <div className="pg-empty"><div style={{fontSize:40,marginBottom:12}}>💳</div><div>Aucun paiement trouvé</div></div>
         ) : (
+          <div style={{overflowX:'auto'}}>
           <table className="loc-table">
             <thead><tr><th>Locataire</th><th>Bien</th><th>Montant</th><th>Mode</th><th>Date</th><th>Statut</th></tr></thead>
             <tbody>
@@ -137,6 +138,7 @@ export default function Paiements() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
       {showModal && (

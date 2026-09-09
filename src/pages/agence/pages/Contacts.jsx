@@ -304,6 +304,7 @@ export default function Contacts() {
               Choisir les colonnes
             </button>
           </div>
+          <div style={{overflowX:'auto'}}>
           <table className="ct-table">
             <thead>
               <tr>
@@ -366,6 +367,7 @@ export default function Contacts() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 

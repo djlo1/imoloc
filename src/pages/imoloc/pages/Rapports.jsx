@@ -196,6 +196,7 @@ export default function Rapports() {
                   <div style={{fontSize:28,marginBottom:8,opacity:0.4}}>✅</div>Aucun retard de paiement
                 </div>
               ):(
+                <div style={{overflowX:'auto'}}>
                 <table style={{width:'100%',borderCollapse:'collapse'}}>
                   <thead><tr>{['Bail','Montant','Echeance','Retard'].map(h=>(
                     <th key={h} style={{textAlign:'left',padding:'8px 12px',fontSize:11,fontWeight:600,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
@@ -209,6 +210,7 @@ export default function Rapports() {
                     </tr>
                   ))}</tbody>
                 </table>
+                </div>
               )}
             </div>
           </div>

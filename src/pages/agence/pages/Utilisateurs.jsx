@@ -920,6 +920,7 @@ export default function Utilisateurs() {
               <div>Les utilisateurs invités sont <strong style={{color:'rgba(255,255,255,0.7)'}}>externes</strong> à votre organisation et ont un accès en <strong style={{color:'rgba(255,255,255,0.7)'}}>lecture seule</strong>. Ils ne peuvent pas modifier les données.</div>
             </div>
             <div className="us-tw">
+              <div style={{overflowX:'auto'}}>
               <table className="us-table" style={{tableLayout:'auto'}}>
                 <thead>
                   <tr>
@@ -969,6 +970,7 @@ export default function Utilisateurs() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           </>
         )}
@@ -1674,7 +1676,8 @@ export default function Utilisateurs() {
                         </button>
                       </div>
                       <div style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,overflow:'hidden'}}>
-                        <table style={{width:'100%',borderCollapse:'collapse'}}>
+                        <div style={{overflowX:'auto'}}>
+                        <table style={{width:'100%',borderCollapse:'collapse',minWidth:520}}>
                           <thead>
                             <tr style={{background:'rgba(255,255,255,0.03)'}}>
                               <th style={{fontSize:12,fontWeight:600,color:'rgba(255,255,255,0.4)',padding:'10px 12px',textAlign:'left',borderBottom:'1px solid rgba(255,255,255,0.07)',width:30}}>#</th>
@@ -1725,6 +1728,7 @@ export default function Utilisateurs() {
                             })}
                           </tbody>
                         </table>
+                        </div>
                       </div>
                     </>
                   )}
