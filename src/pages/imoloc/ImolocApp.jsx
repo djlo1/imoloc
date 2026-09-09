@@ -87,6 +87,7 @@ export default function ImolocApp() {
   const [checking, setChecking] = useState(true)
   const [profileOpen, setProfileOpen] = useState(false)
   const [searchVal, setSearchVal] = useState("")
+  const [mobileOpen, setMobileOpen] = useState(false)
   const profileRef = useRef(null)
 
   useEffect(() => { checkAccess() }, [])
@@ -131,6 +132,8 @@ export default function ImolocApp() {
     e.preventDefault(); e.stopPropagation()
     setExpanded(p=>({...p,[id]:!p[id]}))
   }
+
+  const closeMobile = () => setMobileOpen(false)
 
   if (checking) return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#0d1117",color:"rgba(255,255,255,0.4)",fontSize:14,gap:10}}>
@@ -217,17 +220,30 @@ export default function ImolocApp() {
         .im-content::-webkit-scrollbar{width:6px}
         .im-content::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}
 
+        .im-mobile-toggle{display:none}
+        .im-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;backdrop-filter:blur(4px)}
         @media(max-width:768px){
-          .im-sidebar{display:none}
+          .im-mobile-toggle{display:flex}
+          .im-sidebar{position:fixed;left:0;top:52px;bottom:0;width:240px;transform:translateX(-100%);transition:transform 0.25s ease;z-index:160;background:#0d1117}
+          .im-sidebar.mobile-open{transform:translateX(0)}
           .im-header-search{display:none}
           .im-content{padding:18px 16px}
+          .im-brand-sep,.im-brand-sub,.im-hbtn-loci-text,.im-profile-name{display:none}
+          .im-hbtn-loci{padding:6px}
+          .im-header{padding:0 8px;gap:4px}
+          .im-header-right{gap:0}
         }
+        @media(max-width:420px){.im-brand-name{display:none}}
       `}</style>
 
       <div className="im-root">
         {/* ── HEADER ── */}
         <header className="im-header">
           <div className="im-header-left">
+            {/* Toggle sidebar mobile */}
+            <button className="im-waffle im-mobile-toggle" onClick={()=>setMobileOpen(true)}>
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+            </button>
             {/* Waffle */}
             <button className="im-waffle">
               <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
@@ -256,7 +272,7 @@ export default function ImolocApp() {
             {/* Bouton Loci */}
             <button className="im-hbtn im-hbtn-loci" onClick={()=>navigate("/imoloc/loci")}>
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
-              Loci IA
+              <span className="im-hbtn-loci-text">Loci IA</span>
             </button>
 
             {/* Notifications */}
@@ -302,8 +318,9 @@ export default function ImolocApp() {
 
         {/* ── BODY ── */}
         <div className="im-body">
+          {mobileOpen && <div className="im-overlay" onClick={closeMobile}/>}
           {/* Sidebar */}
-          <div className="im-sidebar">
+          <div className={`im-sidebar ${mobileOpen?"mobile-open":""}`}>
             <nav className="im-nav">
               <div className="im-nav-sect">Navigation</div>
               {NAV.map(item => {
@@ -315,7 +332,7 @@ export default function ImolocApp() {
                     {hasChildren ? (
                       <>
                         <button className={`im-nav-item ${isActive?"active":""}`}
-                          onClick={(e)=>{ navigate(item.path); toggle(item.id,e) }}>
+                          onClick={(e)=>{ navigate(item.path); toggle(item.id,e); closeMobile() }}>
                           <span className="im-nav-left">
                             <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d={item.icon}/></svg>
                             {item.label}
@@ -325,13 +342,13 @@ export default function ImolocApp() {
                         {isExpanded && (
                           <div className="im-nav-sub">
                             {item.children.map(child=>(
-                              <NavLink key={child.path} to={child.path} end className={({isActive})=>`im-nav-sub-item ${isActive?"active":""}`}>{child.label}</NavLink>
+                              <NavLink key={child.path} to={child.path} end onClick={closeMobile} className={({isActive})=>`im-nav-sub-item ${isActive?"active":""}`}>{child.label}</NavLink>
                             ))}
                           </div>
                         )}
                       </>
                     ) : (
-                      <NavLink to={item.path} end={item.exact}
+                      <NavLink to={item.path} end={item.exact} onClick={closeMobile}
                         className={({isActive})=>`im-nav-item ${item.loci?"loci-item":""} ${isActive?"active":""}`}>
                         <span className="im-nav-left">
                           <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d={item.icon}/></svg>
