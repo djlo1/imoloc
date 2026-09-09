@@ -386,6 +386,8 @@ export default function ImolocApp() {
               <Route path="proprietaires/*" element={<Proprietaires />} />
               <Route path="biens/*" element={<Biens />} />
               <Route path="locataires/*" element={<Locataires />} />
+              <Route path="baux/expiration" element={<Baux />} />
+              <Route path="baux/termines" element={<Baux />} />
               <Route path="baux/:id" element={<BailDetail />} />
               <Route path="baux/*" element={<Baux />} />
               <Route path="paiements/*" element={<Paiements />} />
