@@ -14,3 +14,67 @@ select option {
 select {
   color-scheme: dark;
 }
+
+/* ============================================================
+   FONDATION RESPONSIVE — briques communes a toute l app.
+   ============================================================
+   But : que chaque page utilise les MEMES outils au lieu de
+   reinventer ses propres media queries a chaque fois (source
+   du "garbage" qui s accumule fichier par fichier).
+
+   Deux principes :
+   1. Fluide par defaut — clamp() et repeat(auto-fit,minmax())
+      s adaptent en continu a la largeur de l ecran, sans jamais
+      "sauter" a un palier fixe ni deborder.
+   2. Points de rupture standard SEULEMENT quand le fluide ne
+      suffit pas (masquer un element, changer une direction
+      flex) :
+        480px  = telephone etroit
+        768px  = telephone large / petite tablette
+        1024px = tablette / desktop etroit
+   ============================================================ */
+:root{
+  /* Espacements fluides */
+  --sp-1: clamp(4px, 0.5vw, 6px);
+  --sp-2: clamp(8px, 1vw, 12px);
+  --sp-3: clamp(12px, 1.5vw, 18px);
+  --sp-4: clamp(16px, 2vw, 24px);
+  --sp-5: clamp(24px, 3vw, 36px);
+  --sp-6: clamp(32px, 4vw, 56px);
+
+  /* Texte fluide */
+  --fs-sm: clamp(12px, 0.4rem + 0.5vw, 13.5px);
+  --fs-base: clamp(13.5px, 0.5rem + 0.6vw, 15px);
+  --fs-lg: clamp(16px, 0.7rem + 0.8vw, 19px);
+  --fs-xl: clamp(20px, 0.9rem + 1.4vw, 28px);
+  --fs-2xl: clamp(24px, 1rem + 2.2vw, 40px);
+}
+
+/* Conteneur standard : largeur max + marge laterale fluide qui ne touche jamais les bords */
+.rs-container{ width:100%; max-width:1280px; margin:0 auto; padding-left:var(--sp-4); padding-right:var(--sp-4); box-sizing:border-box; }
+
+/* Grilles auto-adaptatives : le nombre de colonnes se recalcule en continu selon la largeur
+   disponible - jamais de "saut" a un point de rupture, jamais de debordement. A privilegier
+   par defaut a la place d un grid-template-columns fixe (1fr 1fr, repeat(3,1fr)...). */
+.rs-grid{ display:grid; gap:var(--sp-4); }
+.rs-grid-2{ grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
+.rs-grid-3{ grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
+.rs-grid-4{ grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); }
+
+/* Ligne flex qui s empile proprement des que la place manque */
+.rs-row{ display:flex; flex-wrap:wrap; gap:var(--sp-3); align-items:center; }
+
+/* Piege CSS classique : un enfant de grid/flex ne se retreint jamais sous la largeur de son
+   contenu par defaut (min-width:auto implicite). Un tableau ou un long texte force alors tout
+   le conteneur - et la page - a deborder au lieu de s empiler ou de defiler proprement. */
+.rs-grid > *, .rs-row > *{ min-width:0; }
+
+/* Defilement horizontal pour ce qui ne peut pas s empiler (tableaux, barres d outils) */
+.rs-scroll-x{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.rs-scroll-x::-webkit-scrollbar{ height:4px; }
+.rs-scroll-x::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.15); border-radius:2px; }
+
+/* Visibilite conditionnelle coherente (remplace les .hide-mobile ad hoc par fichier) */
+@media(max-width:768px){ .rs-hide-mobile{ display:none!important; } }
+@media(min-width:769px){ .rs-show-mobile{ display:none!important; } }
+@media(max-width:480px){ .rs-hide-xs{ display:none!important; } }
