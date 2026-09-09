@@ -123,17 +123,23 @@ export default function Organisation() {
         .ms-row:last-child{border-bottom:none}
         .ms-icon-wrap{width:32px;height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px}
         .panel-drawer{position:fixed;top:0;right:0;height:100vh;width:440px;background:#161b22;border-left:1px solid rgba(255,255,255,0.08);z-index:200;display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,0.5)}
+        @media(max-width:500px){.panel-drawer{width:100%}}
+        @media(max-width:520px){
+          .org-header-row{flex-wrap:wrap;gap:10px}
+          .org-search-input{width:120px}
+          .ms-tab{padding:10px 12px;font-size:13px}
+        }
       `}</style>
 
       <div style={{ width:'100%' }}>
         {/* HEADER */}
-        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:4 }}>
+        <div className="org-header-row" style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:4 }}>
           <div style={{ fontSize:24, fontWeight:700, color:'#e6edf3', letterSpacing:'-0.01em' }}>Parametres de l organisation</div>
           {/* Recherche top droite comme Microsoft */}
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:4 }}>
               <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
-              <input style={{ background:'none', border:'none', outline:'none', color:'#e6edf3', fontFamily:'Inter,sans-serif', fontSize:13, width:200 }} placeholder="Rechercher dans tous les parametres..." value={search} onChange={e=>setSearch(e.target.value)}/>
+              <input className="org-search-input" style={{ background:'none', border:'none', outline:'none', color:'#e6edf3', fontFamily:'Inter,sans-serif', fontSize:13, width:200 }} placeholder="Rechercher dans tous les parametres..." value={search} onChange={e=>setSearch(e.target.value)}/>
             </div>
           </div>
         </div>
