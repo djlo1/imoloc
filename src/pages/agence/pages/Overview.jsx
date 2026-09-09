@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { Video, BookOpen, GraduationCap, ArrowRight, Building2 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
+import Trend from '../../../components/ui/Trend'
 
 const TABLEAU_ITEMS = [
   { id:'biens', label:'Gestion des biens', visible:true },
@@ -18,7 +19,7 @@ const TABLEAU_ITEMS = [
 
 export default function Overview() {
   const { profile } = useAuthStore()
-  const [stats, setStats] = useState({ biens:0, locataires:0, revenus:0, retards:0 })
+  const [stats, setStats] = useState({ biens:0, locataires:0, revenus:0, retards:0, revenusMoisPrecedent:0 })
   const [agence, setAgence] = useState(null)
   const [biens, setBiens] = useState([])
   const [locataires, setLocataires] = useState([])
@@ -53,8 +54,11 @@ export default function Overview() {
           ])
           const bD=b||[], lD=l||[], pD=p||[]
           setBiens(bD); setLocataires(lD); setPaiements(pD)
-          const rev = pD.filter(x=>x.statut==='payé'&&new Date(x.date_paiement).getMonth()===new Date().getMonth()).reduce((s,x)=>s+Number(x.montant||0),0)
-          setStats({ biens:bD.length, locataires:lD.length, revenus:rev, retards:pD.filter(x=>x.statut==='retard').length })
+          const now = new Date()
+          const moisPrecedent = new Date(now.getFullYear(), now.getMonth()-1)
+          const rev = pD.filter(x=>x.statut==='paye'&&new Date(x.date_paiement).getMonth()===now.getMonth()&&new Date(x.date_paiement).getFullYear()===now.getFullYear()).reduce((s,x)=>s+Number(x.montant||0),0)
+          const revPrec = pD.filter(x=>x.statut==='paye'&&new Date(x.date_paiement).getMonth()===moisPrecedent.getMonth()&&new Date(x.date_paiement).getFullYear()===moisPrecedent.getFullYear()).reduce((s,x)=>s+Number(x.montant||0),0)
+          setStats({ biens:bD.length, locataires:lD.length, revenus:rev, retards:pD.filter(x=>x.statut==='en_retard').length, revenusMoisPrecedent:revPrec })
         }
       } catch(e){ console.error(e) }
       finally { setLoading(false) }
@@ -63,9 +67,10 @@ export default function Overview() {
   }, [])
 
   const nom = profile?.nom ? `${profile.prenom||''} ${profile.nom}`.trim() : 'Admin'
-  const bienOcc = biens.filter(b=>b.statut==='occupé').length
-  const bienLib = biens.filter(b=>b.statut==='libre').length
+  const bienOcc = biens.filter(b=>b.statut==='occupe').length
+  const bienLib = biens.filter(b=>b.statut==='disponible').length
   const tauxOcc = biens.length>0 ? Math.round((bienOcc/biens.length)*100) : 0
+  const revenusTrend = stats.revenusMoisPrecedent>0 ? Math.round(((stats.revenus-stats.revenusMoisPrecedent)/stats.revenusMoisPrecedent)*100) : (stats.revenus>0?100:0)
 
   const toggleItem = (id) => setVisibleItems(prev => prev.map(i => i.id===id ? {...i, visible:!i.visible} : i))
   const isVisible = (id) => visibleItems.find(i=>i.id===id)?.visible
@@ -317,7 +322,7 @@ export default function Overview() {
                 </div>
                 <div className="ov-simple-status">
                   <div className="ov-simple-dot" style={{background:'#0078d4'}}/>
-                  {paiements.filter(p=>p.statut==='en attente').length} paiement(s) en attente
+                  {paiements.filter(p=>p.statut==='en_attente').length} paiement(s) en attente
                 </div>
                 <div className="ov-simple-btns">
                   <Link to="/agence/locataires" className="ov-simple-btn blue">Voir les locataires</Link>
@@ -333,7 +338,10 @@ export default function Overview() {
                   <span className="ov-simple-card-name">Facturation & Paiements</span>
                   <button className="ov-simple-more">···</button>
                 </div>
-                <div className="ov-simple-val" style={{color:'#00c896',fontSize:22}}>{stats.revenus.toLocaleString()}<span style={{fontSize:13,fontWeight:400,color:'rgba(255,255,255,0.3)'}}> FCFA</span></div>
+                <div style={{display:'flex',alignItems:'baseline',gap:10,flexWrap:'wrap'}}>
+                  <div className="ov-simple-val" style={{color:'#00c896',fontSize:22,marginBottom:0}}>{stats.revenus.toLocaleString()}<span style={{fontSize:13,fontWeight:400,color:'rgba(255,255,255,0.3)'}}> FCFA</span></div>
+                  <Trend value={revenusTrend}/>
+                </div>
                 <div className="ov-simple-lbl">Revenus encaissés ce mois</div>
                 <div className="ov-simple-status">
                   <div className="ov-simple-dot" style={{background:'#0078d4'}}/>
@@ -447,15 +455,17 @@ export default function Overview() {
               <div style={{overflowX:'auto'}}>
               <table className="ov-table">
                 <thead><tr><th>Nom</th><th>Type</th><th>Ville</th><th>Loyer/mois</th><th>Statut</th></tr></thead>
-                <tbody>{biens.slice(0,5).map((b,i)=>(
+                <tbody>{biens.slice(0,5).map((b,i)=>{
+                  const bc = b.statut==='disponible'?'#00c896':b.statut==='occupe'?'#0078d4':'#f59e0b'
+                  return (
                   <tr key={i}>
-                    <td style={{fontWeight:500,color:'#e6edf3'}}>{b.nom}</td>
+                    <td className="ind-td" style={{fontWeight:500,color:'#e6edf3','--ind-c':bc}}>{b.nom}</td>
                     <td>{b.type}</td>
                     <td>{b.ville||'—'}</td>
                     <td style={{color:'#0078d4',fontWeight:600}}>{Number(b.loyer||0).toLocaleString()} FCFA</td>
-                    <td><span className="ov-badge" style={{background:b.statut==='libre'?'rgba(0,200,150,0.1)':b.statut==='occupé'?'rgba(0,120,212,0.1)':'rgba(245,158,11,0.1)',color:b.statut==='libre'?'#00c896':b.statut==='occupé'?'#0078d4':'#f59e0b'}}>{b.statut}</span></td>
+                    <td><span className="ov-badge" style={{background:bc+'1a',color:bc}}>{b.statut}</span></td>
                   </tr>
-                ))}</tbody>
+                )})}</tbody>
               </table>
               </div>
             )}
@@ -480,14 +490,16 @@ export default function Overview() {
               <div style={{overflowX:'auto'}}>
               <table className="ov-table">
                 <thead><tr><th>Date</th><th>Montant</th><th>Mode</th><th>Statut</th></tr></thead>
-                <tbody>{paiements.slice(0,5).map((p,i)=>(
+                <tbody>{paiements.slice(0,5).map((p,i)=>{
+                  const pc = p.statut==='paye'?'#00c896':p.statut==='en_retard'?'#ef4444':'#f59e0b'
+                  return (
                   <tr key={i}>
-                    <td>{p.date_paiement?new Date(p.date_paiement).toLocaleDateString('fr-FR'):'—'}</td>
+                    <td className="ind-td" style={{'--ind-c':pc}}>{p.date_paiement?new Date(p.date_paiement).toLocaleDateString('fr-FR'):'—'}</td>
                     <td style={{fontWeight:600,color:'#00c896'}}>{Number(p.montant||0).toLocaleString()} FCFA</td>
                     <td>{p.mode||'—'}</td>
-                    <td><span className="ov-badge" style={{background:p.statut==='payé'?'rgba(0,200,150,0.1)':p.statut==='retard'?'rgba(239,68,68,0.1)':'rgba(245,158,11,0.1)',color:p.statut==='payé'?'#00c896':p.statut==='retard'?'#ef4444':'#f59e0b'}}>{p.statut}</span></td>
+                    <td><span className="ov-badge" style={{background:pc+'1a',color:pc}}>{p.statut}</span></td>
                   </tr>
-                ))}</tbody>
+                )})}</tbody>
               </table>
               </div>
             )}
@@ -518,11 +530,11 @@ export default function Overview() {
           <div className="ov-grid3">
             <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Biens</span><button className="ov-card-more">···</button></div><div style={{fontSize:40,fontWeight:800,color:'#0078d4',letterSpacing:'-0.03em'}}>{stats.biens}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{bienOcc} occupés · {bienLib} libres</div><div className="ov-progress" style={{marginTop:12}}><div className="ov-progress-fill" style={{width:`${tauxOcc}%`,background:'#0078d4'}}/></div><Link to="/agence/biens" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Gérer les biens <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link></div>
             <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Locataires</span><button className="ov-card-more">···</button></div><div style={{fontSize:40,fontWeight:800,color:'#6c63ff',letterSpacing:'-0.03em'}}>{stats.locataires}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{stats.retards} loyer{stats.retards>1?'s':''} en retard</div><Link to="/agence/locataires" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les locataires <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link></div>
-            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Revenus ce mois</span><button className="ov-card-more">···</button></div><div style={{fontSize:28,fontWeight:800,color:'#00c896',letterSpacing:'-0.02em'}}>{stats.revenus.toLocaleString()} FCFA</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>Plan Standard actif</div><Link to="/agence/paiements" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les paiements <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link></div>
+            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Revenus ce mois</span><button className="ov-card-more">···</button></div><div style={{display:'flex',alignItems:'baseline',gap:10,flexWrap:'wrap'}}><div style={{fontSize:28,fontWeight:800,color:'#00c896',letterSpacing:'-0.02em'}}>{stats.revenus.toLocaleString()} FCFA</div><Trend value={revenusTrend}/></div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>Plan Standard actif</div><Link to="/agence/paiements" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les paiements <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link></div>
           </div>
           <div className="ov-grid2">
-            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Biens récents</span><Link to="/agence/biens" className="ov-link" style={{fontSize:12}}>Voir tout</Link></div>{biens.length===0?<div className="ov-empty">Aucun bien</div>:biens.slice(0,4).map((b,i)=><div key={i} className="ov-item-row"><span style={{color:'#e6edf3',fontWeight:500}}>{b.nom}</span><span className="ov-badge" style={{background:b.statut==='libre'?'rgba(0,200,150,0.1)':'rgba(0,120,212,0.1)',color:b.statut==='libre'?'#00c896':'#0078d4'}}>{b.statut}</span></div>)}</div>
-            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Paiements récents</span><Link to="/agence/paiements" className="ov-link" style={{fontSize:12}}>Voir tout</Link></div>{paiements.length===0?<div className="ov-empty">Aucun paiement</div>:paiements.slice(0,4).map((p,i)=><div key={i} className="ov-item-row"><span style={{color:'rgba(255,255,255,0.6)'}}>{Number(p.montant||0).toLocaleString()} FCFA</span><span className="ov-badge" style={{background:p.statut==='payé'?'rgba(0,200,150,0.1)':'rgba(239,68,68,0.1)',color:p.statut==='payé'?'#00c896':'#ef4444'}}>{p.statut}</span></div>)}</div>
+            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Biens récents</span><Link to="/agence/biens" className="ov-link" style={{fontSize:12}}>Voir tout</Link></div>{biens.length===0?<div className="ov-empty">Aucun bien</div>:biens.slice(0,4).map((b,i)=>{const bc=b.statut==='disponible'?'#00c896':'#0078d4';return <div key={i} className="ov-item-row ind-left" style={{'--ind-c':bc,paddingLeft:10}}><span style={{color:'#e6edf3',fontWeight:500}}>{b.nom}</span><span className="ov-badge" style={{background:bc+'1a',color:bc}}>{b.statut}</span></div>})}</div>
+            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Paiements récents</span><Link to="/agence/paiements" className="ov-link" style={{fontSize:12}}>Voir tout</Link></div>{paiements.length===0?<div className="ov-empty">Aucun paiement</div>:paiements.slice(0,4).map((p,i)=>{const pc=p.statut==='paye'?'#00c896':'#ef4444';return <div key={i} className="ov-item-row ind-left" style={{'--ind-c':pc,paddingLeft:10}}><span style={{color:'rgba(255,255,255,0.6)'}}>{Number(p.montant||0).toLocaleString()} FCFA</span><span className="ov-badge" style={{background:pc+'1a',color:pc}}>{p.statut}</span></div>})}</div>
           </div>
         </>
       )}

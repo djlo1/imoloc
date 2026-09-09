@@ -77,6 +77,19 @@ select {
    le conteneur - et la page - a deborder au lieu de s empiler ou de defiler proprement. */
 .rs-grid > *, .rs-row > *{ min-width:0; }
 
+/* ── INDICATEURS DE STATUT ──
+   Bordure/liseré colore reutilisable pour signaler un statut d un coup d oeil
+   (urgent, actif, en attente...) sur une carte ou une ligne de tableau.
+   Usage : className="ind-left" + style={{"--ind-c": "#ef4444"}}.
+   Sur une <tr>, appliquer plutot a la 1ere <td> (les bordures sur <tr> sont
+   peu fiables suivant les navigateurs) : className="ind-td" sur le <td>. */
+.ind-left{ border-left:3px solid var(--ind-c, transparent); }
+.ind-td{ box-shadow: inset 3px 0 0 var(--ind-c, transparent); }
+:root{
+  --c-danger:#ef4444; --c-warning:#f59e0b; --c-success:#00c896;
+  --c-info:#0078d4; --c-purple:#a78bfa; --c-neutral:rgba(255,255,255,0.15);
+}
+
 /* Defilement horizontal pour ce qui ne peut pas s empiler (tableaux, barres d outils) */
 .rs-scroll-x{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .rs-scroll-x::-webkit-scrollbar{ height:4px; }
