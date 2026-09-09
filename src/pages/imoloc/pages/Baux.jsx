@@ -390,6 +390,8 @@ export default function ImolocBaux() {
     .wf-dot.current{background:rgba(0,120,212,0.15);border-color:#0078d4;color:#0078d4;box-shadow:0 0 0 3px rgba(0,120,212,0.15)}
     @media(max-width:960px){.bx-g2,.bx-g3{grid-template-columns:1fr}}
     @media(max-width:600px){.bx-stv{display:none}}
+    @media(max-width:700px){.bx-stats5{grid-template-columns:repeat(3,1fr)!important}}
+    @media(max-width:420px){.bx-stats5{grid-template-columns:repeat(2,1fr)!important}}
   `
 
   return (
@@ -405,7 +407,7 @@ export default function ImolocBaux() {
         <div style={{fontSize:26,fontWeight:700,color:'#e6edf3',letterSpacing:'-0.02em',marginBottom:4}}>Baux et Contrats</div>
         <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:22}}>{baux.length} bail{baux.length!==1?'x':''} — {agence?.nom||'votre agence'}</div>
 
-        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:12,marginBottom:24}}>
+        <div className="bx-stats5" style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:12,marginBottom:24}}>
           {[{l:'Total',v:stats.total,c:'#e6edf3'},{l:'Actifs',v:stats.actifs,c:'#00c896'},{l:'Brouillons',v:stats.brouillons,c:'#f59e0b'},{l:'Expiration <30j',v:stats.expiration,c:stats.expiration>0?'#f59e0b':'rgba(255,255,255,0.3)'},{l:'Revenus/mois',v:fmt(stats.revenus)+' FCFA',c:'#00c896',sm:true}].map((s,i)=>(
             <div key={i} style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'14px 16px'}}>
               <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)',marginBottom:7}}>{s.l}</div>

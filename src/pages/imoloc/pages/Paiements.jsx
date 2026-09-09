@@ -142,6 +142,7 @@ export default function ImolocPaiements() {
         .px-row.retard{border-left:3px solid #ef4444}
         .px-row.paye{border-left:3px solid #00c896}
         @media(max-width:700px){.px-g2{grid-template-columns:1fr}}
+        @media(max-width:560px){.px-stats4{grid-template-columns:repeat(2,1fr)!important}}
       `}</style>
 
       <div className='px-page'>
@@ -154,7 +155,7 @@ export default function ImolocPaiements() {
         <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:22}}>{paiements.length} echeance{paiements.length!==1?'s':''} — {agence?.nom||'votre agence'}</div>
 
         {/* Stats */}
-        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:24}}>
+        <div className="px-stats4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:24}}>
           {[
             {ic:'💰',l:'Total attendu',     v:fmt(stats.attendu)+' FCFA',   c:'#e6edf3',sm:true},
             {ic:'✅',l:'Encaisse',          v:fmt(stats.encaisse)+' FCFA',  c:'#00c896',sm:true},
