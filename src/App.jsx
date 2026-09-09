@@ -1,15 +1,18 @@
-import { useEffect } from 'react'
-import ImolocApp from './pages/imoloc/ImolocApp'
+import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './store/authStore'
-import Landing from './pages/Landing'
-import Login from './pages/auth/Login'
-import Register from './pages/auth/Register'
-import DashboardAgence from './pages/agence/Dashboard'
-import DashboardProprietaire from './pages/proprietaire/Dashboard'
-import DashboardLocataire from './pages/locataire/Dashboard'
-import DashboardAdmin from './pages/admin/Dashboard'
+
+// Chaque espace n'est charge que lorsqu'on y accede, au lieu d'un seul
+// bundle de ~1.5 Mo contenant tout le code de l'application.
+const Landing = lazy(() => import('./pages/Landing'))
+const Login = lazy(() => import('./pages/auth/Login'))
+const Register = lazy(() => import('./pages/auth/Register'))
+const DashboardAgence = lazy(() => import('./pages/agence/Dashboard'))
+const DashboardProprietaire = lazy(() => import('./pages/proprietaire/Dashboard'))
+const DashboardLocataire = lazy(() => import('./pages/locataire/Dashboard'))
+const DashboardAdmin = lazy(() => import('./pages/admin/Dashboard'))
+const ImolocApp = lazy(() => import('./pages/imoloc/ImolocApp'))
 
 function Loader() {
   return (
@@ -71,16 +74,18 @@ export default function App() {
   }, [])
 
   return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/agence/*" element={<PrivateRoute roles={['agence','global_admin','user_admin','billing_admin','reports_reader','security_admin','password_admin','agent','comptable','lecteur']}><DashboardAgence /></PrivateRoute>} />
-      <Route path="/proprietaire/*" element={<PrivateRoute roles={['proprietaire']}><DashboardProprietaire /></PrivateRoute>} />
-      <Route path="/locataire/*" element={<PrivateRoute><DashboardLocataire /></PrivateRoute>} />
-      <Route path="/admin/*" element={<PrivateRoute roles={['super_admin']}><DashboardAdmin /></PrivateRoute>} />
-      <Route path="/imoloc/*" element={<ImolocApp />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+    <Suspense fallback={<Loader />}>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/agence/*" element={<PrivateRoute roles={['agence','global_admin','user_admin','billing_admin','reports_reader','security_admin','password_admin','agent','comptable','lecteur']}><DashboardAgence /></PrivateRoute>} />
+        <Route path="/proprietaire/*" element={<PrivateRoute roles={['proprietaire']}><DashboardProprietaire /></PrivateRoute>} />
+        <Route path="/locataire/*" element={<PrivateRoute><DashboardLocataire /></PrivateRoute>} />
+        <Route path="/admin/*" element={<PrivateRoute roles={['super_admin']}><DashboardAdmin /></PrivateRoute>} />
+        <Route path="/imoloc/*" element={<ImolocApp />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </Suspense>
   )
 }

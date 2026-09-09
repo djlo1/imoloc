@@ -1,25 +1,31 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
-import Overview from './pages/Overview'
-import Biens from './pages/Biens'
-import Locataires from './pages/Locataires'
-import Paiements from './pages/Paiements'
-import Baux from './pages/Baux'
-import Utilisateurs from './pages/Utilisateurs'
-import Contacts from './pages/Contacts'
-import Nouveautes from './pages/Nouveautes'
-import ImolocCenter from './imoloc/ImolocCenter'
-import Organisation from './pages/Organisation'
-import Abonnement from './pages/Abonnement'
-import AbonnementPlan from './pages/AbonnementPlan'
-import Securite from './pages/Securite'
-import Parametres from './pages/Parametres'
-import Rapports from './pages/Rapports'
-import Integrations from './pages/Integrations'
-import Loci from './pages/Loci'
-import ModelesDocuments from './pages/ModelesDocuments'
+
+// Chaque page n'est chargee que lorsqu on y navigue.
+const Overview = lazy(() => import('./pages/Overview'))
+const Biens = lazy(() => import('./pages/Biens'))
+const Locataires = lazy(() => import('./pages/Locataires'))
+const Paiements = lazy(() => import('./pages/Paiements'))
+const Baux = lazy(() => import('./pages/Baux'))
+const Utilisateurs = lazy(() => import('./pages/Utilisateurs'))
+const Contacts = lazy(() => import('./pages/Contacts'))
+const Nouveautes = lazy(() => import('./pages/Nouveautes'))
+const ImolocCenter = lazy(() => import('./imoloc/ImolocCenter'))
+const Organisation = lazy(() => import('./pages/Organisation'))
+const Abonnement = lazy(() => import('./pages/Abonnement'))
+const AbonnementPlan = lazy(() => import('./pages/AbonnementPlan'))
+const Securite = lazy(() => import('./pages/Securite'))
+const Parametres = lazy(() => import('./pages/Parametres'))
+const Rapports = lazy(() => import('./pages/Rapports'))
+const Integrations = lazy(() => import('./pages/Integrations'))
+const Loci = lazy(() => import('./pages/Loci'))
+const ModelesDocuments = lazy(() => import('./pages/ModelesDocuments'))
+
+function PageLoader() {
+  return <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:300,color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement...</div>
+}
 
 export default function DashboardAgence() {
   const [collapsed, setCollapsed] = useState(false)
@@ -76,6 +82,7 @@ export default function DashboardAgence() {
 
           <div className="ac-main">
             <div className="ac-inner">
+              <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route index element={<Overview />} />
                 <Route path="loci" element={<Loci />} />
@@ -107,6 +114,7 @@ export default function DashboardAgence() {
                 <Route path="integrations" element={<Integrations />} />
                 <Route path="*" element={<Navigate to="/agence" replace />} />
               </Routes>
+              </Suspense>
             </div>
           </div>
         </div>
