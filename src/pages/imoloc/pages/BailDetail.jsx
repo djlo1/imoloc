@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Check, FileText, RotateCcw, ClipboardList } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 import SignaturePanel from '../../../components/SignaturePanel'
@@ -155,7 +156,7 @@ export default function BailDetail() {
       <style>{`.bd-tab{padding:10px 18px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.4);transition:all 0.15s;white-space:nowrap}.bd-tab.on{background:rgba(255,255,255,0.08);color:#e6edf3}.bd-tr:hover td{background:rgba(255,255,255,0.02)}`}</style>
       <div style={{ maxWidth:1100, margin:'0 auto' }}>
 
-        <button onClick={() => navigate('/imoloc/baux')} style={{ ...bB, fontSize:12, padding:'5px 12px', marginBottom:20 }}>← Retour aux baux</button>
+        <button onClick={() => navigate('/imoloc/baux')} style={{ ...bB, fontSize:12, padding:'5px 12px', marginBottom:20 }}><ArrowLeft size={12}/> Retour aux baux</button>
 
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:16, marginBottom:20 }}>
           <div>
@@ -179,7 +180,7 @@ export default function BailDetail() {
         <div style={{ display:'flex', gap:0, marginBottom:24, overflowX:'auto', borderBottom:'1px solid rgba(255,255,255,0.07)' }}>
           {ETAPES.map((e,i) => (
             <div key={e} onClick={() => avancerEtape(e)} style={{ padding:'7px 14px', fontSize:11.5, fontWeight:etapeIdx===i?700:400, cursor:'pointer', borderBottom:`2px solid ${etapeIdx===i?'#0078d4':i<etapeIdx?'#00c896':'transparent'}`, color:etapeIdx===i?'#0078d4':i<etapeIdx?'#00c896':'rgba(255,255,255,0.3)', transition:'all 0.15s', whiteSpace:'nowrap', marginBottom:-1 }}>
-              {i < etapeIdx ? '✓ ' : ''}{e.charAt(0).toUpperCase()+e.slice(1)}
+              {i < etapeIdx && <Check size={11} style={{marginRight:4,verticalAlign:-1}}/>}{e.charAt(0).toUpperCase()+e.slice(1)}
             </div>
           ))}
         </div>
@@ -263,7 +264,7 @@ export default function BailDetail() {
                   <div>
                     <div style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 18px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, marginBottom:12, cursor:'pointer' }} onClick={() => { setContratOuvert(true); setEditMode(false); loadModeleActif().then(m=>setModeleActif(m)) }}>
                       <div style={{ width:44, height:50, background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:6, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                        <span style={{ fontSize:18 }}>📄</span><span style={{ fontSize:7, fontWeight:700, color:'#ef4444' }}>PDF</span>
+                        <FileText size={16}/><span style={{ fontSize:7, fontWeight:700, color:'#ef4444' }}>PDF</span>
                       </div>
                       <div style={{ flex:1 }}>
                         <div style={{ fontSize:14, fontWeight:600, color:'#e6edf3', marginBottom:3 }}>Contrat_{(bail.biens?.nom||'bail').replace(/\s+/g,'_')}.pdf</div>
@@ -272,12 +273,12 @@ export default function BailDetail() {
                           <span style={{ fontSize:11, padding:'1px 7px', borderRadius:100, fontWeight:600, background:bail.contrat_statut==='signe'?'rgba(0,200,150,0.1)':'rgba(245,158,11,0.1)', color:bail.contrat_statut==='signe'?'#00c896':'#f59e0b' }}>{bail.contrat_statut==='signe'?'Signe':'Brouillon'}</span>
                         </div>
                       </div>
-                      <button style={{ ...bB, padding:'7px 12px' }} onClick={e=>{e.stopPropagation();genererContrat()}}>↺</button>
+                      <button style={{ ...bB, padding:'7px 12px' }} onClick={e=>{e.stopPropagation();genererContrat()}}><RotateCcw size={14}/></button>
                     </div>
                   </div>
                 ) : (
                   <div style={{ textAlign:'center', padding:'60px 20px', border:'1px dashed rgba(255,255,255,0.08)', borderRadius:10 }}>
-                    <div style={{ fontSize:36, marginBottom:12, opacity:0.3 }}>📄</div>
+                    <FileText size={36} style={{ marginBottom:12, opacity:0.3 }}/>
                     <div style={{ fontSize:15, fontWeight:600, color:'rgba(255,255,255,0.4)', marginBottom:8 }}>Aucun contrat genere</div>
                     <div style={{ fontSize:13, color:'rgba(255,255,255,0.25)', marginBottom:20 }}>Generez le contrat depuis le modele actif</div>
                     <button style={{ ...bP, margin:'0 auto' }} onClick={genererContrat}>Generer le contrat</button>
@@ -287,7 +288,7 @@ export default function BailDetail() {
             ) : (
               <div>
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16, flexWrap:'wrap' }}>
-                  <button style={{ ...bB, fontSize:12, padding:'5px 12px' }} onClick={()=>{setContratOuvert(false);setEditMode(false)}}>← Retour</button>
+                  <button style={{ ...bB, fontSize:12, padding:'5px 12px' }} onClick={()=>{setContratOuvert(false);setEditMode(false)}}><ArrowLeft size={12}/> Retour</button>
                   <button style={{ ...bP, fontSize:12, padding:'5px 12px' }} onClick={exporterPDF}>⬇ PDF</button>
                   <button style={{ ...bB, fontSize:12, padding:'5px 12px', color:editMode?'#f59e0b':'rgba(255,255,255,0.6)' }} onClick={()=>setEditMode(m=>!m)}>{editMode?'Apercu':'Modifier'}</button>
                   {editMode && <button style={{ ...bG, fontSize:12, padding:'5px 12px' }} onClick={async()=>{const html=editableRef.current?editableRef.current.innerHTML:contrat;setContrat(html);await supabase.from('baux').update({contrat_html:html}).eq('id',id);toast.success('Sauvegarde !')}}>Sauvegarder</button>}
@@ -322,7 +323,7 @@ export default function BailDetail() {
 
         {tab === 'edl' && (
           <div style={{ textAlign:'center', padding:'60px 20px', border:'1px dashed rgba(255,255,255,0.08)', borderRadius:10 }}>
-            <div style={{ fontSize:36, marginBottom:12, opacity:0.3 }}>📋</div>
+            <ClipboardList size={36} style={{ marginBottom:12, opacity:0.3 }}/>
             <div style={{ fontSize:15, fontWeight:600, color:'rgba(255,255,255,0.4)', marginBottom:8 }}>Etats des lieux</div>
             <div style={{ fontSize:13, color:'rgba(255,255,255,0.25)', marginBottom:20 }}>Creez les etats des lieux pour ce bail</div>
             <button style={{ ...bP, margin:'0 auto' }} onClick={() => navigate('/imoloc/etats-lieux')}>Aller aux etats des lieux</button>

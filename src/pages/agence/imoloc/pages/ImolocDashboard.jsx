@@ -1,14 +1,15 @@
 import { useNavigate } from 'react-router-dom'
+import { User, Building2, Users, FileText, Wallet, Wrench, ClipboardList, BarChart3, AlertTriangle } from 'lucide-react'
 
 const MODULES = [
-  { icon:'👤', label:'Proprietaires', desc:'Gerez les proprietaires et leurs mandats', path:'/agence/imoloc/proprietaires', col:'#0078d4' },
-  { icon:'🏢', label:'Biens immobiliers', desc:'Ajoutez et gerez vos biens (appartements, villas, bureaux...)', path:'/agence/imoloc/biens', col:'#6c63ff' },
-  { icon:'👥', label:'Locataires', desc:'Dossiers locataires, KYC et historique', path:'/agence/imoloc/locataires', col:'#00c896' },
-  { icon:'📄', label:'Baux et Contrats', desc:'Creation, signature electronique et suivi des baux', path:'/agence/imoloc/baux', col:'#f59e0b' },
-  { icon:'💰', label:'Paiements', desc:'Encaissements, retards et recus automatiques', path:'/agence/imoloc/paiements', col:'#4da6ff' },
-  { icon:'🔧', label:'Maintenance', desc:'Plaintes locataires et suivi des interventions', path:'/agence/imoloc/maintenance', col:'#a78bfa' },
-  { icon:'📋', label:'Etats des lieux', desc:'Formulaires entree/sortie avec photos et signatures', path:'/agence/imoloc/etats-lieux', col:'#fb923c' },
-  { icon:'📊', label:'Rapports', desc:'Statistiques, exports PDF/Excel et rapports automatiques', path:'/agence/imoloc/rapports', col:'#34d399' },
+  { icon:User, label:'Proprietaires', desc:'Gerez les proprietaires et leurs mandats', path:'/agence/imoloc/proprietaires', col:'#0078d4' },
+  { icon:Building2, label:'Biens immobiliers', desc:'Ajoutez et gerez vos biens (appartements, villas, bureaux...)', path:'/agence/imoloc/biens', col:'#6c63ff' },
+  { icon:Users, label:'Locataires', desc:'Dossiers locataires, KYC et historique', path:'/agence/imoloc/locataires', col:'#00c896' },
+  { icon:FileText, label:'Baux et Contrats', desc:'Creation, signature electronique et suivi des baux', path:'/agence/imoloc/baux', col:'#f59e0b' },
+  { icon:Wallet, label:'Paiements', desc:'Encaissements, retards et recus automatiques', path:'/agence/imoloc/paiements', col:'#4da6ff' },
+  { icon:Wrench, label:'Maintenance', desc:'Plaintes locataires et suivi des interventions', path:'/agence/imoloc/maintenance', col:'#a78bfa' },
+  { icon:ClipboardList, label:'Etats des lieux', desc:'Formulaires entree/sortie avec photos et signatures', path:'/agence/imoloc/etats-lieux', col:'#fb923c' },
+  { icon:BarChart3, label:'Rapports', desc:'Statistiques, exports PDF/Excel et rapports automatiques', path:'/agence/imoloc/rapports', col:'#34d399' },
 ]
 
 export default function ImolocDashboard({ agence, stats }) {
@@ -40,7 +41,7 @@ export default function ImolocDashboard({ agence, stats }) {
       <div className="imd-page">
         <div className="imd-hero">
           <div>
-            <div className="imd-hero-title"><span>🏢</span> Centre Imoloc</div>
+            <div className="imd-hero-title"><Building2 size={22}/> Centre Imoloc</div>
             <div className="imd-hero-sub">
               Bienvenue dans votre espace de gestion immobiliere. Gerez vos biens, proprietaires, locataires, baux et paiements depuis un seul endroit.
             </div>
@@ -57,14 +58,14 @@ export default function ImolocDashboard({ agence, stats }) {
 
         <div className="imd-stats-row">
           {[
-            {ic:'🏢',lbl:'Biens geres',val:stats?.biens||0,col:'#0078d4',path:'/agence/imoloc/biens'},
-            {ic:'👥',lbl:'Locataires',val:stats?.locataires||0,col:'#6c63ff',path:'/agence/imoloc/locataires'},
-            {ic:'📄',lbl:'Baux actifs',val:stats?.baux||0,col:'#00c896',path:'/agence/imoloc/baux'},
-            {ic:'⚠️',lbl:'Retards paiement',val:stats?.retards||0,col:stats?.retards>0?'#f59e0b':'rgba(255,255,255,0.4)',path:'/agence/imoloc/paiements/retard'},
+            {ic:Building2,lbl:'Biens geres',val:stats?.biens||0,col:'#0078d4',path:'/agence/imoloc/biens'},
+            {ic:Users,lbl:'Locataires',val:stats?.locataires||0,col:'#6c63ff',path:'/agence/imoloc/locataires'},
+            {ic:FileText,lbl:'Baux actifs',val:stats?.baux||0,col:'#00c896',path:'/agence/imoloc/baux'},
+            {ic:AlertTriangle,lbl:'Retards paiement',val:stats?.retards||0,col:stats?.retards>0?'#f59e0b':'rgba(255,255,255,0.4)',path:'/agence/imoloc/paiements/retard'},
           ].map((s,i)=>(
             <div key={i} className="imd-stat" onClick={()=>navigate(s.path)}>
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-                <span style={{fontSize:20}}>{s.ic}</span>
+                <s.ic size={20} color={s.col}/>
                 <span className="imd-stat-lbl">{s.lbl}</span>
               </div>
               <div className="imd-stat-val" style={{color:s.col}}>{s.val}</div>

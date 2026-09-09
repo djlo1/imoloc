@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Lock, AlertTriangle, ClipboardList } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
@@ -195,7 +196,7 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
     setResetting(false)
 
     if (selfSelected) {
-      toast('Votre mot de passe a été réinitialisé. Déconnexion dans 3 secondes...', { icon: '🔐', duration: 3000 })
+      toast('Votre mot de passe a été réinitialisé. Déconnexion dans 3 secondes...', { icon: <Lock size={16}/>, duration: 3000 })
       setTimeout(async () => {
         await supabase.auth.signOut()
         logout()
@@ -394,7 +395,7 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
                 {/* Avertissement si l'utilisateur se réinitialise lui-même */}
                 {selfSelected && (
                   <div className="rp-warn-box">
-                    <span style={{fontSize:18}}>⚠️</span>
+                    <span style={{color:'#f59e0b',flexShrink:0,display:'flex'}}><AlertTriangle size={18}/></span>
                     <div>
                       Vous avez sélectionné votre propre compte. Après la réinitialisation, <strong style={{color:'#f59e0b'}}>vous serez automatiquement déconnecté</strong> et devrez vous reconnecter avec le nouveau mot de passe envoyé sur votre email.
                     </div>
@@ -471,7 +472,7 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
                       toast.success('Tous les mots de passe copiés !')
                     }}
                     style={{display:'flex',alignItems:'center',gap:7,padding:'7px 14px',borderRadius:5,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',color:'rgba(255,255,255,0.55)',fontSize:13,cursor:'pointer',fontFamily:'Inter'}}>
-                    📋 Copier tout
+                    <ClipboardList size={14}/> Copier tout
                   </button>
                 </div>
 
@@ -508,7 +509,7 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
                     )}
                     {forceChange && (
                       <div style={{fontSize:12,color:'rgba(245,158,11,0.7)',marginTop:8}}>
-                        ⚠️ L'utilisateur devra modifier ce mot de passe à la prochaine connexion
+                        <AlertTriangle size={12} style={{verticalAlign:'-2px',marginRight:4}}/>L'utilisateur devra modifier ce mot de passe à la prochaine connexion
                       </div>
                     )}
                   </div>

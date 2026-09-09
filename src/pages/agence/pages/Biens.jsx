@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Building2, Home } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
@@ -100,7 +101,7 @@ export default function Biens() {
       `}</style>
 
       <div className="pg-head">
-        <div className="pg-title">🏢 Biens immobiliers <span style={{fontSize:14,fontWeight:400,color:'rgba(255,255,255,0.3)'}}>({biens.length})</span></div>
+        <div className="pg-title" style={{display:"flex",alignItems:"center",gap:8}}><Building2 size={18}/> Biens immobiliers <span style={{fontSize:14,fontWeight:400,color:'rgba(255,255,255,0.3)'}}>({biens.length})</span></div>
         <button className="pg-btn pg-btn-blue" onClick={() => setShowModal(true)}>
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
           Ajouter un bien
@@ -123,7 +124,7 @@ export default function Biens() {
         <div style={{display:'flex',justifyContent:'center',padding:60,color:'rgba(255,255,255,0.3)'}}>Chargement...</div>
       ) : filtered.length === 0 ? (
         <div className="pg-empty">
-          <div className="pg-empty-icon">🏠</div>
+          <div className="pg-empty-icon" style={{display:"flex",justifyContent:"center"}}><Home size={52} style={{opacity:0.3}}/></div>
           <div className="pg-empty-title">{search ? 'Aucun résultat' : 'Aucun bien ajouté'}</div>
           <div className="pg-empty-sub">{search ? 'Essayez une autre recherche' : 'Commencez par ajouter votre premier bien immobilier'}</div>
           {!search && <button className="pg-btn pg-btn-blue" onClick={() => setShowModal(true)}>Ajouter un bien</button>}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { FileText, PenLine, RotateCcw, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 import SignatureModal from '../../../components/SignatureModal'
@@ -710,7 +711,7 @@ export default function ImolocBaux() {
                             onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(0,120,212,0.4)'}
                             onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.08)'}>
                             <div style={{width:42,height:48,background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:6,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                              <div style={{fontSize:16}}>📄</div>
+                              <FileText size={16}/>
                               <div style={{fontSize:7,fontWeight:700,color:'#ef4444',letterSpacing:0.5}}>PDF</div>
                             </div>
                             <div style={{flex:1,minWidth:0}}>
@@ -733,15 +734,15 @@ export default function ImolocBaux() {
                               onClick={e=>{e.stopPropagation();exporterPDF(selBail)}}>⬇ PDF</button>
                         </div>
                         <div style={{display:'flex',gap:8,marginTop:10}}>
-                          <button className='bx-btn bx-btn-g' style={{fontSize:12,padding:'6px 14px'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.locataires?.nom?`${selBail.locataires.prenom||''} ${selBail.locataires.nom}`:'Locataire',signataire_role:'locataire',signataire_email:selBail?.locataires?.email||''});setShowSigModal(true)}}>✍ Signature Locataire</button>
-                          <button className='bx-btn' style={{fontSize:12,padding:'6px 14px',color:'#4da6ff',borderColor:'rgba(0,120,212,0.3)'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.proprietaires?.nom?`${selBail.proprietaires.prenom||''} ${selBail.proprietaires.nom}`:'Proprietaire',signataire_role:'proprietaire',signataire_email:selBail?.proprietaires?.email||''});setShowSigModal(true)}}>✍ Signature Proprietaire</button>
-                          <button className='bx-btn' style={{fontSize:12,padding:'6px 14px'}} onClick={()=>{setContrat(null);genererContrat(selBail)}}>↺ Regenerer</button>
+                          <button className='bx-btn bx-btn-g' style={{fontSize:12,padding:'6px 14px'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.locataires?.nom?`${selBail.locataires.prenom||''} ${selBail.locataires.nom}`:'Locataire',signataire_role:'locataire',signataire_email:selBail?.locataires?.email||''});setShowSigModal(true)}}><PenLine size={13}/> Signature Locataire</button>
+                          <button className='bx-btn' style={{fontSize:12,padding:'6px 14px',color:'#4da6ff',borderColor:'rgba(0,120,212,0.3)'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.proprietaires?.nom?`${selBail.proprietaires.prenom||''} ${selBail.proprietaires.nom}`:'Proprietaire',signataire_role:'proprietaire',signataire_email:selBail?.proprietaires?.email||''});setShowSigModal(true)}}><PenLine size={13}/> Signature Proprietaire</button>
+                          <button className='bx-btn' style={{fontSize:12,padding:'6px 14px'}} onClick={()=>{setContrat(null);genererContrat(selBail)}}><RotateCcw size={13}/> Regenerer</button>
                           </div>
                           <button className='bx-btn' style={{width:'100%',justifyContent:'center',fontSize:12}} onClick={()=>{setContrat(null);genererContrat(selBail)}}>+ Regenerer un nouveau contrat</button>
                         </div>
                       ):(
                         <div style={{textAlign:'center',padding:'40px 20px',border:'1px dashed rgba(255,255,255,0.08)',borderRadius:10}}>
-                          <div style={{fontSize:32,marginBottom:12,opacity:0.3}}>📄</div>
+                          <FileText size={32} style={{marginBottom:12,opacity:0.3}}/>
                           <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Aucun contrat genere</div>
                           <div style={{fontSize:13,color:'rgba(255,255,255,0.25)',marginBottom:20}}>Generez le contrat a partir du modele actif de votre organisation</div>
                           <button className='bx-btn bx-btn-p' style={{margin:'0 auto'}} onClick={()=>genererContrat(selBail)}>Generer le contrat</button>
@@ -752,7 +753,7 @@ export default function ImolocBaux() {
                     /* ── VUE DETAIL ── */
                     <div>
                       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14}}>
-                        <button className='bx-btn' style={{padding:'5px 10px',fontSize:12}} onClick={()=>{setContratOuvert(false);setEditMode(false)}}>← Retour</button>
+                        <button className='bx-btn' style={{padding:'5px 10px',fontSize:12}} onClick={()=>{setContratOuvert(false);setEditMode(false)}}><ArrowLeft size={12}/> Retour</button>
                         <span style={{fontSize:12,color:'rgba(255,255,255,0.4)',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                           Contrat_{(selBail?.biens?.nom||'bail').replace(/\s+/g,'_')}
                         </span>
@@ -763,7 +764,7 @@ export default function ImolocBaux() {
                         /* Contrat signe : lecture seule */
                         <div>
                           <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',background:'rgba(0,200,150,0.06)',border:'1px solid rgba(0,200,150,0.15)',borderRadius:8,marginBottom:14}}>
-                            <span style={{fontSize:13}}>✅</span>
+                            <CheckCircle2 size={13} color="#00c896"/>
                             <div>
                               <div style={{fontSize:13,fontWeight:600,color:'#00c896'}}>Contrat {selBail.contrat_statut==='signe'?'signe':'valide'}</div>
                               <div style={{fontSize:11,color:'rgba(255,255,255,0.35)'}}>Ce contrat est finalise et ne peut plus etre modifie</div>
@@ -802,8 +803,8 @@ export default function ImolocBaux() {
                               setSelBail(prev=>prev?{...prev,contrat_statut:'signe'}:prev)
                               toast.success('Contrat marque comme signe !')
                             }}>Marquer comme signe</button>}
-                            <button className='bx-btn bx-btn-g' style={{fontSize:11,padding:'5px 12px'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.locataires?.nom?`${selBail.locataires.prenom||''} ${selBail.locataires.nom}`:'Locataire',signataire_role:'locataire'});setShowSigModal(true)}}>✍ Locataire</button>
-                            <button className='bx-btn' style={{fontSize:11,padding:'5px 12px',color:'#4da6ff',borderColor:'rgba(0,120,212,0.3)'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.proprietaires?.nom?`${selBail.proprietaires.prenom||''} ${selBail.proprietaires.nom}`:'Proprietaire',signataire_role:'proprietaire'});setShowSigModal(true)}}>✍ Proprietaire</button>
+                            <button className='bx-btn bx-btn-g' style={{fontSize:11,padding:'5px 12px'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.locataires?.nom?`${selBail.locataires.prenom||''} ${selBail.locataires.nom}`:'Locataire',signataire_role:'locataire'});setShowSigModal(true)}}><PenLine size={12}/> Locataire</button>
+                            <button className='bx-btn' style={{fontSize:11,padding:'5px 12px',color:'#4da6ff',borderColor:'rgba(0,120,212,0.3)'}} onClick={()=>{setSigConfig({signataire_nom:selBail?.proprietaires?.nom?`${selBail.proprietaires.prenom||''} ${selBail.proprietaires.nom}`:'Proprietaire',signataire_role:'proprietaire'});setShowSigModal(true)}}><PenLine size={12}/> Proprietaire</button>
                             {modeleActif&&<div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>Modele : {modeleActif.nom}</div>}
                           </div>
                           {editMode?(

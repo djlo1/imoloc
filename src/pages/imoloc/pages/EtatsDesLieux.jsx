@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
+import { Key, DoorOpen, ClipboardList, FileText, Check } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 
 const TYPE_CFG = {
-  entree: { color:'#00c896', bg:'rgba(0,200,150,0.1)',  label:'Entree',  icon:'🔑' },
-  sortie: { color:'#ef4444', bg:'rgba(239,68,68,0.1)',  label:'Sortie',  icon:'🚪' },
+  entree: { color:'#00c896', bg:'rgba(0,200,150,0.1)',  label:'Entree',  icon:Key },
+  sortie: { color:'#ef4444', bg:'rgba(239,68,68,0.1)',  label:'Sortie',  icon:DoorOpen },
 }
 const ETAT_CFG = {
   bon:    { color:'#00c896', label:'Bon etat' },
@@ -220,7 +221,7 @@ export default function EtatsDesLieux() {
         <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,overflow:'hidden'}}>
           {filtered.length===0?(
             <div style={{textAlign:'center',padding:'60px 20px'}}>
-              <div style={{fontSize:36,marginBottom:12,opacity:0.2}}>📋</div>
+              <ClipboardList size={36} style={{marginBottom:12,opacity:0.2}}/>
               <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.3)',marginBottom:8}}>Aucun etat des lieux</div>
               <button style={{...btnP,margin:'0 auto'}} onClick={()=>setShowAdd(true)}>+ Nouvel etat des lieux</button>
             </div>
@@ -236,7 +237,7 @@ export default function EtatsDesLieux() {
                 return (
                   <tr key={e.id} className="edl-row" onClick={()=>{setSel(e);setTab('pieces')}}>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
-                      <span style={{fontSize:16,marginRight:6}}>{tc.icon}</span>
+                      <tc.icon size={16} style={{marginRight:6}}/>
                       <span style={{fontSize:12,fontWeight:600,color:tc.color}}>{tc.label}</span>
                     </td>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
@@ -270,7 +271,7 @@ export default function EtatsDesLieux() {
             <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:12}}>
               <div style={{flex:1}}>
                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
-                  <span style={{fontSize:22}}>{(TYPE_CFG[sel.type]||TYPE_CFG.entree).icon}</span>
+                  {(()=>{const TI=(TYPE_CFG[sel.type]||TYPE_CFG.entree).icon;return <TI size={22}/>})()}
                   <div style={{fontSize:16,fontWeight:700,color:'#e6edf3'}}>Etat des lieux d&apos;{(TYPE_CFG[sel.type]||TYPE_CFG.entree).label.toLowerCase()}</div>
                 </div>
                 <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
@@ -340,7 +341,7 @@ export default function EtatsDesLieux() {
             {/* DOCUMENTS */}
             {tab==='documents'&&(
               <div style={{textAlign:'center',padding:'40px 20px',border:'1px dashed rgba(255,255,255,0.08)',borderRadius:10}}>
-                <div style={{fontSize:28,marginBottom:10,opacity:0.2}}>📄</div>
+                <FileText size={28} style={{marginBottom:10,opacity:0.2}}/>
                 <div style={{fontSize:13,color:'rgba(255,255,255,0.3)',marginBottom:8}}>Generation PDF</div>
                 <div style={{fontSize:12,color:'rgba(255,255,255,0.2)'}}>Export PDF de l etat des lieux complet — bientot disponible</div>
               </div>
@@ -362,7 +363,7 @@ export default function EtatsDesLieux() {
                 const n=i+1,done=n<step,active=n===step
                 return (<div key={s} style={{flex:1,textAlign:'center',position:'relative'}}>
                   {i<2&&<div style={{position:'absolute',top:14,left:'50%',width:'100%',height:2,background:done?'#0078d4':'rgba(255,255,255,0.08)'}}/>}
-                  <div className="edl-sdot" style={{background:done?'#0078d4':active?'rgba(0,120,212,0.15)':'rgba(255,255,255,0.06)',border:`2px solid ${done||active?'#0078d4':'rgba(255,255,255,0.1)'}`,color:done?'#fff':active?'#4da6ff':'rgba(255,255,255,0.3)'}}>{done?'✓':n}</div>
+                  <div className="edl-sdot" style={{background:done?'#0078d4':active?'rgba(0,120,212,0.15)':'rgba(255,255,255,0.06)',border:`2px solid ${done||active?'#0078d4':'rgba(255,255,255,0.1)'}`,color:done?'#fff':active?'#4da6ff':'rgba(255,255,255,0.3)'}}>{done?<Check size={12}/>:n}</div>
                   <div style={{fontSize:10.5,color:active?'#e6edf3':'rgba(255,255,255,0.3)',fontWeight:active?600:400}}>{s}</div>
                 </div>)
               })}
@@ -421,7 +422,7 @@ export default function EtatsDesLieux() {
               <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:14}}>Recapitulatif</div>
               <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:16,marginBottom:18}}>
                 <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
-                  <span style={{fontSize:28}}>{(TYPE_CFG[form.type]||TYPE_CFG.entree).icon}</span>
+                  {(()=>{const TI=(TYPE_CFG[form.type]||TYPE_CFG.entree).icon;return <TI size={28}/>})()}
                   <div><div style={{fontSize:15,fontWeight:700,color:'#e6edf3'}}>Etat des lieux d&apos;{(TYPE_CFG[form.type]||TYPE_CFG.entree).label.toLowerCase()}</div><Badge val="en_cours" cfg={STATUT_CFG}/></div>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>

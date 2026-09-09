@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Download, Trash2, Pencil, Mail, Info } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { supabase } from '../../../lib/supabase'
@@ -254,7 +255,7 @@ export default function Contacts() {
             Ajouter plusieurs contacts
           </button>
           <button className="ct-tbtn" onClick={()=>{
-            if (!contacts.length) return toast('Aucun contact à exporter',{icon:'ℹ️'})
+            if (!contacts.length) return toast('Aucun contact à exporter',{icon:<Info size={16}/>})
             const csv = ['Nom,Email,Entreprise,Tel Bureau,Tel Mobile',...contacts.map(c=>`${c.display},${c.email},${c.entreprise||''},${c.tel_bureau||''},${c.tel_mobile||''}`)].join('\n')
             const a = document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='contacts.csv'; a.click()
             toast.success('Contacts exportés !')
@@ -287,8 +288,8 @@ export default function Contacts() {
               const csv = ['NomAffichage,Email,Entreprise,TelBureau,TelMobile',...data.map(c=>`${c.display},${c.email},${c.entreprise||''},${c.tel_bureau||''},${c.tel_mobile||''}`)].join('\n')
               const a = document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='contacts_selection.csv'; a.click()
               toast.success('Exporté !')
-            }}>📥 Exporter</button>
-            <button className="ct-action-btn red" onClick={deleteSelected}>🗑️ Supprimer ({selected.length})</button>
+            }} style={{display:"inline-flex",alignItems:"center",gap:6}}><Download size={14}/> Exporter</button>
+            <button className="ct-action-btn red" onClick={deleteSelected} style={{display:"inline-flex",alignItems:"center",gap:6}}><Trash2 size={14}/> Supprimer ({selected.length})</button>
             <button onClick={()=>setSelected([])} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:20,padding:'0 4px',lineHeight:1}}>×</button>
           </div>
         )}
@@ -355,10 +356,10 @@ export default function Contacts() {
                       <button className="ct-action-btn" style={{padding:'4px 8px',fontSize:13}} onClick={e=>{e.stopPropagation();setRowMenu(rowMenu===c.id?null:c.id)}}>···</button>
                       {rowMenu===c.id&&(
                         <div className="ct-row-dd">
-                          <button className="ct-row-ddi" onClick={()=>{setRowMenu(null);toast('Fonctionnalité à venir',{icon:'ℹ️'})}}>✏️ Modifier</button>
-                          <button className="ct-row-ddi" onClick={()=>{setRowMenu(null);toast('Fonctionnalité à venir',{icon:'ℹ️'})}}>📧 Envoyer un email</button>
+                          <button className="ct-row-ddi" onClick={()=>{setRowMenu(null);toast('Fonctionnalité à venir',{icon:<Info size={16}/>})}} style={{display:"inline-flex",alignItems:"center",gap:6}}><Pencil size={13}/> Modifier</button>
+                          <button className="ct-row-ddi" onClick={()=>{setRowMenu(null);toast('Fonctionnalité à venir',{icon:<Info size={16}/>})}} style={{display:"inline-flex",alignItems:"center",gap:6}}><Mail size={13}/> Envoyer un email</button>
                           <div style={{height:'1px',background:'rgba(255,255,255,0.07)'}}/>
-                          <button className="ct-row-ddi red" onClick={()=>{ deleteOne(c.id); setRowMenu(null) }}>🗑️ Supprimer</button>
+                          <button className="ct-row-ddi red" onClick={()=>{ deleteOne(c.id); setRowMenu(null) }} style={{display:"inline-flex",alignItems:"center",gap:6}}><Trash2 size={13}/> Supprimer</button>
                         </div>
                       )}
                     </td>

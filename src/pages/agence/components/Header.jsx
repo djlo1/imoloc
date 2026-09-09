@@ -1,18 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Home, Building2, Users, CreditCard, FileText, BarChart3, Lock, Settings, Plug } from 'lucide-react'
 import { useAuthStore } from '../../../store/authStore'
 import { supabase } from '../../../lib/supabase'
 
 const APPS = [
-  { icon:'🏠', name:'Accueil', path:'/agence', color:'rgba(0,120,212,0.15)' },
-  { icon:'🏢', name:'Biens', path:'/agence/biens', color:'rgba(108,99,255,0.15)' },
-  { icon:'👥', name:'Locataires', path:'/agence/locataires', color:'rgba(0,200,150,0.15)' },
-  { icon:'💳', name:'Paiements', path:'/agence/paiements', color:'rgba(245,158,11,0.15)' },
-  { icon:'📄', name:'Baux', path:'/agence/baux', color:'rgba(239,68,68,0.15)' },
-  { icon:'📊', name:'Rapports', path:'/agence/rapports', color:'rgba(0,120,212,0.15)' },
-  { icon:'🔐', name:'Sécurité', path:'/agence/securite', color:'rgba(108,99,255,0.15)' },
-  { icon:'⚙️', name:'Paramètres', path:'/agence/parametres', color:'rgba(255,255,255,0.06)' },
-  { icon:'🔌', name:'Intégrations', path:'/agence/integrations', color:'rgba(0,200,150,0.15)' },
+  { icon:Home, name:'Accueil', path:'/agence', color:'rgba(0,120,212,0.15)' },
+  { icon:Building2, name:'Biens', path:'/agence/biens', color:'rgba(108,99,255,0.15)' },
+  { icon:Users, name:'Locataires', path:'/agence/locataires', color:'rgba(0,200,150,0.15)' },
+  { icon:CreditCard, name:'Paiements', path:'/agence/paiements', color:'rgba(245,158,11,0.15)' },
+  { icon:FileText, name:'Baux', path:'/agence/baux', color:'rgba(239,68,68,0.15)' },
+  { icon:BarChart3, name:'Rapports', path:'/agence/rapports', color:'rgba(0,120,212,0.15)' },
+  { icon:Lock, name:'Sécurité', path:'/agence/securite', color:'rgba(108,99,255,0.15)' },
+  { icon:Settings, name:'Paramètres', path:'/agence/parametres', color:'rgba(255,255,255,0.06)' },
+  { icon:Plug, name:'Intégrations', path:'/agence/integrations', color:'rgba(0,200,150,0.15)' },
 ]
 
 const NOTIFS = [
@@ -219,7 +220,7 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
                 <div className="hd3-waffle-grid">
                   {APPS.map((app,i) => (
                     <Link key={i} to={app.path} className="hd3-waffle-item" onClick={closeAll}>
-                      <div className="hd3-waffle-icon" style={{background:app.color}}>{app.icon}</div>
+                      <div className="hd3-waffle-icon" style={{background:app.color}}><app.icon size={20}/></div>
                       <span className="hd3-waffle-name">{app.name}</span>
                     </Link>
                   ))}

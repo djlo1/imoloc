@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Building2, Sparkles } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/authStore'
 import toast from 'react-hot-toast'
@@ -20,7 +21,7 @@ import Paiements from './pages/Paiements'
 
 const Soon = ({ title, icon }) => (
   <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:400,gap:16}}>
-    <div style={{fontSize:52,opacity:0.35}}>{icon}</div>
+    <div style={{opacity:0.35}}>{icon}</div>
     <div style={{fontSize:19,fontWeight:600,color:"rgba(255,255,255,0.5)"}}>{title}</div>
     <div style={{fontSize:13.5,color:"rgba(255,255,255,0.25)"}}>Module en cours de developpement</div>
   </div>
@@ -254,7 +255,7 @@ export default function ImolocApp() {
             </button>
             {/* Brand */}
             <div className="im-brand">
-              <div className="im-brand-icon">🏢</div>
+              <div className="im-brand-icon"><Building2 size={14}/></div>
               <span className="im-brand-name">Imoloc</span>
               <div className="im-brand-sep"/>
               <span className="im-brand-sub">Gestion Immobiliere</span>
@@ -295,7 +296,7 @@ export default function ImolocApp() {
                   <div className="im-drop-head">
                     <div className="im-drop-name">{profile?.prenom} {profile?.nom}</div>
                     <div className="im-drop-email">{profile?.email}</div>
-                    <div className="im-drop-agence">🏢 {agence?.nom || "Mon agence"}</div>
+                    <div className="im-drop-agence"><Building2 size={11}/> {agence?.nom || "Mon agence"}</div>
                   </div>
                   <button className="im-drop-item" onClick={()=>{navigate("/imoloc/profil");setProfileOpen(false)}}>
                     <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -391,7 +392,7 @@ export default function ImolocApp() {
               <Route path="baux/:id" element={<BailDetail />} />
               <Route path="baux/*" element={<Baux />} />
               <Route path="paiements/*" element={<Paiements />} />
-              <Route path="loci/*" element={<Soon title="Loci IA" icon="✨"/>} />
+              <Route path="loci/*" element={<Soon title="Loci IA" icon={<Sparkles size={52}/>}/>} />
               <Route path="maintenance/*" element={<Maintenance />} />
               <Route path="etats-lieux/*" element={<EtatsDesLieux />} />
               <Route path="rapports/*" element={<Rapports />} />

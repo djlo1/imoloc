@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Settings, Globe, Wallet, Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Parametres() {
@@ -32,9 +33,9 @@ export default function Parametres() {
         .pg-btn-blue{background:#0078d4;color:#fff}
         .pg-btn-blue:hover{background:#006cc1}
       `}</style>
-      <div className="par-title">⚙️ Paramètres</div>
+      <div className="par-title" style={{display:'flex',alignItems:'center',gap:8}}><Settings size={18}/> Paramètres</div>
       <div className="par-card">
-        <div className="par-card-title">🌍 Préférences générales</div>
+        <div className="par-card-title"><Globe size={16}/> Préférences générales</div>
         <div className="par-row">
           <div><div className="par-row-title">Devise</div><div className="par-row-sub">Devise utilisée pour les montants</div></div>
           <select className="par-select" value={devise} onChange={e=>setDevise(e.target.value)}>
@@ -49,7 +50,7 @@ export default function Parametres() {
         </div>
       </div>
       <div className="par-card">
-        <div className="par-card-title">💰 Règles métier</div>
+        <div className="par-card-title"><Wallet size={16}/> Règles métier</div>
         <div className="par-row">
           <div><div className="par-row-title">Pénalité de retard</div><div className="par-row-sub">Pourcentage appliqué après le délai de grâce</div></div>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -66,7 +67,7 @@ export default function Parametres() {
         </div>
       </div>
       <div className="par-card">
-        <div className="par-card-title">🔔 Notifications</div>
+        <div className="par-card-title"><Bell size={16}/> Notifications</div>
         {[
           { key:'retard', title:'Loyers en retard', sub:'Alertes pour les paiements en retard' },
           { key:'bail', title:'Baux expirants', sub:'Rappels 30, 60, 90 jours avant expiration' },

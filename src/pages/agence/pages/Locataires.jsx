@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Users } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -85,7 +86,7 @@ export default function Locataires() {
         @media(max-width:768px){.form-grid2{grid-template-columns:1fr}.loc-table{display:block;overflow-x:auto}}
       `}</style>
       <div className="pg-head">
-        <div className="pg-title">👥 Locataires <span style={{fontSize:14,fontWeight:400,color:'rgba(255,255,255,0.3)'}}>({locataires.length})</span></div>
+        <div className="pg-title" style={{display:"flex",alignItems:"center",gap:8}}><Users size={18}/> Locataires <span style={{fontSize:14,fontWeight:400,color:'rgba(255,255,255,0.3)'}}>({locataires.length})</span></div>
         <button className="pg-btn pg-btn-blue" onClick={() => setShowModal(true)}>
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
           Nouveau locataire
@@ -100,7 +101,7 @@ export default function Locataires() {
           <div style={{padding:60,textAlign:'center',color:'rgba(255,255,255,0.3)'}}>Chargement...</div>
         ) : filtered.length === 0 ? (
           <div className="pg-empty">
-            <div className="pg-empty-icon">👥</div>
+            <div className="pg-empty-icon" style={{display:"flex",justifyContent:"center"}}><Users size={52} style={{opacity:0.3}}/></div>
             <div className="pg-empty-title">{search ? 'Aucun résultat' : 'Aucun locataire'}</div>
             <div className="pg-empty-sub">{search ? 'Essayez une autre recherche' : 'Ajoutez votre premier locataire'}</div>
             {!search && <button className="pg-btn pg-btn-blue" onClick={() => setShowModal(true)}>Ajouter un locataire</button>}

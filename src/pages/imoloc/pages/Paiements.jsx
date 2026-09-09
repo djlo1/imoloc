@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Wallet, CheckCircle2, AlertTriangle, Hourglass, RefreshCw, Home, User, FileText, Undo2, Ban } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
@@ -157,13 +158,13 @@ export default function ImolocPaiements() {
         {/* Stats */}
         <div className="px-stats4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:24}}>
           {[
-            {ic:'💰',l:'Total attendu',     v:fmt(stats.attendu)+' FCFA',   c:'#e6edf3',sm:true},
-            {ic:'✅',l:'Encaisse',          v:fmt(stats.encaisse)+' FCFA',  c:'#00c896',sm:true},
-            {ic:'⚠️',l:'En retard',         v:stats.retard,                  c:stats.retard>0?'#ef4444':'rgba(255,255,255,0.3)'},
-            {ic:'⏳',l:'A venir',           v:stats.attente,                 c:'#f59e0b'},
+            {ic:Wallet,l:'Total attendu',     v:fmt(stats.attendu)+' FCFA',   c:'#e6edf3',sm:true},
+            {ic:CheckCircle2,l:'Encaisse',          v:fmt(stats.encaisse)+' FCFA',  c:'#00c896',sm:true},
+            {ic:AlertTriangle,l:'En retard',         v:stats.retard,                  c:stats.retard>0?'#ef4444':'rgba(255,255,255,0.3)'},
+            {ic:Hourglass,l:'A venir',           v:stats.attente,                 c:'#f59e0b'},
           ].map((s,i)=>(
             <div key={i} style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'14px 16px'}}>
-              <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}><span style={{fontSize:15}}>{s.ic}</span><span style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{s.l}</span></div>
+              <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}><s.ic size={15}/><span style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{s.l}</span></div>
               <div style={{fontSize:s.sm?14:22,fontWeight:800,color:s.c}}>{s.v}</div>
             </div>
           ))}
@@ -171,7 +172,7 @@ export default function ImolocPaiements() {
 
         {/* Filtres */}
         <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,flexWrap:'wrap'}}>
-          <button className='px-btn' onClick={initData}>🔄</button>
+          <button className='px-btn' onClick={initData}><RefreshCw size={14}/></button>
           {/* Filtre annee */}
           <select value={filterAnnee} onChange={e=>setFilterAnnee(e.target.value)} style={{padding:'6px 12px',borderRadius:6,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',color:'#e6edf3',fontSize:13,fontFamily:'Inter,sans-serif',cursor:'pointer',colorScheme:'dark'}}>
             <option value='' style={{background:'#161b22'}}>Toutes les annees</option>
@@ -204,7 +205,7 @@ export default function ImolocPaiements() {
             <div style={{textAlign:'center',padding:50,color:'rgba(255,255,255,0.3)'}}>Chargement...</div>
           ) : filtered.length===0 ? (
             <div style={{textAlign:'center',padding:'60px 20px'}}>
-              <div style={{fontSize:44,marginBottom:14,opacity:0.3}}>💰</div>
+              <Wallet size={44} style={{marginBottom:14,opacity:0.3}}/>
               <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.4)'}}>Aucun paiement dans ce filtre</div>
             </div>
           ) : filtered.map(p => {
@@ -214,15 +215,15 @@ export default function ImolocPaiements() {
               <div key={p.id} className={'px-row '+(p.statut||'')} onClick={()=>setSelPaie(p)}>
                 <div style={{display:'flex',alignItems:'center',gap:14,flex:1,minWidth:0}}>
                   <div style={{width:42,height:42,borderRadius:10,background:cfg.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <span style={{fontSize:18}}>{p.statut==='paye'?'✅':p.statut==='en_retard'?'🔴':'⏳'}</span>
+                    {p.statut==='paye'?<CheckCircle2 size={18} color={cfg.color}/>:p.statut==='en_retard'?<AlertTriangle size={18} color={cfg.color}/>:<Hourglass size={18} color={cfg.color}/>}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:2}}>
                       <span style={{fontSize:13.5,fontWeight:600,color:'#e6edf3'}}>{moisLabel} {p.periode_annee}</span>
                       <SBadge s={p.statut}/>
                     </div>
-                    <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                      🏠 {p.biens?.nom||'—'} · 👤 {p.locataires?.prenom||''} {p.locataires?.nom||'—'}
+                    <div style={{display:'flex',alignItems:'center',gap:4,fontSize:12.5,color:'rgba(255,255,255,0.35)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                      <Home size={11} style={{flexShrink:0}}/> {p.biens?.nom||'—'} · <User size={11} style={{flexShrink:0}}/> {p.locataires?.prenom||''} {p.locataires?.nom||'—'}
                     </div>
                     <div style={{fontSize:12,color:'rgba(255,255,255,0.25)',marginTop:2}}>
                       Echeance : {p.date_echeance?new Date(p.date_echeance).toLocaleDateString('fr-FR'):'—'}
@@ -256,13 +257,13 @@ export default function ImolocPaiements() {
             </div>
             <div style={{flex:1,overflowY:'auto',padding:'24px 28px'}}>
               <div style={{padding:'12px 16px',borderRadius:8,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)',marginBottom:20}}>
-                <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:3}}>🏠 {selPaie.biens?.nom||'—'}</div>
-                <div style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>👤 {selPaie.locataires?.prenom||''} {selPaie.locataires?.nom||'—'}</div>
+                <div style={{display:'flex',alignItems:'center',gap:5,fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:3}}><Home size={12}/> {selPaie.biens?.nom||'—'}</div>
+                <div style={{display:'flex',alignItems:'center',gap:5,fontSize:13,color:'rgba(255,255,255,0.5)'}}><User size={12}/> {selPaie.locataires?.prenom||''} {selPaie.locataires?.nom||'—'}</div>
               </div>
               <div className='px-fld'>
                 <label className='px-lbl'>Montant encaisse (FCFA)</label>
                 <input autoFocus className='px-inp' type='number' min='0' value={payForm.montant_paye} onChange={e=>setPF('montant_paye',e.target.value)}/>
-                {payForm.montant_paye && parseFloat(payForm.montant_paye) < selPaie.montant && <div style={{fontSize:12,color:'#6c63ff',marginTop:5}}>⚠️ Montant partiel — sera marque comme Partiel</div>}
+                {payForm.montant_paye && parseFloat(payForm.montant_paye) < selPaie.montant && <div style={{display:'flex',alignItems:'center',gap:4,fontSize:12,color:'#6c63ff',marginTop:5}}><AlertTriangle size={12}/> Montant partiel — sera marque comme Partiel</div>}
               </div>
               <div className='px-g2'>
                 <div>
@@ -289,7 +290,7 @@ export default function ImolocPaiements() {
             </div>
             <div style={{padding:'16px 24px',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',gap:10,flexShrink:0}}>
               <button onClick={()=>setShowPay(false)} style={{flex:1,padding:11,borderRadius:5,fontSize:14,fontWeight:600,cursor:'pointer',background:'rgba(255,255,255,0.05)',color:'rgba(255,255,255,0.6)',border:'1px solid rgba(255,255,255,0.1)',fontFamily:'Inter,sans-serif'}}>Annuler</button>
-              <button onClick={marquerPaye} disabled={saving||!payForm.montant_paye} style={{flex:2,padding:11,borderRadius:5,fontSize:14,fontWeight:600,cursor:'pointer',background:'#00c896',color:'#fff',border:'none',fontFamily:'Inter,sans-serif',opacity:saving||!payForm.montant_paye?0.4:1}}>{saving?'Enregistrement...':'✅ Confirmer le paiement'}</button>
+              <button onClick={marquerPaye} disabled={saving||!payForm.montant_paye} style={{flex:2,padding:11,borderRadius:5,fontSize:14,fontWeight:600,cursor:'pointer',background:'#00c896',color:'#fff',border:'none',fontFamily:'Inter,sans-serif',opacity:saving||!payForm.montant_paye?0.4:1,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>{saving?'Enregistrement...':<><CheckCircle2 size={15}/> Confirmer le paiement</>}</button>
             </div>
           </div>
         </div>
@@ -311,10 +312,10 @@ export default function ImolocPaiements() {
               <div style={{textAlign:'center',padding:'20px 0 28px',borderBottom:'1px solid rgba(255,255,255,0.07)',marginBottom:24}}>
                 <div style={{fontSize:36,fontWeight:800,color:selPaie.statut==='paye'?'#00c896':selPaie.statut==='en_retard'?'#ef4444':'#e6edf3',marginBottom:6}}>{fmt(selPaie.montant)} FCFA</div>
                 <div style={{fontSize:13,color:'rgba(255,255,255,0.4)'}}>Echeance du {selPaie.date_echeance?new Date(selPaie.date_echeance).toLocaleDateString('fr-FR'):'—'}</div>
-                {selPaie.statut==='en_retard'&&selPaie.date_echeance&&<div style={{fontSize:12.5,color:'#ef4444',marginTop:4}}>⚠️ Retard de {Math.floor((new Date()-new Date(selPaie.date_echeance))/(1000*60*60*24))} jours</div>}
+                {selPaie.statut==='en_retard'&&selPaie.date_echeance&&<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:4,fontSize:12.5,color:'#ef4444',marginTop:4}}><AlertTriangle size={12}/> Retard de {Math.floor((new Date()-new Date(selPaie.date_echeance))/(1000*60*60*24))} jours</div>}
               </div>
               {/* Infos */}
-              {[['Bien',`🏠 ${selPaie.biens?.nom||'—'}`],['Locataire',`👤 ${selPaie.locataires?.prenom||''} ${selPaie.locataires?.nom||'—'}`],['Periode',`${MOIS[(selPaie.periode_mois||1)-1]} ${selPaie.periode_annee||'—'}`],['Mode bail',selPaie.mode||'—'],['Ref. transaction',selPaie.reference_transaction||null],['Operateur',selPaie.operateur||null],['Date paiement',selPaie.date_paiement?new Date(selPaie.date_paiement).toLocaleDateString('fr-FR'):null],['Notes',selPaie.notes||null]].map(([k,v])=>v?(
+              {[['Bien',selPaie.biens?.nom||'—'],['Locataire',`${selPaie.locataires?.prenom||''} ${selPaie.locataires?.nom||'—'}`],['Periode',`${MOIS[(selPaie.periode_mois||1)-1]} ${selPaie.periode_annee||'—'}`],['Mode bail',selPaie.mode||'—'],['Ref. transaction',selPaie.reference_transaction||null],['Operateur',selPaie.operateur||null],['Date paiement',selPaie.date_paiement?new Date(selPaie.date_paiement).toLocaleDateString('fr-FR'):null],['Notes',selPaie.notes||null]].map(([k,v])=>v?(
                 <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
                   <span style={{fontSize:13,color:'rgba(255,255,255,0.4)',width:140}}>{k}</span>
                   <span style={{fontSize:13.5,color:'#e6edf3',fontWeight:500,textAlign:'right'}}>{v}</span>
@@ -323,15 +324,15 @@ export default function ImolocPaiements() {
               {/* Actions */}
               <div style={{marginTop:24,display:'flex',flexDirection:'column',gap:8}}>
                 {['en_attente','en_retard','partiel'].includes(selPaie.statut)&&(
-                  <button className='px-btn px-btn-g' style={{justifyContent:'center',padding:'11px'}} onClick={()=>{setPayForm({mode:'Mobile Money',operateur:'',reference:'',date_paiement:new Date().toISOString().split('T')[0],montant_paye:String(selPaie.montant),notes:''});setShowPay(true)}}>✅ Encaisser ce paiement</button>
+                  <button className='px-btn px-btn-g' style={{justifyContent:'center',padding:'11px',display:'flex',alignItems:'center',gap:6}} onClick={()=>{setPayForm({mode:'Mobile Money',operateur:'',reference:'',date_paiement:new Date().toISOString().split('T')[0],montant_paye:String(selPaie.montant),notes:''});setShowPay(true)}}><CheckCircle2 size={15}/> Encaisser ce paiement</button>
                 )}
                 {selPaie.statut==='paye'&&(
-                  <button className='px-btn px-btn-y' style={{justifyContent:'center',padding:'11px'}} onClick={()=>remettreEnAttente(selPaie)}>↩️ Remettre en attente</button>
+                  <button className='px-btn px-btn-y' style={{justifyContent:'center',padding:'11px',display:'flex',alignItems:'center',gap:6}} onClick={()=>remettreEnAttente(selPaie)}><Undo2 size={15}/> Remettre en attente</button>
                 )}
                 {selPaie.statut!=='annule'&&selPaie.statut!=='paye'&&(
-                  <button className='px-btn px-btn-r' style={{justifyContent:'center',padding:'11px'}} onClick={()=>annulerPaiement(selPaie)}>🚫 Annuler ce paiement</button>
+                  <button className='px-btn px-btn-r' style={{justifyContent:'center',padding:'11px',display:'flex',alignItems:'center',gap:6}} onClick={()=>annulerPaiement(selPaie)}><Ban size={15}/> Annuler ce paiement</button>
                 )}
-                <button className='px-btn' style={{justifyContent:'center',padding:'11px'}} onClick={()=>{setSelPaie(null);navigate('/imoloc/baux')}}>📄 Voir le bail associe</button>
+                <button className='px-btn' style={{justifyContent:'center',padding:'11px',display:'flex',alignItems:'center',gap:6}} onClick={()=>{setSelPaie(null);navigate('/imoloc/baux')}}><FileText size={15}/> Voir le bail associe</button>
               </div>
             </div>
           </div>

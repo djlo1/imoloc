@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import { ArrowLeft, FileText, X } from "lucide-react"
 import { supabase } from "../../../lib/supabase"
 import toast from "react-hot-toast"
 
@@ -611,7 +612,7 @@ export default function ModelesDocuments() {
           </div>
           <div style={{display:"flex",gap:8}}>
             {vue==="editeur" && <>
-              <button className="md-btn" onClick={()=>setVue("mes_modeles")}>← Mes modeles</button>
+              <button className="md-btn" onClick={()=>setVue("mes_modeles")} style={{display:'inline-flex',alignItems:'center',gap:6}}><ArrowLeft size={14}/> Mes modeles</button>
               <button className="md-btn md-btn-p" disabled={saving} onClick={sauvegarderModele}>{saving?"Sauvegarde...":"Sauvegarder"}</button>
             </>}
           </div>
@@ -662,7 +663,7 @@ export default function ModelesDocuments() {
           </div>
           {mesModeles.length===0 ? (
             <div style={{textAlign:"center",padding:"60px 20px",border:"1px dashed rgba(255,255,255,0.1)",borderRadius:12}}>
-              <div style={{fontSize:36,marginBottom:12,opacity:0.3}}>📄</div>
+              <div style={{marginBottom:12,opacity:0.3,display:'flex',justifyContent:'center'}}><FileText size={36}/></div>
               <div style={{fontSize:16,fontWeight:600,color:"rgba(255,255,255,0.4)",marginBottom:12}}>Aucun modele personnalise</div>
               <div style={{fontSize:13,color:"rgba(255,255,255,0.25)",marginBottom:20}}>Choisissez un modele dans la bibliotheque et personnalisez-le</div>
               <button className="md-btn md-btn-p" style={{margin:"0 auto"}} onClick={()=>setVue("bibliotheque")}>Parcourir la bibliotheque</button>
@@ -687,7 +688,7 @@ export default function ModelesDocuments() {
                       <div style={{display:"flex",gap:6}}>
                         <button className="md-btn" style={{flex:1,justifyContent:"center",padding:"7px"}} onClick={()=>ouvrirEditeur(tpl,modele)}>Modifier</button>
                         {!isActif && <button className="md-btn md-btn-g" style={{flex:1,justifyContent:"center",padding:"7px"}} onClick={()=>activerModele(modele)}>Activer</button>}
-                        <button className="md-btn md-btn-r" style={{padding:"7px 10px"}} onClick={()=>supprimerModele(modele)}>✕</button>
+                        <button className="md-btn md-btn-r" style={{padding:"7px 10px",display:'inline-flex'}} onClick={()=>supprimerModele(modele)}><X size={14}/></button>
                       </div>
                     </div>
                   </div>

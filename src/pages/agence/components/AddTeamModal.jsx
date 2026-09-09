@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Building2, Globe, Lock } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -200,7 +201,7 @@ export default function AddTeamModal({ onClose, agenceId, agenceName='Mon organi
         })
       }
 
-      toast.success(`✅ Équipe "${form.nom}" créée avec succès !`)
+      toast.success(`Équipe "${form.nom}" créée avec succès !`)
       onClose()
     } catch (err) {
       console.error(err)
@@ -479,7 +480,7 @@ export default function AddTeamModal({ onClose, agenceId, agenceName='Mon organi
                       <div key={i}
                         className={`at-agence-opt ${form.agence_id===ag.id?'active':''}`}
                         onClick={()=>set('agence_id',ag.id)}>
-                        <div style={{width:36,height:36,borderRadius:8,background:'rgba(0,120,212,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>🏢</div>
+                        <div style={{width:36,height:36,borderRadius:8,background:'rgba(0,120,212,0.15)',display:'flex',alignItems:'center',justifyContent:'center',color:'#4da6ff',flexShrink:0}}><Building2 size={16}/></div>
                         <div style={{flex:1}}>
                           <div style={{fontSize:14,fontWeight:600,color:'#e6edf3'}}>{ag.nom}</div>
                           <div style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>Agence · {agenceName}</div>
@@ -491,7 +492,7 @@ export default function AddTeamModal({ onClose, agenceId, agenceName='Mon organi
                         )}
                       </div>
                     ))}
-                    <div className="at-agence-add" onClick={()=>toast('Fonctionnalité de création d\'agence à venir',{icon:'🏗️'})}>
+                    <div className="at-agence-add" onClick={()=>toast('Fonctionnalité de création d\'agence à venir',{icon:<Building2 size={16}/>})}>
                       <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/>
                       </svg>
@@ -505,14 +506,14 @@ export default function AddTeamModal({ onClose, agenceId, agenceName='Mon organi
                     <div className={`at-radio-opt ${form.confidentialite==='public'?'active':''}`} onClick={()=>set('confidentialite','public')}>
                       <div className={`at-radio-dot ${form.confidentialite==='public'?'on':''}`}/>
                       <div>
-                        <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:4}}>🌐 Public</div>
+                        <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Globe size={14}/> Public</div>
                         <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)',lineHeight:1.6}}>Les personnes de l'organisation peuvent rejoindre l'équipe et accéder à son contenu sans approbation préalable.</div>
                       </div>
                     </div>
                     <div className={`at-radio-opt ${form.confidentialite==='prive'?'active':''}`} onClick={()=>set('confidentialite','prive')}>
                       <div className={`at-radio-dot ${form.confidentialite==='prive'?'on':''}`}/>
                       <div>
-                        <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:4}}>🔒 Privé</div>
+                        <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Lock size={14}/> Privé</div>
                         <div style={{fontSize:12.5,color:'rgba(255,255,255,0.4)',lineHeight:1.6}}>Seuls les membres invités par un propriétaire peuvent accéder à cette équipe et à son contenu.</div>
                       </div>
                     </div>
@@ -608,7 +609,9 @@ export default function AddTeamModal({ onClose, agenceId, agenceName='Mon organi
                       </div>
                       <div className="at-summary-row">
                         <span className="at-summary-key">Confidentialité</span>
-                        <span className="at-summary-val">{form.confidentialite === 'public' ? '🌐 Public' : '🔒 Privé'}</span>
+                        <span className="at-summary-val" style={{display:'inline-flex',alignItems:'center',gap:6}}>
+                          {form.confidentialite === 'public' ? <><Globe size={13}/> Public</> : <><Lock size={13}/> Privé</>}
+                        </span>
                       </div>
                     </div>
                   </div>

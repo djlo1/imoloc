@@ -4,6 +4,13 @@ import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
 import AddUserModal from '../components/AddUserModal'
+import {
+  Users, Crown, Briefcase, Eye, FileText, ShieldCheck, RefreshCw, Mail, AlertTriangle,
+  Trash2, Ban, Key, Lock, Pencil, User, Download, Upload,
+  Image as ImageIcon, Paperclip, ClipboardList, Folder, FolderOpen, Package,
+  Laptop, Undo2, Circle, CheckCircle2, Smartphone, Sparkles, Wallet, Building2,
+  BarChart3, Check, PenLine, Construction, Contact2, Info, Send, Clock,
+} from 'lucide-react'
 
 // ── Constantes ──────────────────────────────────────────
 const ROLES_LABELS = {
@@ -320,7 +327,7 @@ export default function Utilisateurs() {
         }
       } catch(e) { errors++ }
     }
-    toast.success(`✅ ${success} utilisateur(s) ajouté(s)${errors>0?' · '+errors+' erreur(s)':''}`)
+    toast.success(`${success} utilisateur(s) ajouté(s)${errors>0?' · '+errors+' erreur(s)':''}`)
     setBulkRows([{prenom:'',nom:'',email:'',role:'agent'},{prenom:'',nom:'',email:'',role:'agent'}])
     setShowBulkPanel(false)
     fetchData()
@@ -629,14 +636,14 @@ export default function Utilisateurs() {
             {/* Stats */}
             <div className="us-stats">
               {[
-                {ic:'👥',lbl:'Total',val:actifs.length,col:'#0078d4'},
-                {ic:'👑',lbl:'Administrateurs',val:actifs.filter(u=>u.role?.includes('admin')).length,col:'#ef4444'},
-                {ic:'💼',lbl:'Agents & Comptables',val:actifs.filter(u=>['agent','comptable'].includes(u.role)).length,col:'#6c63ff'},
-                {ic:'👁️',lbl:'Lecteurs',val:actifs.filter(u=>u.role==='lecteur').length,col:'rgba(255,255,255,0.4)'},
+                {ic:Users,lbl:'Total',val:actifs.length,col:'#0078d4'},
+                {ic:Crown,lbl:'Administrateurs',val:actifs.filter(u=>u.role?.includes('admin')).length,col:'#ef4444'},
+                {ic:Briefcase,lbl:'Agents & Comptables',val:actifs.filter(u=>['agent','comptable'].includes(u.role)).length,col:'#6c63ff'},
+                {ic:Eye,lbl:'Lecteurs',val:actifs.filter(u=>u.role==='lecteur').length,col:'rgba(255,255,255,0.4)'},
               ].map((s,i)=>(
                 <div key={i} className="us-sc">
                   <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}>
-                    <span style={{fontSize:16}}>{s.ic}</span>
+                    <s.ic size={16} color={s.col}/>
                     <span className="us-sl">{s.lbl}</span>
                   </div>
                   <div className="us-sv" style={{color:s.col}}>{s.val}</div>
@@ -655,9 +662,9 @@ export default function Utilisateurs() {
                 const blob = new Blob([csv],{type:'text/csv'})
                 const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modele_utilisateurs.csv'; a.click()
                 toast.success('Modèle CSV téléchargé !')
-              }}>📋 Modèles</button>
-              <button className="us-btn" onClick={()=>setShowBulkPanel(true)}>👥 Ajouter plusieurs</button>
-              <button className="us-btn">🔐 MFA</button>
+              }}><ClipboardList size={13}/> Modèles</button>
+              <button className="us-btn" onClick={()=>setShowBulkPanel(true)}><Users size={13}/> Ajouter plusieurs</button>
+              <button className="us-btn"><ShieldCheck size={13}/> MFA</button>
               <div className="us-sep"/>
               <button className="us-btn us-btn-d" disabled={selected.length===0} onClick={()=>{const u=actifs.find(x=>x.id===selected[0]);if(u)handleDelete(u)}}>
                 <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916"/></svg>
@@ -667,7 +674,7 @@ export default function Utilisateurs() {
                 <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
                 Exporter{selected.length>0&&` (${selected.length})`}
               </button>
-              <button className="us-btn" onClick={fetchData}>🔄</button>
+              <button className="us-btn" onClick={fetchData}><RefreshCw size={13}/></button>
               <div className="us-sr">
                 <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
                 <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher dans la liste des utilisateurs"/>
@@ -794,7 +801,7 @@ export default function Utilisateurs() {
                     ):filtered.length===0?(
                       <tr><td colSpan={20}>
                         <div className="us-empty">
-                          <div className="us-empty-ic">👥</div>
+                          <div className="us-empty-ic"><Users size={44}/></div>
                           <div className="us-empty-t">{search?`Aucun résultat pour "${search}"`:'Aucun utilisateur'}</div>
                           {!search&&<button className="us-btn us-btn-p" style={{margin:'0 auto'}} onClick={()=>navigate('/agence',{state:{openAddUser:true}})}>+ Ajouter un utilisateur</button>}
                         </div>
@@ -820,7 +827,7 @@ export default function Utilisateurs() {
                               <div>
                                 <div className="us-uname" style={{fontSize:viewMode==='compact'?12.5:13.5}}>
                                   {u.prenom} {u.nom}
-                                  {u.isOwner&&<span className="us-owner">👑</span>}
+                                  {u.isOwner&&<span className="us-owner" style={{display:'inline-flex',alignItems:'center'}}><Crown size={10}/></span>}
                                   {blockedUsers.includes(u.id)&&<span style={{fontSize:10,padding:'1px 7px',borderRadius:'100px',background:'rgba(245,158,11,0.12)',color:'#f59e0b',fontWeight:600,border:'1px solid rgba(245,158,11,0.25)'}}>Bloqué</span>}
                                 </div>
                                 {viewMode==='normal'&&<div className="us-uemail">{u.email||'—'}</div>}
@@ -863,13 +870,13 @@ export default function Utilisateurs() {
                             <button className="us-mbtn" onClick={e=>{e.stopPropagation();setRowMenu(rowMenu===u.id?null:u.id)}}>···</button>
                             {rowMenu===u.id&&(
                               <div className="us-dd">
-                                <button className="us-ddi" onClick={()=>{setSelectedUser(u);loadUserData(u);setRowMenu(null)}}>👤 Voir le profil</button>
-                                <button className="us-ddi" onClick={()=>setRowMenu(null)}>✏️ Modifier</button>
-                                <button className="us-ddi" onClick={()=>setRowMenu(null)}>🔑 Gérer les rôles</button>
-                                <button className="us-ddi" onClick={()=>setRowMenu(null)}>🔐 Réinitialiser le MDP</button>
-                                <button className="us-ddi" onClick={()=>setRowMenu(null)}>🚫 Bloquer la connexion</button>
+                                <button className="us-ddi" onClick={()=>{setSelectedUser(u);loadUserData(u);setRowMenu(null)}}><User size={14}/> Voir le profil</button>
+                                <button className="us-ddi" onClick={()=>setRowMenu(null)}><Pencil size={14}/> Modifier</button>
+                                <button className="us-ddi" onClick={()=>setRowMenu(null)}><Key size={14}/> Gérer les rôles</button>
+                                <button className="us-ddi" onClick={()=>setRowMenu(null)}><Lock size={14}/> Réinitialiser le MDP</button>
+                                <button className="us-ddi" onClick={()=>setRowMenu(null)}><Ban size={14}/> Bloquer la connexion</button>
                                 <div className="us-dds"/>
-                                {!u.isOwner&&<button className="us-ddi red" onClick={()=>{setRowMenu(null);handleDelete(u)}}>🗑️ Supprimer</button>}
+                                {!u.isOwner&&<button className="us-ddi red" onClick={()=>{setRowMenu(null);handleDelete(u)}}><Trash2 size={14}/> Supprimer</button>}
                               </div>
                             )}
                           </td>
@@ -890,13 +897,13 @@ export default function Utilisateurs() {
         {/* ══ PAGE CONTACTS ══ */}
         {tab==='contacts'&&(
           <div className="us-ct">
-            <div style={{fontSize:48,marginBottom:18}}>📇</div>
+            <div style={{marginBottom:18}}><Contact2 size={48}/></div>
             <div style={{fontSize:20,fontWeight:700,color:'#e6edf3',marginBottom:12}}>Contacts</div>
             <div style={{fontSize:14,color:'rgba(255,255,255,0.45)',lineHeight:1.85,marginBottom:24}}>
               Les contacts sont des personnes externes à votre organisation que vous aimeriez que tout le monde puisse trouver. Toutes les personnes répertoriées ici sont disponibles dans <strong style={{color:'rgba(255,255,255,0.7)'}}>Outlook</strong> sous Personnes dans <strong style={{color:'rgba(255,255,255,0.7)'}}>Microsoft 365</strong>.
             </div>
-            <div style={{padding:'14px 20px',borderRadius:8,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.18)',fontSize:13.5,color:'rgba(255,255,255,0.4)'}}>
-              🚧 Fonctionnalité disponible prochainement.
+            <div style={{padding:'14px 20px',borderRadius:8,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.18)',fontSize:13.5,color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',gap:8}}>
+              <Construction size={16}/> Fonctionnalité disponible prochainement.
             </div>
           </div>
         )}
@@ -909,14 +916,14 @@ export default function Utilisateurs() {
                 <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Inviter un utilisateur externe
               </button>
-              <button className="us-btn" onClick={fetchData}>🔄 Actualiser</button>
+              <button className="us-btn" onClick={fetchData}><RefreshCw size={13}/> Actualiser</button>
               <div className="us-sr">
                 <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
                 <input placeholder="Rechercher un invité"/>
               </div>
             </div>
             <div className="us-inv-info">
-              <span style={{fontSize:18,flexShrink:0}}>ℹ️</span>
+              <span style={{flexShrink:0,display:'flex'}}><Info size={18}/></span>
               <div>Les utilisateurs invités sont <strong style={{color:'rgba(255,255,255,0.7)'}}>externes</strong> à votre organisation et ont un accès en <strong style={{color:'rgba(255,255,255,0.7)'}}>lecture seule</strong>. Ils ne peuvent pas modifier les données.</div>
             </div>
             <div className="us-tw">
@@ -936,7 +943,7 @@ export default function Utilisateurs() {
                   {invites.length===0?(
                     <tr><td colSpan={6}>
                       <div className="us-empty">
-                        <div className="us-empty-ic">✉️</div>
+                        <div className="us-empty-ic"><Mail size={44}/></div>
                         <div className="us-empty-t">Aucun utilisateur invité</div>
                         <div style={{fontSize:13.5,marginBottom:16}}>Invitez des personnes externes en lecture seule</div>
                         <button className="us-btn us-btn-p" style={{margin:'0 auto'}} onClick={()=>setShowInvitePanel(true)}>+ Inviter</button>
@@ -963,7 +970,7 @@ export default function Utilisateurs() {
                         <td style={{fontSize:12.5,color:exp?'#ef4444':'rgba(255,255,255,0.5)'}}>{new Date(inv.date_expiration).toLocaleDateString('fr-FR')}</td>
                         <td><span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12.5,color:sc.c,fontWeight:500}}><span style={{width:7,height:7,borderRadius:'50%',background:sc.c}}/>{sc.l}</span></td>
                         <td>
-                          <button className="us-mbtn" onClick={async()=>{if(confirm('Supprimer cette invitation ?')){await supabase.from('utilisateurs_invites').delete().eq('id',inv.id);fetchData();toast.success('Invitation supprimée')}}}>🗑️</button>
+                          <button className="us-mbtn" onClick={async()=>{if(confirm('Supprimer cette invitation ?')){await supabase.from('utilisateurs_invites').delete().eq('id',inv.id);fetchData();toast.success('Invitation supprimée')}}}><Trash2 size={14}/></button>
                         </td>
                       </tr>
                     )
@@ -979,12 +986,12 @@ export default function Utilisateurs() {
         {tab==='supprimes'&&(
           <>
             <div style={{padding:'13px 16px',borderRadius:8,background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.15)',fontSize:13.5,color:'rgba(255,255,255,0.45)',lineHeight:1.7,marginBottom:20,display:'flex',gap:10,maxWidth:700}}>
-              <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
+              <span style={{flexShrink:0,display:'flex'}}><AlertTriangle size={18}/></span>
               <div>Les utilisateurs supprimés sont conservés <strong style={{color:'rgba(255,255,255,0.7)'}}>30 jours</strong> avant suppression définitive. Restaurez-les ou supprimez-les définitivement.</div>
             </div>
             {supprimes.length===0?(
               <div className="us-empty">
-                <div className="us-empty-ic">🗑️</div>
+                <div className="us-empty-ic"><Trash2 size={44}/></div>
                 <div className="us-empty-t">La corbeille est vide</div>
                 <div>Les utilisateurs supprimés apparaissent ici pendant 30 jours</div>
               </div>
@@ -999,12 +1006,12 @@ export default function Utilisateurs() {
                     <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:2}}>{sup.prenom} {sup.nom}</div>
                     <div style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{sup.email} · {ROLES_LABELS[sup.role]||sup.role}</div>
                     <div style={{fontSize:11.5,color:jr<=7?'#ef4444':'#f59e0b',marginTop:3,display:'flex',alignItems:'center',gap:4}}>
-                      {jr<=7?'🔴':'⏱️'} Suppression définitive dans {jr} jour{jr>1?'s':''}
+                      {jr<=7?<Circle size={8} fill="currentColor"/>:<Clock size={11}/>} Suppression définitive dans {jr} jour{jr>1?'s':''}
                     </div>
                   </div>
                   <div style={{display:'flex',gap:8,flexShrink:0}}>
-                    <button className="us-btn us-btn-g" onClick={()=>handleRestore(sup)}>↩️ Restaurer</button>
-                    <button className="us-btn us-btn-d" onClick={async()=>{if(confirm('Supprimer définitivement ?')){await supabase.from('utilisateurs_supprimes').delete().eq('id',sup.id);toast.success('Supprimé définitivement');fetchData()}}}>🗑️ Supprimer définitivement</button>
+                    <button className="us-btn us-btn-g" onClick={()=>handleRestore(sup)}><Undo2 size={13}/> Restaurer</button>
+                    <button className="us-btn us-btn-d" onClick={async()=>{if(confirm('Supprimer définitivement ?')){await supabase.from('utilisateurs_supprimes').delete().eq('id',sup.id);toast.success('Supprimé définitivement');fetchData()}}}><Trash2 size={13}/> Supprimer définitivement</button>
                   </div>
                 </div>
               )
@@ -1030,7 +1037,7 @@ export default function Utilisateurs() {
                       <span className="us-pill" style={{background:`${ROLES_COLORS[selectedUser.role]||'#0078d4'}18`,color:ROLES_COLORS[selectedUser.role]||'#0078d4',fontSize:11}}>
                         {ROLES_LABELS[selectedUser.role]||selectedUser.role}
                       </span>
-                      {selectedUser.isOwner&&<span className="us-owner" style={{marginLeft:6}}>👑 Propriétaire</span>}
+                      {selectedUser.isOwner&&<span className="us-owner" style={{marginLeft:6,display:'inline-flex',alignItems:'center',gap:4}}><Crown size={10}/> Propriétaire</span>}
                     </div>
                   </div>
                 </div>
@@ -1121,7 +1128,7 @@ export default function Utilisateurs() {
                       <div className="ud-blk">
                         <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:4}}>
                           <div className="ud-field-lbl2" style={{marginBottom:0}}>Déconnexion</div>
-                          <span style={{fontSize:15,color:'rgba(255,255,255,0.35)',lineHeight:1}}>ⓘ</span>
+                          <span style={{fontSize:15,color:'rgba(255,255,255,0.35)',lineHeight:1}}><Info size={14}/></span>
                         </div>
                         <div className="ud-field-val2">Signer l'utilisateur à partir de toutes les sessions Microsoft 365 actives.</div>
                         <a href="#" className="ud-link">Déconnectez-vous de toutes les sessions</a>
@@ -1213,7 +1220,7 @@ export default function Utilisateurs() {
                     <div className="ud-blk">
                       <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:4}}>
                         <div className="ud-field-lbl2" style={{marginBottom:0}}>Activations Imoloc</div>
-                        <span style={{fontSize:15,color:'rgba(255,255,255,0.35)'}}>ⓘ</span>
+                        <span style={{fontSize:15,color:'rgba(255,255,255,0.35)'}}><Info size={14}/></span>
                       </div>
                       <a href="#" className="ud-link">Afficher les activations</a>
                     </div>
@@ -1238,13 +1245,13 @@ export default function Utilisateurs() {
                       <div style={{textAlign:'center',padding:30,color:'rgba(255,255,255,0.3)'}}>Chargement...</div>
                     ) : userAppareils.length===0 ? (
                       <div className="ud-empty-tab">
-                        <div style={{fontSize:36,opacity:0.3,marginBottom:12}}>💻</div>
+                        <div style={{opacity:0.3,marginBottom:12}}><Laptop size={36}/></div>
                         <div style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Aucun appareil enregistré</div>
                         <div>Les sessions actives apparaîtront ici automatiquement.</div>
                       </div>
                     ) : userAppareils.map((d,i)=>(
                       <div key={i} className="ud-device-card" style={{opacity:d.revoque?0.45:1}}>
-                        <div className="ud-device-icon">{d.type==='mobile'?'📱':d.type==='tablette'?'📱':'💻'}</div>
+                        <div className="ud-device-icon">{d.type==='mobile'||d.type==='tablette'?<Smartphone size={22}/>:<Laptop size={22}/>}</div>
                         <div style={{flex:1}}>
                           <div className="ud-device-name">{d.nom||`${d.os||'Appareil'} — ${d.navigateur||'Navigateur'}`}</div>
                           <div className="ud-device-meta">{d.type} · {d.localisation||'Localisation inconnue'}</div>
@@ -1269,7 +1276,7 @@ export default function Utilisateurs() {
                 <>
                   {/* Bannière info */}
                   <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,marginBottom:22}}>
-                    <span style={{fontSize:16,flexShrink:0}}>ⓘ</span>
+                    <span style={{fontSize:16,flexShrink:0}}><Info size={14}/></span>
                     <div style={{flex:1,fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.6}}>
                       Les licences sont attribuées automatiquement selon le rôle de l'utilisateur dans l'organisation.
                       <a href="#" className="ud-link" style={{marginLeft:8}}>Gérer les abonnements</a>
@@ -1432,7 +1439,7 @@ export default function Utilisateurs() {
                       <div>
                         <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
                           <div className="ud-field-lbl2" style={{margin:0}}>Conservation des données</div>
-                          <span style={{color:'rgba(255,255,255,0.3)'}}>ⓘ</span>
+                          <span style={{color:'rgba(255,255,255,0.3)'}}><Info size={14}/></span>
                         </div>
                         <div className="ud-field-val2">30 jour(s)</div>
                         <a href="#" className="ud-link">Modifier</a>
@@ -1450,21 +1457,21 @@ export default function Utilisateurs() {
                     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
                       <div style={{fontSize:15,fontWeight:700,color:'#e6edf3'}}>Fichiers de l'utilisateur</div>
                       <button style={{display:'flex',alignItems:'center',gap:7,padding:'7px 14px',borderRadius:6,background:'rgba(0,120,212,0.1)',border:'1px solid rgba(0,120,212,0.25)',color:'#4da6ff',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
-                        📦 Télécharger tout en ZIP
+                        <Package size={14}/> Télécharger tout en ZIP
                       </button>
                     </div>
                     {loadingUserData ? (
                       <div style={{textAlign:'center',padding:30,color:'rgba(255,255,255,0.3)'}}>Chargement...</div>
                     ) : userDriveFiles.length===0 ? (
                       <div style={{textAlign:'center',padding:'40px 20px',color:'rgba(255,255,255,0.25)',background:'rgba(255,255,255,0.02)',borderRadius:10,border:'1px dashed rgba(255,255,255,0.07)'}}>
-                        <div style={{fontSize:36,marginBottom:12,opacity:0.4}}>📂</div>
+                        <div style={{marginBottom:12,opacity:0.4}}><FolderOpen size={36}/></div>
                         <div style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.35)',marginBottom:8}}>Aucun fichier disponible</div>
                         <div style={{fontSize:13}}>Les baux, contrats et documents de cet utilisateur apparaîtront ici.</div>
                       </div>
                     ) : userDriveFiles.map((f,i)=>(
                       <div key={i} className="ud-file-card">
                         <div className="ud-file-icon" style={{background:f.type==='bail'?'rgba(0,120,212,0.12)':f.type==='image'?'rgba(0,200,150,0.12)':'rgba(255,255,255,0.06)'}}>
-                          {f.type==='bail'?'📋':f.type==='image'?'🖼️':f.type==='contrat'?'📄':'📎'}
+                          {f.type==='bail'?<ClipboardList size={18}/>:f.type==='image'?<ImageIcon size={18}/>:f.type==='contrat'?<FileText size={18}/>:<Paperclip size={18}/>}
                         </div>
                         <div style={{flex:1,minWidth:0}}>
                           <div className="ud-file-name">{f.nom}</div>
@@ -1533,7 +1540,7 @@ export default function Utilisateurs() {
             </div>
             <div className="ui-body">
               <div style={{padding:'12px 14px',borderRadius:7,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.18)',fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.65,marginBottom:20,display:'flex',gap:10}}>
-                <span style={{fontSize:18,flexShrink:0}}>ℹ️</span>
+                <span style={{flexShrink:0,display:'flex'}}><Info size={18}/></span>
                 <div>Les utilisateurs invités sont <strong style={{color:'rgba(255,255,255,0.7)'}}>externes</strong> à votre organisation avec un accès en <strong style={{color:'rgba(255,255,255,0.7)'}}>lecture seule</strong> uniquement.</div>
               </div>
               <form id="invite-form" onSubmit={handleInvite}>
@@ -1619,21 +1626,21 @@ export default function Utilisateurs() {
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
                     <div onClick={()=>setBulkMode('manual')}
                       style={{padding:'24px',borderRadius:10,border:`2px solid ${bulkMode==='manual'?'#0078d4':'rgba(255,255,255,0.08)'}`,background:bulkMode==='manual'?'rgba(0,120,212,0.07)':'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.15s'}}>
-                      <div style={{fontSize:32,marginBottom:14}}>📝</div>
+                      <div style={{marginBottom:14}}><PenLine size={32}/></div>
                       <div style={{fontSize:15,fontWeight:700,color:'#e6edf3',marginBottom:8}}>Saisie manuelle</div>
                       <div style={{fontSize:13.5,color:'rgba(255,255,255,0.45)',lineHeight:1.65}}>
                         Remplissez un tableau directement dans l'interface. Idéal pour ajouter quelques utilisateurs rapidement.
                       </div>
-                      {bulkMode==='manual'&&<div style={{marginTop:12,fontSize:12.5,color:'#4da6ff',fontWeight:600}}>✓ Sélectionné</div>}
+                      {bulkMode==='manual'&&<div style={{marginTop:12,fontSize:12.5,color:'#4da6ff',fontWeight:600,display:'flex',alignItems:'center',gap:5}}><Check size={13}/> Sélectionné</div>}
                     </div>
                     <div onClick={()=>setBulkMode('csv')}
                       style={{padding:'24px',borderRadius:10,border:`2px solid ${bulkMode==='csv'?'#0078d4':'rgba(255,255,255,0.08)'}`,background:bulkMode==='csv'?'rgba(0,120,212,0.07)':'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.15s'}}>
-                      <div style={{fontSize:32,marginBottom:14}}>📥</div>
+                      <div style={{marginBottom:14}}><Download size={32}/></div>
                       <div style={{fontSize:15,fontWeight:700,color:'#e6edf3',marginBottom:8}}>Import CSV</div>
                       <div style={{fontSize:13.5,color:'rgba(255,255,255,0.45)',lineHeight:1.65}}>
                         Téléchargez notre modèle CSV, remplissez-le et importez-le. Parfait pour un grand nombre d'utilisateurs.
                       </div>
-                      {bulkMode==='csv'&&<div style={{marginTop:12,fontSize:12.5,color:'#4da6ff',fontWeight:600}}>✓ Sélectionné</div>}
+                      {bulkMode==='csv'&&<div style={{marginTop:12,fontSize:12.5,color:'#4da6ff',fontWeight:600,display:'flex',alignItems:'center',gap:5}}><Check size={13}/> Sélectionné</div>}
                     </div>
                   </div>
 
@@ -1694,7 +1701,7 @@ export default function Utilisateurs() {
                                 <tr key={i} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:isValid?'rgba(0,200,150,0.02)':'transparent'}}>
                                   <td style={{padding:'6px 12px',fontSize:12,color:'rgba(255,255,255,0.25)',textAlign:'center'}}>
                                     {isValid
-                                      ? <span style={{color:'#00c896',fontSize:14}}>✓</span>
+                                      ? <span style={{color:'#00c896',display:'inline-flex'}}><Check size={14}/></span>
                                       : <span>{i+1}</span>}
                                   </td>
                                   {['prenom','nom','email'].map(field=>(
@@ -1734,7 +1741,7 @@ export default function Utilisateurs() {
                   )}
                   {bulkMode==='csv'&&(
                     <div style={{textAlign:'center',padding:'40px'}}>
-                      <div style={{fontSize:40,marginBottom:16}}>📁</div>
+                      <div style={{marginBottom:16}}><Folder size={40}/></div>
                       <div style={{fontSize:15,fontWeight:600,color:'#e6edf3',marginBottom:8}}>Importer un fichier CSV</div>
                       <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',marginBottom:24}}>Glissez-déposez votre fichier ou cliquez pour sélectionner</div>
                       <input type="file" accept=".csv" onChange={async(e)=>{
@@ -1766,7 +1773,7 @@ export default function Utilisateurs() {
                     Sélectionnez les licences à attribuer aux {bulkRows.filter(r=>r.prenom&&r.email).length} utilisateurs. Les licences sont attribuées automatiquement selon le rôle mais vous pouvez les personnaliser.
                   </div>
                   <div style={{padding:'12px 16px',borderRadius:8,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.18)',fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.65,marginBottom:24,display:'flex',gap:10}}>
-                    <span style={{fontSize:18,flexShrink:0}}>ℹ️</span>
+                    <span style={{flexShrink:0,display:'flex'}}><Info size={18}/></span>
                     <div>Les licences sont attribuées selon le rôle de chaque utilisateur. <a href="#" className="ud-link">En savoir plus sur les licences</a></div>
                   </div>
                   {[
@@ -1800,14 +1807,14 @@ export default function Utilisateurs() {
                   </div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                     {[
-                      {icon:'🏢',name:'Gestion des biens',desc:'Ajout, modification et suivi des biens immobiliers',active:true},
-                      {icon:'👥',name:'Gestion des locataires',desc:'Gestion des dossiers et contrats locataires',active:true},
-                      {icon:'💰',name:'Paiements & Loyers',desc:'Suivi des encaissements et relances',active:true},
-                      {icon:'✨',name:'Loci IA',desc:"Assistant IA pour analyses et recommandations",active:true},
-                      {icon:'📊',name:'Rapports & Analytics',desc:'Tableaux de bord et exports de données',active:false},
-                      {icon:'📋',name:'Gestion des baux',desc:'Création et suivi des contrats de bail',active:true},
-                      {icon:'🔐',name:'Sécurité avancée',desc:'MFA et politiques de sécurité',active:false},
-                      {icon:'📱',name:'Application mobile',desc:'Accès depuis smartphone et tablette',active:false},
+                      {icon:Building2,name:'Gestion des biens',desc:'Ajout, modification et suivi des biens immobiliers',active:true},
+                      {icon:Users,name:'Gestion des locataires',desc:'Gestion des dossiers et contrats locataires',active:true},
+                      {icon:Wallet,name:'Paiements & Loyers',desc:'Suivi des encaissements et relances',active:true},
+                      {icon:Sparkles,name:'Loci IA',desc:"Assistant IA pour analyses et recommandations",active:true},
+                      {icon:BarChart3,name:'Rapports & Analytics',desc:'Tableaux de bord et exports de données',active:false},
+                      {icon:ClipboardList,name:'Gestion des baux',desc:'Création et suivi des contrats de bail',active:true},
+                      {icon:ShieldCheck,name:'Sécurité avancée',desc:'MFA et politiques de sécurité',active:false},
+                      {icon:Smartphone,name:'Application mobile',desc:'Accès depuis smartphone et tablette',active:false},
                     ].map((app,i)=>(
                       <div key={i} style={{display:'flex',alignItems:'flex-start',gap:12,padding:'14px',borderRadius:8,border:'1px solid rgba(255,255,255,0.07)',background:'rgba(255,255,255,0.02)'}}>
                         <div style={{width:18,height:18,borderRadius:3,background:app.active?'#0078d4':'rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,cursor:'pointer',marginTop:2}}>
@@ -1815,7 +1822,7 @@ export default function Utilisateurs() {
                         </div>
                         <div style={{flex:1}}>
                           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
-                            <span style={{fontSize:16}}>{app.icon}</span>
+                            <app.icon size={16}/>
                             <span style={{fontSize:13.5,fontWeight:600,color:'#e6edf3'}}>{app.name}</span>
                           </div>
                           <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',lineHeight:1.5}}>{app.desc}</div>
@@ -1885,12 +1892,12 @@ export default function Utilisateurs() {
                   </div>
                   <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:24}}>
                     {[
-                      {ic:'✅',val:bulkRows.filter(r=>r.prenom&&r.email).length,lbl:'Valides',col:'#00c896'},
-                      {ic:'⚠️',val:bulkRows.filter(r=>!r.prenom||!r.email).length,lbl:'Ignorés',col:'#f59e0b'},
-                      {ic:'👥',val:bulkRows.length,lbl:'Total',col:'#0078d4'},
+                      {ic:CheckCircle2,val:bulkRows.filter(r=>r.prenom&&r.email).length,lbl:'Valides',col:'#00c896'},
+                      {ic:AlertTriangle,val:bulkRows.filter(r=>!r.prenom||!r.email).length,lbl:'Ignorés',col:'#f59e0b'},
+                      {ic:Users,val:bulkRows.length,lbl:'Total',col:'#0078d4'},
                     ].map((s,i)=>(
                       <div key={i} style={{padding:'14px',borderRadius:8,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)',textAlign:'center'}}>
-                        <div style={{fontSize:22,marginBottom:6}}>{s.ic}</div>
+                        <div style={{marginBottom:6,display:'flex',justifyContent:'center',color:s.col}}><s.ic size={22}/></div>
                         <div style={{fontSize:22,fontWeight:800,color:s.col,marginBottom:3}}>{s.val}</div>
                         <div style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{s.lbl}</div>
                       </div>
@@ -1916,8 +1923,8 @@ export default function Utilisateurs() {
                     })}
                   </div>
                   {bulkRows.filter(r=>!r.prenom||!r.email).length>0&&(
-                    <div style={{marginTop:14,padding:'12px 16px',borderRadius:8,background:'rgba(245,158,11,0.07)',border:'1px solid rgba(245,158,11,0.2)',fontSize:13,color:'rgba(255,255,255,0.5)'}}>
-                      ⚠️ {bulkRows.filter(r=>!r.prenom||!r.email).length} ligne(s) incomplète(s) seront ignorées.
+                    <div style={{marginTop:14,padding:'12px 16px',borderRadius:8,background:'rgba(245,158,11,0.07)',border:'1px solid rgba(245,158,11,0.2)',fontSize:13,color:'rgba(255,255,255,0.5)',display:'flex',alignItems:'center',gap:8}}>
+                      <AlertTriangle size={14} style={{flexShrink:0}}/> {bulkRows.filter(r=>!r.prenom||!r.email).length} ligne(s) incomplète(s) seront ignorées.
                     </div>
                   )}
                 </>

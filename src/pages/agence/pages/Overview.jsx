@@ -3,6 +3,7 @@ import ResetPasswordPanel from '../components/ResetPasswordPanel'
 import AddTeamModal from '../components/AddTeamModal'
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { Video, BookOpen, GraduationCap, ArrowRight, Building2 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 
@@ -361,12 +362,12 @@ export default function Overview() {
                   <button className="ov-simple-more">···</button>
                 </div>
                 {[
-                  { icon:'📹', title:'Guide de démarrage rapide', sub:'Configurez votre organisation en 5 étapes' },
-                  { icon:'📘', title:'Guides administration avancés', sub:'Rapports, exports, multi-biens' },
-                  { icon:'🎓', title:'Formation pour les agents', sub:'Utilisez Imoloc au quotidien' },
+                  { icon:Video, title:'Guide de démarrage rapide', sub:'Configurez votre organisation en 5 étapes' },
+                  { icon:BookOpen, title:'Guides administration avancés', sub:'Rapports, exports, multi-biens' },
+                  { icon:GraduationCap, title:'Formation pour les agents', sub:'Utilisez Imoloc au quotidien' },
                 ].map((g,i) => (
                   <div key={i} style={{display:'flex',alignItems:'flex-start',gap:10,padding:'8px 0',borderBottom: i<2?'1px solid rgba(255,255,255,0.04)':'none',cursor:'pointer'}}>
-                    <span style={{fontSize:20,flexShrink:0}}>{g.icon}</span>
+                    <g.icon size={18} style={{flexShrink:0,color:'rgba(255,255,255,0.4)'}}/>
                     <div>
                       <div style={{fontSize:13,fontWeight:500,color:'#e6edf3',marginBottom:2}}>{g.title}</div>
                       <div style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{g.sub}</div>
@@ -397,7 +398,7 @@ export default function Overview() {
                     <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:'100px',background:a.ok?'rgba(0,200,150,0.1)':'rgba(255,255,255,0.05)',color:a.ok?'#00c896':'rgba(255,255,255,0.2)'}}>{a.ok?'Actif':'Upgrade'}</span>
                   </div>
                 ))}
-                <Link to="/agence/abonnement" className="ov-link" style={{fontSize:12.5,marginTop:8,display:'block'}}>Voir mon abonnement →</Link>
+                <Link to="/agence/abonnement" className="ov-link" style={{fontSize:12.5,marginTop:8,display:'block'}}>Voir mon abonnement <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link>
               </div>
             )}
 
@@ -424,7 +425,7 @@ export default function Overview() {
                     </div>
                   </div>
                 ))}
-                <Link to="/agence/rapports" className="ov-link" style={{fontSize:12.5,marginTop:4,display:'block'}}>Voir tous les rapports →</Link>
+                <Link to="/agence/rapports" className="ov-link" style={{fontSize:12.5,marginTop:4,display:'block'}}>Voir tous les rapports <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link>
               </div>
             )}
           </div>
@@ -442,7 +443,7 @@ export default function Overview() {
               ))}
             </div>
             {orgTab==='biens' && (
-              biens.length===0 ? <div className="ov-empty">Aucun bien. <Link to="/agence/biens" className="ov-link">Ajouter un bien →</Link></div> :
+              biens.length===0 ? <div className="ov-empty">Aucun bien. <Link to="/agence/biens" className="ov-link">Ajouter un bien <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link></div> :
               <div style={{overflowX:'auto'}}>
               <table className="ov-table">
                 <thead><tr><th>Nom</th><th>Type</th><th>Ville</th><th>Loyer/mois</th><th>Statut</th></tr></thead>
@@ -459,7 +460,7 @@ export default function Overview() {
               </div>
             )}
             {orgTab==='locataires' && (
-              locataires.length===0 ? <div className="ov-empty">Aucun locataire. <Link to="/agence/locataires" className="ov-link">Ajouter →</Link></div> :
+              locataires.length===0 ? <div className="ov-empty">Aucun locataire. <Link to="/agence/locataires" className="ov-link">Ajouter <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link></div> :
               <div style={{overflowX:'auto'}}>
               <table className="ov-table">
                 <thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Ajouté le</th></tr></thead>
@@ -475,7 +476,7 @@ export default function Overview() {
               </div>
             )}
             {orgTab==='paiements' && (
-              paiements.length===0 ? <div className="ov-empty">Aucun paiement. <Link to="/agence/paiements" className="ov-link">Enregistrer →</Link></div> :
+              paiements.length===0 ? <div className="ov-empty">Aucun paiement. <Link to="/agence/paiements" className="ov-link">Enregistrer <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link></div> :
               <div style={{overflowX:'auto'}}>
               <table className="ov-table">
                 <thead><tr><th>Date</th><th>Montant</th><th>Mode</th><th>Statut</th></tr></thead>
@@ -490,7 +491,7 @@ export default function Overview() {
               </table>
               </div>
             )}
-            {orgTab==='baux' && <div className="ov-empty">Aucun bail. <Link to="/agence/baux" className="ov-link">Créer un bail →</Link></div>}
+            {orgTab==='baux' && <div className="ov-empty">Aucun bail. <Link to="/agence/baux" className="ov-link">Créer un bail <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link></div>}
           </div>
         </>
       )}
@@ -503,7 +504,7 @@ export default function Overview() {
             onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,0.3)"}}
             onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none"}}>
             <div style={{display:"flex",alignItems:"center",gap:16}}>
-              <div style={{width:48,height:48,borderRadius:12,background:"rgba(0,200,150,0.15)",border:"1px solid rgba(0,200,150,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>🏢</div>
+              <div style={{width:48,height:48,borderRadius:12,background:"rgba(0,200,150,0.15)",border:"1px solid rgba(0,200,150,0.3)",display:"flex",alignItems:"center",justifyContent:"center",color:"#00c896",flexShrink:0}}><Building2 size={24}/></div>
               <div>
                 <div style={{fontSize:16,fontWeight:700,color:"#e6edf3",marginBottom:3}}>Centre Imoloc</div>
                 <div style={{fontSize:13,color:"rgba(255,255,255,0.45)"}}>Gerer vos biens, proprietaires, locataires, baux et paiements</div>
@@ -515,9 +516,9 @@ export default function Overview() {
             </div>
           </div>
           <div className="ov-grid3">
-            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Biens</span><button className="ov-card-more">···</button></div><div style={{fontSize:40,fontWeight:800,color:'#0078d4',letterSpacing:'-0.03em'}}>{stats.biens}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{bienOcc} occupés · {bienLib} libres</div><div className="ov-progress" style={{marginTop:12}}><div className="ov-progress-fill" style={{width:`${tauxOcc}%`,background:'#0078d4'}}/></div><Link to="/agence/biens" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Gérer les biens →</Link></div>
-            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Locataires</span><button className="ov-card-more">···</button></div><div style={{fontSize:40,fontWeight:800,color:'#6c63ff',letterSpacing:'-0.03em'}}>{stats.locataires}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{stats.retards} loyer{stats.retards>1?'s':''} en retard</div><Link to="/agence/locataires" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les locataires →</Link></div>
-            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Revenus ce mois</span><button className="ov-card-more">···</button></div><div style={{fontSize:28,fontWeight:800,color:'#00c896',letterSpacing:'-0.02em'}}>{stats.revenus.toLocaleString()} FCFA</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>Plan Standard actif</div><Link to="/agence/paiements" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les paiements →</Link></div>
+            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Biens</span><button className="ov-card-more">···</button></div><div style={{fontSize:40,fontWeight:800,color:'#0078d4',letterSpacing:'-0.03em'}}>{stats.biens}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{bienOcc} occupés · {bienLib} libres</div><div className="ov-progress" style={{marginTop:12}}><div className="ov-progress-fill" style={{width:`${tauxOcc}%`,background:'#0078d4'}}/></div><Link to="/agence/biens" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Gérer les biens <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link></div>
+            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Locataires</span><button className="ov-card-more">···</button></div><div style={{fontSize:40,fontWeight:800,color:'#6c63ff',letterSpacing:'-0.03em'}}>{stats.locataires}</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>{stats.retards} loyer{stats.retards>1?'s':''} en retard</div><Link to="/agence/locataires" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les locataires <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link></div>
+            <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Revenus ce mois</span><button className="ov-card-more">···</button></div><div style={{fontSize:28,fontWeight:800,color:'#00c896',letterSpacing:'-0.02em'}}>{stats.revenus.toLocaleString()} FCFA</div><div style={{fontSize:12.5,color:'rgba(255,255,255,0.3)',marginTop:4}}>Plan Standard actif</div><Link to="/agence/paiements" className="ov-link" style={{fontSize:12.5,marginTop:10,display:'block'}}>Voir les paiements <ArrowRight size={11} style={{display:"inline",verticalAlign:"-1px"}}/></Link></div>
           </div>
           <div className="ov-grid2">
             <div className="ov-card"><div className="ov-card-head"><span className="ov-card-title">Biens récents</span><Link to="/agence/biens" className="ov-link" style={{fontSize:12}}>Voir tout</Link></div>{biens.length===0?<div className="ov-empty">Aucun bien</div>:biens.slice(0,4).map((b,i)=><div key={i} className="ov-item-row"><span style={{color:'#e6edf3',fontWeight:500}}>{b.nom}</span><span className="ov-badge" style={{background:b.statut==='libre'?'rgba(0,200,150,0.1)':'rgba(0,120,212,0.1)',color:b.statut==='libre'?'#00c896':'#0078d4'}}>{b.statut}</span></div>)}</div>

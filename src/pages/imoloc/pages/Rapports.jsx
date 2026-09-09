@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
+import { Wallet, Calendar, Hourglass, AlertTriangle, Home, CheckCircle2, Key, BarChart3, Users, Wrench, ClipboardList } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 
 const MOIS = ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec']
 
-function StatCard({ label, value, sub, color, icon }) {
+function StatCard({ label, value, sub, color, icon:Icon }) {
   return (
     <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'16px 20px'}}>
       <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:10}}>
         <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',fontWeight:500}}>{label}</div>
-        {icon&&<span style={{fontSize:20,opacity:0.6}}>{icon}</span>}
+        {Icon&&<Icon size={20} style={{opacity:0.6}}/>}
       </div>
       <div style={{fontSize:28,fontWeight:700,color:color||'#4da6ff',marginBottom:4}}>{value}</div>
       {sub&&<div style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{sub}</div>}
@@ -118,10 +119,10 @@ export default function Rapports() {
         {activeTab==='financier'&&(
           <div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,marginBottom:20}}>
-              <StatCard label="Revenus totaux" value={fmt(stats.revenus_total)+' F'} sub="Tous paiements recus" color="#00c896" icon="💰"/>
-              <StatCard label="Revenus ce mois" value={fmt(stats.revenus_mois)+' F'} sub={new Date().toLocaleString('fr-FR',{month:'long',year:'numeric'})} color="#4da6ff" icon="📅"/>
-              <StatCard label="En attente" value={fmt(stats.paiements_en_attente)+' F'} sub="Paiements non encaisses" color="#f59e0b" icon="⏳"/>
-              <StatCard label="Retards" value={stats.retards_total} sub="Paiements en retard" color="#ef4444" icon="⚠️"/>
+              <StatCard label="Revenus totaux" value={fmt(stats.revenus_total)+' F'} sub="Tous paiements recus" color="#00c896" icon={Wallet}/>
+              <StatCard label="Revenus ce mois" value={fmt(stats.revenus_mois)+' F'} sub={new Date().toLocaleString('fr-FR',{month:'long',year:'numeric'})} color="#4da6ff" icon={Calendar}/>
+              <StatCard label="En attente" value={fmt(stats.paiements_en_attente)+' F'} sub="Paiements non encaisses" color="#f59e0b" icon={Hourglass}/>
+              <StatCard label="Retards" value={stats.retards_total} sub="Paiements en retard" color="#ef4444" icon={AlertTriangle}/>
             </div>
             <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'20px 24px',marginBottom:16}}>
               <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:16}}>Revenus mensuels {annee}</div>
@@ -154,10 +155,10 @@ export default function Rapports() {
         {activeTab==='occupation'&&(
           <div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,marginBottom:20}}>
-              <StatCard label="Total biens" value={stats.biens_total} sub="Dans le portefeuille" color="#4da6ff" icon="🏠"/>
-              <StatCard label="Occupes" value={stats.biens_occupes} sub={stats.taux_occupation+'% du portefeuille'} color="#00c896" icon="✅"/>
-              <StatCard label="Disponibles" value={stats.biens_libres} sub="Prets a louer" color="#f59e0b" icon="🔑"/>
-              <StatCard label="Taux occupation" value={stats.taux_occupation+'%'} sub="Portefeuille global" color={stats.taux_occupation>=80?'#00c896':stats.taux_occupation>=60?'#f59e0b':'#ef4444'} icon="📊"/>
+              <StatCard label="Total biens" value={stats.biens_total} sub="Dans le portefeuille" color="#4da6ff" icon={Home}/>
+              <StatCard label="Occupes" value={stats.biens_occupes} sub={stats.taux_occupation+'% du portefeuille'} color="#00c896" icon={CheckCircle2}/>
+              <StatCard label="Disponibles" value={stats.biens_libres} sub="Prets a louer" color="#f59e0b" icon={Key}/>
+              <StatCard label="Taux occupation" value={stats.taux_occupation+'%'} sub="Portefeuille global" color={stats.taux_occupation>=80?'#00c896':stats.taux_occupation>=60?'#f59e0b':'#ef4444'} icon={BarChart3}/>
             </div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
               <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'20px 24px'}}>
@@ -185,15 +186,15 @@ export default function Rapports() {
         {activeTab==='locataires'&&(
           <div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,marginBottom:20}}>
-              <StatCard label="Total locataires" value={stats.locataires_total} sub="Dans la base" color="#4da6ff" icon="👥"/>
-              <StatCard label="Locataires actifs" value={stats.locataires_actifs} sub="Avec bail en cours" color="#00c896" icon="✅"/>
-              <StatCard label="Retards de paiement" value={stats.retards_total} sub="Paiements en retard" color="#ef4444" icon="⚠️"/>
+              <StatCard label="Total locataires" value={stats.locataires_total} sub="Dans la base" color="#4da6ff" icon={Users}/>
+              <StatCard label="Locataires actifs" value={stats.locataires_actifs} sub="Avec bail en cours" color="#00c896" icon={CheckCircle2}/>
+              <StatCard label="Retards de paiement" value={stats.retards_total} sub="Paiements en retard" color="#ef4444" icon={AlertTriangle}/>
             </div>
             <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'20px 24px'}}>
               <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:16}}>Paiements en retard</div>
               {retards_list.length===0?(
                 <div style={{textAlign:'center',padding:'30px',color:'rgba(255,255,255,0.25)',fontSize:13}}>
-                  <div style={{fontSize:28,marginBottom:8,opacity:0.4}}>✅</div>Aucun retard de paiement
+                  <CheckCircle2 size={28} style={{marginBottom:8,opacity:0.4}}/>Aucun retard de paiement
                 </div>
               ):(
                 <div style={{overflowX:'auto'}}>
@@ -219,17 +220,17 @@ export default function Rapports() {
         {activeTab==='maintenance'&&(
           <div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,marginBottom:20}}>
-              <StatCard label="Tickets ouverts" value={stats.maintenances_ouvertes} sub="En attente ou en cours" color="#f59e0b" icon="🔧"/>
-              <StatCard label="Tickets resolus" value={stats.maintenances_resolues} sub="Resolus ou fermes" color="#00c896" icon="✅"/>
-              <StatCard label="Total tickets" value={stats.maintenances_ouvertes+stats.maintenances_resolues} sub="Depuis le debut" color="#4da6ff" icon="📋"/>
-              <StatCard label="Taux resolution" value={stats.maintenances_ouvertes+stats.maintenances_resolues>0?Math.round((stats.maintenances_resolues/(stats.maintenances_ouvertes+stats.maintenances_resolues))*100)+'%':'—'} sub="Tickets resolus / total" color="#8b5cf6" icon="📊"/>
+              <StatCard label="Tickets ouverts" value={stats.maintenances_ouvertes} sub="En attente ou en cours" color="#f59e0b" icon={Wrench}/>
+              <StatCard label="Tickets resolus" value={stats.maintenances_resolues} sub="Resolus ou fermes" color="#00c896" icon={CheckCircle2}/>
+              <StatCard label="Total tickets" value={stats.maintenances_ouvertes+stats.maintenances_resolues} sub="Depuis le debut" color="#4da6ff" icon={ClipboardList}/>
+              <StatCard label="Taux resolution" value={stats.maintenances_ouvertes+stats.maintenances_resolues>0?Math.round((stats.maintenances_resolues/(stats.maintenances_ouvertes+stats.maintenances_resolues))*100)+'%':'—'} sub="Tickets resolus / total" color="#8b5cf6" icon={BarChart3}/>
             </div>
             <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'20px 24px'}}>
               <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:20}}>Suivi des tickets</div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
-                {[{label:'Ouverts / En cours',val:stats.maintenances_ouvertes,color:'#f59e0b',icon:'🔧'},{label:'Resolus / Fermes',val:stats.maintenances_resolues,color:'#00c896',icon:'✅'}].map(({label,val,color,icon})=>(
+                {[{label:'Ouverts / En cours',val:stats.maintenances_ouvertes,color:'#f59e0b',icon:Wrench},{label:'Resolus / Fermes',val:stats.maintenances_resolues,color:'#00c896',icon:CheckCircle2}].map(({label,val,color,icon:Icon})=>(
                   <div key={label} style={{padding:'20px',background:color+'0f',border:`1px solid ${color}33`,borderRadius:10,textAlign:'center'}}>
-                    <div style={{fontSize:36,marginBottom:8}}>{icon}</div>
+                    <div style={{marginBottom:8,display:'flex',justifyContent:'center'}}><Icon size={32} color={color}/></div>
                     <div style={{fontSize:32,fontWeight:700,color,marginBottom:6}}>{val}</div>
                     <div style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>{label}</div>
                   </div>

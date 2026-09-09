@@ -1,10 +1,12 @@
+import { Smartphone, Waves, MessageCircle, Calendar, Signature, Plug } from 'lucide-react'
+
 const INTEGRATIONS = [
-  { name:'MTN Mobile Money', desc:'Collecte automatique des loyers via MTN MoMo', icon:'📱', status:'disponible', color:'#f59e0b' },
-  { name:'Moov Money', desc:'Intégration Moov Money pour le Bénin et Togo', icon:'📱', status:'disponible', color:'#0078d4' },
-  { name:'Wave', desc:'Paiements Wave pour le Sénégal et Côte d\'Ivoire', icon:'💙', status:'disponible', color:'#4da6ff' },
-  { name:'WhatsApp Business', desc:'Envoi automatique de notifications aux locataires', icon:'💬', status:'bientôt', color:'#00c896' },
-  { name:'Google Calendar', desc:'Synchronisation des échéances et rendez-vous', icon:'📅', status:'bientôt', color:'#ef4444' },
-  { name:'Signature électronique', desc:'Signature de baux en ligne via DocuSign', icon:'✍️', status:'bientôt', color:'#6c63ff' },
+  { name:'MTN Mobile Money', desc:'Collecte automatique des loyers via MTN MoMo', icon:Smartphone, status:'disponible', color:'#f59e0b' },
+  { name:'Moov Money', desc:'Intégration Moov Money pour le Bénin et Togo', icon:Smartphone, status:'disponible', color:'#0078d4' },
+  { name:'Wave', desc:'Paiements Wave pour le Sénégal et Côte d\'Ivoire', icon:Waves, status:'disponible', color:'#4da6ff' },
+  { name:'WhatsApp Business', desc:'Envoi automatique de notifications aux locataires', icon:MessageCircle, status:'bientôt', color:'#00c896' },
+  { name:'Google Calendar', desc:'Synchronisation des échéances et rendez-vous', icon:Calendar, status:'bientôt', color:'#ef4444' },
+  { name:'Signature électronique', desc:'Signature de baux en ligne via DocuSign', icon:Signature, status:'bientôt', color:'#6c63ff' },
 ]
 
 export default function Integrations() {
@@ -30,13 +32,13 @@ export default function Integrations() {
         @media(max-width:900px){.int-grid{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:600px){.int-grid{grid-template-columns:1fr}}
       `}</style>
-      <div className="int-title">🔌 Intégrations</div>
+      <div className="int-title" style={{display:"flex",alignItems:"center",gap:8}}><Plug size={18}/> Intégrations</div>
       <div className="int-sub">Connectez Imoloc à vos outils et services préférés</div>
       <div className="int-grid">
         {INTEGRATIONS.map((g,i) => (
           <div key={i} className="int-card">
             <div className="int-card-top">
-              <div className="int-icon">{g.icon}</div>
+              <div className="int-icon"><g.icon size={26} color={g.color}/></div>
               <span className={`int-status ${g.status==='disponible'?'disponible':'bientot'}`}>
                 {g.status==='disponible'?'Disponible':'Bientôt'}
               </span>

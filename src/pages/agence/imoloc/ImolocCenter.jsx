@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Building2, User, Users, FileText, Wallet, Wrench, ClipboardList, BarChart3 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import ImolocDashboard from './pages/ImolocDashboard'
 
-const ComingSoon = ({ title, icon }) => (
+const ComingSoon = ({ title, icon:Icon }) => (
   <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:400,gap:16,opacity:0.5}}>
-    <div style={{fontSize:48}}>{icon}</div>
+    <Icon size={48}/>
     <div style={{fontSize:20,fontWeight:600,color:'rgba(255,255,255,0.6)'}}>{title}</div>
     <div style={{fontSize:14,color:'rgba(255,255,255,0.3)'}}>Module en cours de developpement</div>
   </div>
@@ -135,7 +136,7 @@ export default function ImolocCenter() {
               Centre admin
             </button>
             <div className="ic-sidebar-title">
-              <span style={{fontSize:18}}>🏢</span>
+              <Building2 size={18}/>
               Centre Imoloc
             </div>
             <div className="ic-sidebar-sub">{agence?.nom || 'Gestion immobiliere'}</div>
@@ -198,20 +199,20 @@ export default function ImolocCenter() {
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
             </button>
             <div className="ic-sidebar-title">
-              <span style={{fontSize:16}}>🏢</span>
+              <Building2 size={16}/>
               Centre Imoloc
             </div>
           </div>
           <Routes>
             <Route index element={<ImolocDashboard agence={agence} stats={stats} />} />
-            <Route path="proprietaires/*" element={<ComingSoon title="Proprietaires" icon="👤"/>} />
-            <Route path="biens/*" element={<ComingSoon title="Biens immobiliers" icon="🏢"/>} />
-            <Route path="locataires/*" element={<ComingSoon title="Locataires" icon="👥"/>} />
-            <Route path="baux/*" element={<ComingSoon title="Baux et Contrats" icon="📄"/>} />
-            <Route path="paiements/*" element={<ComingSoon title="Paiements" icon="💰"/>} />
-            <Route path="maintenance/*" element={<ComingSoon title="Maintenance et Plaintes" icon="🔧"/>} />
-            <Route path="etats-lieux/*" element={<ComingSoon title="Etats des lieux" icon="📋"/>} />
-            <Route path="rapports/*" element={<ComingSoon title="Rapports" icon="📊"/>} />
+            <Route path="proprietaires/*" element={<ComingSoon title="Proprietaires" icon={User}/>} />
+            <Route path="biens/*" element={<ComingSoon title="Biens immobiliers" icon={Building2}/>} />
+            <Route path="locataires/*" element={<ComingSoon title="Locataires" icon={Users}/>} />
+            <Route path="baux/*" element={<ComingSoon title="Baux et Contrats" icon={FileText}/>} />
+            <Route path="paiements/*" element={<ComingSoon title="Paiements" icon={Wallet}/>} />
+            <Route path="maintenance/*" element={<ComingSoon title="Maintenance et Plaintes" icon={Wrench}/>} />
+            <Route path="etats-lieux/*" element={<ComingSoon title="Etats des lieux" icon={ClipboardList}/>} />
+            <Route path="rapports/*" element={<ComingSoon title="Rapports" icon={BarChart3}/>} />
           </Routes>
         </div>
       </div>

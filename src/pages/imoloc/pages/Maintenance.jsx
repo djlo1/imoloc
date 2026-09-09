@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react'
+import { Wrench, Zap, Paintbrush, Hammer, Snowflake, Blocks, SprayCan, Package, Paperclip, Check } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 import { notifierNouveauTicket } from '../../../lib/notifications'
 
 const TYPE_CFG = {
-  plomberie:    { icon:'🔧', color:'#0078d4', label:'Plomberie' },
-  electricite:  { icon:'⚡', color:'#f59e0b', label:'Electricite' },
-  peinture:     { icon:'🎨', color:'#8b5cf6', label:'Peinture' },
-  menuiserie:   { icon:'🪚', color:'#b45309', label:'Menuiserie' },
-  climatisation:{ icon:'❄️', color:'#06b6d4', label:'Climatisation' },
-  maconnerie:   { icon:'🧱', color:'#6b7280', label:'Maconnerie' },
-  nettoyage:    { icon:'🧹', color:'#059669', label:'Nettoyage' },
-  autre:        { icon:'🔨', color:'#6b7280', label:'Autre' },
+  plomberie:    { icon:Wrench, color:'#0078d4', label:'Plomberie' },
+  electricite:  { icon:Zap, color:'#f59e0b', label:'Electricite' },
+  peinture:     { icon:Paintbrush, color:'#8b5cf6', label:'Peinture' },
+  menuiserie:   { icon:Hammer, color:'#b45309', label:'Menuiserie' },
+  climatisation:{ icon:Snowflake, color:'#06b6d4', label:'Climatisation' },
+  maconnerie:   { icon:Blocks, color:'#6b7280', label:'Maconnerie' },
+  nettoyage:    { icon:SprayCan, color:'#059669', label:'Nettoyage' },
+  autre:        { icon:Package, color:'#6b7280', label:'Autre' },
 }
 const PRIO_CFG = {
   urgente: { color:'#ef4444', bg:'rgba(239,68,68,0.1)',  label:'Urgente' },
@@ -205,7 +206,7 @@ export default function Maintenance() {
         <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,overflow:'hidden'}}>
           {filtered.length===0?(
             <div style={{textAlign:'center',padding:'60px 20px'}}>
-              <div style={{fontSize:36,marginBottom:12,opacity:0.2}}>🔧</div>
+              <Wrench size={36} style={{marginBottom:12,opacity:0.2}}/>
               <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.3)',marginBottom:8}}>Aucun ticket de maintenance</div>
               <button style={{...btnP,margin:'0 auto'}} onClick={()=>setShowAdd(true)}>+ Nouveau ticket</button>
             </div>
@@ -227,7 +228,7 @@ export default function Maintenance() {
                       <div style={{fontSize:12.5}}>{t.biens?.nom||'—'}</div>
                       <div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{t.biens?.ville||''}</div>
                     </td>
-                    <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}><span style={{fontSize:13}}>{tc.icon}</span><span style={{fontSize:11,color:tc.color,marginLeft:5,fontWeight:600}}>{tc.label}</span></td>
+                    <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)',display:'flex',alignItems:'center'}}><tc.icon size={13} color={tc.color}/><span style={{fontSize:11,color:tc.color,marginLeft:5,fontWeight:600}}>{tc.label}</span></td>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}><Badge val={t.priorite} cfg={PRIO_CFG}/></td>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}><Badge val={t.statut} cfg={STATUT_CFG}/></td>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)',fontSize:12.5,color:'rgba(255,255,255,0.5)'}}>{t.prestataire_nom||'—'}</td>
@@ -248,7 +249,7 @@ export default function Maintenance() {
             <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:10}}>
               <div style={{flex:1}}>
                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
-                  <span style={{fontSize:22}}>{(TYPE_CFG[sel.type]||TYPE_CFG.autre).icon}</span>
+                  {(()=>{const TIcon=(TYPE_CFG[sel.type]||TYPE_CFG.autre).icon; return <TIcon size={22} color={(TYPE_CFG[sel.type]||TYPE_CFG.autre).color}/>})()}
                   <div style={{fontSize:16,fontWeight:700,color:'#e6edf3'}}>{sel.titre}</div>
                 </div>
                 <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginBottom:10}}>
@@ -274,7 +275,7 @@ export default function Maintenance() {
             {tab==='details'&&(
               <div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:16}}>
-                  {[['Type',`${(TYPE_CFG[sel.type]||TYPE_CFG.autre).icon} ${(TYPE_CFG[sel.type]||TYPE_CFG.autre).label}`],['Priorite',(PRIO_CFG[sel.priorite]||PRIO_CFG.normale).label],['Bien',`${sel.biens?.nom||'—'}`],['Locataire',sel.locataires?`${sel.locataires.prenom} ${sel.locataires.nom}`:'—'],['Date signalement',new Date(sel.date_signalement||sel.created_at).toLocaleDateString('fr-FR')],['Debut travaux',sel.date_debut_travaux?new Date(sel.date_debut_travaux).toLocaleDateString('fr-FR'):'—'],['Fin prevue',sel.date_fin_travaux?new Date(sel.date_fin_travaux).toLocaleDateString('fr-FR'):'—'],['Cout estime',sel.cout_estime?Number(sel.cout_estime).toLocaleString('fr-FR')+' FCFA':'—'],['Cout reel',sel.cout_reel?Number(sel.cout_reel).toLocaleString('fr-FR')+' FCFA':'—']].map(([k,v])=>(
+                  {[['Type',(TYPE_CFG[sel.type]||TYPE_CFG.autre).label],['Priorite',(PRIO_CFG[sel.priorite]||PRIO_CFG.normale).label],['Bien',`${sel.biens?.nom||'—'}`],['Locataire',sel.locataires?`${sel.locataires.prenom} ${sel.locataires.nom}`:'—'],['Date signalement',new Date(sel.date_signalement||sel.created_at).toLocaleDateString('fr-FR')],['Debut travaux',sel.date_debut_travaux?new Date(sel.date_debut_travaux).toLocaleDateString('fr-FR'):'—'],['Fin prevue',sel.date_fin_travaux?new Date(sel.date_fin_travaux).toLocaleDateString('fr-FR'):'—'],['Cout estime',sel.cout_estime?Number(sel.cout_estime).toLocaleString('fr-FR')+' FCFA':'—'],['Cout reel',sel.cout_reel?Number(sel.cout_reel).toLocaleString('fr-FR')+' FCFA':'—']].map(([k,v])=>(
                     <div key={k}><div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:3,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em'}}>{k}</div><div style={{fontSize:13.5,color:'#e6edf3'}}>{v}</div></div>
                   ))}
                 </div>
@@ -302,7 +303,7 @@ export default function Maintenance() {
             )}
             {tab==='documents'&&(
               <div style={{textAlign:'center',padding:'40px 20px',border:'1px dashed rgba(255,255,255,0.08)',borderRadius:10}}>
-                <div style={{fontSize:28,marginBottom:10,opacity:0.2}}>📎</div>
+                <Paperclip size={28} style={{marginBottom:10,opacity:0.2}}/>
                 <div style={{fontSize:13,color:'rgba(255,255,255,0.3)'}}>Photos avant/apres, devis, factures — bientot disponible</div>
               </div>
             )}
@@ -322,7 +323,7 @@ export default function Maintenance() {
                 const n=i+1,done=n<step,active=n===step
                 return (<div key={s} style={{flex:1,textAlign:'center',position:'relative'}}>
                   {i<2&&<div style={{position:'absolute',top:14,left:'50%',width:'100%',height:2,background:done?'#0078d4':'rgba(255,255,255,0.08)'}}/>}
-                  <div className="mt-sdot" style={{background:done?'#0078d4':active?'rgba(0,120,212,0.15)':'rgba(255,255,255,0.06)',border:`2px solid ${done||active?'#0078d4':'rgba(255,255,255,0.1)'}`,color:done?'#fff':active?'#4da6ff':'rgba(255,255,255,0.3)'}}>{done?'✓':n}</div>
+                  <div className="mt-sdot" style={{background:done?'#0078d4':active?'rgba(0,120,212,0.15)':'rgba(255,255,255,0.06)',border:`2px solid ${done||active?'#0078d4':'rgba(255,255,255,0.1)'}`,color:done?'#fff':active?'#4da6ff':'rgba(255,255,255,0.3)',display:'flex',alignItems:'center',justifyContent:'center'}}>{done?<Check size={12}/>:n}</div>
                   <div style={{fontSize:10.5,color:active?'#e6edf3':'rgba(255,255,255,0.3)',fontWeight:active?600:400}}>{s}</div>
                 </div>)
               })}
@@ -355,7 +356,7 @@ export default function Maintenance() {
               <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:14}}>Recapitulatif</div>
               <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:16,marginBottom:18}}>
                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
-                  <span style={{fontSize:28}}>{(TYPE_CFG[form.type]||TYPE_CFG.autre).icon}</span>
+                  {(()=>{const TIcon=(TYPE_CFG[form.type]||TYPE_CFG.autre).icon; return <TIcon size={28} color={(TYPE_CFG[form.type]||TYPE_CFG.autre).color}/>})()}
                   <div><div style={{fontSize:15,fontWeight:700,color:'#e6edf3'}}>{form.titre}</div><div style={{display:'flex',gap:6,marginTop:4}}><Badge val={form.priorite} cfg={PRIO_CFG}/><Badge val="ouvert" cfg={STATUT_CFG}/></div></div>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>

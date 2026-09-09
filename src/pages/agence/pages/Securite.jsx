@@ -1,3 +1,5 @@
+import { Lock, Key, Smartphone, Monitor, ClipboardList, Check, AlertTriangle } from 'lucide-react'
+
 export default function Securite() {
   return (
     <>
@@ -24,9 +26,9 @@ export default function Securite() {
         .sec-badge.ok{background:rgba(0,200,150,0.1);color:#00c896}
         .sec-badge.warn{background:rgba(245,158,11,0.1);color:#f59e0b}
       `}</style>
-      <div className="sec-title">🔐 Sécurité</div>
+      <div className="sec-title" style={{display:'flex',alignItems:'center',gap:8}}><Lock size={18}/> Sécurité</div>
       <div className="sec-card">
-        <div className="sec-card-title">🔑 Mot de passe</div>
+        <div className="sec-card-title"><Key size={16}/> Mot de passe</div>
         <div className="sec-row">
           <div className="sec-row-info">
             <div className="sec-row-title">Mot de passe du compte</div>
@@ -36,7 +38,7 @@ export default function Securite() {
         </div>
       </div>
       <div className="sec-card">
-        <div className="sec-card-title">📱 Double authentification (MFA)</div>
+        <div className="sec-card-title"><Smartphone size={16}/> Double authentification (MFA)</div>
         <div className="sec-row">
           <div className="sec-row-info">
             <div className="sec-row-title">Authentification par SMS</div>
@@ -53,7 +55,7 @@ export default function Securite() {
         </div>
       </div>
       <div className="sec-card">
-        <div className="sec-card-title">🖥️ Sessions actives</div>
+        <div className="sec-card-title"><Monitor size={16}/> Sessions actives</div>
         {[
           { device:'Chrome — Windows 11', location:'Cotonou, Bénin', time:'Maintenant', current:true },
           { device:'Firefox — Android', location:'Cotonou, Bénin', time:'Il y a 2h', current:false },
@@ -68,7 +70,7 @@ export default function Securite() {
         ))}
       </div>
       <div className="sec-card">
-        <div className="sec-card-title">📋 Journal d'activité</div>
+        <div className="sec-card-title"><ClipboardList size={16}/> Journal d'activité</div>
         {[
           { action:'Connexion réussie', info:'Chrome · Cotonou', time:'Il y a 5 min', type:'ok' },
           { action:'Modification profil', info:'Nom mis à jour', time:'Il y a 2 jours', type:'ok' },
@@ -77,7 +79,7 @@ export default function Securite() {
           <div key={i} className="sec-row">
             <div className="sec-row-info">
               <div className="sec-row-title" style={{display:'flex',alignItems:'center',gap:8}}>
-                <span className={`sec-badge ${a.type}`}>{a.type==='ok'?'✓':'⚠'}</span>{a.action}
+                <span className={`sec-badge ${a.type}`}>{a.type==='ok'?<Check size={11}/>:<AlertTriangle size={11}/>}</span>{a.action}
               </div>
               <div className="sec-row-sub">{a.info} · {a.time}</div>
             </div>

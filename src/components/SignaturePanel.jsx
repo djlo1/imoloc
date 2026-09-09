@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
+import { User, Home, Building2, CheckCircle2, X, PenLine, Mail, Hourglass, FileText } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 import SignatureModal from './SignatureModal'
 
 const PARTIES = [
-  { key: 'locataire',    label: 'Locataire',    icon: '👤', color: '#00c896' },
-  { key: 'proprietaire', label: 'Proprietaire', icon: '🏠', color: '#4da6ff' },
-  { key: 'agence',       label: 'Agence',       icon: '🏢', color: '#f59e0b' },
+  { key: 'locataire',    label: 'Locataire',    icon: User, color: '#00c896' },
+  { key: 'proprietaire', label: 'Proprietaire', icon: Home, color: '#4da6ff' },
+  { key: 'agence',       label: 'Agence',       icon: Building2, color: '#f59e0b' },
 ]
 
 function StatusBadge({ sig }) {
@@ -122,7 +123,7 @@ export default function SignaturePanel({ bail, agence, onUpdate }) {
     <div>
       {toutSigne && (
         <div style={{padding:'12px 16px',background:'rgba(0,200,150,0.06)',border:'1px solid rgba(0,200,150,0.15)',borderRadius:8,marginBottom:16,display:'flex',alignItems:'center',gap:10}}>
-          <span style={{fontSize:20}}>✅</span>
+          <span style={{color:'#00c896',display:'flex'}}><CheckCircle2 size={20}/></span>
           <div>
             <div style={{fontSize:13,fontWeight:600,color:'#00c896'}}>Contrat entierement signe</div>
             <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>Toutes les parties ont signe le bail</div>
@@ -130,14 +131,14 @@ export default function SignaturePanel({ bail, agence, onUpdate }) {
         </div>
       )}
 
-      {PARTIES.map(({ key, label, icon, color }) => {
+      {PARTIES.map(({ key, label, icon:Icon, color }) => {
         const sig = getSig(key)
         const estSigne = sig?.statut === 'signe'
         return (
           <div key={key} style={{marginBottom:12,padding:'16px',background:'rgba(255,255,255,0.02)',border:`1px solid ${estSigne ? color+'33' : 'rgba(255,255,255,0.07)'}`,borderRadius:10,transition:'all 0.2s'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:estSigne ? 10 : 14}}>
               <div style={{display:'flex',alignItems:'center',gap:10}}>
-                <div style={{width:36,height:36,borderRadius:8,background:color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{icon}</div>
+                <div style={{width:36,height:36,borderRadius:8,background:color+'18',display:'flex',alignItems:'center',justifyContent:'center',color}}><Icon size={18}/></div>
                 <div>
                   <div style={{fontSize:13.5,fontWeight:600,color:'#e6edf3'}}>{label}</div>
                   <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{getNom(key)}</div>
@@ -145,7 +146,7 @@ export default function SignaturePanel({ bail, agence, onUpdate }) {
               </div>
               <div style={{display:'flex',alignItems:'center',gap:8}}>
                 <StatusBadge sig={sig}/>
-                {sig && <button onClick={()=>annulerSignature(sig)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(239,68,68,0.6)',fontSize:13,padding:'2px 6px'}}>✕</button>}
+                {sig && <button onClick={()=>annulerSignature(sig)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(239,68,68,0.6)',padding:'2px 6px',display:'flex'}}><X size={14}/></button>}
               </div>
             </div>
 
@@ -166,14 +167,14 @@ export default function SignaturePanel({ bail, agence, onUpdate }) {
 
                   {/* Option 1 : Sur place */}
                   <button onClick={()=>signerSurPlace(key)} style={{padding:'10px 8px',borderRadius:8,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',cursor:'pointer',textAlign:'center',transition:'all 0.15s',fontFamily:'Inter,sans-serif'}}>
-                    <div style={{fontSize:20,marginBottom:5}}>✍️</div>
+                    <div style={{marginBottom:5,display:'flex',justifyContent:'center'}}><PenLine size={20}/></div>
                     <div style={{fontSize:11.5,fontWeight:600,color:'#e6edf3',marginBottom:2}}>Sur place</div>
                     <div style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>Signer a l ecran</div>
                   </button>
 
                   {/* Option 2 : Par email */}
                   <button onClick={()=>demanderParEmail(key)} disabled={sig?.statut==='demande_envoyee'} style={{padding:'10px 8px',borderRadius:8,border:'1px solid rgba(255,255,255,0.1)',background:sig?.statut==='demande_envoyee'?'rgba(245,158,11,0.06)':'rgba(255,255,255,0.03)',cursor:sig?.statut==='demande_envoyee'?'default':'pointer',textAlign:'center',transition:'all 0.15s',fontFamily:'Inter,sans-serif',opacity:sig?.statut==='demande_envoyee'?0.7:1}}>
-                    <div style={{fontSize:20,marginBottom:5}}>📧</div>
+                    <div style={{marginBottom:5,display:'flex',justifyContent:'center'}}><Mail size={20}/></div>
                     <div style={{fontSize:11.5,fontWeight:600,color:'#e6edf3',marginBottom:2}}>{sig?.statut==='demande_envoyee'?'Envoye':'Par email'}</div>
                     <div style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>Lien de signature</div>
                   </button>
@@ -181,7 +182,7 @@ export default function SignaturePanel({ bail, agence, onUpdate }) {
                   {/* Option 3 : Physique */}
                   <label style={{padding:'10px 8px',borderRadius:8,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',cursor:'pointer',textAlign:'center',transition:'all 0.15s',display:'block'}}>
                     <input type="file" accept="image/*,application/pdf" style={{display:'none'}} onChange={e=>e.target.files[0]&&uploaderPhysique(key,e.target.files[0])}/>
-                    <div style={{fontSize:20,marginBottom:5}}>{uploading===key?'⏳':'📄'}</div>
+                    <div style={{marginBottom:5,display:'flex',justifyContent:'center'}}>{uploading===key?<Hourglass size={20}/>:<FileText size={20}/>}</div>
                     <div style={{fontSize:11.5,fontWeight:600,color:'#e6edf3',marginBottom:2}}>{uploading===key?'Upload...':'Physique'}</div>
                     <div style={{fontSize:10,color:'rgba(255,255,255,0.3)'}}>Scanner et uploader</div>
                   </label>

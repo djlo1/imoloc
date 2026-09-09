@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { CreditCard } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -89,7 +90,7 @@ export default function Paiements() {
         @media(max-width:768px){.pai-stats{grid-template-columns:1fr}.form-grid2{grid-template-columns:1fr}}
       `}</style>
       <div className="pg-head">
-        <div className="pg-title">💳 Paiements</div>
+        <div className="pg-title" style={{display:'flex',alignItems:'center',gap:8}}><CreditCard size={20}/> Paiements</div>
         <button className="pg-btn pg-btn-blue" onClick={() => setShowModal(true)}>
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
           Enregistrer un paiement
@@ -120,7 +121,7 @@ export default function Paiements() {
         {loading ? (
           <div style={{padding:60,textAlign:'center',color:'rgba(255,255,255,0.3)'}}>Chargement...</div>
         ) : filtered.length === 0 ? (
-          <div className="pg-empty"><div style={{fontSize:40,marginBottom:12}}>💳</div><div>Aucun paiement trouvé</div></div>
+          <div className="pg-empty"><div style={{marginBottom:12,display:'flex',justifyContent:'center'}}><CreditCard size={40} strokeWidth={1.5} opacity={0.5}/></div><div>Aucun paiement trouvé</div></div>
         ) : (
           <div style={{overflowX:'auto'}}>
           <table className="loc-table">

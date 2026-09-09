@@ -1,11 +1,13 @@
+import { BarChart3, Home, Clock, FileText, Users, TrendingUp } from 'lucide-react'
+
 export default function Rapports() {
   const RAPPORTS = [
-    { icon:'📊', title:'Rapport financier mensuel', desc:'Revenus, paiements, retards du mois en cours', color:'#0078d4' },
-    { icon:'🏠', title:"Taux d'occupation", desc:'Statistiques occupation par bien et par période', color:'#6c63ff' },
-    { icon:'⏰', title:'Rapport des retards', desc:'Liste des loyers en retard avec montants et durées', color:'#ef4444' },
-    { icon:'📄', title:'Rapport des baux', desc:'Baux actifs, expirés et renouvellements à venir', color:'#f59e0b' },
-    { icon:'👥', title:'Rapport locataires', desc:"Historique et statistiques par locataire", color:'#00c896' },
-    { icon:'📈', title:'Rapport annuel', desc:'Vue globale des performances sur 12 mois', color:'#4da6ff' },
+    { icon:BarChart3, title:'Rapport financier mensuel', desc:'Revenus, paiements, retards du mois en cours', color:'#0078d4' },
+    { icon:Home, title:"Taux d'occupation", desc:'Statistiques occupation par bien et par période', color:'#6c63ff' },
+    { icon:Clock, title:'Rapport des retards', desc:'Liste des loyers en retard avec montants et durées', color:'#ef4444' },
+    { icon:FileText, title:'Rapport des baux', desc:'Baux actifs, expirés et renouvellements à venir', color:'#f59e0b' },
+    { icon:Users, title:'Rapport locataires', desc:"Historique et statistiques par locataire", color:'#00c896' },
+    { icon:TrendingUp, title:'Rapport annuel', desc:'Vue globale des performances sur 12 mois', color:'#4da6ff' },
   ]
 
   return (
@@ -26,12 +28,12 @@ export default function Rapports() {
         @media(max-width:900px){.rap-grid{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:600px){.rap-grid{grid-template-columns:1fr}}
       `}</style>
-      <div className="rap-title">📊 Rapports</div>
+      <div className="rap-title" style={{display:'flex',alignItems:'center',gap:8}}><BarChart3 size={18}/> Rapports</div>
       <div className="rap-sub">Générez et exportez vos rapports en PDF ou Excel</div>
       <div className="rap-grid">
         {RAPPORTS.map((r,i) => (
           <div key={i} className="rap-card">
-            <div className="rap-icon">{r.icon}</div>
+            <div className="rap-icon" style={{color:r.color}}><r.icon size={28} strokeWidth={1.75}/></div>
             <div className="rap-card-title">{r.title}</div>
             <div className="rap-card-desc">{r.desc}</div>
             <div className="rap-btns">

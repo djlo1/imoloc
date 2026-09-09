@@ -1,4 +1,10 @@
 import { useState, useEffect } from 'react'
+import {
+  FileText, Bell, Link2, Sparkles, Rocket, BarChart3, Smartphone, Mail,
+  Lock, Key, Users, Shield, ClipboardList, LockKeyhole, AlertTriangle, Globe,
+  Trash2, Building2, Globe2, Coins, Palette, MapPin, Phone, Handshake, Briefcase,
+  ArrowUp, Check,
+} from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { changeLanguage } from '../../../i18n'
 import toast from 'react-hot-toast'
@@ -11,37 +17,37 @@ const TABS = [
 
 const ITEMS = {
   services: [
-    { icon:'📄', color:'#0078d4', title:'Modeles de documents',   desc:'Gerez vos templates de bail, factures et quittances. Personnalisez avec votre logo et couleurs.', action:'modeles' },
-    { icon:'🔔', color:'#0078d4', title:'Notifications',          desc:'Configurez les alertes email et push pour les paiements, baux et evenements importants.', action:'notifications' },
-    { icon:'🔗', color:'#0078d4', title:'Applications integrees', desc:'Connectez des applications tierces a votre espace Imoloc (FedaPay, Stripe, et plus).', action:'integrations' },
-    { icon:'✨', color:'#6c63ff', title:'Loci IA',                desc:'Parametrez l assistant IA. Redigez, analysez et automatisez vos taches immobilieres.', action:'loci' },
-    { icon:'🆕', color:'#0078d4', title:'Nouveautes',             desc:'Consultez les dernieres fonctionnalites et mises a jour de la plateforme Imoloc.', action:'nouveautes' },
-    { icon:'📊', color:'#0078d4', title:'Rapports et analyses',   desc:'Configurez vos rapports automatiques et tableaux de bord analytiques.', action:'rapports' },
-    { icon:'📱', color:'#00c896', title:'Application mobile',     desc:'Gerez les acces de l application mobile pour vos proprietaires et locataires.', action:null },
-    { icon:'📧', color:'#0078d4', title:'Modeles d emails',       desc:'Personnalisez les emails automatiques envoyes par Imoloc a vos locataires.', action:null },
+    { icon:FileText, color:'#0078d4', title:'Modeles de documents',   desc:'Gerez vos templates de bail, factures et quittances. Personnalisez avec votre logo et couleurs.', action:'modeles' },
+    { icon:Bell, color:'#0078d4', title:'Notifications',          desc:'Configurez les alertes email et push pour les paiements, baux et evenements importants.', action:'notifications' },
+    { icon:Link2, color:'#0078d4', title:'Applications integrees', desc:'Connectez des applications tierces a votre espace Imoloc (FedaPay, Stripe, et plus).', action:'integrations' },
+    { icon:Sparkles, color:'#6c63ff', title:'Loci IA',                desc:'Parametrez l assistant IA. Redigez, analysez et automatisez vos taches immobilieres.', action:'loci' },
+    { icon:Rocket, color:'#0078d4', title:'Nouveautes',             desc:'Consultez les dernieres fonctionnalites et mises a jour de la plateforme Imoloc.', action:'nouveautes' },
+    { icon:BarChart3, color:'#0078d4', title:'Rapports et analyses',   desc:'Configurez vos rapports automatiques et tableaux de bord analytiques.', action:'rapports' },
+    { icon:Smartphone, color:'#00c896', title:'Application mobile',     desc:'Gerez les acces de l application mobile pour vos proprietaires et locataires.', action:null },
+    { icon:Mail, color:'#0078d4', title:'Modeles d emails',       desc:'Personnalisez les emails automatiques envoyes par Imoloc a vos locataires.', action:null },
   ],
   securite: [
-    { icon:'🔐', color:'#ef4444', title:'Authentification a deux facteurs', desc:'Renforcez la securite des comptes avec la verification en deux etapes.', action:'securite' },
-    { icon:'📱', color:'#f59e0b', title:'Sessions et appareils',            desc:'Gerez les sessions actives et les appareils connectes a votre organisation.', action:'securite' },
-    { icon:'🔑', color:'#f59e0b', title:'Politique de mot de passe',        desc:'Definissez les regles de complexite et la duree d expiration des mots de passe.', action:'securite' },
-    { icon:'👥', color:'#0078d4', title:'Roles et permissions',             desc:'Controllez precisement ce que chaque collaborateur peut voir et faire.', action:'utilisateurs' },
-    { icon:'🛡️', color:'#ef4444', title:'Acces conditionnel',               desc:'Definissez des regles d acces selon la localisation ou l appareil utilise.', action:null },
-    { icon:'📋', color:'#8b5cf6', title:'Journal d activite',               desc:'Consultez l historique complet des actions effectuees dans votre organisation.', action:null },
-    { icon:'🔒', color:'#ef4444', title:'Chiffrement des donnees',          desc:'Toutes les donnees sont chiffrees en transit et au repos avec AES-256.', action:null },
-    { icon:'⚠️', color:'#f59e0b', title:'Alertes de securite',              desc:'Recevez des notifications en cas d activite suspecte sur votre compte.', action:null },
-    { icon:'🌍', color:'#0078d4', title:'Connexions autorisees',            desc:'Limitez les connexions a certains pays ou plages d adresses IP.', action:null },
-    { icon:'🗑️', color:'#ef4444', title:'Suppression des donnees',          desc:'Gerez la retention et la suppression des donnees conformement au RGPD.', action:null },
+    { icon:Lock, color:'#ef4444', title:'Authentification a deux facteurs', desc:'Renforcez la securite des comptes avec la verification en deux etapes.', action:'securite' },
+    { icon:Smartphone, color:'#f59e0b', title:'Sessions et appareils',            desc:'Gerez les sessions actives et les appareils connectes a votre organisation.', action:'securite' },
+    { icon:Key, color:'#f59e0b', title:'Politique de mot de passe',        desc:'Definissez les regles de complexite et la duree d expiration des mots de passe.', action:'securite' },
+    { icon:Users, color:'#0078d4', title:'Roles et permissions',             desc:'Controllez precisement ce que chaque collaborateur peut voir et faire.', action:'utilisateurs' },
+    { icon:Shield, color:'#ef4444', title:'Acces conditionnel',               desc:'Definissez des regles d acces selon la localisation ou l appareil utilise.', action:null },
+    { icon:ClipboardList, color:'#8b5cf6', title:'Journal d activite',               desc:'Consultez l historique complet des actions effectuees dans votre organisation.', action:null },
+    { icon:LockKeyhole, color:'#ef4444', title:'Chiffrement des donnees',          desc:'Toutes les donnees sont chiffrees en transit et au repos avec AES-256.', action:null },
+    { icon:AlertTriangle, color:'#f59e0b', title:'Alertes de securite',              desc:'Recevez des notifications en cas d activite suspecte sur votre compte.', action:null },
+    { icon:Globe, color:'#0078d4', title:'Connexions autorisees',            desc:'Limitez les connexions a certains pays ou plages d adresses IP.', action:null },
+    { icon:Trash2, color:'#ef4444', title:'Suppression des donnees',          desc:'Gerez la retention et la suppression des donnees conformement au RGPD.', action:null },
   ],
   profil: [
-    { icon:'🏢', color:'#0078d4', title:'Informations de l organisation',  desc:'Nom, email, telephone, adresse, ville, pays et site web de votre organisation.', action:'informations' },
-    { icon:'🌐', color:'#00c896', title:'Langue par defaut',                desc:'Definissez la langue de l interface pour tous les collaborateurs de l organisation.', action:'langue' },
-    { icon:'💱', color:'#f59e0b', title:'Devise et fuseau horaire',         desc:'Configurez la devise et le fuseau horaire utilises dans votre organisation.', action:'devise' },
-    { icon:'🎨', color:'#8b5cf6', title:'Charte graphique',                 desc:'Logo, couleur principale et identite visuelle de votre organisation.', action:'charte' },
-    { icon:'📍', color:'#ef4444', title:'Localisation',                     desc:'Adresse principale, ville et pays de votre organisation.', action:'informations' },
-    { icon:'📞', color:'#0078d4', title:'Coordonnees de contact',           desc:'Numero de telephone, email de contact et site web public.', action:'informations' },
-    { icon:'📄', color:'#0078d4', title:'Mentions legales',                 desc:'Configurez les mentions legales et politique de confidentialite.', action:null },
-    { icon:'🤝', color:'#00c896', title:'Partenaires et integrateurs',      desc:'Gerez les acces partenaires et les relations B2B de votre organisation.', action:null },
-    { icon:'💼', color:'#6c63ff', title:'Informations fiscales',            desc:'IFU, registre de commerce et statut fiscal de votre organisation.', action:null },
+    { icon:Building2, color:'#0078d4', title:'Informations de l organisation',  desc:'Nom, email, telephone, adresse, ville, pays et site web de votre organisation.', action:'informations' },
+    { icon:Globe2, color:'#00c896', title:'Langue par defaut',                desc:'Definissez la langue de l interface pour tous les collaborateurs de l organisation.', action:'langue' },
+    { icon:Coins, color:'#f59e0b', title:'Devise et fuseau horaire',         desc:'Configurez la devise et le fuseau horaire utilises dans votre organisation.', action:'devise' },
+    { icon:Palette, color:'#8b5cf6', title:'Charte graphique',                 desc:'Logo, couleur principale et identite visuelle de votre organisation.', action:'charte' },
+    { icon:MapPin, color:'#ef4444', title:'Localisation',                     desc:'Adresse principale, ville et pays de votre organisation.', action:'informations' },
+    { icon:Phone, color:'#0078d4', title:'Coordonnees de contact',           desc:'Numero de telephone, email de contact et site web public.', action:'informations' },
+    { icon:FileText, color:'#0078d4', title:'Mentions legales',                 desc:'Configurez les mentions legales et politique de confidentialite.', action:null },
+    { icon:Handshake, color:'#00c896', title:'Partenaires et integrateurs',      desc:'Gerez les acces partenaires et les relations B2B de votre organisation.', action:null },
+    { icon:Briefcase, color:'#6c63ff', title:'Informations fiscales',            desc:'IFU, registre de commerce et statut fiscal de votre organisation.', action:null },
   ],
 }
 
@@ -163,7 +169,7 @@ export default function Organisation() {
         <div style={{ display:'grid', gridTemplateColumns:'44px 1fr 1fr', padding:'8px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)', gap:0 }}>
           <div/>
           <div style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.06em', display:'flex', alignItems:'center', gap:4 }}>
-            Nom <span style={{ fontSize:10 }}>↑</span>
+            Nom <ArrowUp size={10}/>
           </div>
           <div style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.06em' }}>Description</div>
         </div>
@@ -176,8 +182,8 @@ export default function Organisation() {
             <div key={i} className="ms-row" onClick={()=>handleAction(item)} style={{ cursor: clickable ? 'pointer' : 'default' }}>
               {/* Icone */}
               <div>
-                <div className="ms-icon-wrap" style={{ background:item.color+'15', border:'1px solid '+item.color+'30' }}>
-                  {item.icon}
+                <div className="ms-icon-wrap" style={{ background:item.color+'15', border:'1px solid '+item.color+'30', color:item.color }}>
+                  <item.icon size={16}/>
                 </div>
               </div>
               {/* Nom */}
@@ -222,7 +228,7 @@ export default function Organisation() {
                     <div key={val} onClick={()=>set('langue',val)} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:8, border:`1.5px solid ${form.langue===val?'#0078d4':'rgba(255,255,255,0.08)'}`, background:form.langue===val?'rgba(0,120,212,0.06)':'rgba(255,255,255,0.02)', cursor:'pointer', transition:'all 0.15s' }}>
                       <span style={{ fontSize:28 }}>{flag}</span>
                       <div style={{ flex:1, fontSize:14, fontWeight:600, color:form.langue===val?'#4da6ff':'#e6edf3' }}>{name}</div>
-                      {form.langue===val && <span style={{ color:'#0078d4', fontSize:18 }}>✓</span>}
+                      {form.langue===val && <Check size={18} color="#0078d4"/>}
                     </div>
                   ))}
                 </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Users, AlertTriangle, Check, CheckCircle2, ArrowRight, ArrowLeft, Paperclip } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -302,7 +303,7 @@ export default function Locataires() {
         <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,overflow:'hidden'}}>
           {filteredList.length===0 ? (
             <div style={{textAlign:'center',padding:'60px 20px'}}>
-              <div style={{fontSize:36,marginBottom:12,opacity:0.2}}>👥</div>
+              <Users size={36} style={{marginBottom:12,opacity:0.2}}/>
               <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.3)',marginBottom:8}}>Aucun locataire</div>
               <div style={{fontSize:13,color:'rgba(255,255,255,0.2)',marginBottom:20}}>Ajoutez votre premier locataire</div>
               <button className="lc-btn lc-btn-p" style={{margin:'0 auto'}} onClick={()=>setShowAdd(true)}>+ Ajouter un locataire</button>
@@ -376,7 +377,7 @@ export default function Locataires() {
             </div>
             {selLoc.statut_global==='blackliste'&&(
               <div className="lc-warn">
-                <div style={{fontSize:12.5,fontWeight:600,color:'#ef4444',marginBottom:3}}>⚠ Locataire blackliste</div>
+                <div style={{display:'flex',alignItems:'center',gap:5,fontSize:12.5,fontWeight:600,color:'#ef4444',marginBottom:3}}><AlertTriangle size={13}/> Locataire blackliste</div>
                 <div style={{fontSize:12,color:'rgba(239,68,68,0.8)'}}>{selLoc.motif_blacklist||'Aucun motif specifie'}</div>
               </div>
             )}
@@ -483,7 +484,7 @@ export default function Locataires() {
             {/* ── DOCUMENTS ── */}
             {detailTab==='documents'&&(
               <div style={{textAlign:'center',padding:'40px 20px',border:'1px dashed rgba(255,255,255,0.08)',borderRadius:10}}>
-                <div style={{fontSize:28,marginBottom:10,opacity:0.2}}>📎</div>
+                <Paperclip size={28} style={{marginBottom:10,opacity:0.2}}/>
                 <div style={{fontSize:13,color:'rgba(255,255,255,0.3)',marginBottom:16}}>Gestion des documents bientot disponible</div>
                 <div style={{fontSize:12,color:'rgba(255,255,255,0.2)'}}>CIN, justificatif domicile, contrat emploi...</div>
               </div>
@@ -525,7 +526,7 @@ export default function Locataires() {
                 return (
                   <div key={s} className="lc-step">
                     {i<STEPS.length-1&&<div className="lc-step-line" style={{background:done?'#0078d4':'rgba(255,255,255,0.08)'}}/>}
-                    <div className="lc-step-dot" style={{background:done?'#0078d4':active?'rgba(0,120,212,0.15)':'rgba(255,255,255,0.06)',border:`2px solid ${done||active?'#0078d4':'rgba(255,255,255,0.1)'}`,color:done?'#fff':active?'#4da6ff':'rgba(255,255,255,0.3)'}}>{done?'✓':n}</div>
+                    <div className="lc-step-dot" style={{background:done?'#0078d4':active?'rgba(0,120,212,0.15)':'rgba(255,255,255,0.06)',border:`2px solid ${done||active?'#0078d4':'rgba(255,255,255,0.1)'}`,color:done?'#fff':active?'#4da6ff':'rgba(255,255,255,0.3)',display:'flex',alignItems:'center',justifyContent:'center'}}>{done?<Check size={12}/>:n}</div>
                     <div style={{fontSize:10.5,color:active?'#e6edf3':'rgba(255,255,255,0.3)',fontWeight:active?600:400}}>{s}</div>
                   </div>
                 )
@@ -561,9 +562,9 @@ export default function Locataires() {
                               {loc.profession&&<span>· {loc.profession}</span>}
                             </div>
                             {loc.ancienne_agence&&<div style={{fontSize:11,color:'rgba(255,255,255,0.25)',marginTop:2}}>Ancienne agence : {loc.ancienne_agence}</div>}
-                            {loc.statut_global==='blackliste'&&<div style={{fontSize:11,color:'#ef4444',marginTop:4}}>⚠ {loc.motif_blacklist||'Blackliste'}</div>}
+                            {loc.statut_global==='blackliste'&&<div style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'#ef4444',marginTop:4}}><AlertTriangle size={11}/> {loc.motif_blacklist||'Blackliste'}</div>}
                           </div>
-                          <div style={{fontSize:11,color:'#4da6ff'}}>Selectionner →</div>
+                          <div style={{display:'flex',alignItems:'center',gap:3,fontSize:11,color:'#4da6ff'}}>Selectionner <ArrowRight size={11}/></div>
                         </div>
                       </div>
                     ))}
@@ -576,8 +577,8 @@ export default function Locataires() {
                 )}
                 <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:16}}>
                   <button className="lc-btn" onClick={resetAdd}>Annuler</button>
-                  <button className="lc-btn lc-btn-p" onClick={()=>setStep(2)}>
-                    {searchResults.length>0?'Creer un nouveau':'Continuer →'}
+                  <button className="lc-btn lc-btn-p" onClick={()=>setStep(2)} style={{display:'inline-flex',alignItems:'center',gap:5}}>
+                    {searchResults.length>0?'Creer un nouveau':<>Continuer <ArrowRight size={13}/></>}
                   </button>
                 </div>
               </div>
@@ -591,7 +592,7 @@ export default function Locataires() {
                 </div>
                 {locTrouve?.statut_global==='blackliste'&&(
                   <div className="lc-warn">
-                    <div style={{fontSize:12.5,fontWeight:600,color:'#ef4444'}}>⚠ Ce locataire est blackliste</div>
+                    <div style={{display:'flex',alignItems:'center',gap:5,fontSize:12.5,fontWeight:600,color:'#ef4444'}}><AlertTriangle size={13}/> Ce locataire est blackliste</div>
                     <div style={{fontSize:12,color:'rgba(239,68,68,0.7)',marginTop:3}}>{locTrouve.motif_blacklist||'Aucun motif'}</div>
                     <div style={{fontSize:11,color:'rgba(255,255,255,0.3)',marginTop:6}}>Vous pouvez tout de meme l ajouter mais cela est deconseille</div>
                   </div>
@@ -627,8 +628,8 @@ export default function Locataires() {
                   </div>
                 </div>
                 <div style={{display:'flex',gap:8,justifyContent:'space-between'}}>
-                  <button className="lc-btn" onClick={()=>setStep(1)}>← Retour</button>
-                  <button className="lc-btn lc-btn-p" onClick={()=>setStep(3)}>Suivant →</button>
+                  <button className="lc-btn" onClick={()=>setStep(1)} style={{display:'inline-flex',alignItems:'center',gap:5}}><ArrowLeft size={13}/> Retour</button>
+                  <button className="lc-btn lc-btn-p" onClick={()=>setStep(3)} style={{display:'inline-flex',alignItems:'center',gap:5}}>Suivant <ArrowRight size={13}/></button>
                 </div>
               </div>
             )}
@@ -650,8 +651,8 @@ export default function Locataires() {
                   <div className="lc-field"><label className="lc-lbl">CIN du garant</label><input className="lc-inp" value={form.garant_cin} onChange={e=>setF('garant_cin',e.target.value)}/></div>
                 </div>
                 <div style={{display:'flex',gap:8,justifyContent:'space-between',marginTop:16}}>
-                  <button className="lc-btn" onClick={()=>setStep(2)}>← Retour</button>
-                  <button className="lc-btn lc-btn-p" onClick={()=>setStep(4)}>Suivant →</button>
+                  <button className="lc-btn" onClick={()=>setStep(2)} style={{display:'inline-flex',alignItems:'center',gap:5}}><ArrowLeft size={13}/> Retour</button>
+                  <button className="lc-btn lc-btn-p" onClick={()=>setStep(4)} style={{display:'inline-flex',alignItems:'center',gap:5}}>Suivant <ArrowRight size={13}/></button>
                 </div>
               </div>
             )}
@@ -663,7 +664,7 @@ export default function Locataires() {
                 <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)',marginBottom:20}}>Creez un compte pour que le locataire puisse acceder a ses documents en ligne</div>
                 {locTrouve?.profile_id?(
                   <div style={{padding:'14px 16px',background:'rgba(0,200,150,0.06)',border:'1px solid rgba(0,200,150,0.15)',borderRadius:8,marginBottom:16}}>
-                    <div style={{fontSize:13,fontWeight:600,color:'#00c896',marginBottom:4}}>✅ Compte existant</div>
+                    <div style={{display:'flex',alignItems:'center',gap:5,fontSize:13,fontWeight:600,color:'#00c896',marginBottom:4}}><CheckCircle2 size={14}/> Compte existant</div>
                     <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>Ce locataire possede deja un compte Imoloc</div>
                   </div>
                 ):(
@@ -675,12 +676,12 @@ export default function Locataires() {
                         <div style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>Un email avec les identifiants sera envoye a <strong style={{color:'rgba(255,255,255,0.6)'}}>{form.email||'l adresse email'}</strong>. Le locataire pourra voir ses baux, contrats et quittances.</div>
                       </label>
                     </div>
-                    {!form.email&&form.creer_compte&&<div style={{fontSize:12,color:'#f59e0b',marginTop:10,paddingLeft:28}}>⚠ Renseignez un email a l etape 2 pour creer un compte</div>}
+                    {!form.email&&form.creer_compte&&<div style={{display:'flex',alignItems:'center',gap:4,fontSize:12,color:'#f59e0b',marginTop:10,paddingLeft:28}}><AlertTriangle size={12}/> Renseignez un email a l etape 2 pour creer un compte</div>}
                   </div>
                 )}
                 <div style={{display:'flex',gap:8,justifyContent:'space-between',marginTop:16}}>
-                  <button className="lc-btn" onClick={()=>setStep(3)}>← Retour</button>
-                  <button className="lc-btn lc-btn-p" onClick={()=>setStep(5)}>Suivant →</button>
+                  <button className="lc-btn" onClick={()=>setStep(3)} style={{display:'inline-flex',alignItems:'center',gap:5}}><ArrowLeft size={13}/> Retour</button>
+                  <button className="lc-btn lc-btn-p" onClick={()=>setStep(5)} style={{display:'inline-flex',alignItems:'center',gap:5}}>Suivant <ArrowRight size={13}/></button>
                 </div>
               </div>
             )}
@@ -707,7 +708,7 @@ export default function Locataires() {
                 </div>
                 {locTrouve&&<div style={{padding:'10px 14px',background:'rgba(0,120,212,0.06)',border:'1px solid rgba(0,120,212,0.15)',borderRadius:8,marginBottom:16,fontSize:12.5,color:'#4da6ff'}}>Ce locataire existe deja dans Imoloc — il sera lie a votre agence</div>}
                 <div style={{display:'flex',gap:8,justifyContent:'space-between'}}>
-                  <button className="lc-btn" onClick={()=>setStep(4)}>← Retour</button>
+                  <button className="lc-btn" onClick={()=>setStep(4)} style={{display:'inline-flex',alignItems:'center',gap:5}}><ArrowLeft size={13}/> Retour</button>
                   <button className="lc-btn lc-btn-p" disabled={saving||!form.nom||!form.prenom} onClick={ajouterLocataire}>
                     {saving?'Ajout en cours...':'Confirmer et ajouter'}
                   </button>

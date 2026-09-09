@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Building2, User, Users, FileText, Wallet, AlertTriangle, Wrench, ClipboardList } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 
 const MOIS = ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec']
@@ -27,8 +28,8 @@ export default function ImolocDashboard({ agence, stats, navigate }) {
       setBauxExp(bx.data||[])
       setDerniersPaiements(pm.data||[])
       const acts = [
-        ...(mt.data||[]).map(m=>({type:'maintenance',icon:'🔧',titre:`Ticket: ${m.titre}`,sub:m.biens?.nom||'',date:m.created_at,color:'#f59e0b',statut:m.statut})),
-        ...(edl.data||[]).map(e=>({type:'edl',icon:'📋',titre:`EDL ${e.type==='entree'?'entree':'sortie'}`,sub:e.biens?.nom||'',date:e.created_at,color:'#8b5cf6',statut:e.statut})),
+        ...(mt.data||[]).map(m=>({type:'maintenance',icon:Wrench,titre:`Ticket: ${m.titre}`,sub:m.biens?.nom||'',date:m.created_at,color:'#f59e0b',statut:m.statut})),
+        ...(edl.data||[]).map(e=>({type:'edl',icon:ClipboardList,titre:`EDL ${e.type==='entree'?'entree':'sortie'}`,sub:e.biens?.nom||'',date:e.created_at,color:'#8b5cf6',statut:e.statut})),
       ].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,6)
       setActivite(acts)
       const revParMois = MOIS.map((label,i)=>({
@@ -44,21 +45,21 @@ export default function ImolocDashboard({ agence, stats, navigate }) {
   const fmt = n => Number(n||0).toLocaleString('fr-FR')
 
   const STATS = [
-    {ic:'🏢',lbl:'Biens geres',val:stats?.biens||0,col:'#0078d4',sub:'Total du parc',path:'/imoloc/biens'},
-    {ic:'👤',lbl:'Proprietaires',val:stats?.proprietaires||0,col:'#6c63ff',sub:'Enregistres',path:'/imoloc/proprietaires'},
-    {ic:'👥',lbl:'Locataires',val:stats?.locataires||0,col:'#00c896',sub:'Locataires actifs',path:'/imoloc/locataires'},
-    {ic:'📄',lbl:'Baux actifs',val:stats?.baux||0,col:'#f59e0b',sub:'Contrats en cours',path:'/imoloc/baux'},
-    {ic:'💰',lbl:'Revenus',val:fmt(stats?.revenus)+' F',col:'#34d399',sub:'Total encaisse',path:'/imoloc/paiements'},
-    {ic:'⚠️',lbl:'Retards',val:stats?.retards||0,col:stats?.retards>0?'#ef4444':'rgba(255,255,255,0.35)',sub:'Paiements en retard',path:'/imoloc/paiements'},
+    {ic:Building2,lbl:'Biens geres',val:stats?.biens||0,col:'#0078d4',sub:'Total du parc',path:'/imoloc/biens'},
+    {ic:User,lbl:'Proprietaires',val:stats?.proprietaires||0,col:'#6c63ff',sub:'Enregistres',path:'/imoloc/proprietaires'},
+    {ic:Users,lbl:'Locataires',val:stats?.locataires||0,col:'#00c896',sub:'Locataires actifs',path:'/imoloc/locataires'},
+    {ic:FileText,lbl:'Baux actifs',val:stats?.baux||0,col:'#f59e0b',sub:'Contrats en cours',path:'/imoloc/baux'},
+    {ic:Wallet,lbl:'Revenus',val:fmt(stats?.revenus)+' F',col:'#34d399',sub:'Total encaisse',path:'/imoloc/paiements'},
+    {ic:AlertTriangle,lbl:'Retards',val:stats?.retards||0,col:stats?.retards>0?'#ef4444':'rgba(255,255,255,0.35)',sub:'Paiements en retard',path:'/imoloc/paiements'},
   ]
 
   const ACTIONS = [
-    {ic:'🏢',lbl:'Ajouter un bien',col:'#0078d4',path:'/imoloc/biens'},
-    {ic:'👥',lbl:'Nouveau locataire',col:'#6c63ff',path:'/imoloc/locataires'},
-    {ic:'📄',lbl:'Creer un bail',col:'#f59e0b',path:'/imoloc/baux'},
-    {ic:'💰',lbl:'Enregistrer paiement',col:'#00c896',path:'/imoloc/paiements'},
-    {ic:'🔧',lbl:'Nouveau ticket',col:'#f97316',path:'/imoloc/maintenance'},
-    {ic:'📋',lbl:'Etat des lieux',col:'#8b5cf6',path:'/imoloc/etats-lieux'},
+    {ic:Building2,lbl:'Ajouter un bien',col:'#0078d4',path:'/imoloc/biens'},
+    {ic:Users,lbl:'Nouveau locataire',col:'#6c63ff',path:'/imoloc/locataires'},
+    {ic:FileText,lbl:'Creer un bail',col:'#f59e0b',path:'/imoloc/baux'},
+    {ic:Wallet,lbl:'Enregistrer paiement',col:'#00c896',path:'/imoloc/paiements'},
+    {ic:Wrench,lbl:'Nouveau ticket',col:'#f97316',path:'/imoloc/maintenance'},
+    {ic:ClipboardList,lbl:'Etat des lieux',col:'#8b5cf6',path:'/imoloc/etats-lieux'},
   ]
 
   const statutPColor = {paye:'#00c896',en_attente:'#f59e0b',en_retard:'#ef4444',partiel:'#8b5cf6'}
@@ -104,7 +105,7 @@ export default function ImolocDashboard({ agence, stats, navigate }) {
           {STATS.map(s=>(
             <div key={s.lbl} className="imd2-stat" onClick={()=>navigate(s.path)}>
               <div className="imd2-stat-head">
-                <div className="imd2-stat-ic" style={{background:s.col+'22'}}>{s.ic}</div>
+                <div className="imd2-stat-ic" style={{background:s.col+'22'}}><s.ic size={17} color={s.col}/></div>
                 <span className="imd2-stat-lbl">{s.lbl}</span>
               </div>
               <div className="imd2-stat-val" style={{color:s.col}}>{s.val}</div>
@@ -146,7 +147,7 @@ export default function ImolocDashboard({ agence, stats, navigate }) {
                 return (
                   <div key={b.id} className="imd2-item">
                     <div style={{width:34,height:34,borderRadius:8,background:jours<=15?'rgba(239,68,68,0.12)':'rgba(245,158,11,0.12)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                      <span style={{fontSize:16}}>📄</span>
+                      <FileText size={16} color={jours<=15?'#ef4444':'#f59e0b'}/>
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:12.5,fontWeight:600,color:'#e6edf3',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.biens?.nom||'—'}</div>
@@ -171,7 +172,7 @@ export default function ImolocDashboard({ agence, stats, navigate }) {
               ):derniers_paiements.map(p=>(
                 <div key={p.id} className="imd2-item">
                   <div style={{width:34,height:34,borderRadius:8,background:(statutPColor[p.statut]||'#4da6ff')+'18',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <span style={{fontSize:15}}>💰</span>
+                    <Wallet size={15} color={statutPColor[p.statut]||'#4da6ff'}/>
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:12.5,fontWeight:600,color:'#e6edf3',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.biens?.nom||'—'}</div>
@@ -199,7 +200,7 @@ export default function ImolocDashboard({ agence, stats, navigate }) {
               ):activite.map((a,i)=>(
                 <div key={i} className="imd2-item">
                   <div style={{width:34,height:34,borderRadius:8,background:a.color+'18',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <span style={{fontSize:16}}>{a.icon}</span>
+                    <a.icon size={16} color={a.color}/>
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:12.5,fontWeight:600,color:'#e6edf3',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{a.titre}</div>
@@ -220,7 +221,7 @@ export default function ImolocDashboard({ agence, stats, navigate }) {
               <div className="imd2-actions">
                 {ACTIONS.map(a=>(
                   <div key={a.lbl} className="imd2-action" onClick={()=>navigate(a.path)}>
-                    <div className="imd2-action-ic" style={{background:a.col+'22'}}>{a.ic}</div>
+                    <div className="imd2-action-ic" style={{background:a.col+'22'}}><a.ic size={19} color={a.col}/></div>
                     <span className="imd2-action-lbl">{a.lbl}</span>
                   </div>
                 ))}

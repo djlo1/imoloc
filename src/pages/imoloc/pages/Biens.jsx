@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import {
+  Home, Sofa, Building, Warehouse, Store, Trees, ParkingSquare, Hotel, HardHat,
+  Wallet, FileText, User, Trash2, Pencil, Ban, RefreshCw, Download, Building2,
+  Check, ArrowRight, Circle,
+} from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
@@ -20,9 +25,9 @@ const TYPES = [
   { val:'autre',           label:'Autre'            },
 ]
 const TYPE_ICONS = {
-  appartement:'🏠', maison:'🏠', villa:'🏡', studio:'🛋️',
-  bureau:'🏢', entrepot:'🏭', local_commercial:'🏪',
-  terrain:'🌿', parking:'🅿️', hotel:'🏨', autre:'🏗️',
+  appartement:Building, maison:Home, villa:Home, studio:Sofa,
+  bureau:Building2, entrepot:Warehouse, local_commercial:Store,
+  terrain:Trees, parking:ParkingSquare, hotel:Hotel, autre:HardHat,
 }
 // statut_bien enum: disponible, occupe, maintenance, renovation, reserve, hors_service
 const STATUT_CFG = {
@@ -422,15 +427,15 @@ export default function ImolocBiens() {
         {/* Stats */}
         <div className="pb-stats">
           {[
-            {ic:'🏢',lbl:'Total',        val:stats.total,       col:'#e6edf3'},
-            {ic:'🟢',lbl:'Libres',       val:stats.libres,      col:'#00c896'},
-            {ic:'🔵',lbl:'Occupes',      val:stats.occupes,     col:'#0078d4'},
-            {ic:'🟡',lbl:'Maintenance',  val:stats.maintenance, col:'#f59e0b'},
-            {ic:'💰',lbl:'Revenus/mois', val:fmt(stats.revenus)+' FCFA', col:'#00c896', small:true},
+            {ic:Building2, lbl:'Total',        val:stats.total,       col:'#e6edf3'},
+            {dot:true,     lbl:'Libres',       val:stats.libres,      col:'#00c896'},
+            {dot:true,     lbl:'Occupes',      val:stats.occupes,     col:'#0078d4'},
+            {dot:true,     lbl:'Maintenance',  val:stats.maintenance, col:'#f59e0b'},
+            {ic:Wallet,    lbl:'Revenus/mois', val:fmt(stats.revenus)+' FCFA', col:'#00c896', small:true},
           ].map((s,i)=>(
             <div key={i} className="pb-stat">
               <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}>
-                <span style={{fontSize:16}}>{s.ic}</span>
+                {s.dot ? <span style={{width:9,height:9,borderRadius:'50%',background:s.col,flexShrink:0}}/> : <s.ic size={16} color={s.col}/>}
                 <span className="pb-stat-lbl">{s.lbl}</span>
               </div>
               <div className="pb-stat-val" style={{color:s.col,fontSize:s.small?16:22}}>{s.val}</div>
@@ -444,14 +449,14 @@ export default function ImolocBiens() {
             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
             Ajouter un bien
           </button>
-          <button className="pb-btn" onClick={initData}>🔄</button>
+          <button className="pb-btn" onClick={initData}><RefreshCw size={13}/></button>
           <div className="pb-sep"/>
           <button className="pb-btn pb-btn-g" onClick={exportCSV}>
-            📥 Exporter{selected.length>0&&` (${selected.length})`}
+            <Download size={13}/> Exporter{selected.length>0&&` (${selected.length})`}
           </button>
           {selected.length>0&&(
             <button className="pb-btn pb-btn-r" onClick={()=>deleteBiens(selected)}>
-              🗑️ Supprimer ({selected.length})
+              <Trash2 size={13}/> Supprimer ({selected.length})
             </button>
           )}
           <div className="pb-search">
@@ -527,7 +532,7 @@ export default function ImolocBiens() {
                 ):filtered.length===0?(
                   <tr><td colSpan={20}>
                     <div className="pb-empty">
-                      <div style={{fontSize:44,marginBottom:14,opacity:0.3}}>🏠</div>
+                      <Home size={44} style={{marginBottom:14,opacity:0.3}}/>
                       <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>
                         {search?`Aucun resultat pour "${search}"`:filterStatut!=='tous'?`Aucun bien "${filterStatut}"`:' Aucun bien enregistre'}
                       </div>
@@ -540,7 +545,7 @@ export default function ImolocBiens() {
                   </td></tr>
                 ):filtered.map((b)=>{
                   const isSel = selected.includes(b.id)
-                  const ic    = TYPE_ICONS[b.type_bien] || TYPE_ICONS[b.type] || '🏠'
+                  const IcComp = TYPE_ICONS[b.type_bien] || TYPE_ICONS[b.type] || Home
                   const avH   = viewMode==='compact' ? 26 : 32
                   return (
                     <tr key={b.id} className={isSel?'sel':''} onClick={()=>{setSelectedBien(b);setDetailTab('infos')}}>
@@ -551,8 +556,8 @@ export default function ImolocBiens() {
                       </td>
                       <td>
                         <div style={{display:'flex',alignItems:'center',gap:10}}>
-                          <div style={{width:avH,height:avH,borderRadius:7,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:viewMode==='compact'?13:17,flexShrink:0}}>
-                            {ic}
+                          <div style={{width:avH,height:avH,borderRadius:7,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                            <IcComp size={viewMode==='compact'?13:17}/>
                           </div>
                           <div>
                             <div style={{fontWeight:600,color:'#e6edf3',fontSize:viewMode==='compact'?12.5:13.5}}>{b.nom}</div>
@@ -663,12 +668,14 @@ export default function ImolocBiens() {
                   </div>
                   <div className="pb-sec">Type de bien</div>
                   <div className="pb-type-grid">
-                    {TYPES.map(t=>(
+                    {TYPES.map(t=>{
+                      const TIcon = TYPE_ICONS[t.val]||Home
+                      return (
                       <div key={t.val} className={`pb-type-item ${form.type===t.val?'on':''}`} onClick={()=>setF('type',t.val)}>
-                        <div className="pb-type-ic-lg">{TYPE_ICONS[t.val]||'🏠'}</div>
+                        <div className="pb-type-ic-lg"><TIcon size={22}/></div>
                         <div className="pb-type-lbl">{t.label}</div>
                       </div>
-                    ))}
+                    )})}
                   </div>
                   <div className="pb-sec">Statut actuel</div>
                   <div className="pb-statut-row">
@@ -750,8 +757,8 @@ export default function ImolocBiens() {
                   {proprietaires.length===0?(
                     <div style={{padding:'18px 20px',borderRadius:10,background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.18)',fontSize:13.5,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
                       Aucun proprietaire associe a votre agence pour le moment.
-                      <span style={{color:'#4da6ff',cursor:'pointer',marginLeft:6}} onClick={()=>navigate('/imoloc/proprietaires')}>
-                        Ajouter un proprietaire →
+                      <span style={{color:'#4da6ff',cursor:'pointer',marginLeft:6,display:'inline-flex',alignItems:'center',gap:4}} onClick={()=>navigate('/imoloc/proprietaires')}>
+                        Ajouter un proprietaire <ArrowRight size={12}/>
                       </span>
                     </div>
                   ):(
@@ -766,12 +773,12 @@ export default function ImolocBiens() {
                       </div>
                       {/* Option aucun */}
                       <div className={`pb-prop-item ${!selectedProp?'on':''}`} onClick={()=>setSelectedProp(null)}>
-                        <div style={{width:38,height:38,borderRadius:'50%',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🚫</div>
+                        <div style={{width:38,height:38,borderRadius:'50%',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Ban size={16} color="rgba(255,255,255,0.4)"/></div>
                         <div style={{flex:1}}>
                           <div style={{fontSize:13.5,fontWeight:600,color:'rgba(255,255,255,0.7)'}}>Aucun proprietaire</div>
                           <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginTop:1}}>Ajouter plus tard</div>
                         </div>
-                        {!selectedProp&&<span style={{color:'#00c896',fontSize:18}}>✓</span>}
+                        {!selectedProp&&<Check size={18} color="#00c896"/>}
                       </div>
                       {filteredProps.map((p,i)=>{
                         const cols_p = ['#0078d4','#6c63ff','#00c896','#f59e0b','#4da6ff','#a78bfa']
@@ -786,7 +793,7 @@ export default function ImolocBiens() {
                               <div style={{fontSize:13.5,fontWeight:600,color:'#e6edf3'}}>{p.prenom} {p.nom}</div>
                               <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:1}}>{p.telephone||'Pas de tel'}</div>
                             </div>
-                            {isOn?<span style={{color:'#00c896',fontSize:18}}>✓</span>:<span style={{color:'rgba(255,255,255,0.15)',fontSize:18}}>○</span>}
+                            {isOn?<Check size={18} color="#00c896"/>:<Circle size={16} color="rgba(255,255,255,0.15)"/>}
                           </div>
                         )
                       })}
@@ -801,7 +808,7 @@ export default function ImolocBiens() {
                   <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,overflow:'hidden'}}>
                     {[
                       ['Nom',          form.nom],
-                      ['Type',         TYPE_ICONS[form.type]+' '+(TYPES.find(t=>t.val===form.type)?.label||form.type)],
+                      ['Type',         (()=>{const TIcon=TYPE_ICONS[form.type]||Home;return <span style={{display:'inline-flex',alignItems:'center',gap:6}}><TIcon size={14}/>{TYPES.find(t=>t.val===form.type)?.label||form.type}</span>})()],
                       ['Statut',       STATUT_CFG[form.statut]?.label || form.statut],
                       ['Adresse',      form.adresse?`${form.adresse}${form.quartier?', '+form.quartier:''}, ${form.ville}`:form.ville||'—'],
                       ['Superficie',   form.superficie?form.superficie+' m²':'—'],
@@ -829,7 +836,7 @@ export default function ImolocBiens() {
                 <button className="pb-pfb pb-pfb-b" disabled={step===1&&!form.nom}
                   style={{opacity:step===1&&!form.nom?0.4:1}}
                   onClick={()=>setStep(step+1)}>
-                  Suivant →
+                  <span style={{display:'inline-flex',alignItems:'center',gap:6}}>Suivant <ArrowRight size={14}/></span>
                 </button>
               ):(
                 <button className="pb-pfb pb-pfb-b" disabled={saving||!form.nom}
@@ -850,8 +857,8 @@ export default function ImolocBiens() {
             <div className="pb-detail-head">
               <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:18}}>
                 <div style={{display:'flex',alignItems:'center',gap:14}}>
-                  <div style={{width:56,height:56,borderRadius:12,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,flexShrink:0}}>
-                    {TYPE_ICONS[selectedBien.type_bien] || TYPE_ICONS[selectedBien.type] || '🏠'}
+                  <div style={{width:56,height:56,borderRadius:12,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    {(()=>{const TIcon=TYPE_ICONS[selectedBien.type_bien] || TYPE_ICONS[selectedBien.type] || Home;return <TIcon size={26}/>})()}
                   </div>
                   <div>
                     <div style={{fontSize:19,fontWeight:700,color:'#e6edf3',marginBottom:3}}>{selectedBien.nom}</div>
@@ -876,10 +883,10 @@ export default function ImolocBiens() {
               {/* Actions */}
               <div style={{display:'flex',alignItems:'center',gap:18,marginBottom:18,flexWrap:'wrap'}}>
                 {[
-                  {ic:'📄',lbl:'Voir les baux',   action:()=>navigate('/imoloc/baux')},
-                  {ic:'💰',lbl:'Paiements',        action:()=>navigate('/imoloc/paiements')},
-                  {ic:'✏️',lbl:'Modifier',          action:()=>{}},
-                  {ic:'🗑️',lbl:'Supprimer',         action:()=>{
+                  {ic:FileText,lbl:'Voir les baux',   action:()=>navigate('/imoloc/baux')},
+                  {ic:Wallet,  lbl:'Paiements',        action:()=>navigate('/imoloc/paiements')},
+                  {ic:Pencil,  lbl:'Modifier',          action:()=>{}},
+                  {ic:Trash2,  lbl:'Supprimer',         action:()=>{
                     if(!confirm('Supprimer ce bien ?')) return
                     supabase.from('biens').delete().eq('id',selectedBien.id).then(()=>{
                       toast.success('Bien supprime'); setSelectedBien(null); initData()
@@ -890,7 +897,7 @@ export default function ImolocBiens() {
                     onClick={a.action}
                     onMouseEnter={e=>e.currentTarget.style.color='#e6edf3'}
                     onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.55)'}>
-                    {a.ic} {a.lbl}
+                    <a.ic size={14}/> {a.lbl}
                   </span>
                 ))}
               </div>
@@ -969,7 +976,7 @@ export default function ImolocBiens() {
                   </>
                 ):(
                   <div style={{textAlign:'center',padding:'50px 20px'}}>
-                    <div style={{fontSize:36,marginBottom:12,opacity:0.35}}>👤</div>
+                    <User size={36} style={{marginBottom:12,opacity:0.35}}/>
                     <div style={{fontSize:14,color:'rgba(255,255,255,0.35)',marginBottom:18}}>Aucun proprietaire associe</div>
                     <button className="pb-btn pb-btn-p" style={{margin:'0 auto'}} onClick={()=>navigate('/imoloc/proprietaires')}>
                       Associer un proprietaire
@@ -981,7 +988,7 @@ export default function ImolocBiens() {
               {/* Tab Baux */}
               {detailTab==='baux'&&(
                 <div style={{textAlign:'center',padding:'60px 20px'}}>
-                  <div style={{fontSize:36,marginBottom:12,opacity:0.3}}>📄</div>
+                  <FileText size={36} style={{marginBottom:12,opacity:0.3}}/>
                   <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.35)',marginBottom:8}}>
                     {selectedBien.nb_baux} bail{selectedBien.nb_baux!==1?'s':''} actif{selectedBien.nb_baux!==1?'s':''}
                   </div>
@@ -993,7 +1000,7 @@ export default function ImolocBiens() {
               {/* Tab Paiements */}
               {detailTab==='paiements'&&(
                 <div style={{textAlign:'center',padding:'60px 20px'}}>
-                  <div style={{fontSize:36,marginBottom:12,opacity:0.3}}>💰</div>
+                  <Wallet size={36} style={{marginBottom:12,opacity:0.3}}/>
                   <div style={{fontSize:13,color:'rgba(255,255,255,0.25)',marginBottom:18}}>Module paiements en cours de developpement</div>
                   <button className="pb-btn" style={{margin:'0 auto'}} onClick={()=>navigate('/imoloc/paiements')}>Voir les paiements</button>
                 </div>

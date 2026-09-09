@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Check, Smartphone, CheckCircle2, XCircle, Mail } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -28,11 +29,11 @@ const STATUT_CFG = {
 }
 
 const CORRESPONDENTS = [
-  { id: 'MTN_MOMO_BEN', label: 'MTN Mobile Money', pays: 'Benin', indicatif: '229', longueur: 11, icon: '📱', color: '#f59e0b' },
-  { id: 'MOOV_BEN', label: 'Moov Money', pays: 'Benin', indicatif: '229', longueur: 11, icon: '📱', color: '#0078d4' },
-  { id: 'MOOV_TGO', label: 'Moov Money', pays: 'Togo', indicatif: '228', longueur: 11, icon: '📱', color: '#0078d4' },
-  { id: 'ORANGE_SEN', label: 'Orange Money', pays: 'Senegal', indicatif: '221', longueur: 12, icon: '📱', color: '#f97316' },
-  { id: 'WAVE_SEN', label: 'Wave', pays: 'Senegal', indicatif: '221', longueur: 12, icon: '📱', color: '#00c896' },
+  { id: 'MTN_MOMO_BEN', label: 'MTN Mobile Money', pays: 'Benin', indicatif: '229', longueur: 11, color: '#f59e0b' },
+  { id: 'MOOV_BEN', label: 'Moov Money', pays: 'Benin', indicatif: '229', longueur: 11, color: '#0078d4' },
+  { id: 'MOOV_TGO', label: 'Moov Money', pays: 'Togo', indicatif: '228', longueur: 11, color: '#0078d4' },
+  { id: 'ORANGE_SEN', label: 'Orange Money', pays: 'Senegal', indicatif: '221', longueur: 12, color: '#f97316' },
+  { id: 'WAVE_SEN', label: 'Wave', pays: 'Senegal', indicatif: '221', longueur: 12, color: '#00c896' },
 ]
 
 export default function AbonnementPlan() {
@@ -77,7 +78,7 @@ export default function AbonnementPlan() {
 
   const souscirePlan = (plan) => {
     if (!plan.prix_mois_fcfa) {
-      toast('Contactez-nous pour l offre Enterprise : contact@imoloc.lt', { icon: '📧' })
+      toast('Contactez-nous pour l offre Enterprise : contact@imoloc.lt', { icon: <Mail size={16}/> })
       return
     }
     setSelectedPlan(plan)
@@ -284,7 +285,7 @@ export default function AbonnementPlan() {
                     <div style={{ flex:1, marginBottom:20 }}>
                       {plan.features.map((f,i)=>(
                         <div key={i} className="feat-item">
-                          <span style={{ color:plan.couleur, flexShrink:0 }}>✓</span> {f}
+                          <Check size={14} style={{ color:plan.couleur, flexShrink:0 }}/> {f}
                         </div>
                       ))}
                     </div>
@@ -354,7 +355,7 @@ export default function AbonnementPlan() {
 
             {payStatus==='pending' && (
               <div style={{textAlign:'center',padding:'20px 0'}}>
-                <div style={{fontSize:40,marginBottom:16}}>📱</div>
+                <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}><Smartphone size={40} color="#0078d4"/></div>
                 <div style={{fontSize:16,fontWeight:600,color:'#e6edf3',marginBottom:8}}>En attente de confirmation</div>
                 <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:20,lineHeight:1.7}}>Une notification USSD a ete envoyee sur votre telephone.<br/>Approuvez le paiement pour continuer.</div>
                 <div style={{display:'flex',justifyContent:'center',gap:6}}>
@@ -367,7 +368,7 @@ export default function AbonnementPlan() {
 
             {payStatus==='success' && (
               <div style={{textAlign:'center',padding:'20px 0'}}>
-                <div style={{fontSize:40,marginBottom:16}}>✅</div>
+                <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}><CheckCircle2 size={40} color="#00c896"/></div>
                 <div style={{fontSize:16,fontWeight:600,color:'#00c896',marginBottom:8}}>Paiement confirme !</div>
                 <div style={{fontSize:13,color:'rgba(255,255,255,0.4)'}}>Votre abonnement {selectedPlan.nom} est maintenant actif.</div>
               </div>
@@ -375,7 +376,7 @@ export default function AbonnementPlan() {
 
             {payStatus==='failed' && (
               <div style={{textAlign:'center',padding:'20px 0'}}>
-                <div style={{fontSize:40,marginBottom:16}}>❌</div>
+                <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}><XCircle size={40} color="#ef4444"/></div>
                 <div style={{fontSize:16,fontWeight:600,color:'#ef4444',marginBottom:8}}>Paiement echoue</div>
                 <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:16}}>Le paiement n a pas pu etre traite.</div>
                 <button style={{...bP,margin:'0 auto'}} onClick={()=>setPayStatus(null)}>Reessayer</button>

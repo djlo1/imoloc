@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Building2, Users, CreditCard, FileText, BarChart3, Wrench, Plug, Lock, Check, ArrowLeft, ArrowRight, Mail, User, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -35,14 +36,14 @@ const LICENCES = [
 ]
 
 const APPS = [
-  { id:'biens', label:'Biens immobiliers', icon:'🏢' },
-  { id:'locataires', label:'Locataires', icon:'👥' },
-  { id:'paiements', label:'Paiements', icon:'💳' },
-  { id:'baux', label:'Baux', icon:'📄' },
-  { id:'rapports', label:'Rapports', icon:'📊' },
-  { id:'maintenance', label:'Maintenance', icon:'🔧' },
-  { id:'integrations', label:'Intégrations', icon:'🔌' },
-  { id:'securite', label:'Sécurité', icon:'🔐' },
+  { id:'biens', label:'Biens immobiliers', icon:Building2 },
+  { id:'locataires', label:'Locataires', icon:Users },
+  { id:'paiements', label:'Paiements', icon:CreditCard },
+  { id:'baux', label:'Baux', icon:FileText },
+  { id:'rapports', label:'Rapports', icon:BarChart3 },
+  { id:'maintenance', label:'Maintenance', icon:Wrench },
+  { id:'integrations', label:'Intégrations', icon:Plug },
+  { id:'securite', label:'Sécurité', icon:Lock },
 ]
 
 // Détecter le fournisseur d'email
@@ -203,7 +204,7 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
         }),
       })
 
-      toast.success(`✅ Invitation envoyée à ${form.email} !`)
+      toast.success(`Invitation envoyée à ${form.email} !`)
       onClose()
     } catch (err) {
       console.error('Erreur:', err)
@@ -372,8 +373,8 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                         />
                         {provider && (
                           <div className="au-input-icon">
-                            <span style={{fontSize:11,color:provider.color,fontWeight:600,background:`${provider.color}18`,padding:'3px 10px',borderRadius:'100px',border:`1px solid ${provider.color}30`,whiteSpace:'nowrap'}}>
-                              {provider.isPro ? '🏢 Pro' : provider.label}
+                            <span style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:11,color:provider.color,fontWeight:600,background:`${provider.color}18`,padding:'3px 10px',borderRadius:'100px',border:`1px solid ${provider.color}30`,whiteSpace:'nowrap'}}>
+                              {provider.isPro ? <><Building2 size={11}/> Pro</> : provider.label}
                             </span>
                           </div>
                         )}
@@ -381,8 +382,8 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                       {provider && (
                         <div className="au-provider-badge" style={{background:`${provider.color}12`,color:provider.color,border:`1px solid ${provider.color}25`}}>
                           {provider.isPro
-                            ? <>🏢 <strong>Adresse professionnelle</strong> · Le compte sera associé au domaine {form.email.split('@')[1]}</>
-                            : <>✓ <strong>{provider.label}</strong> détecté · Connexion possible via ce fournisseur</>
+                            ? <><Building2 size={13}/> <strong>Adresse professionnelle</strong> · Le compte sera associé au domaine {form.email.split('@')[1]}</>
+                            : <><Check size={13}/> <strong>{provider.label}</strong> détecté · Connexion possible via ce fournisseur</>
                           }
                         </div>
                       )}
@@ -517,7 +518,7 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                     {APPS.map(app => (
                       <div key={app.id} className={`au-app-item ${form.apps.includes(app.id)?'selected':''}`} onClick={()=>toggleApp(app.id)}>
                         {form.apps.includes(app.id)&&<div className="au-app-check"><svg width="9" height="9" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg></div>}
-                        <div className="au-app-icon">{app.icon}</div>
+                        <div className="au-app-icon"><app.icon size={20}/></div>
                         <div className="au-app-name">{app.label}</div>
                       </div>
                     ))}
@@ -588,7 +589,7 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                       {k:'Nom complet', v:`${form.prenom} ${form.nom}`.trim()||'—'},
                       {k:'Email', v:form.email||'—'},
                       {k:'Mot de passe', v:form.auto_password?'Généré automatiquement':'Défini manuellement'},
-                      {k:'Modifier à la 1ʳᵉ connexion', v:form.force_change?'✓ Oui':'Non'},
+                      {k:'Modifier à la 1ʳᵉ connexion', v:form.force_change?'Oui':'Non'},
                     ].map((r,i)=>(
                       <div key={i} className="au-summary-row"><span className="au-summary-key">{r.k}</span><span className="au-summary-val">{r.v}</span></div>
                     ))}
@@ -621,18 +622,18 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                       </div>
                       <div style={{marginBottom:8}}>Vos informations de connexion :</div>
                       <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:6,padding:'12px 14px',marginBottom:14,fontFamily:'monospace',fontSize:13}}>
-                        <div>📧 Email : <span style={{color:'#4da6ff'}}>{form.email || 'jean.dupont@gmail.com'}</span></div>
-                        <div>🔐 Mot de passe : <span style={{color:'#00c896'}}>{form.auto_password ? '(généré automatiquement)' : '(défini par l\'administrateur)'}</span></div>
-                        <div>🏢 Organisation : <span style={{color:'#e6edf3'}}>{agenceName}</span></div>
-                        <div>👤 Rôle : <span style={{color:'#e6edf3'}}>{ROLES.find(r=>r.id===form.role)?.label}</span></div>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}><Mail size={13}/> Email : <span style={{color:'#4da6ff'}}>{form.email || 'jean.dupont@gmail.com'}</span></div>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}><Lock size={13}/> Mot de passe : <span style={{color:'#00c896'}}>{form.auto_password ? '(généré automatiquement)' : '(défini par l\'administrateur)'}</span></div>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}><Building2 size={13}/> Organisation : <span style={{color:'#e6edf3'}}>{agenceName}</span></div>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}><User size={13}/> Rôle : <span style={{color:'#e6edf3'}}>{ROLES.find(r=>r.id===form.role)?.label}</span></div>
                       </div>
                       <div style={{marginBottom:12}}>Cliquez sur le bouton ci-dessous pour accéder à votre espace :</div>
-                      <div className="au-email-link" style={{display:'inline-block',cursor:'default'}}>
-                        🚀 Accéder à Imoloc
+                      <div className="au-email-link" style={{display:'inline-flex',alignItems:'center',gap:6,cursor:'default'}}>
+                        <ArrowRight size={13}/> Accéder à Imoloc
                       </div>
                       {form.force_change && (
-                        <div style={{marginTop:10,padding:'10px 12px',borderRadius:6,background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.2)',fontSize:12,color:'rgba(255,255,255,0.45)'}}>
-                          ⚠️ Vous devrez modifier votre mot de passe lors de votre première connexion.
+                        <div style={{marginTop:10,padding:'10px 12px',borderRadius:6,background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.2)',fontSize:12,color:'rgba(255,255,255,0.45)',display:'flex',alignItems:'center',gap:6}}>
+                          <AlertTriangle size={13}/> Vous devrez modifier votre mot de passe lors de votre première connexion.
                         </div>
                       )}
                       <div style={{marginTop:16,fontSize:12,color:'rgba(255,255,255,0.25)',borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:12}}>
@@ -648,14 +649,14 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
           <div className="au-foot">
             <div className="au-foot-left">Étape {step} sur {STEPS.length}</div>
             <div className="au-foot-btns">
-              <button className="au-btn au-btn-ghost" onClick={()=>step>1?setStep(step-1):onClose()}>
-                {step===1?'Annuler':'← Précédent'}
+              <button className="au-btn au-btn-ghost" style={{display:'inline-flex',alignItems:'center',gap:6}} onClick={()=>step>1?setStep(step-1):onClose()}>
+                {step===1?'Annuler':<><ArrowLeft size={14}/> Précédent</>}
               </button>
               {step<STEPS.length ? (
-                <button className="au-btn au-btn-blue" disabled={!canNext()} onClick={()=>setStep(step+1)}>Suivant →</button>
+                <button className="au-btn au-btn-blue" style={{display:'inline-flex',alignItems:'center',gap:6}} disabled={!canNext()} onClick={()=>setStep(step+1)}>Suivant <ArrowRight size={14}/></button>
               ) : (
-                <button className="au-btn au-btn-blue" disabled={saving} onClick={handleFinish}>
-                  {saving?<><span className="au-spin"/>Création en cours…</>:'✅ Terminer et envoyer l\'invitation'}
+                <button className="au-btn au-btn-blue" style={{display:'inline-flex',alignItems:'center',gap:6}} disabled={saving} onClick={handleFinish}>
+                  {saving?<><span className="au-spin"/>Création en cours…</>:<><Check size={14}/> Terminer et envoyer l'invitation</>}
                 </button>
               )}
             </div>

@@ -1,20 +1,21 @@
 import { useState, useEffect, useRef } from 'react'
+import { Info, CheckCircle2, AlertTriangle, AlertCircle, Bell, Wallet, Users, Building2, Lock, ArrowRight } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 
 const TYPE_CONFIG = {
-  info:    { color:'#0078d4', bg:'rgba(0,120,212,0.12)', icon:'ℹ️' },
-  success: { color:'#00c896', bg:'rgba(0,200,150,0.12)', icon:'✅' },
-  warning: { color:'#f59e0b', bg:'rgba(245,158,11,0.12)', icon:'⚠️' },
-  error:   { color:'#ef4444', bg:'rgba(239,68,68,0.12)',  icon:'🔴' },
+  info:    { color:'#0078d4', bg:'rgba(0,120,212,0.12)', icon:Info },
+  success: { color:'#00c896', bg:'rgba(0,200,150,0.12)', icon:CheckCircle2 },
+  warning: { color:'#f59e0b', bg:'rgba(245,158,11,0.12)', icon:AlertTriangle },
+  error:   { color:'#ef4444', bg:'rgba(239,68,68,0.12)',  icon:AlertCircle },
 }
 
 const CAT_LABELS = {
-  general:     '🔔 Général',
-  paiement:    '💰 Paiement',
-  utilisateur: '👥 Utilisateur',
-  bien:        '🏢 Bien',
-  securite:    '🔐 Sécurité',
+  general:     { icon:Bell, label:'Général' },
+  paiement:    { icon:Wallet, label:'Paiement' },
+  utilisateur: { icon:Users, label:'Utilisateur' },
+  bien:        { icon:Building2, label:'Bien' },
+  securite:    { icon:Lock, label:'Sécurité' },
 }
 
 export default function NotificationsPanel({ userId, agenceId }) {
@@ -207,7 +208,7 @@ export default function NotificationsPanel({ userId, agenceId }) {
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="notif-empty">
-                  <div className="notif-empty-ic">🔔</div>
+                  <div className="notif-empty-ic"><Bell size={40}/></div>
                   <div style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:6}}>
                     {filter==='unread'?'Aucune notification non lue':'Aucune notification'}
                   </div>
@@ -220,10 +221,11 @@ export default function NotificationsPanel({ userId, agenceId }) {
                   <div className="notif-group-lbl">{group}</div>
                   {items.map((n,i)=>{
                     const tc = TYPE_CONFIG[n.type] || TYPE_CONFIG.info
+                    const catInfo = CAT_LABELS[n.categorie]
                     return (
                       <div key={i} className={`notif-item ${!n.lu?'unread':''}`} onClick={()=>handleClick(n)}>
-                        <div className="notif-ic" style={{background:tc.bg}}>
-                          {tc.icon}
+                        <div className="notif-ic" style={{background:tc.bg,color:tc.color}}>
+                          <tc.icon size={16}/>
                         </div>
                         <div className="notif-body">
                           <div className="notif-ntitle">{n.titre}</div>
@@ -231,8 +233,10 @@ export default function NotificationsPanel({ userId, agenceId }) {
                           <div className="notif-meta">
                             <span>{timeAgo(n.created_at)}</span>
                             {n.categorie && (
-                              <span className="notif-cat" style={{background:tc.bg,color:tc.color}}>
-                                {CAT_LABELS[n.categorie] || n.categorie}
+                              <span className="notif-cat" style={{display:'inline-flex',alignItems:'center',gap:4,background:tc.bg,color:tc.color}}>
+                                {catInfo
+                                  ? <><catInfo.icon size={11}/> {catInfo.label}</>
+                                  : n.categorie}
                               </span>
                             )}
                           </div>
@@ -255,8 +259,8 @@ export default function NotificationsPanel({ userId, agenceId }) {
             {/* Footer */}
             {filtered.length > 0 && (
               <div className="notif-footer">
-                <a onClick={()=>{setOpen(false); navigate('/agence/notifications')}}>
-                  Voir toutes les notifications →
+                <a onClick={()=>{setOpen(false); navigate('/agence/notifications')}} style={{display:'inline-flex',alignItems:'center',gap:4}}>
+                  Voir toutes les notifications <ArrowRight size={13}/>
                 </a>
               </div>
             )}

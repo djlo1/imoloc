@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Sparkles, RefreshCw, Wrench, Lock, Rocket, Inbox, Lightbulb, ArrowRight } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 
 const TYPE_CONFIG = {
-  feature:  { label:'Nouveau', color:'#0078d4', bg:'rgba(0,120,212,0.12)', icon:'✨' },
-  update:   { label:'Mise à jour', color:'#6c63ff', bg:'rgba(108,99,255,0.12)', icon:'🔄' },
-  fix:      { label:'Correction', color:'#00c896', bg:'rgba(0,200,150,0.12)', icon:'🔧' },
-  security: { label:'Sécurité', color:'#f59e0b', bg:'rgba(245,158,11,0.12)', icon:'🔐' },
+  feature:  { label:'Nouveau', color:'#0078d4', bg:'rgba(0,120,212,0.12)', icon:Sparkles },
+  update:   { label:'Mise à jour', color:'#6c63ff', bg:'rgba(108,99,255,0.12)', icon:RefreshCw },
+  fix:      { label:'Correction', color:'#00c896', bg:'rgba(0,200,150,0.12)', icon:Wrench },
+  security: { label:'Sécurité', color:'#f59e0b', bg:'rgba(245,158,11,0.12)', icon:Lock },
 }
 
 export default function Nouveautes() {
@@ -137,7 +138,7 @@ export default function Nouveautes() {
               <span style={{color:'rgba(255,255,255,0.2)'}}>›</span>
               <span style={{color:'rgba(255,255,255,0.65)'}}>Nouveautés</span>
             </div>
-            <div className="nv-hero-title">🚀 Nouveautés Imoloc</div>
+            <div className="nv-hero-title" style={{display:'flex',alignItems:'center',gap:10}}><Rocket size={24}/> Nouveautés Imoloc</div>
             <div className="nv-hero-sub">
               Découvrez toutes les nouvelles fonctionnalités, améliorations et corrections apportées à votre plateforme de gestion immobilière.
             </div>
@@ -164,13 +165,13 @@ export default function Nouveautes() {
           {[
             { v:'all', l:`Toutes (${nouveautes.length})` },
             nonVues.length > 0 && { v:'new', l:`Non vues (${nonVues.length})` },
-            { v:'feature', l:'✨ Nouvelles fonctionnalités' },
-            { v:'update', l:'🔄 Mises à jour' },
-            { v:'fix', l:'🔧 Corrections' },
-            { v:'security', l:'🔐 Sécurité' },
+            { v:'feature', icon:Sparkles, l:'Nouvelles fonctionnalités' },
+            { v:'update', icon:RefreshCw, l:'Mises à jour' },
+            { v:'fix', icon:Wrench, l:'Corrections' },
+            { v:'security', icon:Lock, l:'Sécurité' },
           ].filter(Boolean).map(f=>(
-            <button key={f.v} className={`nv-filter ${filter===f.v?'active':''}`} onClick={()=>setFilter(f.v)}>
-              {f.l}
+            <button key={f.v} className={`nv-filter ${filter===f.v?'active':''}`} onClick={()=>setFilter(f.v)} style={{display:'inline-flex',alignItems:'center',gap:6}}>
+              {f.icon && <f.icon size={13}/>}{f.l}
             </button>
           ))}
         </div>
@@ -178,12 +179,12 @@ export default function Nouveautes() {
         {/* Grille */}
         {loading ? (
           <div style={{textAlign:'center',padding:60,color:'rgba(255,255,255,0.3)'}}>
-            <div style={{fontSize:32,marginBottom:12,opacity:0.4}}>🚀</div>
+            <div style={{marginBottom:12,opacity:0.4,display:'flex',justifyContent:'center'}}><Rocket size={32}/></div>
             Chargement des nouveautés...
           </div>
         ) : filtered.length === 0 ? (
           <div className="nv-empty">
-            <div style={{fontSize:40,marginBottom:14,opacity:0.35}}>📭</div>
+            <div style={{marginBottom:14,opacity:0.35,display:'flex',justifyContent:'center'}}><Inbox size={40}/></div>
             <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Aucune nouveauté</div>
             <div>Les mises à jour apparaîtront ici automatiquement.</div>
           </div>
@@ -198,8 +199,8 @@ export default function Nouveautes() {
                   style={{animationDelay:`${i*0.05}s`}}>
                   {isNew && <div className="nv-card-new-dot"/>}
                   <div className="nv-card-head">
-                    <div className="nv-card-icon" style={{background:tc.bg}}>
-                      {tc.icon}
+                    <div className="nv-card-icon" style={{background:tc.bg,color:tc.color}}>
+                      <tc.icon size={22}/>
                     </div>
                     <div style={{flex:1}}>
                       <div className="nv-card-type" style={{background:tc.bg,color:tc.color}}>
@@ -221,7 +222,7 @@ export default function Nouveautes() {
                       )}
                     </div>
                     <span className="nv-card-read">
-                      Lire la suite <span>→</span>
+                      Lire la suite <ArrowRight size={13}/>
                     </span>
                   </div>
                 </div>
@@ -237,8 +238,8 @@ export default function Nouveautes() {
           <div className="nv-modal">
             <div className="nv-modal-head">
               <div style={{display:'flex',alignItems:'flex-start',gap:14}}>
-                <div style={{width:48,height:48,borderRadius:12,background:(TYPE_CONFIG[selected.type]||TYPE_CONFIG.feature).bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,flexShrink:0}}>
-                  {(TYPE_CONFIG[selected.type]||TYPE_CONFIG.feature).icon}
+                <div style={{width:48,height:48,borderRadius:12,background:(TYPE_CONFIG[selected.type]||TYPE_CONFIG.feature).bg,color:(TYPE_CONFIG[selected.type]||TYPE_CONFIG.feature).color,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  {(()=>{ const Icon=(TYPE_CONFIG[selected.type]||TYPE_CONFIG.feature).icon; return <Icon size={24}/> })()}
                 </div>
                 <div>
                   <div style={{display:'inline-flex',alignItems:'center',padding:'3px 10px',borderRadius:'100px',fontSize:11,fontWeight:700,background:(TYPE_CONFIG[selected.type]||TYPE_CONFIG.feature).bg,color:(TYPE_CONFIG[selected.type]||TYPE_CONFIG.feature).color,marginBottom:6}}>
@@ -272,8 +273,8 @@ export default function Nouveautes() {
                 </div>
               )}
               <div style={{marginTop:24,padding:'16px 18px',borderRadius:10,background:'rgba(0,120,212,0.06)',border:'1px solid rgba(0,120,212,0.15)'}}>
-                <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.65}}>
-                  💡 <strong style={{color:'rgba(255,255,255,0.7)'}}>Conseil :</strong> Cette fonctionnalité est disponible dès maintenant dans votre tableau de bord. Contactez le support si vous avez des questions.
+                <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.65,display:'flex',gap:8}}>
+                  <Lightbulb size={16} style={{flexShrink:0,marginTop:1}}/> <span><strong style={{color:'rgba(255,255,255,0.7)'}}>Conseil :</strong> Cette fonctionnalité est disponible dès maintenant dans votre tableau de bord. Contactez le support si vous avez des questions.</span>
                 </div>
               </div>
             </div>

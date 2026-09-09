@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { Building2, FileText, BarChart3, Wrench, LayoutGrid, Pencil, LayoutDashboard, MessageCircle, SlidersHorizontal } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 
@@ -49,12 +50,12 @@ const NAV = [
 ]
 
 const ADMIN_CENTERS = [
-  { label:'Centre Imoloc', path:'/agence/imoloc', icon:'🏢' },
-  { label:'Baux', path:'/agence/baux', icon:'📄' },
-  { label:'Rapports', path:'/agence/rapports', icon:'📊' },
-  { label:'Maintenance', path:'/agence/maintenance', icon:'🔧' },
-  { label:'Tous les centres', path:'/agence', icon:'⊞' },
-  { label:'Personnaliser la navigation', path:'/agence/parametres', icon:'✏️' },
+  { label:'Centre Imoloc', path:'/agence/imoloc', icon:Building2 },
+  { label:'Baux', path:'/agence/baux', icon:FileText },
+  { label:'Rapports', path:'/agence/rapports', icon:BarChart3 },
+  { label:'Maintenance', path:'/agence/maintenance', icon:Wrench },
+  { label:'Tous les centres', path:'/agence', icon:LayoutGrid },
+  { label:'Personnaliser la navigation', path:'/agence/parametres', icon:Pencil },
 ]
 
 export default function Sidebar({ collapsed, mobileOpen, onClose }) {
@@ -140,16 +141,16 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
           {!collapsed && location.pathname.startsWith('/agence/loci') && (
             <div style={{paddingLeft:30}}>
               <Link to="/agence/loci" className="sb3-sub-item" onClick={onClose}
-                style={{display:'flex',alignItems:'center',padding:'5px 14px',cursor:'pointer',fontSize:12.5,color:location.pathname==='/agence/loci'?'#a78bfa':'rgba(255,255,255,0.4)',transition:'all 0.1s',textDecoration:'none',borderLeft:'1px solid rgba(108,99,255,0.2)'}}>
-                📊 Tableau de bord
+                style={{display:'flex',alignItems:'center',gap:7,padding:'5px 14px',cursor:'pointer',fontSize:12.5,color:location.pathname==='/agence/loci'?'#a78bfa':'rgba(255,255,255,0.4)',transition:'all 0.1s',textDecoration:'none',borderLeft:'1px solid rgba(108,99,255,0.2)'}}>
+                <LayoutDashboard size={13}/> Tableau de bord
               </Link>
               <Link to="/agence/loci/chat" className="sb3-sub-item" onClick={onClose}
-                style={{display:'flex',alignItems:'center',padding:'5px 14px',cursor:'pointer',fontSize:12.5,color:location.pathname==='/agence/loci/chat'?'#a78bfa':'rgba(255,255,255,0.4)',transition:'all 0.1s',textDecoration:'none',borderLeft:'1px solid rgba(108,99,255,0.2)'}}>
-                💬 Loci Chat
+                style={{display:'flex',alignItems:'center',gap:7,padding:'5px 14px',cursor:'pointer',fontSize:12.5,color:location.pathname==='/agence/loci/chat'?'#a78bfa':'rgba(255,255,255,0.4)',transition:'all 0.1s',textDecoration:'none',borderLeft:'1px solid rgba(108,99,255,0.2)'}}>
+                <MessageCircle size={13}/> Loci Chat
               </Link>
               <Link to="/agence/loci/outils" className="sb3-sub-item" onClick={onClose}
-                style={{display:'flex',alignItems:'center',padding:'5px 14px',cursor:'pointer',fontSize:12.5,color:location.pathname==='/agence/loci/outils'?'#a78bfa':'rgba(255,255,255,0.4)',transition:'all 0.1s',textDecoration:'none',borderLeft:'1px solid rgba(108,99,255,0.2)'}}>
-                🛠️ Outils BI
+                style={{display:'flex',alignItems:'center',gap:7,padding:'5px 14px',cursor:'pointer',fontSize:12.5,color:location.pathname==='/agence/loci/outils'?'#a78bfa':'rgba(255,255,255,0.4)',transition:'all 0.1s',textDecoration:'none',borderLeft:'1px solid rgba(108,99,255,0.2)'}}>
+                <SlidersHorizontal size={13}/> Outils BI
               </Link>
             </div>
           )}
@@ -187,14 +188,14 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
           {ADMIN_CENTERS.map((c,i) => (
             c.path === '/agence/imoloc'
               ? <a key={i} href="/imoloc" target="_blank" rel="noopener noreferrer" className="sb3-admin" onClick={onClose}>
-                  <span style={{fontSize:14,flexShrink:0}}>{c.icon}</span>
+                  <c.icon size={14} style={{flexShrink:0}}/>
                   {!collapsed && <span style={{display:'flex',alignItems:'center',gap:6,flex:1}}>
                     {c.label}
                     <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{opacity:0.4,flexShrink:0}}><path strokeLinecap="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
                   </span>}
                 </a>
               : <Link key={i} to={c.path} className={`sb3-admin ${isActive(c.path)?'active':''}`} onClick={onClose}>
-                  <span style={{fontSize:14,flexShrink:0}}>{c.icon}</span>
+                  <c.icon size={14} style={{flexShrink:0}}/>
                   {!collapsed && c.label}
                 </Link>
           ))}
