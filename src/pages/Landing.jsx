@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { Link } from "react-router-dom"
+import { Apple, Smartphone, CheckCircle2, XCircle, AlertTriangle } from "lucide-react"
 
 /* ── LOGO ── */
 const Logo = () => (
@@ -504,8 +505,8 @@ export default function Landing() {
                   Acc&#233;dez aux t&#226;ches courantes en d&#233;placement et recevez des notifications concernant les paiements, renouvellements et signalements.
                 </p>
                 <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:32}}>
-                  {[["Pour iOS","🍎"],["Pour Android","▶"]].map(([l,ic]) => (
-                    <button key={l} style={{padding:"12px 28px",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:4,fontSize:14,cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>{ic} {l}</button>
+                  {[["Pour iOS",Apple],["Pour Android",Smartphone]].map(([l,Ic]) => (
+                    <button key={l} style={{display:"inline-flex",alignItems:"center",gap:8,padding:"12px 28px",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:4,fontSize:14,cursor:"pointer",fontFamily:"inherit",fontWeight:600}}><Ic size={16}/> {l}</button>
                   ))}
                 </div>
                 {/* QR CODE PLACEHOLDER */}
@@ -794,16 +795,19 @@ export default function Landing() {
                   </thead>
                   <tbody>
                     {[
-                      ["Mobile Money natif","✅","❌","❌"],
-                      ["Interface en fran&#231;ais","✅","⚠️","⚠️"],
-                      ["Portail locataire","✅","❌","✅"],
-                      ["Baux &#233;lectroniques","✅","❌","⚠️"],
-                      ["Prix adapt&#233; Afrique","✅","✅","❌"],
-                      ["Support local","✅","❌","❌"],
+                      ["Mobile Money natif","y","n","n"],
+                      ["Interface en fran&#231;ais","y","w","w"],
+                      ["Portail locataire","y","n","y"],
+                      ["Baux &#233;lectroniques","y","n","w"],
+                      ["Prix adapt&#233; Afrique","y","y","n"],
+                      ["Support local","y","n","n"],
                     ].map(([feat,...vals],i) => (
                       <tr key={i} style={{borderBottom:"1px solid #f8f8f8",background:i%2===0?"#fafafa":"#fff"}}>
                         <td style={{padding:"10px 0",fontSize:13,color:"#333"}} dangerouslySetInnerHTML={{__html:feat}}/>
-                        {vals.map((v,j) => <td key={j} style={{textAlign:"center",padding:"10px 8px",fontSize:16}}>{v}</td>)}
+                        {vals.map((v,j) => {
+                          const cfg = {y:{Icon:CheckCircle2,color:"#10b981"},n:{Icon:XCircle,color:"#ef4444"},w:{Icon:AlertTriangle,color:"#f59e0b"}}[v]
+                          return <td key={j} style={{textAlign:"center",padding:"10px 8px"}}><cfg.Icon size={16} color={cfg.color} style={{display:"inline-block"}}/></td>
+                        })}
                       </tr>
                     ))}
                   </tbody>
