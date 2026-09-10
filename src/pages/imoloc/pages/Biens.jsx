@@ -75,6 +75,19 @@ const STEPS = [
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') : '—'
 
+// Reference auto-generee a partir du format de l'organisation (Centre
+// d'administration > Parametres) ou du format par defaut. Jetons geres :
+// {ANNEE}, {MOIS}, {SEQ}, {SEQ:04} (numero sequentiel avec zero-padding)
+const DEFAULT_REFERENCE_FORMAT = 'BIEN-{ANNEE}-{SEQ:04}'
+const formatReference = (format, seq) => {
+  const now = new Date()
+  return (format || DEFAULT_REFERENCE_FORMAT)
+    .replace(/\{SEQ:(\d+)\}/g, (_, pad) => String(seq).padStart(Number(pad), '0'))
+    .replace(/\{SEQ\}/g, String(seq))
+    .replace(/\{ANNEE\}/g, String(now.getFullYear()))
+    .replace(/\{MOIS\}/g, String(now.getMonth()+1).padStart(2,'0'))
+}
+
 // Config d'un statut a partir du catalogue dynamique (fallback neutre si
 // le catalogue n'est pas encore charge ou si la valeur est inconnue)
 const getStatutCfg = (statutsBiens, valeur) => {
@@ -100,11 +113,12 @@ function StatutPicker({ statutsBiens, value, onChange, allowTous=false, size='no
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
   const cur = value && value!=='tous' ? statutsBiens.find(s=>s.valeur===value) : null
+  const placeholder = allowTous ? 'Tous' : 'Choisir un statut'
   return (
     <div ref={ref} style={{position:'relative',display:'inline-block'}}>
       <button className="pb-btn" style={size==='small'?{padding:'6px 11px',fontSize:12.5}:{}} onClick={()=>setOpen(o=>!o)}>
         {cur&&<span style={{width:7,height:7,borderRadius:'50%',background:cur.couleur||'#8b949e',flexShrink:0}}/>}
-        <span>Statut : <b style={{color:'#e6edf3',fontWeight:600}}>{cur?cur.label:'Tous'}</b></span>
+        <span>Statut : <b style={{color:cur?'#e6edf3':'rgba(255,255,255,0.4)',fontWeight:600}}>{cur?cur.label:placeholder}</b></span>
         <ChevronDown size={12}/>
       </button>
       {open&&(
@@ -206,13 +220,22 @@ export default function ImolocBiens() {
   const [coProprietaires, setCoProprietaires] = useState([]) // [{proprietaire, pourcentage}]
 
   const [form, setForm] = useState({
-    nom:'', type:'appartement', statut:'disponible', reference:'', intention:'location',
+    nom:'', type:'', statut:'', intention:'',
     adresse:'', ville:'Cotonou', quartier:'',
     superficie:'', loyer:'', prix_vente_demande:'',
     nb_pieces:'', nb_chambres:'', nb_sdb:'', meuble:false,
     description:'',
   })
   const setF = (k,v) => setForm(f=>({...f,[k]:v}))
+
+  // Un bien doit avoir : type + intention (etape 1), nom + statut (etape 2).
+  // Le reste (localisation, caracteristiques, proprietaire, finances) est
+  // optionnel a la creation.
+  const canProceedStep = (n) => {
+    if (n===1) return !!form.type && !!form.intention
+    if (n===2) return !!form.nom && !!form.statut
+    return true
+  }
 
   const { loading:configLoading, typesBiens, typesParCategorie, statutsBiens, equipements, equipementsParCategorie, adresseSchema } =
     useBiensConfig(agence?.id, agence?.pays)
@@ -305,9 +328,11 @@ export default function ImolocBiens() {
     setSaving(true)
     try {
       const { data:{ user } } = await supabase.auth.getUser()
+      const { data:seq } = await supabase.rpc('next_reference_seq', { p_agence_id: agence.id })
+      const reference = formatReference(agence.format_reference, seq)
       const { data:bien, error } = await supabase.from('biens').insert({
         nom:              form.nom,
-        reference:        form.reference        || null,
+        reference,
         type_bien:        form.type,           // colonne texte (catalogue types_biens)
         type:             form.type,           // colonne compat, conservee pour l'existant
         statut:           form.statut,         // colonne texte (catalogue statuts_biens)
@@ -454,7 +479,7 @@ export default function ImolocBiens() {
     setMultiProp(false)
     setCoProprietaires([])
     setForm({
-      nom:'', type:'appartement', statut:'disponible', reference:'', intention:'location',
+      nom:'', type:'', statut:'', intention:'',
       adresse:'', ville:'Cotonou', quartier:'',
       superficie:'', loyer:'', prix_vente_demande:'',
       nb_pieces:'', nb_chambres:'', nb_sdb:'', meuble:false,
@@ -577,25 +602,25 @@ export default function ImolocBiens() {
         .pb-pfb-g{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1)}.pb-pfb-g:hover{background:rgba(255,255,255,0.09)}
 
         /* ─ Add Panel ─ */
-        .pb-add-panel{width:min(780px,96vw)}
+        .pb-add-panel{width:min(1180px,94vw)}
         .pb-add-body{display:flex;flex:1;overflow:hidden}
-        .pb-steps-v{width:190px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);padding:20px 0;display:flex;flex-direction:column;gap:2px;background:rgba(0,0,0,0.15)}
-        .pb-step-v{display:flex;align-items:flex-start;gap:12px;padding:12px 20px;cursor:pointer;transition:background 0.15s;border-left:3px solid transparent;position:relative}
+        .pb-steps-v{width:230px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);padding:24px 0;display:flex;flex-direction:column;gap:2px;background:rgba(0,0,0,0.15)}
+        .pb-step-v{display:flex;align-items:flex-start;gap:12px;padding:13px 24px;cursor:pointer;transition:background 0.15s;border-left:3px solid transparent;position:relative}
         .pb-step-v:hover{background:rgba(255,255,255,0.04)}
         .pb-step-v.active{background:rgba(0,120,212,0.07);border-left-color:#0078d4}
         .pb-step-v.done{border-left-color:#00c896}
         .pb-step-v-n{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.4);margin-top:1px}
         .pb-step-v-n.active{background:#0078d4;color:#fff}
         .pb-step-v-n.done{background:#00c896;color:#fff}
-        .pb-step-v-lbl{font-size:13px;font-weight:600;color:rgba(255,255,255,0.5)}
+        .pb-step-v-lbl{font-size:13.5px;font-weight:600;color:rgba(255,255,255,0.5)}
         .pb-step-v.active .pb-step-v-lbl{color:#e6edf3}
         .pb-step-v.done .pb-step-v-lbl{color:rgba(255,255,255,0.6)}
         .pb-step-v-desc{font-size:11.5px;color:rgba(255,255,255,0.25);margin-top:2px}
-        .pb-step-content{flex:1;overflow-y:auto;padding:28px 32px}
-        .pb-step-content::-webkit-scrollbar{width:4px}
-        .pb-step-content::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
-        .pb-step-title{font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:6px}
-        .pb-step-sub{font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:24px;line-height:1.65}
+        .pb-step-content{flex:1;overflow-y:auto;padding:40px 56px}
+        .pb-step-inner{max-width:680px}
+        .pb-step-title{font-size:23px;font-weight:800;color:#f5f8fb;margin-bottom:8px;letter-spacing:-0.01em}
+        .pb-step-sub{font-size:13.5px;color:rgba(255,255,255,0.45);margin-bottom:28px;line-height:1.65}
+        .pb-req{color:#ef4444;margin-left:3px}
 
         /* ─ Champs ─ */
         .pb-g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
@@ -621,9 +646,11 @@ export default function ImolocBiens() {
         .pb-statut-pill.on{font-weight:600}
 
         /* ─ Proprietaire search ─ */
-        .pb-prop-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:9px;border:1.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02);margin-bottom:7px;cursor:pointer;transition:all 0.15s}
-        .pb-prop-item:hover{border-color:rgba(0,120,212,0.25);background:rgba(0,120,212,0.04)}
-        .pb-prop-item.on{border-color:#0078d4;background:rgba(0,120,212,0.08)}
+        .pb-prop-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;border:1px solid transparent;cursor:pointer;transition:all 0.1s}
+        .pb-prop-item:hover{background:rgba(255,255,255,0.04)}
+        .pb-prop-item.on{border-color:rgba(0,120,212,0.35);background:rgba(0,120,212,0.08)}
+        .pb-prop-list{border:1px solid rgba(255,255,255,0.08);border-radius:8px;max-height:340px;overflow-y:auto;padding:4px}
+        .pb-prop-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
 
         /* ─ Detail panel ─ */
         .pb-detail-panel{width:min(600px,96vw)}
@@ -895,16 +922,16 @@ export default function ImolocBiens() {
               <div className="pb-step-content">
 
                 {/* ── Step 1 : Type & intention ── */}
-                {step===1&&(<>
+                {step===1&&(<div className="pb-step-inner">
                   <div className="pb-step-title">Type de bien et intention</div>
                   <div className="pb-step-sub">Recherchez le type precis, puis indiquez si ce bien est destine a la location, la vente, ou les deux.</div>
-                  <div className="pb-sec" style={{marginTop:0}}>Type de bien</div>
+                  <div className="pb-sec" style={{marginTop:0,display:'flex',alignItems:'center'}}>Type de bien<span className="pb-req">*</span></div>
                   {configLoading?(
                     <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement du catalogue...</div>
                   ):(
                     <TypeSearchList typesParCategorie={typesParCategorie} value={form.type} onChange={v=>setF('type',v)}/>
                   )}
-                  <div className="pb-sec">Intention</div>
+                  <div className="pb-sec" style={{display:'flex',alignItems:'center'}}>Intention<span className="pb-req">*</span></div>
                   <div className="pb-type-grid" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
                     {INTENTIONS.map(it=>(
                       <div key={it.val} className={`pb-type-item ${form.intention===it.val?'on':''}`} onClick={()=>setF('intention',it.val)}>
@@ -913,26 +940,23 @@ export default function ImolocBiens() {
                       </div>
                     ))}
                   </div>
-                </>)}
+                </div>)}
 
                 {/* ── Step 2 : Identification ── */}
-                {step===2&&(<>
+                {step===2&&(<div className="pb-step-inner">
                   <div className="pb-step-title">Identification</div>
-                  <div className="pb-step-sub">Nom du bien, reference interne et statut actuel.</div>
+                  <div className="pb-step-sub">Nom du bien et statut actuel. La reference interne est generee automatiquement a la creation.</div>
                   <div className="pb-field">
-                    <label className="pb-lbl">Nom du bien <span style={{color:'#ef4444'}}>*</span></label>
+                    <label className="pb-lbl">Nom du bien<span className="pb-req">*</span></label>
                     <input className="pb-inp" autoFocus value={form.nom} onChange={e=>setF('nom',e.target.value)} placeholder="Ex: Villa les Cocotiers, Appart Lot 14..."/>
                   </div>
-                  <div className="pb-field">
-                    <label className="pb-lbl">Reference interne</label>
-                    <input className="pb-inp" value={form.reference} onChange={e=>setF('reference',e.target.value)} placeholder="Ex: BIEN-2026-0042 (optionnel)"/>
-                  </div>
-                  <div className="pb-sec">Statut actuel</div>
+                  <div className="pb-sec" style={{display:'flex',alignItems:'center'}}>Statut actuel<span className="pb-req">*</span></div>
                   <StatutPicker statutsBiens={statutsBiens} value={form.statut} onChange={v=>setF('statut',v)}/>
-                </>)}
+                  {!form.statut&&<div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginTop:8}}>Choisissez le statut actuel du bien pour continuer.</div>}
+                </div>)}
 
                 {/* ── Step 3 : Localisation ── */}
-                {step===3&&(<>
+                {step===3&&(<div className="pb-step-inner">
                   <div className="pb-step-title">Localisation</div>
                   <div className="pb-step-sub">Adresse du bien{agence?.pays?` — champs adaptes au ${agence.pays}`:''}.</div>
                   <div className="pb-g2">
@@ -949,10 +973,10 @@ export default function ImolocBiens() {
                     <label className="pb-lbl">Adresse complete</label>
                     <input className="pb-inp" value={form.adresse} onChange={e=>setF('adresse',e.target.value)} placeholder="Rue, lot, references..."/>
                   </div>
-                </>)}
+                </div>)}
 
                 {/* ── Step 4 : Caracteristiques essentielles ── */}
-                {step===4&&(<>
+                {step===4&&(<div className="pb-step-inner">
                   <div className="pb-step-title">Caracteristiques essentielles</div>
                   <div className="pb-step-sub">Le reste (equipements, compteurs, documents...) se complete depuis la fiche du bien apres creation.</div>
                   <div className="pb-g3">
@@ -981,10 +1005,10 @@ export default function ImolocBiens() {
                     <label className="pb-lbl">Description</label>
                     <textarea className="pb-inp" rows={3} value={form.description} onChange={e=>setF('description',e.target.value)} placeholder="Description du bien, equipements, acces..." style={{resize:'vertical',minHeight:80}}/>
                   </div>
-                </>)}
+                </div>)}
 
                 {/* ── Step 5 : Proprietaire ── */}
-                {step===5&&(<>
+                {step===5&&(<div className="pb-step-inner">
                   <div className="pb-step-title">Associer un proprietaire</div>
                   <div className="pb-step-sub">Optionnel — Selectionnez le proprietaire de ce bien parmi ceux deja associes a votre agence.</div>
 
@@ -1026,46 +1050,49 @@ export default function ImolocBiens() {
                     </div>
                   ):(
                     <>
+                      <label className="pb-lbl" style={{marginBottom:7}}>Ajouter, basculer, ou supprimer</label>
                       <div className="pb-field">
-                        <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:6,padding:'8px 12px',marginBottom:14}}>
-                          <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
+                        <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:6,padding:'8px 12px'}}>
+                          <Search size={13} color="rgba(255,255,255,0.3)"/>
                           <input style={{background:'none',border:'none',outline:'none',fontFamily:'Inter,sans-serif',fontSize:13,color:'#e6edf3',width:'100%'}}
                             value={propSearch} onChange={e=>setPropSearch(e.target.value)}
-                            placeholder="Filtrer par nom ou telephone..."/>
+                            placeholder="Rechercher par nom ou telephone..."/>
                         </div>
                       </div>
-                      {/* Option aucun */}
-                      <div className={`pb-prop-item ${!selectedProp?'on':''}`} onClick={()=>setSelectedProp(null)}>
-                        <div style={{width:38,height:38,borderRadius:'50%',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Ban size={16} color="rgba(255,255,255,0.4)"/></div>
-                        <div style={{flex:1}}>
-                          <div style={{fontSize:13.5,fontWeight:600,color:'rgba(255,255,255,0.7)'}}>Aucun proprietaire</div>
-                          <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginTop:1}}>Ajouter plus tard</div>
-                        </div>
-                        {!selectedProp&&<Check size={18} color="#00c896"/>}
-                      </div>
-                      {filteredProps.map((p,i)=>{
-                        const cols_p = ['#0078d4','#6c63ff','#00c896','#f59e0b','#4da6ff','#a78bfa']
-                        const col_p  = cols_p[i % cols_p.length]
-                        const isOn   = selectedProp?.id===p.id
-                        return (
-                          <div key={p.id} className={`pb-prop-item ${isOn?'on':''}`} onClick={()=>setSelectedProp(p)}>
-                            <div style={{width:38,height:38,borderRadius:'50%',background:`linear-gradient(135deg,${col_p},${col_p}88)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0}}>
-                              {((p.prenom?.[0]||'')+(p.nom?.[0]||'')).toUpperCase()||'?'}
-                            </div>
-                            <div style={{flex:1}}>
-                              <div style={{fontSize:13.5,fontWeight:600,color:'#e6edf3'}}>{p.prenom} {p.nom}</div>
-                              <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:1}}>{p.telephone||'Pas de tel'}</div>
-                            </div>
-                            {isOn?<Check size={18} color="#00c896"/>:<Circle size={16} color="rgba(255,255,255,0.15)"/>}
+                      <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.3)',textTransform:'uppercase',letterSpacing:'0.06em',margin:'12px 0 6px'}}>Resultats</div>
+                      <div className="pb-prop-list">
+                        <div className={`pb-prop-item ${!selectedProp?'on':''}`} onClick={()=>setSelectedProp(null)}>
+                          <div className="pb-prop-avatar" style={{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)'}}><Ban size={13} color="rgba(255,255,255,0.4)"/></div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.75)'}}>Aucun proprietaire</div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>Ajouter plus tard</div>
                           </div>
-                        )
-                      })}
+                          {!selectedProp&&<Check size={15} color="#00c896"/>}
+                        </div>
+                        {filteredProps.map((p,i)=>{
+                          const cols_p = ['#0078d4','#6c63ff','#00c896','#f59e0b','#4da6ff','#a78bfa']
+                          const col_p  = cols_p[i % cols_p.length]
+                          const isOn   = selectedProp?.id===p.id
+                          return (
+                            <div key={p.id} className={`pb-prop-item ${isOn?'on':''}`} onClick={()=>setSelectedProp(p)}>
+                              <div className="pb-prop-avatar" style={{background:`linear-gradient(135deg,${col_p},${col_p}88)`}}>
+                                {((p.prenom?.[0]||'')+(p.nom?.[0]||'')).toUpperCase()||'?'}
+                              </div>
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{p.prenom} {p.nom}</div>
+                                <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{p.telephone||'Pas de tel'}</div>
+                              </div>
+                              {isOn?<Check size={15} color="#00c896"/>:<Circle size={14} color="rgba(255,255,255,0.15)"/>}
+                            </div>
+                          )
+                        })}
+                      </div>
                     </>
                   )}
-                </>)}
+                </div>)}
 
                 {/* ── Step 6 : Finances de base ── */}
-                {step===6&&(<>
+                {step===6&&(<div className="pb-step-inner">
                   <div className="pb-step-title">Finances de base</div>
                   <div className="pb-step-sub">Le detail (charges, taxes, commission...) se complete depuis la fiche du bien.</div>
                   {(form.intention==='location'||form.intention==='les_deux')&&(
@@ -1080,16 +1107,16 @@ export default function ImolocBiens() {
                       <input className="pb-inp" type="number" min="0" value={form.prix_vente_demande} onChange={e=>setF('prix_vente_demande',e.target.value)} placeholder="25000000"/>
                     </div>
                   )}
-                </>)}
+                </div>)}
 
                 {/* ── Step 7 : Recap ── */}
-                {step===7&&(<>
+                {step===7&&(<div className="pb-step-inner">
                   <div className="pb-step-title">Recapitulatif</div>
                   <div className="pb-step-sub">Verifiez les informations avant de creer le bien.</div>
                   <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,overflow:'hidden'}}>
                     {[
                       ['Nom',          form.nom],
-                      ['Reference',    form.reference||'—'],
+                      ['Reference',    <span key="r" style={{fontStyle:'italic',color:'rgba(255,255,255,0.35)'}}>Generee a la creation</span>],
                       ['Type',         (()=>{const info=getTypeInfo(typesBiens,form.type);const TIcon=info.icon;return <span style={{display:'inline-flex',alignItems:'center',gap:6}}><TIcon size={14}/>{info.label}</span>})()],
                       ['Intention',    INTENTIONS.find(i=>i.val===form.intention)?.label||form.intention],
                       ['Statut',       getStatutCfg(statutsBiens,form.statut).label],
@@ -1110,7 +1137,7 @@ export default function ImolocBiens() {
                       </div>
                     ))}
                   </div>
-                </>)}
+                </div>)}
               </div>
             </div>
 
@@ -1120,14 +1147,14 @@ export default function ImolocBiens() {
                 {step===1?'Annuler':'Precedent'}
               </button>
               {step<7?(
-                <button className="pb-pfb pb-pfb-b" disabled={step===2&&!form.nom}
-                  style={{opacity:step===2&&!form.nom?0.4:1}}
+                <button className="pb-pfb pb-pfb-b" disabled={!canProceedStep(step)}
+                  style={{opacity:!canProceedStep(step)?0.4:1}}
                   onClick={()=>setStep(step+1)}>
                   <span style={{display:'inline-flex',alignItems:'center',gap:6}}>Suivant <ArrowRight size={14}/></span>
                 </button>
               ):(
-                <button className="pb-pfb pb-pfb-b" disabled={saving||!form.nom}
-                  style={{opacity:saving||!form.nom?0.4:1}}
+                <button className="pb-pfb pb-pfb-b" disabled={saving||!canProceedStep(2)}
+                  style={{opacity:saving||!canProceedStep(2)?0.4:1}}
                   onClick={createBien}>
                   {saving?'Creation en cours...':'Ajouter le bien'}
                 </button>
@@ -1213,17 +1240,11 @@ export default function ImolocBiens() {
                       <label className="pb-lbl">Nom du bien</label>
                       <input className="pb-inp" value={editForm.nom} onChange={e=>setE('nom',e.target.value)}/>
                     </div>
-                    <div className="pb-g2">
-                      <div>
-                        <label className="pb-lbl">Reference interne</label>
-                        <input className="pb-inp" value={editForm.reference} onChange={e=>setE('reference',e.target.value)}/>
-                      </div>
-                      <div>
-                        <label className="pb-lbl">Intention</label>
-                        <select className="pb-inp" value={editForm.intention} onChange={e=>setE('intention',e.target.value)}>
-                          {INTENTIONS.map(it=><option key={it.val} value={it.val}>{it.label}</option>)}
-                        </select>
-                      </div>
+                    <div className="pb-field">
+                      <label className="pb-lbl">Intention</label>
+                      <select className="pb-inp" style={{maxWidth:280}} value={editForm.intention} onChange={e=>setE('intention',e.target.value)}>
+                        {INTENTIONS.map(it=><option key={it.val} value={it.val}>{it.label}</option>)}
+                      </select>
                     </div>
                     <div className="pb-sec">Statut</div>
                     <div style={{marginBottom:16}}>
