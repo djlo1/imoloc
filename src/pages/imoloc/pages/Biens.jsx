@@ -1,45 +1,29 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  Home, Sofa, Building, Warehouse, Store, Trees, ParkingSquare, Hotel, HardHat,
-  Wallet, FileText, User, Trash2, Pencil, Ban, RefreshCw, Download, Building2,
-  Check, ArrowRight, Circle,
+  Home, Building, Trees, Building2, ParkingSquare, HardHat,
+  Wallet, FileText, User, Trash2, Pencil, Ban, RefreshCw, Download,
+  Check, ArrowRight, Circle, Key, Tag,
 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
 import StatusDot from '../../../components/ui/StatusDot'
 import ProgressBar from '../../../components/ui/ProgressBar'
+import { useBiensConfig, CATEGORIE_LABELS } from '../../../hooks/useBiensConfig'
 
-// ─── Constants — alignees avec les enums Supabase ─────────
-// type_bien enum: appartement, maison, villa, studio, bureau, entrepot, local_commercial, terrain, parking, hotel, autre
-const TYPES = [
-  { val:'appartement',     label:'Appartement'      },
-  { val:'maison',          label:'Maison'           },
-  { val:'villa',           label:'Villa'            },
-  { val:'studio',          label:'Studio'           },
-  { val:'bureau',          label:'Bureau'           },
-  { val:'entrepot',        label:'Entrepot'         },
-  { val:'local_commercial',label:'Local commercial' },
-  { val:'terrain',         label:'Terrain'          },
-  { val:'parking',         label:'Parking'          },
-  { val:'hotel',           label:'Hotel'            },
-  { val:'autre',           label:'Autre'            },
+// ─── Constants ─────────────────────────────────────────────
+// Icones par categorie de type de bien (les ~68 valeurs du catalogue
+// types_biens sont chargees dynamiquement, voir useBiensConfig)
+const CATEGORIE_ICONS = {
+  residentiel:Home, terrain:Trees, professionnel:Building2,
+  collectif:Building, stationnement:ParkingSquare, specialise:HardHat, autre:HardHat,
+}
+const INTENTIONS = [
+  { val:'location',   label:'Location',    desc:'Gere en location', icon:Key },
+  { val:'vente',       label:'Vente',        desc:'A vendre',         icon:Tag },
+  { val:'les_deux',    label:'Les deux',     desc:'Location et vente possibles', icon:Building2 },
 ]
-const TYPE_ICONS = {
-  appartement:Building, maison:Home, villa:Home, studio:Sofa,
-  bureau:Building2, entrepot:Warehouse, local_commercial:Store,
-  terrain:Trees, parking:ParkingSquare, hotel:Hotel, autre:HardHat,
-}
-// statut_bien enum: disponible, occupe, maintenance, renovation, reserve, hors_service
-const STATUT_CFG = {
-  disponible:   { color:'#00c896', bg:'rgba(0,200,150,0.12)',  label:'Disponible',   dot:'#00c896' },
-  occupe:       { color:'#0078d4', bg:'rgba(0,120,212,0.12)',  label:'Occupe',       dot:'#0078d4' },
-  maintenance:  { color:'#f59e0b', bg:'rgba(245,158,11,0.12)', label:'Maintenance',  dot:'#f59e0b' },
-  renovation:   { color:'#8b5cf6', bg:'rgba(139,92,246,0.12)', label:'Renovation',   dot:'#8b5cf6' },
-  reserve:      { color:'#6c63ff', bg:'rgba(108,99,255,0.12)', label:'Reserve',      dot:'#6c63ff' },
-  hors_service: { color:'#ef4444', bg:'rgba(239,68,68,0.12)',  label:'Hors service', dot:'#ef4444' },
-}
 
 const ALL_COLS = [
   { key:'displayName',   label:'Bien',          checked:true,  disabled:true },
@@ -55,13 +39,30 @@ const ALL_COLS = [
 const DEFAULT_COLS = ALL_COLS.filter(c=>c.checked).map(c=>c.key)
 
 const STEPS = [
-  { n:1, label:'Informations', desc:'Nom, type, statut' },
-  { n:2, label:'Localisation',  desc:'Adresse et finances' },
-  { n:3, label:'Proprietaire',  desc:'Associer un proprietaire' },
-  { n:4, label:'Recapitulatif', desc:'Verification finale' },
+  { n:1, label:'Type & intention',  desc:'Categorie, type, location ou vente' },
+  { n:2, label:'Identification',    desc:'Nom, reference, statut' },
+  { n:3, label:'Localisation',      desc:'Adresse selon le pays' },
+  { n:4, label:'Caracteristiques',  desc:'Pieces, superficie, meuble' },
+  { n:5, label:'Proprietaire',      desc:'Associer un proprietaire' },
+  { n:6, label:'Finances',          desc:'Loyer ou prix de vente' },
+  { n:7, label:'Recapitulatif',     desc:'Verification finale' },
 ]
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') : '—'
+
+// Config d'un statut a partir du catalogue dynamique (fallback neutre si
+// le catalogue n'est pas encore charge ou si la valeur est inconnue)
+const getStatutCfg = (statutsBiens, valeur) => {
+  const row = (statutsBiens||[]).find(s=>s.valeur===valeur)
+  const color = row?.couleur || '#8b949e'
+  return { color, bg:`${color}1e`, label: row?.label || valeur || '—', dot: color }
+}
+// Type de bien a partir du catalogue dynamique — l'icone suit la categorie,
+// pas la valeur precise (68 types, pas la peine d'une icone chacun)
+const getTypeInfo = (typesBiens, valeur) => {
+  const row = (typesBiens||[]).find(t=>t.valeur===valeur)
+  return { label: row?.label || valeur || '—', icon: CATEGORIE_ICONS[row?.categorie] || Home }
+}
 
 // ─── Composant principal ──────────────────────────────────
 export default function ImolocBiens() {
@@ -85,19 +86,27 @@ export default function ImolocBiens() {
   const [step, setStep]             = useState(1)
   const [saving, setSaving]         = useState(false)
 
-  // Pour l'etape 3
+  // Pour l'etape 5 (proprietaire)
   const [proprietaires, setProprietaires] = useState([])
   const [propSearch, setPropSearch]       = useState('')
   const [selectedProp, setSelectedProp]   = useState(null)
+  const [multiProp, setMultiProp]         = useState(false)
+  const [coProprietaires, setCoProprietaires] = useState([]) // [{proprietaire, pourcentage}]
+
+  // Pour l'etape 1 (categorie active dans la grille de types)
+  const [activeCategorie, setActiveCategorie] = useState('residentiel')
 
   const [form, setForm] = useState({
-    nom:'', type:'appartement', statut:'disponible',
+    nom:'', type:'appartement', statut:'disponible', reference:'', intention:'location',
     adresse:'', ville:'Cotonou', quartier:'',
-    superficie:'', loyer:'',
-    nb_pieces:'', nb_chambres:'', nb_sdb:'',
+    superficie:'', loyer:'', prix_vente_demande:'',
+    nb_pieces:'', nb_chambres:'', nb_sdb:'', meuble:false,
     description:'',
   })
   const setF = (k,v) => setForm(f=>({...f,[k]:v}))
+
+  const { loading:configLoading, typesBiens, typesParCategorie, statutsBiens, adresseSchema } =
+    useBiensConfig(agence?.id, agence?.pays)
 
   const resizingCol = useRef(null)
   const startX      = useRef(0)
@@ -186,11 +195,15 @@ export default function ImolocBiens() {
     if (!agence?.id || !form.nom) return
     setSaving(true)
     try {
-      const { error } = await supabase.from('biens').insert({
+      const { data:{ user } } = await supabase.auth.getUser()
+      const { data:bien, error } = await supabase.from('biens').insert({
         nom:              form.nom,
-        type_bien:        form.type,           // enum type_bien (valeur lowercase)
-        type:             form.type,           // colonne compat text
-        statut:           form.statut,         // enum statut_bien
+        reference:        form.reference        || null,
+        type_bien:        form.type,           // colonne texte (catalogue types_biens)
+        type:             form.type,           // colonne compat, conservee pour l'existant
+        statut:           form.statut,         // colonne texte (catalogue statuts_biens)
+        intention:        form.intention,
+        meuble:           form.meuble,
         adresse:          form.adresse         || null,
         ville:            form.ville           || null,
         quartier:         form.quartier        || null,
@@ -198,14 +211,28 @@ export default function ImolocBiens() {
         superficie_totale:form.superficie      ? Number(form.superficie)  : null,
         loyer:            form.loyer           ? Number(form.loyer)       : null,
         loyer_mensuel:    form.loyer           ? Number(form.loyer)       : null,
+        prix_vente_demande: form.prix_vente_demande ? Number(form.prix_vente_demande) : null,
         nombre_pieces:    form.nb_pieces       ? Number(form.nb_pieces)   : null,
         nombre_chambres:  form.nb_chambres     ? Number(form.nb_chambres) : null,
         nombre_salles_bain: form.nb_sdb        ? Number(form.nb_sdb)      : null,
         description:      form.description     || null,
         agence_id:        agence.id,
-        proprietaire_id:  selectedProp?.id     || null,
-      })
+        proprietaire_id:  selectedProp?.id     || null, // conserve pour compat, biens_proprietaires est la source de verite
+        created_by:       user?.id             || null,
+      }).select('id').single()
       if (error) throw error
+
+      // Proprietaire(s) — un seul a 100% par defaut, ou plusieurs si coche
+      const parts = multiProp
+        ? coProprietaires.filter(c=>c.proprietaire && Number(c.pourcentage)>0)
+        : (selectedProp ? [{ proprietaire:selectedProp, pourcentage:100 }] : [])
+      if (parts.length>0) {
+        const { error: propErr } = await supabase.from('biens_proprietaires').insert(
+          parts.map(p => ({ bien_id: bien.id, proprietaire_id: p.proprietaire.id, pourcentage: Number(p.pourcentage) }))
+        )
+        if (propErr) console.error('biens_proprietaires', propErr)
+      }
+
       toast.success(form.nom + ' ajoute avec succes !')
       setShowAddPanel(false)
       resetForm()
@@ -227,7 +254,16 @@ export default function ImolocBiens() {
     setStep(1)
     setSelectedProp(null)
     setPropSearch('')
-    setForm({ nom:'', type:'appartement', statut:'disponible', adresse:'', ville:'Cotonou', quartier:'', superficie:'', loyer:'', nb_pieces:'', nb_chambres:'', nb_sdb:'', description:'' })
+    setMultiProp(false)
+    setCoProprietaires([])
+    setActiveCategorie('residentiel')
+    setForm({
+      nom:'', type:'appartement', statut:'disponible', reference:'', intention:'location',
+      adresse:'', ville:'Cotonou', quartier:'',
+      superficie:'', loyer:'', prix_vente_demande:'',
+      nb_pieces:'', nb_chambres:'', nb_sdb:'', meuble:false,
+      description:'',
+    })
   }
 
   // Filtrages
@@ -264,7 +300,7 @@ export default function ImolocBiens() {
   }
 
   const StatutBadge = ({ statut, size=12 }) => {
-    const cfg = STATUT_CFG[statut] || STATUT_CFG.disponible
+    const cfg = getStatutCfg(statutsBiens, statut)
     return (
       <span style={{display:'inline-flex',alignItems:'center',gap:5,padding:'2px 9px',borderRadius:'100px',fontSize:size,fontWeight:600,background:cfg.bg,color:cfg.color}}>
         <span style={{width:6,height:6,borderRadius:'50%',background:cfg.dot,flexShrink:0}}/>
@@ -475,18 +511,11 @@ export default function ImolocBiens() {
           </div>
         </div>
 
-        {/* Filtres statut — valeurs exactes de l'enum statut_bien */}
+        {/* Filtres statut — catalogue dynamique (Centre d'administration > Parametres) */}
         <div className="pb-ftabs">
-          {[
-            ['tous',         'Tous'],
-            ['disponible',   'Disponibles'],
-            ['occupe',       'Occupes'],
-            ['maintenance',  'Maintenance'],
-            ['renovation',   'Renovation'],
-            ['reserve',      'Reserves'],
-            ['hors_service', 'Hors service'],
-          ].map(([v,l])=>(
-            <button key={v} className={`pb-ftab ${filterStatut===v?'active':''}`} onClick={()=>setFilterStatut(v)}>{l}</button>
+          <button className={`pb-ftab ${filterStatut==='tous'?'active':''}`} onClick={()=>setFilterStatut('tous')}>Tous</button>
+          {statutsBiens.map(s=>(
+            <button key={s.valeur} className={`pb-ftab ${filterStatut===s.valeur?'active':''}`} onClick={()=>setFilterStatut(s.valeur)}>{s.label}</button>
           ))}
         </div>
 
@@ -554,9 +583,9 @@ export default function ImolocBiens() {
                   </td></tr>
                 ):filtered.map((b)=>{
                   const isSel = selected.includes(b.id)
-                  const IcComp = TYPE_ICONS[b.type_bien] || TYPE_ICONS[b.type] || Home
+                  const IcComp = getTypeInfo(typesBiens, b.type_bien || b.type).icon
                   const avH   = viewMode==='compact' ? 26 : 32
-                  const statutColor = (STATUT_CFG[b.statut] || STATUT_CFG.disponible).color
+                  const statutColor = getStatutCfg(statutsBiens, b.statut).color
                   return (
                     <tr key={b.id} className={isSel?'sel':''} onClick={()=>{setSelectedBien(b);setDetailTab('infos')}}>
                       <td className="ind-td" style={{'--ind-c':statutColor}} onClick={e=>{e.stopPropagation();toggleSelect(b.id)}}>
@@ -669,52 +698,77 @@ export default function ImolocBiens() {
               {/* Contenu steps */}
               <div className="pb-step-content">
 
-                {/* ── Step 1 : Informations ── */}
+                {/* ── Step 1 : Type & intention ── */}
                 {step===1&&(<>
-                  <div className="pb-step-title">Informations du bien</div>
-                  <div className="pb-step-sub">Renseignez le nom, le type et le statut actuel du bien.</div>
-                  <div className="pb-field">
-                    <label className="pb-lbl">Nom du bien <span style={{color:'#ef4444'}}>*</span></label>
-                    <input className="pb-inp" autoFocus value={form.nom} onChange={e=>setF('nom',e.target.value)} placeholder="Ex: Villa les Cocotiers, Appart Lot 14..."/>
-                  </div>
-                  <div className="pb-sec">Type de bien</div>
-                  <div className="pb-type-grid">
-                    {TYPES.map(t=>{
-                      const TIcon = TYPE_ICONS[t.val]||Home
+                  <div className="pb-step-title">Type de bien et intention</div>
+                  <div className="pb-step-sub">Choisissez la categorie, le type precis, puis si ce bien est destine a la location, la vente, ou les deux.</div>
+                  <div className="pb-sec">Categorie</div>
+                  <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:16}}>
+                    {Object.keys(typesParCategorie).map(cat=>{
+                      const CIcon = CATEGORIE_ICONS[cat]||Home
                       return (
-                      <div key={t.val} className={`pb-type-item ${form.type===t.val?'on':''}`} onClick={()=>setF('type',t.val)}>
+                        <div key={cat} onClick={()=>setActiveCategorie(cat)}
+                          style={{display:'inline-flex',alignItems:'center',gap:6,padding:'7px 13px',borderRadius:100,fontSize:12.5,fontWeight:500,cursor:'pointer',
+                            border:`1px solid ${activeCategorie===cat?'#0078d4':'rgba(255,255,255,0.1)'}`,
+                            background:activeCategorie===cat?'rgba(0,120,212,0.12)':'rgba(255,255,255,0.03)',
+                            color:activeCategorie===cat?'#4da6ff':'rgba(255,255,255,0.55)'}}>
+                          <CIcon size={13}/> {CATEGORIE_LABELS[cat]||cat}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="pb-type-grid">
+                    {configLoading?(
+                      <div style={{gridColumn:'1/-1',color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement du catalogue...</div>
+                    ):(typesParCategorie[activeCategorie]||[]).map(t=>{
+                      const TIcon = CATEGORIE_ICONS[t.categorie]||Home
+                      return (
+                      <div key={t.valeur} className={`pb-type-item ${form.type===t.valeur?'on':''}`} onClick={()=>setF('type',t.valeur)}>
                         <div className="pb-type-ic-lg"><TIcon size={22}/></div>
                         <div className="pb-type-lbl">{t.label}</div>
                       </div>
                     )})}
                   </div>
-                  <div className="pb-sec">Statut actuel</div>
-                  <div className="pb-statut-row">
-                    {[
-                      ['disponible',   'Disponible'],
-                      ['occupe',       'Occupe'],
-                      ['maintenance',  'Maintenance'],
-                      ['renovation',   'Renovation'],
-                      ['reserve',      'Reserve'],
-                      ['hors_service', 'Hors service'],
-                    ].map(([k,lbl])=>{
-                      const cfg = STATUT_CFG[k] || STATUT_CFG.disponible
-                      return (
-                        <div key={k} className={`pb-statut-pill ${form.statut===k?'on':''}`}
-                          style={form.statut===k?{borderColor:cfg.color,background:cfg.bg,color:cfg.color}:{}}
-                          onClick={()=>setF('statut',k)}>
-                          <span style={{width:7,height:7,borderRadius:'50%',background:cfg.dot,flexShrink:0}}/>
-                          {lbl}
-                        </div>
-                      )
-                    })}
+                  <div className="pb-sec">Intention</div>
+                  <div className="pb-type-grid" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
+                    {INTENTIONS.map(it=>(
+                      <div key={it.val} className={`pb-type-item ${form.intention===it.val?'on':''}`} onClick={()=>setF('intention',it.val)}>
+                        <div className="pb-type-ic-lg"><it.icon size={22}/></div>
+                        <div className="pb-type-lbl">{it.label}</div>
+                      </div>
+                    ))}
                   </div>
                 </>)}
 
-                {/* ── Step 2 : Localisation & Finances ── */}
+                {/* ── Step 2 : Identification ── */}
                 {step===2&&(<>
-                  <div className="pb-step-title">Localisation et finances</div>
-                  <div className="pb-step-sub">Adresse du bien, superficie, loyer et caracteristiques.</div>
+                  <div className="pb-step-title">Identification</div>
+                  <div className="pb-step-sub">Nom du bien, reference interne et statut actuel.</div>
+                  <div className="pb-field">
+                    <label className="pb-lbl">Nom du bien <span style={{color:'#ef4444'}}>*</span></label>
+                    <input className="pb-inp" autoFocus value={form.nom} onChange={e=>setF('nom',e.target.value)} placeholder="Ex: Villa les Cocotiers, Appart Lot 14..."/>
+                  </div>
+                  <div className="pb-field">
+                    <label className="pb-lbl">Reference interne</label>
+                    <input className="pb-inp" value={form.reference} onChange={e=>setF('reference',e.target.value)} placeholder="Ex: BIEN-2026-0042 (optionnel)"/>
+                  </div>
+                  <div className="pb-sec">Statut actuel</div>
+                  <div className="pb-statut-row">
+                    {statutsBiens.map(s=>(
+                      <div key={s.valeur} className={`pb-statut-pill ${form.statut===s.valeur?'on':''}`}
+                        style={form.statut===s.valeur?{borderColor:s.couleur,background:`${s.couleur}1e`,color:s.couleur}:{}}
+                        onClick={()=>setF('statut',s.valeur)}>
+                        <span style={{width:7,height:7,borderRadius:'50%',background:s.couleur||'#8b949e',flexShrink:0}}/>
+                        {s.label}
+                      </div>
+                    ))}
+                  </div>
+                </>)}
+
+                {/* ── Step 3 : Localisation ── */}
+                {step===3&&(<>
+                  <div className="pb-step-title">Localisation</div>
+                  <div className="pb-step-sub">Adresse du bien{agence?.pays?` — champs adaptes au ${agence.pays}`:''}.</div>
                   <div className="pb-g2">
                     <div>
                       <label className="pb-lbl">Ville</label>
@@ -729,7 +783,12 @@ export default function ImolocBiens() {
                     <label className="pb-lbl">Adresse complete</label>
                     <input className="pb-inp" value={form.adresse} onChange={e=>setF('adresse',e.target.value)} placeholder="Rue, lot, references..."/>
                   </div>
-                  <div className="pb-sec">Caracteristiques</div>
+                </>)}
+
+                {/* ── Step 4 : Caracteristiques essentielles ── */}
+                {step===4&&(<>
+                  <div className="pb-step-title">Caracteristiques essentielles</div>
+                  <div className="pb-step-sub">Le reste (equipements, compteurs, documents...) se complete depuis la fiche du bien apres creation.</div>
                   <div className="pb-g3">
                     <div>
                       <label className="pb-lbl">Superficie (m²)</label>
@@ -744,16 +803,13 @@ export default function ImolocBiens() {
                       <input className="pb-inp" type="number" min="0" value={form.nb_chambres} onChange={e=>setF('nb_chambres',e.target.value)} placeholder="2"/>
                     </div>
                   </div>
-                  <div className="pb-sec">Finances</div>
-                  <div className="pb-g2">
-                    <div>
-                      <label className="pb-lbl">Loyer mensuel (FCFA) <span style={{color:'#ef4444'}}>*</span></label>
-                      <input className="pb-inp" type="number" min="0" value={form.loyer} onChange={e=>setF('loyer',e.target.value)} placeholder="75000"/>
-                    </div>
-                    <div>
-                      <label className="pb-lbl">Salles de bain</label>
-                      <input className="pb-inp" type="number" min="0" value={form.nb_sdb} onChange={e=>setF('nb_sdb',e.target.value)} placeholder="1"/>
-                    </div>
+                  <div className="pb-field">
+                    <label className="pb-lbl">Salles de bain</label>
+                    <input className="pb-inp" type="number" min="0" value={form.nb_sdb} onChange={e=>setF('nb_sdb',e.target.value)} placeholder="1" style={{maxWidth:160}}/>
+                  </div>
+                  <div className="pb-statut-pill" style={{display:'inline-flex',marginBottom:16,borderColor: form.meuble?'#0078d4':'rgba(255,255,255,0.08)', background: form.meuble?'rgba(0,120,212,0.1)':'rgba(255,255,255,0.02)', color: form.meuble?'#4da6ff':'rgba(255,255,255,0.5)'}}
+                    onClick={()=>setF('meuble',!form.meuble)}>
+                    {form.meuble&&<Check size={14}/>} Bien meuble
                   </div>
                   <div className="pb-field">
                     <label className="pb-lbl">Description</label>
@@ -761,12 +817,41 @@ export default function ImolocBiens() {
                   </div>
                 </>)}
 
-                {/* ── Step 3 : Proprietaire ── */}
-                {step===3&&(<>
+                {/* ── Step 5 : Proprietaire ── */}
+                {step===5&&(<>
                   <div className="pb-step-title">Associer un proprietaire</div>
                   <div className="pb-step-sub">Optionnel — Selectionnez le proprietaire de ce bien parmi ceux deja associes a votre agence.</div>
 
-                  {proprietaires.length===0?(
+                  {proprietaires.length>0&&(
+                    <div className="pb-statut-pill" style={{display:'inline-flex',marginBottom:16,borderColor: multiProp?'#0078d4':'rgba(255,255,255,0.08)', background: multiProp?'rgba(0,120,212,0.1)':'rgba(255,255,255,0.02)', color: multiProp?'#4da6ff':'rgba(255,255,255,0.5)'}}
+                      onClick={()=>setMultiProp(m=>!m)}>
+                      {multiProp&&<Check size={14}/>} Ce bien a plusieurs proprietaires
+                    </div>
+                  )}
+
+                  {multiProp?(
+                    <div>
+                      {coProprietaires.map((c,i)=>(
+                        <div key={i} style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
+                          <select className="pb-inp" style={{flex:1}} value={c.proprietaire?.id||''}
+                            onChange={e=>{
+                              const prop = proprietaires.find(p=>p.id===e.target.value)
+                              setCoProprietaires(cs=>cs.map((x,xi)=>xi===i?{...x,proprietaire:prop}:x))
+                            }}>
+                            <option value="">Choisir un proprietaire...</option>
+                            {proprietaires.map(p=><option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}
+                          </select>
+                          <input className="pb-inp" type="number" min="0" max="100" style={{width:90}} placeholder="%"
+                            value={c.pourcentage} onChange={e=>setCoProprietaires(cs=>cs.map((x,xi)=>xi===i?{...x,pourcentage:e.target.value}:x))}/>
+                          <button className="pb-cls" onClick={()=>setCoProprietaires(cs=>cs.filter((_,xi)=>xi!==i))}>×</button>
+                        </div>
+                      ))}
+                      <button className="pb-btn" style={{marginBottom:10}} onClick={()=>setCoProprietaires(cs=>[...cs,{proprietaire:null,pourcentage:''}])}>+ Ajouter un proprietaire</button>
+                      <div style={{fontSize:12.5,color: (coProprietaires.reduce((s,c)=>s+(Number(c.pourcentage)||0),0)===100)?'#00c896':'#f59e0b'}}>
+                        Total : {coProprietaires.reduce((s,c)=>s+(Number(c.pourcentage)||0),0)}% {coProprietaires.reduce((s,c)=>s+(Number(c.pourcentage)||0),0)!==100&&'(doit faire 100%)'}
+                      </div>
+                    </div>
+                  ):proprietaires.length===0?(
                     <div style={{padding:'18px 20px',borderRadius:10,background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.18)',fontSize:13.5,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
                       Aucun proprietaire associe a votre agence pour le moment.
                       <span style={{color:'#4da6ff',cursor:'pointer',marginLeft:6,display:'inline-flex',alignItems:'center',gap:4}} onClick={()=>navigate('/imoloc/proprietaires')}>
@@ -813,20 +898,44 @@ export default function ImolocBiens() {
                   )}
                 </>)}
 
-                {/* ── Step 4 : Recap ── */}
-                {step===4&&(<>
+                {/* ── Step 6 : Finances de base ── */}
+                {step===6&&(<>
+                  <div className="pb-step-title">Finances de base</div>
+                  <div className="pb-step-sub">Le detail (charges, taxes, commission...) se complete depuis la fiche du bien.</div>
+                  {(form.intention==='location'||form.intention==='les_deux')&&(
+                    <div className="pb-field">
+                      <label className="pb-lbl">Loyer mensuel (FCFA)</label>
+                      <input className="pb-inp" type="number" min="0" value={form.loyer} onChange={e=>setF('loyer',e.target.value)} placeholder="75000"/>
+                    </div>
+                  )}
+                  {(form.intention==='vente'||form.intention==='les_deux')&&(
+                    <div className="pb-field">
+                      <label className="pb-lbl">Prix de vente demande (FCFA)</label>
+                      <input className="pb-inp" type="number" min="0" value={form.prix_vente_demande} onChange={e=>setF('prix_vente_demande',e.target.value)} placeholder="25000000"/>
+                    </div>
+                  )}
+                </>)}
+
+                {/* ── Step 7 : Recap ── */}
+                {step===7&&(<>
                   <div className="pb-step-title">Recapitulatif</div>
                   <div className="pb-step-sub">Verifiez les informations avant de creer le bien.</div>
                   <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,overflow:'hidden'}}>
                     {[
                       ['Nom',          form.nom],
-                      ['Type',         (()=>{const TIcon=TYPE_ICONS[form.type]||Home;return <span style={{display:'inline-flex',alignItems:'center',gap:6}}><TIcon size={14}/>{TYPES.find(t=>t.val===form.type)?.label||form.type}</span>})()],
-                      ['Statut',       STATUT_CFG[form.statut]?.label || form.statut],
+                      ['Reference',    form.reference||'—'],
+                      ['Type',         (()=>{const info=getTypeInfo(typesBiens,form.type);const TIcon=info.icon;return <span style={{display:'inline-flex',alignItems:'center',gap:6}}><TIcon size={14}/>{info.label}</span>})()],
+                      ['Intention',    INTENTIONS.find(i=>i.val===form.intention)?.label||form.intention],
+                      ['Statut',       getStatutCfg(statutsBiens,form.statut).label],
                       ['Adresse',      form.adresse?`${form.adresse}${form.quartier?', '+form.quartier:''}, ${form.ville}`:form.ville||'—'],
                       ['Superficie',   form.superficie?form.superficie+' m²':'—'],
+                      ['Meuble',       form.meuble?'Oui':'Non'],
                       ['Loyer',        form.loyer?fmt(form.loyer)+' FCFA/mois':'—'],
+                      ['Prix de vente',form.prix_vente_demande?fmt(form.prix_vente_demande)+' FCFA':'—'],
                       ['Pieces',       form.nb_pieces?form.nb_pieces+' pieces / '+form.nb_chambres+' chambres':'—'],
-                      ['Proprietaire', selectedProp?`${selectedProp.prenom} ${selectedProp.nom}`:'Non attribue'],
+                      ['Proprietaire(s)', multiProp
+                        ? coProprietaires.filter(c=>c.proprietaire).map(c=>`${c.proprietaire.prenom} ${c.proprietaire.nom} (${c.pourcentage}%)`).join(', ') || 'Non attribue'
+                        : (selectedProp?`${selectedProp.prenom} ${selectedProp.nom}`:'Non attribue')],
                       ['Agence',       agence?.nom||'—'],
                     ].map(([k,v],i,arr)=>(
                       <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'10px 16px',borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'none'}}>
@@ -844,9 +953,9 @@ export default function ImolocBiens() {
               <button className="pb-pfb pb-pfb-g" onClick={()=>{ if(step===1){setShowAddPanel(false);resetForm()} else setStep(step-1) }}>
                 {step===1?'Annuler':'Precedent'}
               </button>
-              {step<4?(
-                <button className="pb-pfb pb-pfb-b" disabled={step===1&&!form.nom}
-                  style={{opacity:step===1&&!form.nom?0.4:1}}
+              {step<7?(
+                <button className="pb-pfb pb-pfb-b" disabled={step===2&&!form.nom}
+                  style={{opacity:step===2&&!form.nom?0.4:1}}
                   onClick={()=>setStep(step+1)}>
                   <span style={{display:'inline-flex',alignItems:'center',gap:6}}>Suivant <ArrowRight size={14}/></span>
                 </button>
@@ -870,7 +979,7 @@ export default function ImolocBiens() {
               <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:18}}>
                 <div style={{display:'flex',alignItems:'center',gap:14}}>
                   <div style={{width:56,height:56,borderRadius:12,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    {(()=>{const TIcon=TYPE_ICONS[selectedBien.type_bien] || TYPE_ICONS[selectedBien.type] || Home;return <TIcon size={26}/>})()}
+                    {(()=>{const TIcon=getTypeInfo(typesBiens, selectedBien.type_bien||selectedBien.type).icon;return <TIcon size={26}/>})()}
                   </div>
                   <div>
                     <div style={{fontSize:19,fontWeight:700,color:'#e6edf3',marginBottom:3}}>{selectedBien.nom}</div>
