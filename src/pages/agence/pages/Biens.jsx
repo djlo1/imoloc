@@ -13,6 +13,7 @@ import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
 import StatusDot from '../../../components/ui/StatusDot'
 import ProgressBar from '../../../components/ui/ProgressBar'
+import ConfirmDangerModal from '../../../components/shared/ConfirmDangerModal'
 import { useBiensConfig, CATEGORIE_LABELS } from '../../../hooks/useBiensConfig'
 
 // ─── Constants ─────────────────────────────────────────────
@@ -245,6 +246,7 @@ export default function Biens() {
   // Fiche du bien selectionne
   const [editMode, setEditMode]     = useState(false)
   const [editForm, setEditForm]     = useState({})
+  const [conversionWarning, setConversionWarning] = useState(null) // {title,message,checkboxLabel} | null
   const [bienProps, setBienProps]   = useState([])   // biens_proprietaires + proprietaire joint
   const [bienEquip, setBienEquip]   = useState([])   // ids d'equipements coches pour ce bien
   const [bienMandat, setBienMandat] = useState(null)
@@ -509,7 +511,36 @@ export default function Biens() {
   }
   const setE = (k,v) => setEditForm(f=>({...f,[k]:v}))
 
+  // Conversion Location<->Vente : detecte les transitions a risque et
+  // impose un avertissement a case a cocher avant d'ecrire en base.
   const saveEdit = async () => {
+    const wasVente = selectedBien.intention==='vente'||selectedBien.intention==='les_deux'
+    const willVente = editForm.intention==='vente'||editForm.intention==='les_deux'
+
+    if (!wasVente && willVente && selectedBien.nb_baux>0) {
+      setConversionWarning({
+        title: 'Mettre ce bien en vente',
+        message: `Ce bien a ${selectedBien.nb_baux} bail${selectedBien.nb_baux>1?'s':''} actif${selectedBien.nb_baux>1?'s':''}. En activant l'intention de vente, le bien sera propose a la vente alors qu'il reste loue, sauf si le bail est resilie separement.`,
+        checkboxLabel: "Je comprends que ce bien sera mis en vente occupe et je confirme vouloir continuer.",
+      })
+      return
+    }
+    if (wasVente && !willVente) {
+      const opportuniteAvancee = bienOpportunites.some(o=>o.statut==='accepte')
+      const venteAvancee = selectedBien.statut_vente==='compromis_signe' || selectedBien.statut_vente==='vendu'
+      if (opportuniteAvancee || venteAvancee) {
+        setConversionWarning({
+          title: 'Retirer ce bien de la vente',
+          message: "Ce bien a une opportunite de vente avancee (offre acceptee ou compromis signe). Retirer l'intention de vente n'annule pas cette opportunite — pensez a la mettre a jour si la vente n'a plus lieu.",
+          checkboxLabel: "Je comprends les consequences et je confirme vouloir continuer.",
+        })
+        return
+      }
+    }
+    await doSaveEdit()
+  }
+
+  const doSaveEdit = async () => {
     setSaving(true)
     try {
       const payload = {
@@ -1774,6 +1805,17 @@ export default function Biens() {
           </div>
         </div>
       )}
+
+      <ConfirmDangerModal
+        open={!!conversionWarning}
+        title={conversionWarning?.title}
+        message={conversionWarning?.message}
+        checkboxLabel={conversionWarning?.checkboxLabel}
+        confirmLabel="Continuer"
+        cancelLabel="Annuler"
+        onCancel={()=>setConversionWarning(null)}
+        onConfirm={async()=>{ setConversionWarning(null); await doSaveEdit() }}
+      />
     </>
   )
 }
