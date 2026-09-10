@@ -37,9 +37,15 @@ const NAV = [
     icon:"M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z",
     children:[
       {label:"Tous les biens", path:"/imoloc/biens"},
+      {label:"Immeubles", path:"/imoloc/biens/immeubles"},
+      {section:"Location"},
       {label:"Biens libres", path:"/imoloc/biens/libres"},
-      {label:"Biens occupes", path:"/imoloc/biens/occupes"},
+      {label:"Occupes", path:"/imoloc/biens/occupes"},
       {label:"En maintenance", path:"/imoloc/biens/maintenance"},
+      {section:"Vente"},
+      {label:"A vendre", path:"/imoloc/biens/a-vendre"},
+      {label:"Opportunites", path:"/imoloc/biens/opportunites"},
+      {label:"Ventes conclues", path:"/imoloc/biens/vendus"},
     ]
   },
   { id:"locataires", label:"Locataires", path:"/imoloc/locataires",
@@ -208,6 +214,7 @@ export default function ImolocApp() {
         .im-nav-sub-item{padding:5px 10px;border-radius:5px;font-size:12.5px;color:rgba(255,255,255,0.38);text-decoration:none;transition:all 0.12s;display:block;border-left:1px solid rgba(255,255,255,0.07)}
         .im-nav-sub-item:hover{color:#e6edf3;background:rgba(255,255,255,0.04)}
         .im-nav-sub-item.active{color:#00c896;border-left-color:#00c896;background:rgba(0,200,150,0.05)}
+        .im-nav-sub-section{padding:8px 10px 3px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.22);text-transform:uppercase;letter-spacing:0.07em}
         .im-sidebar-bottom{padding:12px 14px;border-top:1px solid rgba(255,255,255,0.06)}
         .im-mini-stat{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px}
         .im-mini-lbl{color:rgba(255,255,255,0.3)}
@@ -341,8 +348,10 @@ export default function ImolocApp() {
                         </button>
                         {isExpanded && (
                           <div className="im-nav-sub">
-                            {item.children.map(child=>(
-                              <NavLink key={child.path} to={child.path} end onClick={closeMobile} className={({isActive})=>`im-nav-sub-item ${isActive?"active":""}`}>{child.label}</NavLink>
+                            {item.children.map((child,ci)=>(
+                              child.section
+                                ? <div key={`sec-${ci}`} className="im-nav-sub-section">{child.section}</div>
+                                : <NavLink key={child.path} to={child.path} end onClick={closeMobile} className={({isActive})=>`im-nav-sub-item ${isActive?"active":""}`}>{child.label}</NavLink>
                             ))}
                           </div>
                         )}

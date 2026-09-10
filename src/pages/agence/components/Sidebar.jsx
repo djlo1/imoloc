@@ -19,9 +19,15 @@ const NAV = [
   { id:'biens', label:'Biens immobiliers', icon:'M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z',
     children:[
       { label:'Tous les biens', path:'/agence/biens' },
+      { label:'Immeubles', path:'/agence/biens/immeubles' },
+      { section:'Location' },
       { label:'Biens libres', path:'/agence/biens/libres' },
-      { label:'Biens occupés', path:'/agence/biens/occupes' },
+      { label:'Occupés', path:'/agence/biens/occupes' },
       { label:'En maintenance', path:'/agence/biens/maintenance' },
+      { section:'Vente' },
+      { label:'À vendre', path:'/agence/biens/a-vendre' },
+      { label:'Opportunités', path:'/agence/biens/opportunites' },
+      { label:'Ventes conclues', path:'/agence/biens/vendus' },
     ]
   },
   { id:'locataires', label:'Locataires', icon:'M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z',
@@ -91,6 +97,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
         .sb3-sub-item{display:flex;align-items:center;padding:5px 14px;cursor:pointer;font-size:12.5px;color:rgba(255,255,255,0.4);transition:all 0.1s;text-decoration:none;white-space:nowrap;overflow:hidden;border-left:1px solid rgba(255,255,255,0.06)}
         .sb3-sub-item:hover{color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.04)}
         .sb3-sub-item.active{color:#4da6ff;border-left-color:#0078d4}
+        .sb3-sub-section{padding:7px 14px 3px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.2);text-transform:uppercase;letter-spacing:0.07em}
         .sb3-sep{height:1px;background:rgba(255,255,255,0.06);margin:6px 0}
         .sb3-section{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:8px 14px 4px;white-space:nowrap;overflow:hidden}
         .sb3-admin{display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:12.5px;color:rgba(255,255,255,0.4);transition:all 0.1s;text-decoration:none;white-space:nowrap;overflow:hidden;border:none;background:none;font-family:'Inter',sans-serif;width:100%;text-align:left}
@@ -173,9 +180,11 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
               {!collapsed && expanded[item.id] && (
                 <div className="sb3-sub">
                   {item.children.map((child,i) => (
-                    <Link key={i} to={child.path} className={`sb3-sub-item ${isActive(child.path)?'active':''}`} onClick={onClose}>
-                      {child.label}
-                    </Link>
+                    child.section
+                      ? <div key={i} className="sb3-sub-section">{child.section}</div>
+                      : <Link key={i} to={child.path} className={`sb3-sub-item ${isActive(child.path)?'active':''}`} onClick={onClose}>
+                          {child.label}
+                        </Link>
                   ))}
                 </div>
               )}

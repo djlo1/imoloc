@@ -228,6 +228,9 @@ export default function Biens() {
   const [loading, setLoading]       = useState(true)
   const [search, setSearch]         = useState('')
   const [filterStatut, setFilterStatut] = useState('tous')
+  const [specialFilter, setSpecialFilter] = useState(null) // 'immeubles' | 'a_vendre' | 'vendus' | 'opportunites'
+  const [oppList, setOppList]       = useState([])
+  const [oppLoading, setOppLoading] = useState(false)
   const [selected, setSelected]     = useState([])
   const [viewMode, setViewMode]     = useState('normal')
   const [cols, setCols]             = useState(DEFAULT_COLS)
@@ -285,16 +288,48 @@ export default function Biens() {
   const startX      = useRef(0)
   const startW      = useRef(0)
 
-  // Lire le filtre statut depuis l'URL (/biens/libres, /biens/occupes, etc.)
+  // Lire le filtre depuis l'URL (/biens/libres, /biens/immeubles, /biens/a-vendre, etc.)
   useEffect(() => {
     const seg = location.pathname.split('/').pop()
-    if (['libres','occupes','maintenance','renovation','reserves'].includes(seg)) {
-      const map = { libres:'disponible', occupes:'occupe', maintenance:'maintenance', renovation:'renovation', reserves:'reserve' }
-      setFilterStatut(map[seg])
+    const statutMap = { libres:'disponible', occupes:'occupe', maintenance:'maintenance', renovation:'renovation', reserves:'reserve' }
+    const specialMap = { immeubles:'immeubles', 'a-vendre':'a_vendre', vendus:'vendus', opportunites:'opportunites' }
+    if (statutMap[seg]) {
+      setFilterStatut(statutMap[seg])
+      setSpecialFilter(null)
+    } else if (specialMap[seg]) {
+      setFilterStatut('tous')
+      setSpecialFilter(specialMap[seg])
     } else {
       setFilterStatut('tous')
+      setSpecialFilter(null)
     }
   }, [location.pathname])
+
+  // Chargement des opportunites (vue transversale, toutes les biens de l'agence)
+  useEffect(() => {
+    if (specialFilter!=='opportunites' || !agence?.id) return
+    let cancelled = false
+    const load = async () => {
+      setOppLoading(true)
+      const { data } = await supabase.from('opportunites_vente')
+        .select('*, biens!inner(id,nom,reference,agence_id), contacts(id,display,email,tel_mobile)')
+        .eq('biens.agence_id', agence.id)
+        .order('created_at', { ascending:false })
+      if (!cancelled) { setOppList(data||[]); setOppLoading(false) }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [specialFilter, agence?.id])
+
+  const updateOppListStatut = async (id, statut) => {
+    setOppList(o=>o.map(x=>x.id===id?{...x,statut}:x))
+    await supabase.from('opportunites_vente').update({ statut, updated_at: new Date().toISOString() }).eq('id', id)
+  }
+
+  const openBienFromOpp = (bienId) => {
+    const b = biens.find(x=>x.id===bienId)
+    if (b) { setSelectedBien(b); setDetailTab('vente') }
+  }
 
   useEffect(() => { initData() }, [])
 
@@ -562,7 +597,12 @@ export default function Biens() {
   const filtered = biens.filter(b => {
     const matchSearch  = `${b.nom} ${b.adresse||''} ${b.ville||''} ${b.type||''}`.toLowerCase().includes(search.toLowerCase())
     const matchStatut  = filterStatut === 'tous' || b.statut === filterStatut
-    return matchSearch && matchStatut
+    const matchSpecial =
+      specialFilter==='immeubles' ? b.is_immeuble===true :
+      specialFilter==='a_vendre'  ? b.statut_vente==='a_vendre' :
+      specialFilter==='vendus'    ? b.statut_vente==='vendu' :
+      true
+    return matchSearch && matchStatut && matchSpecial
   })
   const filteredProps = proprietaires.filter(p =>
     `${p.prenom||''} ${p.nom||''} ${p.telephone||''}`.toLowerCase().includes(propSearch.toLowerCase())
@@ -749,9 +789,58 @@ export default function Biens() {
       `}</style>
 
       <div className="pb-page">
-        <div className="pb-title">Biens immobiliers</div>
-        <div className="pb-sub">{biens.length} bien{biens.length!==1?'s':''} enregistre{biens.length!==1?'s':''} — {agence?.nom||'votre agence'}</div>
+        <div className="pb-title">
+          {specialFilter==='opportunites'?'Opportunites de vente':specialFilter==='immeubles'?'Immeubles':specialFilter==='a_vendre'?'Biens a vendre':specialFilter==='vendus'?'Ventes conclues':'Biens immobiliers'}
+        </div>
+        <div className="pb-sub">
+          {specialFilter==='opportunites'
+            ?`${oppList.length} opportunite${oppList.length!==1?'s':''} — ${agence?.nom||'votre agence'}`
+            :`${biens.length} bien${biens.length!==1?'s':''} enregistre${biens.length!==1?'s':''} — ${agence?.nom||'votre agence'}`}
+        </div>
 
+        {specialFilter==='opportunites'?(
+        <>
+          {/* Table Opportunites (vue transversale) */}
+          <div className="pb-tw">
+            <div style={{overflowX:'auto'}}>
+              <table className="pb-table">
+                <thead>
+                  <tr>
+                    <th>Bien</th>
+                    <th>Contact</th>
+                    <th>Statut</th>
+                    <th>Offre</th>
+                    <th>Date offre</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {oppLoading?(
+                    <tr><td colSpan={5} style={{textAlign:'center',padding:50,color:'rgba(255,255,255,0.3)'}}>Chargement...</td></tr>
+                  ):oppList.length===0?(
+                    <tr><td colSpan={5}>
+                      <div className="pb-empty">
+                        <User size={44} style={{marginBottom:14,opacity:0.3}}/>
+                        <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.4)'}}>Aucune opportunite de vente</div>
+                      </div>
+                    </td></tr>
+                  ):oppList.map(o=>(
+                    <tr key={o.id} onClick={()=>openBienFromOpp(o.bien_id)}>
+                      <td style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{o.biens?.nom||'—'}</td>
+                      <td style={{fontSize:12.5,color:'rgba(255,255,255,0.6)'}}>{o.contacts?.display||'Contact supprime'}</td>
+                      <td onClick={e=>e.stopPropagation()}>
+                        <StatutPicker statutsBiens={OPPORTUNITE_STATUTS} value={o.statut} onChange={v=>updateOppListStatut(o.id,v)} size="small"/>
+                      </td>
+                      <td style={{fontSize:12.5,color:'rgba(255,255,255,0.5)'}}>{o.montant_offre?fmt(o.montant_offre)+' FCFA':'—'}</td>
+                      <td style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{o.date_offre?new Date(o.date_offre).toLocaleDateString('fr-FR'):'—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+        ):(
+        <>
         {/* Stats */}
         <div className="pb-stats">
           {[
@@ -921,6 +1010,8 @@ export default function Biens() {
             <span>{selected.length>0&&`${selected.length} selectionne${selected.length>1?'s':''}`}</span>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* ══ PANEL COLONNES ══ */}
