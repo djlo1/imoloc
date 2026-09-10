@@ -83,8 +83,7 @@ export default function ImolocBaux() {
     setLoading(true)
     try {
       const { data:{ user } } = await supabase.auth.getUser()
-      const { data:agList }   = await supabase.from('agences').select('*')
-      const ag = agList?.find(a=>a.profile_id===user.id)||agList?.[0]
+      const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
       setAgence(ag)
       if (!ag?.id) return
       const { data:b } = await supabase.from('baux')
@@ -102,8 +101,7 @@ export default function ImolocBaux() {
   const loadModeleActif = async () => {
     try {
       const {data:{user}} = await supabase.auth.getUser()
-      const {data:agList} = await supabase.from('agences').select('*')
-      const ag = agList?.find(a=>a.profile_id===user.id)||agList?.[0]
+      const {data:ag} = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
       if (!ag?.id) return null
       const {data:p} = await supabase.from('parametres_organisation').select('*').eq('agence_id',ag.id).single()
       if (!p?.mes_modeles||!p.modele_actif_id) return null

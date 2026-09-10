@@ -103,8 +103,7 @@ export default function ImolocApp() {
     try {
       const { data:{ user } } = await supabase.auth.getUser()
       if (!user) { navigate("/login"); return }
-      const { data:agList } = await supabase.from("agences").select("*")
-      const ag = agList?.find(a=>a.profile_id===user.id) || agList?.[0]
+      const { data:ag } = await supabase.from("agences").select("*").eq("profile_id", user.id).single()
       setAgence(ag)
       if (ag?.id) {
         const [b,pr,l,bx,ret,rev] = await Promise.all([
