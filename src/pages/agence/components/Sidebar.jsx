@@ -59,7 +59,7 @@ const ADMIN_CENTERS = [
   { label:'Centre Imoloc', path:'/agence/imoloc', icon:Building2 },
   { label:'Baux', path:'/agence/baux', icon:FileText },
   { label:'Rapports', path:'/agence/rapports', icon:BarChart3 },
-  { label:'Maintenance', path:'/agence/maintenance', icon:Wrench },
+  { label:'Tickets', path:'/agence/tickets', icon:Wrench },
   { label:'Tous les centres', path:'/agence', icon:LayoutGrid },
   { label:'Personnaliser la navigation', path:'/agence/parametres', icon:Pencil },
 ]

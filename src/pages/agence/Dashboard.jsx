@@ -22,6 +22,7 @@ const Rapports = lazy(() => import('./pages/Rapports'))
 const Integrations = lazy(() => import('./pages/Integrations'))
 const Loci = lazy(() => import('./pages/Loci'))
 const ModelesDocuments = lazy(() => import('./pages/ModelesDocuments'))
+const Tickets = lazy(() => import('./pages/Tickets'))
 
 function PageLoader() {
   return <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:300,color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement...</div>
@@ -111,6 +112,8 @@ export default function DashboardAgence() {
                 <Route path="parametres" element={<Parametres />} />
                 <Route path="parametres/*" element={<Parametres />} />
                 <Route path="rapports" element={<Rapports />} />
+                <Route path="tickets" element={<Tickets />} />
+                <Route path="tickets/*" element={<Tickets />} />
                 <Route path="integrations" element={<Integrations />} />
                 <Route path="*" element={<Navigate to="/agence" replace />} />
               </Routes>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Wrench, Zap, Paintbrush, Hammer, Snowflake, Blocks, SprayCan, Package, Paperclip, Check } from 'lucide-react'
+import { Wrench, Zap, Paintbrush, Hammer, Snowflake, Blocks, SprayCan, Package, Paperclip, Check, AlertCircle, AlertTriangle, FileText } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 import { notifierNouveauTicket } from '../../../lib/notifications'
@@ -15,6 +15,15 @@ const TYPE_CFG = {
   nettoyage:    { icon:SprayCan, color:'#059669', label:'Nettoyage' },
   autre:        { icon:Package, color:'#6b7280', label:'Autre' },
 }
+const TYPE_TICKET_CFG = {
+  maintenance:            { icon:Wrench,        color:'#0078d4', label:'Maintenance' },
+  reclamation:            { icon:AlertCircle,   color:'#f59e0b', label:'Reclamation' },
+  demande_administrative: { icon:FileText,      color:'#8b5cf6', label:'Demande admin.' },
+  signalement_degat:      { icon:AlertTriangle, color:'#ef4444', label:'Signalement de degat' },
+  autre:                  { icon:Package,       color:'#6b7280', label:'Autre' },
+}
+const ORIGINE_LABEL = { agence:'Agence', locataire:'Locataire' }
+const RESPONSABILITE_LABEL = { agence:'Agence', proprietaire:'Proprietaire', locataire:'Locataire' }
 const PRIO_CFG = {
   urgente: { color:'#ef4444', bg:'rgba(239,68,68,0.1)',  label:'Urgente' },
   haute:   { color:'#f59e0b', bg:'rgba(245,158,11,0.1)', label:'Haute' },
@@ -34,26 +43,29 @@ const Badge = ({ val, cfg }) => {
   return <span style={{fontSize:11,padding:'2px 9px',borderRadius:100,fontWeight:600,background:c.bg,color:c.color,border:`1px solid ${c.color}33`,whiteSpace:'nowrap'}}>{c.label}</span>
 }
 
-export default function Maintenance() {
+export default function Tickets() {
   const [agence, setAgence]         = useState(null)
   const [tickets, setTickets]       = useState([])
   const [biens, setBiens]           = useState([])
   const [locataires, setLocataires] = useState([])
+  const [prestataires, setPrestataires] = useState([])
   const [loading, setLoading]       = useState(true)
   const [search, setSearch]         = useState('')
   const [fStatut, setFStatut]       = useState('tous')
   const [fPrio, setFPrio]           = useState('tous')
+  const [fType, setFType]           = useState('tous')
   const [sel, setSel]               = useState(null)
   const [tab, setTab]               = useState('details')
   const [showAdd, setShowAdd]       = useState(false)
   const [step, setStep]             = useState(1)
   const [saving, setSaving]         = useState(false)
   const [newComment, setNewComment] = useState('')
+  const [showNewPrestataire, setShowNewPrestataire] = useState(false)
+  const [newPrestataire, setNewPrestataire] = useState({ nom:'', specialite:'', telephone:'', email:'' })
   const [form, setForm] = useState({
-    titre:'', type:'plomberie', priorite:'normale', bien_id:'',
-    locataire_id:'', description:'', notes:'',
-    prestataire_nom:'', prestataire_telephone:'', prestataire_email:'',
-    cout_estime:'', date_debut_travaux:'', date_fin_travaux:'',
+    titre:'', type_ticket:'maintenance', type:'plomberie', origine:'agence', responsabilite:'agence',
+    priorite:'normale', bien_id:'', locataire_id:'', description:'', notes:'',
+    prestataire_id:'', cout_estime:'', date_debut_travaux:'', date_fin_travaux:'',
   })
   const setF = (k,v) => setForm(p=>({...p,[k]:v}))
 
@@ -66,14 +78,16 @@ export default function Maintenance() {
       const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
       setAgence(ag)
       if (!ag?.id) return
-      const [t,b,l] = await Promise.all([
-        supabase.from('maintenances').select('*,biens(nom,ville),locataires(nom,prenom)').eq('agence_id',ag.id).order('created_at',{ascending:false}),
+      const [t,b,l,p] = await Promise.all([
+        supabase.from('tickets').select('*,biens(nom,ville),locataires(nom,prenom),prestataires(nom,telephone,email,specialite)').eq('agence_id',ag.id).order('created_at',{ascending:false}),
         supabase.from('biens').select('id,nom,ville').eq('agence_id',ag.id),
         supabase.from('locataires').select('id,nom,prenom').eq('agence_id',ag.id),
+        supabase.from('prestataires').select('*').eq('agence_id',ag.id).order('nom'),
       ])
       setTickets(t.data||[])
       setBiens(b.data||[])
       setLocataires(l.data||[])
+      setPrestataires(p.data||[])
     } catch(e){console.error(e)}
     finally{setLoading(false)}
   }
@@ -83,18 +97,27 @@ export default function Maintenance() {
     setSaving(true)
     try {
       const {data:{user}} = await supabase.auth.getUser()
-      const {error} = await supabase.from('maintenances').insert({
-        agence_id:agence.id, titre:form.titre, type:form.type,
+      let prestataireId = form.prestataire_id || null
+      if (showNewPrestataire && newPrestataire.nom) {
+        const { data:presta, error:presErr } = await supabase.from('prestataires').insert({
+          agence_id: agence.id, nom: newPrestataire.nom, specialite: newPrestataire.specialite||null,
+          telephone: newPrestataire.telephone||null, email: newPrestataire.email||null,
+        }).select('*').single()
+        if (presErr) throw presErr
+        prestataireId = presta.id
+        setPrestataires(p=>[...p, presta])
+      }
+      const {error} = await supabase.from('tickets').insert({
+        agence_id:agence.id, titre:form.titre, specialite:form.type,
+        type_ticket:form.type_ticket, origine:form.origine, responsabilite:form.responsabilite||null,
         priorite:form.priorite, bien_id:form.bien_id,
         locataire_id:form.locataire_id||null,
         description:form.description, notes:form.notes,
-        prestataire_nom:form.prestataire_nom,
-        prestataire_telephone:form.prestataire_telephone,
-        prestataire_email:form.prestataire_email,
+        prestataire_id:prestataireId,
         cout_estime:form.cout_estime?parseFloat(form.cout_estime):null,
         date_debut_travaux:form.date_debut_travaux||null,
         date_fin_travaux:form.date_fin_travaux||null,
-        statut:'ouvert', cree_par:user.id,
+        statut:'ouvert', created_by:user.id,
       })
       if(error) throw error
       toast.success('Ticket cree !')
@@ -106,7 +129,7 @@ export default function Maintenance() {
   }
 
   const changerStatut = async (ticket, newStatut) => {
-    const {error} = await supabase.from('maintenances').update({statut:newStatut,updated_at:new Date().toISOString()}).eq('id',ticket.id)
+    const {error} = await supabase.from('tickets').update({statut:newStatut,updated_at:new Date().toISOString()}).eq('id',ticket.id)
     if(error){toast.error(error.message);return}
     setTickets(prev=>prev.map(t=>t.id===ticket.id?{...t,statut:newStatut}:t))
     setSel(prev=>prev?{...prev,statut:newStatut}:prev)
@@ -120,7 +143,7 @@ export default function Maintenance() {
       id:Date.now(), texte:newComment, auteur:user.email,
       date:new Date().toISOString()
     }]
-    const {error} = await supabase.from('maintenances').update({commentaires,updated_at:new Date().toISOString()}).eq('id',sel.id)
+    const {error} = await supabase.from('tickets').update({commentaires,updated_at:new Date().toISOString()}).eq('id',sel.id)
     if(error){toast.error(error.message);return}
     setSel(prev=>({...prev,commentaires}))
     setTickets(prev=>prev.map(t=>t.id===sel.id?{...t,commentaires}:t))
@@ -129,19 +152,20 @@ export default function Maintenance() {
   }
 
   const resetAdd = () => {
-    setShowAdd(false); setStep(1)
-    setForm({titre:'',type:'plomberie',priorite:'normale',bien_id:'',
-      locataire_id:'',description:'',notes:'',
-      prestataire_nom:'',prestataire_telephone:'',prestataire_email:'',
-      cout_estime:'',date_debut_travaux:'',date_fin_travaux:''})
+    setShowAdd(false); setStep(1); setShowNewPrestataire(false)
+    setNewPrestataire({ nom:'', specialite:'', telephone:'', email:'' })
+    setForm({titre:'',type_ticket:'maintenance',type:'plomberie',origine:'agence',responsabilite:'agence',
+      priorite:'normale',bien_id:'',locataire_id:'',description:'',notes:'',
+      prestataire_id:'',cout_estime:'',date_debut_travaux:'',date_fin_travaux:''})
   }
 
   const filtered = tickets.filter(t=>{
     const q=search.toLowerCase()
-    const ms=!q||`${t.titre} ${t.biens?.nom||''} ${t.prestataire_nom||''} `.toLowerCase().includes(q)
+    const ms=!q||`${t.titre} ${t.biens?.nom||''} ${t.prestataires?.nom||''} `.toLowerCase().includes(q)
     const fs=fStatut==='tous'||t.statut===fStatut
     const fp=fPrio==='tous'||t.priorite===fPrio
-    return ms&&fs&&fp
+    const ft=fType==='tous'||t.type_ticket===fType
+    return ms&&fs&&fp&&ft
   })
 
   const stats = {
@@ -182,7 +206,7 @@ export default function Maintenance() {
       <div style={{minHeight:'100%'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20,flexWrap:'wrap',gap:10}}>
           <div>
-            <div style={{fontSize:22,fontWeight:700,color:'#e6edf3',letterSpacing:'-0.02em',marginBottom:3}}>Maintenance & Travaux</div>
+            <div style={{fontSize:22,fontWeight:700,color:'#e6edf3',letterSpacing:'-0.02em',marginBottom:3}}>Tickets</div>
             <div style={{fontSize:13,color:'rgba(255,255,255,0.4)'}}>{filtered.length} ticket{filtered.length!==1?'s':''} — {agence?.nom}</div>
           </div>
           <button style={btnP} onClick={()=>setShowAdd(true)}>+ Nouveau ticket</button>
@@ -198,7 +222,7 @@ export default function Maintenance() {
             </div>
           ))}
         </div>
-        <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
+        <div style={{display:'flex',gap:8,marginBottom:10,flexWrap:'wrap',alignItems:'center'}}>
           <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:6,padding:'6px 12px'}}>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher..." style={{background:'none',border:'none',outline:'none',fontFamily:'Inter,sans-serif',fontSize:13,color:'#e6edf3',width:180}}/>
             {search&&<button onClick={()=>setSearch('')} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:16,padding:0}}>x</button>}
@@ -212,36 +236,42 @@ export default function Maintenance() {
             <button key={v} className={'mt-ftab'+(fPrio===v?' on':'')} onClick={()=>setFPrio(v)}>{l}</button>
           ))}
         </div>
+        <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
+          <span style={{fontSize:11,color:'rgba(255,255,255,0.3)',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.04em'}}>Categorie</span>
+          {[['tous','Toutes'],...Object.entries(TYPE_TICKET_CFG).map(([k,v])=>[k,v.label])].map(([v,l])=>(
+            <button key={v} className={'mt-ftab'+(fType===v?' on':'')} onClick={()=>setFType(v)}>{l}</button>
+          ))}
+        </div>
         <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,overflow:'hidden'}}>
           {filtered.length===0?(
             <div style={{textAlign:'center',padding:'60px 20px'}}>
               <Wrench size={36} style={{marginBottom:12,opacity:0.2}}/>
-              <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.3)',marginBottom:8}}>Aucun ticket de maintenance</div>
+              <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.3)',marginBottom:8}}>Aucun ticket</div>
               <button style={{...btnP,margin:'0 auto'}} onClick={()=>setShowAdd(true)}>+ Nouveau ticket</button>
             </div>
           ):(
             <div style={{overflowX:'auto'}}>
             <table style={{width:'100%',borderCollapse:'collapse'}}>
-              <thead><tr>{['Ticket','Bien','Type','Priorite','Statut','Prestataire','Cout',''].map(h=>(
+              <thead><tr>{['Ticket','Bien','Categorie','Priorite','Statut','Prestataire','Cout',''].map(h=>(
                 <th key={h} style={{textAlign:'left',padding:'10px 12px',fontSize:11,fontWeight:600,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.06em',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
               ))}</tr></thead>
               <tbody>{filtered.map(t=>{
-                const tc=TYPE_CFG[t.type]||TYPE_CFG.autre
+                const ttc=TYPE_TICKET_CFG[t.type_ticket]||TYPE_TICKET_CFG.autre
                 const sc=STATUT_CFG[t.statut]||STATUT_CFG.ouvert
                 return (
                   <tr key={t.id} className="mt-row" onClick={()=>{setSel(t);setTab('details')}}>
                     <td className="ind-td" style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)','--ind-c':sc.color}}>
                       <div style={{fontWeight:600,color:'#e6edf3',fontSize:13}}>{t.titre}</div>
-                      <div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{new Date(t.created_at).toLocaleDateString('fr-FR')}</div>
+                      <div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{new Date(t.created_at).toLocaleDateString('fr-FR')} · {ORIGINE_LABEL[t.origine]||t.origine}</div>
                     </td>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
                       <div style={{fontSize:12.5}}>{t.biens?.nom||'—'}</div>
                       <div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{t.biens?.ville||''}</div>
                     </td>
-                    <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)',display:'flex',alignItems:'center'}}><tc.icon size={13} color={tc.color}/><span style={{fontSize:11,color:tc.color,marginLeft:5,fontWeight:600}}>{tc.label}</span></td>
+                    <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)',display:'flex',alignItems:'center'}}><ttc.icon size={13} color={ttc.color}/><span style={{fontSize:11,color:ttc.color,marginLeft:5,fontWeight:600}}>{ttc.label}</span></td>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}><Badge val={t.priorite} cfg={PRIO_CFG}/></td>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}><Badge val={t.statut} cfg={STATUT_CFG}/></td>
-                    <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)',fontSize:12.5,color:'rgba(255,255,255,0.5)'}}>{t.prestataire_nom||'—'}</td>
+                    <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)',fontSize:12.5,color:'rgba(255,255,255,0.5)'}}>{t.prestataires?.nom||'—'}</td>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)',fontSize:12.5,color:t.cout_reel?'#00c896':'rgba(255,255,255,0.4)'}}>{t.cout_reel?Number(t.cout_reel).toLocaleString('fr-FR')+' F':t.cout_estime?'~'+Number(t.cout_estime).toLocaleString('fr-FR')+' F':'—'}</td>
                     <td style={{padding:'12px',borderBottom:'1px solid rgba(255,255,255,0.04)'}} onClick={e=>e.stopPropagation()}><button style={{...btnBase,fontSize:11,padding:'4px 10px'}} onClick={()=>{setSel(t);setTab('details')}}>Voir</button></td>
                   </tr>
@@ -259,7 +289,7 @@ export default function Maintenance() {
             <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:10}}>
               <div style={{flex:1}}>
                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
-                  {(()=>{const TIcon=(TYPE_CFG[sel.type]||TYPE_CFG.autre).icon; return <TIcon size={22} color={(TYPE_CFG[sel.type]||TYPE_CFG.autre).color}/>})()}
+                  {(()=>{const TIcon=(TYPE_TICKET_CFG[sel.type_ticket]||TYPE_TICKET_CFG.autre).icon; return <TIcon size={22} color={(TYPE_TICKET_CFG[sel.type_ticket]||TYPE_TICKET_CFG.autre).color}/>})()}
                   <div style={{fontSize:16,fontWeight:700,color:'#e6edf3'}}>{sel.titre}</div>
                 </div>
                 <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginBottom:10}}>
@@ -285,12 +315,12 @@ export default function Maintenance() {
             {tab==='details'&&(
               <div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:16}}>
-                  {[['Type',(TYPE_CFG[sel.type]||TYPE_CFG.autre).label],['Priorite',(PRIO_CFG[sel.priorite]||PRIO_CFG.normale).label],['Bien',`${sel.biens?.nom||'—'}`],['Locataire',sel.locataires?`${sel.locataires.prenom} ${sel.locataires.nom}`:'—'],['Date signalement',new Date(sel.date_signalement||sel.created_at).toLocaleDateString('fr-FR')],['Debut travaux',sel.date_debut_travaux?new Date(sel.date_debut_travaux).toLocaleDateString('fr-FR'):'—'],['Fin prevue',sel.date_fin_travaux?new Date(sel.date_fin_travaux).toLocaleDateString('fr-FR'):'—'],['Cout estime',sel.cout_estime?Number(sel.cout_estime).toLocaleString('fr-FR')+' FCFA':'—'],['Cout reel',sel.cout_reel?Number(sel.cout_reel).toLocaleString('fr-FR')+' FCFA':'—']].map(([k,v])=>(
+                  {[['Categorie',(TYPE_TICKET_CFG[sel.type_ticket]||TYPE_TICKET_CFG.autre).label],['Specialite',(TYPE_CFG[sel.specialite]||TYPE_CFG.autre).label],['Origine',ORIGINE_LABEL[sel.origine]||'—'],['Responsabilite',RESPONSABILITE_LABEL[sel.responsabilite]||'—'],['Priorite',(PRIO_CFG[sel.priorite]||PRIO_CFG.normale).label],['Bien',`${sel.biens?.nom||'—'}`],['Locataire',sel.locataires?`${sel.locataires.prenom} ${sel.locataires.nom}`:'—'],['Date signalement',new Date(sel.created_at).toLocaleDateString('fr-FR')],['Debut travaux',sel.date_debut_travaux?new Date(sel.date_debut_travaux).toLocaleDateString('fr-FR'):'—'],['Fin prevue',sel.date_fin_travaux?new Date(sel.date_fin_travaux).toLocaleDateString('fr-FR'):'—'],['Cout estime',sel.cout_estime?Number(sel.cout_estime).toLocaleString('fr-FR')+' FCFA':'—']].map(([k,v])=>(
                     <div key={k}><div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:3,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em'}}>{k}</div><div style={{fontSize:13.5,color:'#e6edf3'}}>{v}</div></div>
                   ))}
                 </div>
                 {sel.description&&<div style={{marginBottom:14}}><div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:6,fontWeight:600,textTransform:'uppercase'}}>Description</div><div style={{fontSize:13,color:'rgba(255,255,255,0.7)',lineHeight:1.7,background:'rgba(255,255,255,0.02)',padding:12,borderRadius:8,border:'1px solid rgba(255,255,255,0.07)'}}>{sel.description}</div></div>}
-                {sel.prestataire_nom&&<div style={{borderTop:'1px solid rgba(255,255,255,0.07)',paddingTop:14,marginTop:4}}><div style={{fontSize:13,fontWeight:600,color:'#e6edf3',marginBottom:10}}>Prestataire</div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>{[['Nom',sel.prestataire_nom||'—'],['Telephone',sel.prestataire_telephone||'—'],['Email',sel.prestataire_email||'—']].map(([k,v])=>(<div key={k}><div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:3,fontWeight:600,textTransform:'uppercase'}}>{k}</div><div style={{fontSize:13,color:'#e6edf3'}}>{v}</div></div>))}</div></div>}
+                {sel.prestataires&&<div style={{borderTop:'1px solid rgba(255,255,255,0.07)',paddingTop:14,marginTop:4}}><div style={{fontSize:13,fontWeight:600,color:'#e6edf3',marginBottom:10}}>Prestataire</div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>{[['Nom',sel.prestataires.nom||'—'],['Telephone',sel.prestataires.telephone||'—'],['Email',sel.prestataires.email||'—']].map(([k,v])=>(<div key={k}><div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:3,fontWeight:600,textTransform:'uppercase'}}>{k}</div><div style={{fontSize:13,color:'#e6edf3'}}>{v}</div></div>))}</div></div>}
               </div>
             )}
             {tab==='suivi'&&(
@@ -325,7 +355,7 @@ export default function Maintenance() {
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={e=>e.target===e.currentTarget&&resetAdd()}>
           <div style={{background:'#0d1117',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,width:'100%',maxWidth:560,maxHeight:'90vh',overflowY:'auto',padding:28}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:22}}>
-              <div style={{fontSize:17,fontWeight:700,color:'#e6edf3'}}>Nouveau ticket de maintenance</div>
+              <div style={{fontSize:17,fontWeight:700,color:'#e6edf3'}}>Nouveau ticket</div>
               <button onClick={resetAdd} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:22}}>x</button>
             </div>
             <div style={{display:'flex',gap:0,marginBottom:26}}>
@@ -341,7 +371,10 @@ export default function Maintenance() {
             {step===1&&(<div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
                 <div style={{gridColumn:'1/-1'}}><label style={lbl}>Titre *</label><input style={inp} value={form.titre} onChange={e=>setF('titre',e.target.value)} placeholder="Ex: Fuite robinet cuisine"/></div>
-                <div><label style={lbl}>Type</label><select style={sel2} value={form.type} onChange={e=>setF('type',e.target.value)}>{Object.entries(TYPE_CFG).map(([k,v])=><option key={k} value={k} style={{background:'#161b22'}}>{v.label}</option>)}</select></div>
+                <div><label style={lbl}>Categorie</label><select style={sel2} value={form.type_ticket} onChange={e=>setF('type_ticket',e.target.value)}>{Object.entries(TYPE_TICKET_CFG).map(([k,v])=><option key={k} value={k} style={{background:'#161b22'}}>{v.label}</option>)}</select></div>
+                <div><label style={lbl}>Specialite</label><select style={sel2} value={form.type} onChange={e=>setF('type',e.target.value)}>{Object.entries(TYPE_CFG).map(([k,v])=><option key={k} value={k} style={{background:'#161b22'}}>{v.label}</option>)}</select></div>
+                <div><label style={lbl}>Origine</label><select style={sel2} value={form.origine} onChange={e=>setF('origine',e.target.value)}><option value="agence" style={{background:'#161b22'}}>Agence</option><option value="locataire" style={{background:'#161b22'}}>Locataire</option></select></div>
+                <div><label style={lbl}>Responsabilite</label><select style={sel2} value={form.responsabilite} onChange={e=>setF('responsabilite',e.target.value)}><option value="agence" style={{background:'#161b22'}}>Agence</option><option value="proprietaire" style={{background:'#161b22'}}>Proprietaire</option><option value="locataire" style={{background:'#161b22'}}>Locataire</option></select></div>
                 <div><label style={lbl}>Priorite</label><select style={sel2} value={form.priorite} onChange={e=>setF('priorite',e.target.value)}>{Object.entries(PRIO_CFG).map(([k,v])=><option key={k} value={k} style={{background:'#161b22'}}>{v.label}</option>)}</select></div>
                 <div style={{gridColumn:'1/-1'}}><label style={lbl}>Bien concerne *</label><select style={sel2} value={form.bien_id} onChange={e=>setF('bien_id',e.target.value)}><option value="">Selectionner un bien</option>{biens.map(b=><option key={b.id} value={b.id} style={{background:'#161b22'}}>{b.nom}{b.ville?` (${b.ville})`:''}</option>)}</select></div>
                 <div style={{gridColumn:'1/-1'}}><label style={lbl}>Locataire (optionnel)</label><select style={sel2} value={form.locataire_id} onChange={e=>setF('locataire_id',e.target.value)}><option value="">Aucun</option>{locataires.map(l=><option key={l.id} value={l.id} style={{background:'#161b22'}}>{l.prenom} {l.nom}</option>)}</select></div>
@@ -352,11 +385,27 @@ export default function Maintenance() {
               <div style={{display:'flex',gap:8,justifyContent:'space-between'}}><button style={btnBase} onClick={resetAdd}>Annuler</button><button style={btnP} onClick={()=>{if(!form.titre||!form.bien_id){toast.error('Titre et bien requis');return}setStep(2)}}>Suivant</button></div>
             </div>)}
             {step===2&&(<div>
-              <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:14}}>Informations prestataire (optionnel)</div>
+              <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:14}}>Prestataire (optionnel)</div>
+              <div style={{marginBottom:14}}>
+                <label style={lbl}>Prestataire existant</label>
+                <select style={sel2} value={showNewPrestataire?'__new__':form.prestataire_id} onChange={e=>{
+                  if (e.target.value==='__new__') { setShowNewPrestataire(true); setF('prestataire_id','') }
+                  else { setShowNewPrestataire(false); setF('prestataire_id',e.target.value) }
+                }}>
+                  <option value="">Aucun</option>
+                  {prestataires.map(p=><option key={p.id} value={p.id} style={{background:'#161b22'}}>{p.nom}{p.specialite?` (${p.specialite})`:''}</option>)}
+                  <option value="__new__" style={{background:'#161b22'}}>+ Nouveau prestataire</option>
+                </select>
+              </div>
+              {showNewPrestataire&&(
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14,padding:12,background:'rgba(255,255,255,0.03)',borderRadius:8}}>
+                  <div style={{gridColumn:'1/-1'}}><label style={lbl}>Nom *</label><input style={inp} value={newPrestataire.nom} onChange={e=>setNewPrestataire(p=>({...p,nom:e.target.value}))}/></div>
+                  <div><label style={lbl}>Specialite</label><input style={inp} value={newPrestataire.specialite} onChange={e=>setNewPrestataire(p=>({...p,specialite:e.target.value}))}/></div>
+                  <div><label style={lbl}>Telephone</label><input style={inp} value={newPrestataire.telephone} onChange={e=>setNewPrestataire(p=>({...p,telephone:e.target.value}))}/></div>
+                  <div style={{gridColumn:'1/-1'}}><label style={lbl}>Email</label><input type="email" style={inp} value={newPrestataire.email} onChange={e=>setNewPrestataire(p=>({...p,email:e.target.value}))}/></div>
+                </div>
+              )}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
-                <div style={{gridColumn:'1/-1'}}><label style={lbl}>Nom prestataire</label><input style={inp} value={form.prestataire_nom} onChange={e=>setF('prestataire_nom',e.target.value)}/></div>
-                <div><label style={lbl}>Telephone</label><input style={inp} value={form.prestataire_telephone} onChange={e=>setF('prestataire_telephone',e.target.value)}/></div>
-                <div><label style={lbl}>Email</label><input type="email" style={inp} value={form.prestataire_email} onChange={e=>setF('prestataire_email',e.target.value)}/></div>
                 <div style={{gridColumn:'1/-1'}}><label style={lbl}>Cout estime (FCFA)</label><input type="number" style={inp} value={form.cout_estime} onChange={e=>setF('cout_estime',e.target.value)}/></div>
                 <div style={{gridColumn:'1/-1'}}><label style={lbl}>Notes internes</label><textarea style={{...inp,minHeight:70,resize:'vertical'}} value={form.notes} onChange={e=>setF('notes',e.target.value)}/></div>
               </div>
@@ -366,11 +415,11 @@ export default function Maintenance() {
               <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:14}}>Recapitulatif</div>
               <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:16,marginBottom:18}}>
                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
-                  {(()=>{const TIcon=(TYPE_CFG[form.type]||TYPE_CFG.autre).icon; return <TIcon size={28} color={(TYPE_CFG[form.type]||TYPE_CFG.autre).color}/>})()}
+                  {(()=>{const TIcon=(TYPE_TICKET_CFG[form.type_ticket]||TYPE_TICKET_CFG.autre).icon; return <TIcon size={28} color={(TYPE_TICKET_CFG[form.type_ticket]||TYPE_TICKET_CFG.autre).color}/>})()}
                   <div><div style={{fontSize:15,fontWeight:700,color:'#e6edf3'}}>{form.titre}</div><div style={{display:'flex',gap:6,marginTop:4}}><Badge val={form.priorite} cfg={PRIO_CFG}/><Badge val="ouvert" cfg={STATUT_CFG}/></div></div>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                  {[['Bien',biens.find(b=>b.id===form.bien_id)?.nom||'—'],['Type',(TYPE_CFG[form.type]||TYPE_CFG.autre).label],['Prestataire',form.prestataire_nom||'—'],['Cout estime',form.cout_estime?form.cout_estime+' FCFA':'—']].map(([k,v])=>(<div key={k}><span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{k}: </span><span style={{fontSize:12.5,color:'#e6edf3'}}>{v}</span></div>))}
+                  {[['Bien',biens.find(b=>b.id===form.bien_id)?.nom||'—'],['Categorie',(TYPE_TICKET_CFG[form.type_ticket]||TYPE_TICKET_CFG.autre).label],['Prestataire',showNewPrestataire?(newPrestataire.nom||'—'):(prestataires.find(p=>p.id===form.prestataire_id)?.nom||'—')],['Cout estime',form.cout_estime?form.cout_estime+' FCFA':'—']].map(([k,v])=>(<div key={k}><span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{k}: </span><span style={{fontSize:12.5,color:'#e6edf3'}}>{v}</span></div>))}
                 </div>
               </div>
               <div style={{display:'flex',gap:8,justifyContent:'space-between'}}><button style={btnBase} onClick={()=>setStep(2)}>Retour</button><button style={{...btnP,opacity:saving?0.6:1}} disabled={saving} onClick={creerTicket}>{saving?'Creation...':'Creer le ticket'}</button></div>

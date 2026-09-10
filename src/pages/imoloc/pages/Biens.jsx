@@ -6,7 +6,7 @@ import {
   Check, ArrowRight, Circle, Key, Tag, Plus, Layers, X, Save,
   ChevronDown, Search, Sofa, Warehouse, Store, Hotel, Landmark,
   School, FlaskConical, Hammer, Snowflake, Server, Tent, Sprout,
-  TreePine, Boxes, ShieldCheck, Gauge, Receipt,
+  TreePine, Boxes, ShieldCheck, Gauge, Receipt, AlertTriangle,
 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
@@ -268,6 +268,9 @@ export default function ImolocBiens() {
   const [bienTaxes, setBienTaxes]           = useState([])
   const [showAddTaxe, setShowAddTaxe]       = useState(false)
   const [newTaxe, setNewTaxe]               = useState({ type_taxe:'', montant:'', date_echeance:'', frequence:'annuelle', statut:'a_jour' })
+  const [bienSinistres, setBienSinistres]   = useState([])
+  const [showAddSinistre, setShowAddSinistre] = useState(false)
+  const [newSinistre, setNewSinistre]       = useState({ type_sinistre:'', date_sinistre:'', description:'', gravite:'moderee', assurance_id:'', cout:'', statut:'declare' })
 
   // Pour l'etape 5 (proprietaire)
   const [proprietaires, setProprietaires] = useState([])
@@ -494,6 +497,7 @@ export default function ImolocBiens() {
         { data: compteurs },
         { data: assurances },
         { data: taxes },
+        { data: sinistres },
       ] = await Promise.all([
         supabase.from('biens_proprietaires').select('*, proprietaires(id,nom,prenom,telephone,email)').eq('bien_id', bienId),
         supabase.from('biens_equipements').select('equipement_id, valeur').eq('bien_id', bienId),
@@ -503,6 +507,7 @@ export default function ImolocBiens() {
         supabase.from('compteurs').select('*').eq('bien_id', bienId).order('created_at', { ascending:false }),
         supabase.from('assurances').select('*').eq('bien_id', bienId).order('created_at', { ascending:false }),
         supabase.from('taxes_bien').select('*').eq('bien_id', bienId).order('date_echeance', { ascending:true }),
+        supabase.from('sinistres').select('*').eq('bien_id', bienId).order('date_sinistre', { ascending:false }),
       ])
       setBienProps(props||[])
       setBienEquip(equip||[])
@@ -511,6 +516,7 @@ export default function ImolocBiens() {
       setBienOpportunites(opportunites||[])
       setBienAssurances(assurances||[])
       setBienTaxes(taxes||[])
+      setBienSinistres(sinistres||[])
 
       const compteurIds = (compteurs||[]).map(c=>c.id)
       if (compteurIds.length>0) {
@@ -705,6 +711,24 @@ export default function ImolocBiens() {
   const deleteTaxe = async (id) => {
     setBienTaxes(t=>t.filter(x=>x.id!==id))
     await supabase.from('taxes_bien').delete().eq('id', id)
+  }
+
+  const addSinistre = async () => {
+    if (!newSinistre.type_sinistre) { toast.error('Type de sinistre requis'); return }
+    const payload = { bien_id: selectedBien.id, ...newSinistre,
+      assurance_id: newSinistre.assurance_id||null,
+      cout: newSinistre.cout?Number(newSinistre.cout):null,
+      date_sinistre: newSinistre.date_sinistre||null,
+    }
+    const { data, error } = await supabase.from('sinistres').insert(payload).select('*').single()
+    if (error) { toast.error(error.message); return }
+    setBienSinistres(s=>[data, ...s])
+    setShowAddSinistre(false)
+    setNewSinistre({ type_sinistre:'', date_sinistre:'', description:'', gravite:'moderee', assurance_id:'', cout:'', statut:'declare' })
+  }
+  const deleteSinistre = async (id) => {
+    setBienSinistres(s=>s.filter(x=>x.id!==id))
+    await supabase.from('sinistres').delete().eq('id', id)
   }
 
   const resetForm = () => {
@@ -1547,6 +1571,7 @@ export default function ImolocBiens() {
                   ['compteurs','Compteurs'],
                   ['assurance','Assurance'],
                   ['taxes','Taxes'],
+                  ['sinistres','Sinistres'],
                 ].map(([k,l])=>(
                   <button key={k} className={`pb-detail-tab ${detailTab===k?'active':''}`} onClick={()=>setDetailTab(k)}>{l}</button>
                 ))}
@@ -2135,6 +2160,89 @@ export default function ImolocBiens() {
                             </div>
                             <span style={{fontSize:11,fontWeight:600,color:statutColor,textTransform:'uppercase',letterSpacing:'.03em'}}>{t.statut.replace('_',' ')}</span>
                             <button className="pb-cls" onClick={()=>deleteTaxe(t.id)}><X size={14}/></button>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </>
+              )}
+
+              {/* Tab Sinistres */}
+              {detailTab==='sinistres'&&(
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span className="pb-sec" style={{margin:0}}>Sinistres</span>
+                    <button className="pb-btn pb-btn-p" onClick={()=>setShowAddSinistre(o=>!o)}><Plus size={13}/> Ajouter</button>
+                  </div>
+                  {showAddSinistre&&(
+                    <div style={{background:'rgba(255,255,255,0.03)',padding:14,borderRadius:8,marginBottom:14}}>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                        <div>
+                          <label className="pb-lbl">Type de sinistre<span className="pb-req">*</span></label>
+                          <input className="pb-inp" placeholder="Ex: Degat des eaux" value={newSinistre.type_sinistre} onChange={e=>setNewSinistre(s=>({...s,type_sinistre:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Date</label>
+                          <input className="pb-inp" type="date" value={newSinistre.date_sinistre} onChange={e=>setNewSinistre(s=>({...s,date_sinistre:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Gravite</label>
+                          <select className="pb-inp" value={newSinistre.gravite} onChange={e=>setNewSinistre(s=>({...s,gravite:e.target.value}))}>
+                            <option value="mineure">Mineure</option>
+                            <option value="moderee">Moderee</option>
+                            <option value="majeure">Majeure</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Assurance liee</label>
+                          <select className="pb-inp" value={newSinistre.assurance_id} onChange={e=>setNewSinistre(s=>({...s,assurance_id:e.target.value}))}>
+                            <option value="">Aucune</option>
+                            {bienAssurances.map(a=><option key={a.id} value={a.id}>{a.assureur}{a.numero_police?` — ${a.numero_police}`:''}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Cout (FCFA)</label>
+                          <input className="pb-inp" type="number" value={newSinistre.cout} onChange={e=>setNewSinistre(s=>({...s,cout:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Statut</label>
+                          <select className="pb-inp" value={newSinistre.statut} onChange={e=>setNewSinistre(s=>({...s,statut:e.target.value}))}>
+                            <option value="declare">Declare</option>
+                            <option value="en_cours">En cours</option>
+                            <option value="resolu">Resolu</option>
+                            <option value="clos">Clos</option>
+                          </select>
+                        </div>
+                        <div style={{gridColumn:'1/-1'}}>
+                          <label className="pb-lbl">Description</label>
+                          <input className="pb-inp" value={newSinistre.description} onChange={e=>setNewSinistre(s=>({...s,description:e.target.value}))}/>
+                        </div>
+                      </div>
+                      <button className="pb-btn pb-btn-p" onClick={addSinistre}>Ajouter le sinistre</button>
+                    </div>
+                  )}
+                  {bienSinistres.length===0?(
+                    <div style={{textAlign:'center',padding:'30px 20px'}}>
+                      <AlertTriangle size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucun sinistre declare</div>
+                    </div>
+                  ):(
+                    bienSinistres.map(s=>{
+                      const statutColor = s.statut==='clos'?'#8b949e':s.statut==='resolu'?'#00c896':s.statut==='en_cours'?'#0078d4':'#f59e0b'
+                      return (
+                        <div key={s.id} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                          <div style={{display:'flex',alignItems:'center',gap:10}}>
+                            <div className="pb-prop-avatar" style={{background:statutColor}}><AlertTriangle size={14}/></div>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{s.type_sinistre}</div>
+                              <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>
+                                {s.date_sinistre?new Date(s.date_sinistre).toLocaleDateString('fr-FR'):'Date non renseignee'}
+                                {s.cout!=null&&` · ${fmt(s.cout)} FCFA`}
+                              </div>
+                            </div>
+                            <span style={{fontSize:11,fontWeight:600,color:statutColor,textTransform:'uppercase',letterSpacing:'.03em'}}>{s.statut}</span>
+                            <button className="pb-cls" onClick={()=>deleteSinistre(s.id)}><X size={14}/></button>
                           </div>
                         </div>
                       )
