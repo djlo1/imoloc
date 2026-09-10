@@ -181,6 +181,34 @@ function TypeSearchList({ typesParCategorie, value, onChange }) {
   )
 }
 
+// ─── Ville : recherche dans la liste connue du pays, mais accepte
+// toujours une saisie libre (liste non exhaustive, ne doit jamais bloquer) ──
+function VilleCombobox({ villes, value, onChange, placeholder='Cotonou' }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+  const ql = (value||'').trim().toLowerCase()
+  const matches = ql ? villes.filter(v=>v.toLowerCase().includes(ql)) : villes
+  return (
+    <div ref={ref} style={{position:'relative'}}>
+      <input className="pb-inp" value={value} onFocus={()=>setOpen(true)}
+        onChange={e=>{onChange(e.target.value);setOpen(true)}} placeholder={placeholder}/>
+      {open&&matches.length>0&&(
+        <div className="pb-dropdown" style={{minWidth:'100%',maxHeight:220}}>
+          {matches.slice(0,50).map(v=>(
+            <div key={v} className="pb-dropdown-item" onClick={()=>{onChange(v);setOpen(false)}}>{v}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Composant principal ──────────────────────────────────
 export default function ImolocBiens() {
   const navigate = useNavigate()
@@ -218,10 +246,11 @@ export default function ImolocBiens() {
   const [selectedProp, setSelectedProp]   = useState(null)
   const [multiProp, setMultiProp]         = useState(false)
   const [coProprietaires, setCoProprietaires] = useState([]) // [{proprietaire, pourcentage}]
+  const [showPaysOverride, setShowPaysOverride] = useState(false)
 
   const [form, setForm] = useState({
     nom:'', type:'', statut:'', intention:'',
-    adresse:'', ville:'Cotonou', quartier:'',
+    pays:'', adresse:'', ville:'', quartier:'',
     superficie:'', loyer:'', prix_vente_demande:'',
     nb_pieces:'', nb_chambres:'', nb_sdb:'', meuble:false,
     description:'',
@@ -237,8 +266,8 @@ export default function ImolocBiens() {
     return true
   }
 
-  const { loading:configLoading, typesBiens, typesParCategorie, statutsBiens, equipements, equipementsParCategorie, adresseSchema } =
-    useBiensConfig(agence?.id, agence?.pays)
+  const { loading:configLoading, typesBiens, typesParCategorie, statutsBiens, equipements, equipementsParCategorie, adresseSchema, paysActifs, villes } =
+    useBiensConfig(agence?.id, form.pays || agence?.pays)
 
   const resizingCol = useRef(null)
   const startX      = useRef(0)
@@ -338,6 +367,7 @@ export default function ImolocBiens() {
         statut:           form.statut,         // colonne texte (catalogue statuts_biens)
         intention:        form.intention,
         meuble:           form.meuble,
+        pays:             form.pays            || agence.pays || null,
         adresse:          form.adresse         || null,
         ville:            form.ville           || null,
         quartier:         form.quartier        || null,
@@ -478,9 +508,10 @@ export default function ImolocBiens() {
     setPropSearch('')
     setMultiProp(false)
     setCoProprietaires([])
+    setShowPaysOverride(false)
     setForm({
       nom:'', type:'', statut:'', intention:'',
-      adresse:'', ville:'Cotonou', quartier:'',
+      pays:'', adresse:'', ville:'', quartier:'',
       superficie:'', loyer:'', prix_vente_demande:'',
       nb_pieces:'', nb_chambres:'', nb_sdb:'', meuble:false,
       description:'',
@@ -958,11 +989,32 @@ export default function ImolocBiens() {
                 {/* ── Step 3 : Localisation ── */}
                 {step===3&&(<div className="pb-step-inner">
                   <div className="pb-step-title">Localisation</div>
-                  <div className="pb-step-sub">Adresse du bien{agence?.pays?` — champs adaptes au ${agence.pays}`:''}.</div>
+                  <div className="pb-step-sub">Adresse du bien{(form.pays||agence?.pays)?` — champs adaptes au ${form.pays||agence.pays}`:''}.</div>
+
+                  {!showPaysOverride?(
+                    <button className="pb-blk-link" style={{marginBottom:18}} onClick={()=>setShowPaysOverride(true)}>
+                      Ce bien est dans un autre pays que {agence?.pays||'votre organisation'} ?
+                    </button>
+                  ):(
+                    <div className="pb-field">
+                      <label className="pb-lbl">Pays du bien</label>
+                      <select className="pb-inp" style={{maxWidth:280}} value={form.pays||agence?.pays||''} onChange={e=>setF('pays',e.target.value)}>
+                        {paysActifs.map(p=><option key={p} value={p}>{p}</option>)}
+                      </select>
+                      {form.pays && !paysActifs.includes(form.pays) && (
+                        <div style={{marginTop:8,fontSize:12.5,color:'#f59e0b'}}>
+                          {profile?.role==='global_admin'
+                            ? <>Ce pays n'est pas encore configure pour votre organisation. <span className="pb-blk-link" onClick={()=>navigate('/agence/organisation')}>Configurer maintenant →</span></>
+                            : "Ce pays n'est pas configure pour votre organisation. Contactez votre administrateur pour l'ajouter."}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="pb-g2">
                     <div>
                       <label className="pb-lbl">Ville</label>
-                      <input className="pb-inp" value={form.ville} onChange={e=>setF('ville',e.target.value)} placeholder="Cotonou"/>
+                      <VilleCombobox villes={villes} value={form.ville} onChange={v=>setF('ville',v)}/>
                     </div>
                     <div>
                       <label className="pb-lbl">Quartier</label>

@@ -12,6 +12,8 @@ export function useBiensConfig(agenceId, pays) {
   const [adresseSchema, setAdresseSchema] = useState([])
   const [cadastreSchema, setCadastreSchema] = useState([])
   const [fiscaliteSchema, setFiscaliteSchema] = useState([])
+  const [paysActifs, setPaysActifs] = useState([])
+  const [villes, setVilles] = useState([])
 
   useEffect(() => {
     if (!agenceId) { setLoading(false); return }
@@ -29,6 +31,8 @@ export function useBiensConfig(agenceId, pays) {
           { data: equipsDesactives },
           { data: schemaPays },
           { data: schemaGeneric },
+          { data: paysActifsData },
+          { data: villesData },
         ] = await Promise.all([
           supabase.from('types_biens').select('*').or(`agence_id.is.null,agence_id.eq.${agenceId}`).order('categorie').order('ordre'),
           supabase.from('agence_types_biens_desactives').select('type_bien_id').eq('agence_id', agenceId),
@@ -38,6 +42,8 @@ export function useBiensConfig(agenceId, pays) {
           supabase.from('agence_equipements_desactives').select('equipement_id').eq('agence_id', agenceId),
           pays ? supabase.from('country_field_schemas').select('*').eq('pays', pays).order('domaine').order('ordre') : Promise.resolve({ data: [] }),
           supabase.from('country_field_schemas').select('*').eq('pays', '__generic__').order('domaine').order('ordre'),
+          supabase.from('agence_pays_actifs').select('pays').eq('agence_id', agenceId),
+          pays ? supabase.from('villes').select('nom').eq('pays', pays).order('nom') : Promise.resolve({ data: [] }),
         ])
         if (cancelled) return
 
@@ -57,6 +63,8 @@ export function useBiensConfig(agenceId, pays) {
         setAdresseSchema(bySchema(schemaPays, 'adresse'))
         setCadastreSchema(bySchema(schemaPays, 'cadastre'))
         setFiscaliteSchema(bySchema(schemaPays, 'fiscalite'))
+        setPaysActifs((paysActifsData||[]).map(p=>p.pays))
+        setVilles((villesData||[]).map(v=>v.nom))
       } catch (e) {
         console.error('useBiensConfig', e)
       } finally {
@@ -82,6 +90,7 @@ export function useBiensConfig(agenceId, pays) {
     statutsBiens,
     equipements, equipementsParCategorie,
     adresseSchema, cadastreSchema, fiscaliteSchema,
+    paysActifs, villes,
   }
 }
 
