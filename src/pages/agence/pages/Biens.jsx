@@ -6,7 +6,7 @@ import {
   Check, ArrowRight, Circle, Key, Tag, Plus, Layers, X, Save,
   ChevronDown, Search, Sofa, Warehouse, Store, Hotel, Landmark,
   School, FlaskConical, Hammer, Snowflake, Server, Tent, Sprout,
-  TreePine, Boxes, ShieldCheck,
+  TreePine, Boxes, ShieldCheck, Gauge, Receipt,
 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
@@ -255,6 +255,18 @@ export default function Biens() {
   const [contactSearch, setContactSearch] = useState('')
   const [contactResults, setContactResults] = useState([])
   const [showAddOpp, setShowAddOpp] = useState(false)
+
+  // Phase 5 : compteurs, assurances, taxes
+  const [bienCompteurs, setBienCompteurs]   = useState([])
+  const [showAddCompteur, setShowAddCompteur] = useState(false)
+  const [newCompteur, setNewCompteur]       = useState({ type_compteur:'', numero:'', fournisseur:'', unite:'', individuel_collectif:'individuel', souscripteur:'' })
+  const [newReleve, setNewReleve]           = useState({}) // { [compteurId]: { valeur, date_releve } }
+  const [bienAssurances, setBienAssurances] = useState([])
+  const [showAddAssurance, setShowAddAssurance] = useState(false)
+  const [newAssurance, setNewAssurance]     = useState({ assureur:'', numero_police:'', type_assurance:'', date_debut:'', date_expiration:'', prime:'', montant_couvert:'' })
+  const [bienTaxes, setBienTaxes]           = useState([])
+  const [showAddTaxe, setShowAddTaxe]       = useState(false)
+  const [newTaxe, setNewTaxe]               = useState({ type_taxe:'', montant:'', date_echeance:'', frequence:'annuelle', statut:'a_jour' })
   const [detailLoading, setDetailLoading] = useState(false)
 
   // Pour l'etape 5 (proprietaire)
@@ -479,17 +491,36 @@ export default function Biens() {
         { data: mandatsData },
         { data: unites },
         { data: opportunites },
+        { data: compteurs },
+        { data: assurances },
+        { data: taxes },
       ] = await Promise.all([
         supabase.from('biens_proprietaires').select('*, proprietaires(id,nom,prenom,telephone,email)').eq('bien_id', bienId),
         supabase.from('biens_equipements').select('equipement_id, valeur').eq('bien_id', bienId),
         supabase.from('mandats').select('*').eq('bien_id', bienId).order('created_at', { ascending:false }).limit(1),
         supabase.from('biens').select('id,nom,type_bien,type,statut').eq('parent_bien_id', bienId),
         supabase.from('opportunites_vente').select('*, contacts(id,display,email,tel_mobile)').eq('bien_id', bienId).order('created_at', { ascending:false }),
+        supabase.from('compteurs').select('*').eq('bien_id', bienId).order('created_at', { ascending:false }),
+        supabase.from('assurances').select('*').eq('bien_id', bienId).order('created_at', { ascending:false }),
+        supabase.from('taxes_bien').select('*').eq('bien_id', bienId).order('date_echeance', { ascending:true }),
       ])
       setBienProps(props||[])
       setBienEquip(equip||[])
       setBienMandat(mandatsData?.[0]||null)
       setBienUnites(unites||[])
+      setBienAssurances(assurances||[])
+      setBienTaxes(taxes||[])
+
+      const compteurIds = (compteurs||[]).map(c=>c.id)
+      if (compteurIds.length>0) {
+        const { data: releves } = await supabase.from('releves_compteurs')
+          .select('*').in('compteur_id', compteurIds).order('date_releve', { ascending:false })
+        const dernierParCompteur = {}
+        for (const r of (releves||[])) { if (!dernierParCompteur[r.compteur_id]) dernierParCompteur[r.compteur_id] = r }
+        setBienCompteurs((compteurs||[]).map(c=>({ ...c, dernier_releve: dernierParCompteur[c.id]||null })))
+      } else {
+        setBienCompteurs([])
+      }
       setBienOpportunites(opportunites||[])
     } catch(e) { console.error('loadBienDetail', e) }
     finally { setDetailLoading(false) }
@@ -606,6 +637,71 @@ export default function Biens() {
   const deleteOpportunite = async (id) => {
     setBienOpportunites(o=>o.filter(x=>x.id!==id))
     await supabase.from('opportunites_vente').delete().eq('id', id)
+  }
+
+  // ── Phase 5 : compteurs, assurances, taxes ──
+  const addCompteur = async () => {
+    if (!newCompteur.type_compteur) { toast.error('Type de compteur requis'); return }
+    const { data, error } = await supabase.from('compteurs').insert({
+      bien_id: selectedBien.id, ...newCompteur,
+      numero: newCompteur.numero||null, fournisseur: newCompteur.fournisseur||null, unite: newCompteur.unite||null,
+      souscripteur: newCompteur.souscripteur||null,
+    }).select('*').single()
+    if (error) { toast.error(error.message); return }
+    setBienCompteurs(c=>[{ ...data, dernier_releve:null }, ...c])
+    setShowAddCompteur(false)
+    setNewCompteur({ type_compteur:'', numero:'', fournisseur:'', unite:'', individuel_collectif:'individuel', souscripteur:'' })
+  }
+  const deleteCompteur = async (id) => {
+    setBienCompteurs(c=>c.filter(x=>x.id!==id))
+    await supabase.from('compteurs').delete().eq('id', id)
+  }
+  const addReleve = async (compteurId) => {
+    const draft = newReleve[compteurId]
+    if (!draft?.valeur) { toast.error('Valeur du releve requise'); return }
+    const { data, error } = await supabase.from('releves_compteurs').insert({
+      compteur_id: compteurId, valeur: Number(draft.valeur), date_releve: draft.date_releve || new Date().toISOString().slice(0,10),
+    }).select('*').single()
+    if (error) { toast.error(error.message); return }
+    setBienCompteurs(c=>c.map(x=>x.id===compteurId?{...x, dernier_releve:data}:x))
+    setNewReleve(r=>({ ...r, [compteurId]: undefined }))
+    toast.success('Releve enregistre')
+  }
+
+  const addAssurance = async () => {
+    if (!newAssurance.assureur) { toast.error('Assureur requis'); return }
+    const payload = { bien_id: selectedBien.id, ...newAssurance,
+      numero_police: newAssurance.numero_police||null, type_assurance: newAssurance.type_assurance||null,
+      prime: newAssurance.prime?Number(newAssurance.prime):null,
+      montant_couvert: newAssurance.montant_couvert?Number(newAssurance.montant_couvert):null,
+      date_debut: newAssurance.date_debut||null, date_expiration: newAssurance.date_expiration||null,
+    }
+    const { data, error } = await supabase.from('assurances').insert(payload).select('*').single()
+    if (error) { toast.error(error.message); return }
+    setBienAssurances(a=>[data, ...a])
+    setShowAddAssurance(false)
+    setNewAssurance({ assureur:'', numero_police:'', type_assurance:'', date_debut:'', date_expiration:'', prime:'', montant_couvert:'' })
+  }
+  const deleteAssurance = async (id) => {
+    setBienAssurances(a=>a.filter(x=>x.id!==id))
+    await supabase.from('assurances').delete().eq('id', id)
+  }
+
+  const addTaxe = async () => {
+    if (!newTaxe.type_taxe) { toast.error('Type de taxe requis'); return }
+    const payload = { bien_id: selectedBien.id, ...newTaxe,
+      montant: newTaxe.montant?Number(newTaxe.montant):null,
+      date_echeance: newTaxe.date_echeance||null,
+    }
+    const { data, error } = await supabase.from('taxes_bien').insert(payload).select('*').single()
+    if (error) { toast.error(error.message); return }
+    setBienTaxes(t=>[...t, data].sort((a,b)=>(a.date_echeance||'').localeCompare(b.date_echeance||'')))
+    setShowAddTaxe(false)
+    setNewTaxe({ type_taxe:'', montant:'', date_echeance:'', frequence:'annuelle', statut:'a_jour' })
+  }
+  const deleteTaxe = async (id) => {
+    setBienTaxes(t=>t.filter(x=>x.id!==id))
+    await supabase.from('taxes_bien').delete().eq('id', id)
   }
 
   const resetForm = () => {
@@ -797,8 +893,8 @@ export default function Biens() {
         /* ─ Detail panel ─ */
         .pb-detail-panel{width:min(600px,96vw)}
         .pb-detail-head{padding:24px 28px 0;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
-        .pb-detail-tabs{display:flex;margin-top:18px}
-        .pb-detail-tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap}
+        .pb-detail-tabs{display:flex;margin-top:18px;overflow-x:auto}
+        .pb-detail-tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap;flex-shrink:0}
         .pb-detail-tab:hover{color:rgba(255,255,255,0.75)}
         .pb-detail-tab.active{color:#e6edf3;border-bottom-color:#0078d4}
         .pb-blk{display:flex;flex-direction:column;gap:3px;margin-bottom:22px}
@@ -1438,6 +1534,9 @@ export default function Biens() {
                   ...((selectedBien.intention==='vente'||selectedBien.intention==='les_deux')?[['vente','Vente']]:[]),
                   ['baux','Baux'],
                   ['paiements','Paiements'],
+                  ['compteurs','Compteurs'],
+                  ['assurance','Assurance'],
+                  ['taxes','Taxes'],
                 ].map(([k,l])=>(
                   <button key={k} className={`pb-detail-tab ${detailTab===k?'active':''}`} onClick={()=>setDetailTab(k)}>{l}</button>
                 ))}
@@ -1800,6 +1899,238 @@ export default function Biens() {
                   <div style={{fontSize:13,color:'rgba(255,255,255,0.25)',marginBottom:18}}>Module paiements en cours de developpement</div>
                   <button className="pb-btn" style={{margin:'0 auto'}} onClick={()=>navigate('/agence/paiements')}>Voir les paiements</button>
                 </div>
+              )}
+
+              {/* Tab Compteurs */}
+              {detailTab==='compteurs'&&(
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span className="pb-sec" style={{margin:0}}>Compteurs</span>
+                    <button className="pb-btn pb-btn-p" onClick={()=>setShowAddCompteur(o=>!o)}><Plus size={13}/> Ajouter</button>
+                  </div>
+                  {showAddCompteur&&(
+                    <div style={{background:'rgba(255,255,255,0.03)',padding:14,borderRadius:8,marginBottom:14}}>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                        <div>
+                          <label className="pb-lbl">Type<span className="pb-req">*</span></label>
+                          <select className="pb-inp" value={newCompteur.type_compteur} onChange={e=>setNewCompteur(c=>({...c,type_compteur:e.target.value}))}>
+                            <option value="">Choisir...</option>
+                            <option value="eau">Eau</option>
+                            <option value="electricite">Electricite</option>
+                            <option value="gaz">Gaz</option>
+                            <option value="internet">Internet</option>
+                            <option value="autre">Autre</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Numero</label>
+                          <input className="pb-inp" value={newCompteur.numero} onChange={e=>setNewCompteur(c=>({...c,numero:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Fournisseur</label>
+                          <input className="pb-inp" value={newCompteur.fournisseur} onChange={e=>setNewCompteur(c=>({...c,fournisseur:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Unite</label>
+                          <input className="pb-inp" placeholder="kWh, m3..." value={newCompteur.unite} onChange={e=>setNewCompteur(c=>({...c,unite:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Individuel / collectif</label>
+                          <select className="pb-inp" value={newCompteur.individuel_collectif} onChange={e=>setNewCompteur(c=>({...c,individuel_collectif:e.target.value}))}>
+                            <option value="individuel">Individuel</option>
+                            <option value="collectif">Collectif</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Souscripteur</label>
+                          <select className="pb-inp" value={newCompteur.souscripteur} onChange={e=>setNewCompteur(c=>({...c,souscripteur:e.target.value}))}>
+                            <option value="">Non precise</option>
+                            <option value="proprietaire">Proprietaire</option>
+                            <option value="locataire">Locataire</option>
+                            <option value="agence">Agence</option>
+                          </select>
+                        </div>
+                      </div>
+                      <button className="pb-btn pb-btn-p" onClick={addCompteur}>Ajouter le compteur</button>
+                    </div>
+                  )}
+                  {bienCompteurs.length===0?(
+                    <div style={{textAlign:'center',padding:'30px 20px'}}>
+                      <Gauge size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucun compteur enregistre</div>
+                    </div>
+                  ):(
+                    bienCompteurs.map(c=>(
+                      <div key={c.id} style={{padding:'12px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div className="pb-prop-avatar" style={{background:'#0078d4'}}><Gauge size={14}/></div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'#e6edf3',textTransform:'capitalize'}}>{c.type_compteur}{c.numero?` — ${c.numero}`:''}</div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>
+                              {c.fournisseur||'Fournisseur non renseigne'} · {c.individuel_collectif==='collectif'?'Collectif':'Individuel'}
+                              {c.souscripteur&&` · Souscripteur: ${c.souscripteur}`}
+                            </div>
+                          </div>
+                          <button className="pb-cls" onClick={()=>deleteCompteur(c.id)}><X size={14}/></button>
+                        </div>
+                        <div style={{marginLeft:42,marginTop:8,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+                          {c.dernier_releve?(
+                            <span style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>
+                              Dernier releve : <b style={{color:'#e6edf3'}}>{c.dernier_releve.valeur}{c.unite?' '+c.unite:''}</b> le {new Date(c.dernier_releve.date_releve).toLocaleDateString('fr-FR')}
+                            </span>
+                          ):(
+                            <span style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>Aucun releve</span>
+                          )}
+                          <input className="pb-inp" style={{width:100,padding:'5px 8px',fontSize:12}} type="number" placeholder="Valeur"
+                            value={newReleve[c.id]?.valeur||''} onChange={e=>setNewReleve(r=>({...r,[c.id]:{...r[c.id],valeur:e.target.value}}))}/>
+                          <button className="pb-btn" style={{padding:'5px 10px',fontSize:12}} onClick={()=>addReleve(c.id)}>+ Releve</button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </>
+              )}
+
+              {/* Tab Assurance */}
+              {detailTab==='assurance'&&(
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span className="pb-sec" style={{margin:0}}>Assurance</span>
+                    <button className="pb-btn pb-btn-p" onClick={()=>setShowAddAssurance(o=>!o)}><Plus size={13}/> Ajouter</button>
+                  </div>
+                  {showAddAssurance&&(
+                    <div style={{background:'rgba(255,255,255,0.03)',padding:14,borderRadius:8,marginBottom:14}}>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                        <div>
+                          <label className="pb-lbl">Assureur<span className="pb-req">*</span></label>
+                          <input className="pb-inp" value={newAssurance.assureur} onChange={e=>setNewAssurance(a=>({...a,assureur:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">N° police</label>
+                          <input className="pb-inp" value={newAssurance.numero_police} onChange={e=>setNewAssurance(a=>({...a,numero_police:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Type</label>
+                          <select className="pb-inp" value={newAssurance.type_assurance} onChange={e=>setNewAssurance(a=>({...a,type_assurance:e.target.value}))}>
+                            <option value="">Choisir...</option>
+                            <option value="habitation">Habitation</option>
+                            <option value="multirisque">Multirisque</option>
+                            <option value="responsabilite_civile">Responsabilite civile</option>
+                            <option value="autre">Autre</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Prime (FCFA)</label>
+                          <input className="pb-inp" type="number" value={newAssurance.prime} onChange={e=>setNewAssurance(a=>({...a,prime:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Debut</label>
+                          <input className="pb-inp" type="date" value={newAssurance.date_debut} onChange={e=>setNewAssurance(a=>({...a,date_debut:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Expiration</label>
+                          <input className="pb-inp" type="date" value={newAssurance.date_expiration} onChange={e=>setNewAssurance(a=>({...a,date_expiration:e.target.value}))}/>
+                        </div>
+                      </div>
+                      <button className="pb-btn pb-btn-p" onClick={addAssurance}>Ajouter la police</button>
+                    </div>
+                  )}
+                  {bienAssurances.length===0?(
+                    <div style={{textAlign:'center',padding:'30px 20px'}}>
+                      <ShieldCheck size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucune police d'assurance</div>
+                    </div>
+                  ):(
+                    bienAssurances.map(a=>(
+                      <div key={a.id} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div className="pb-prop-avatar" style={{background:'#00c896'}}><ShieldCheck size={14}/></div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{a.assureur}{a.numero_police?` — ${a.numero_police}`:''}</div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>
+                              {a.type_assurance||'Type non precise'}
+                              {a.date_expiration&&` · Expire le ${new Date(a.date_expiration).toLocaleDateString('fr-FR')}`}
+                              {a.prime!=null&&` · ${fmt(a.prime)} FCFA`}
+                            </div>
+                          </div>
+                          <button className="pb-cls" onClick={()=>deleteAssurance(a.id)}><X size={14}/></button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </>
+              )}
+
+              {/* Tab Taxes */}
+              {detailTab==='taxes'&&(
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span className="pb-sec" style={{margin:0}}>Taxes & fiscalite</span>
+                    <button className="pb-btn pb-btn-p" onClick={()=>setShowAddTaxe(o=>!o)}><Plus size={13}/> Ajouter</button>
+                  </div>
+                  {showAddTaxe&&(
+                    <div style={{background:'rgba(255,255,255,0.03)',padding:14,borderRadius:8,marginBottom:14}}>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                        <div>
+                          <label className="pb-lbl">Type de taxe<span className="pb-req">*</span></label>
+                          <input className="pb-inp" placeholder="Ex: Taxe Fonciere Unique" value={newTaxe.type_taxe} onChange={e=>setNewTaxe(t=>({...t,type_taxe:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Montant (FCFA)</label>
+                          <input className="pb-inp" type="number" value={newTaxe.montant} onChange={e=>setNewTaxe(t=>({...t,montant:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Echeance</label>
+                          <input className="pb-inp" type="date" value={newTaxe.date_echeance} onChange={e=>setNewTaxe(t=>({...t,date_echeance:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Frequence</label>
+                          <select className="pb-inp" value={newTaxe.frequence} onChange={e=>setNewTaxe(t=>({...t,frequence:e.target.value}))}>
+                            <option value="annuelle">Annuelle</option>
+                            <option value="trimestrielle">Trimestrielle</option>
+                            <option value="mensuelle">Mensuelle</option>
+                            <option value="unique">Unique</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Statut</label>
+                          <select className="pb-inp" value={newTaxe.statut} onChange={e=>setNewTaxe(t=>({...t,statut:e.target.value}))}>
+                            <option value="a_jour">A jour</option>
+                            <option value="en_retard">En retard</option>
+                            <option value="paye">Paye</option>
+                          </select>
+                        </div>
+                      </div>
+                      <button className="pb-btn pb-btn-p" onClick={addTaxe}>Ajouter la taxe</button>
+                    </div>
+                  )}
+                  {bienTaxes.length===0?(
+                    <div style={{textAlign:'center',padding:'30px 20px'}}>
+                      <Receipt size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucune taxe enregistree</div>
+                    </div>
+                  ):(
+                    bienTaxes.map(t=>{
+                      const statutColor = t.statut==='en_retard'?'#ef4444':t.statut==='paye'?'#6c63ff':'#00c896'
+                      return (
+                        <div key={t.id} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                          <div style={{display:'flex',alignItems:'center',gap:10}}>
+                            <div className="pb-prop-avatar" style={{background:statutColor}}><Receipt size={14}/></div>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{t.type_taxe}</div>
+                              <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>
+                                {t.montant!=null?fmt(t.montant)+' FCFA':'Montant non renseigne'}
+                                {t.date_echeance&&` · Echeance ${new Date(t.date_echeance).toLocaleDateString('fr-FR')}`}
+                              </div>
+                            </div>
+                            <span style={{fontSize:11,fontWeight:600,color:statutColor,textTransform:'uppercase',letterSpacing:'.03em'}}>{t.statut.replace('_',' ')}</span>
+                            <button className="pb-cls" onClick={()=>deleteTaxe(t.id)}><X size={14}/></button>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </>
               )}
             </div>
           </div>
