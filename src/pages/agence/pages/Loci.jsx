@@ -45,12 +45,19 @@ export default function Loci() {
         const { data:{ user } } = await supabase.auth.getUser()
         if (!user) return
 
-        const [{ data:myProfile }, { data:agList }] = await Promise.all([
+        const [{ data:myProfile }, { data:agOwned }] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', user.id).single(),
-          supabase.from('agences').select('*'),
+          supabase.from('agences').select('*').eq('profile_id', user.id).maybeSingle(),
         ])
-        // Trouver l'agence du user (propriétaire ou membre)
-        const ag = agList?.find(a => a.profile_id === user.id) || agList?.[0] || null
+        // Trouver l'agence du user : proprietaire direct, sinon membre via agence_users
+        let ag = agOwned
+        if (!ag) {
+          const { data:membership } = await supabase.from('agence_users').select('agence_id').eq('user_id', user.id).maybeSingle()
+          if (membership?.agence_id) {
+            const { data:agMember } = await supabase.from('agences').select('*').eq('id', membership.agence_id).maybeSingle()
+            ag = agMember
+          }
+        }
 
         setAgence(ag)
 
