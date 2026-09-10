@@ -49,6 +49,14 @@ const INTENTIONS = [
   { val:'vente',       label:'Vente',        desc:'A vendre',         icon:Tag },
   { val:'les_deux',    label:'Les deux',     desc:'Location et vente possibles', icon:Building2 },
 ]
+const OPPORTUNITE_STATUTS = [
+  { valeur:'visite_prevue', label:'Visite prevue',  couleur:'#8b949e' },
+  { valeur:'offre_faite',   label:'Offre faite',    couleur:'#f59e0b' },
+  { valeur:'negociation',   label:'Negociation',    couleur:'#6c63ff' },
+  { valeur:'accepte',       label:'Accepte',        couleur:'#00c896' },
+  { valeur:'refuse',        label:'Refuse',         couleur:'#ef4444' },
+  { valeur:'annule',        label:'Annule',         couleur:'#4b5563' },
+]
 
 const ALL_COLS = [
   { key:'displayName',   label:'Bien',          checked:true,  disabled:true },
@@ -238,6 +246,10 @@ export default function Biens() {
   const [bienEquip, setBienEquip]   = useState([])   // ids d'equipements coches pour ce bien
   const [bienMandat, setBienMandat] = useState(null)
   const [bienUnites, setBienUnites] = useState([])   // unites enfants si immeuble
+  const [bienOpportunites, setBienOpportunites] = useState([])
+  const [contactSearch, setContactSearch] = useState('')
+  const [contactResults, setContactResults] = useState([])
+  const [showAddOpp, setShowAddOpp] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
 
   // Pour l'etape 5 (proprietaire)
@@ -249,7 +261,7 @@ export default function Biens() {
   const [showPaysOverride, setShowPaysOverride] = useState(false)
 
   const [form, setForm] = useState({
-    nom:'', type:'', statut:'', intention:'',
+    nom:'', type:'', statut:'', statut_vente:'', intention:'',
     pays:'', adresse:'', ville:'', quartier:'',
     superficie:'', loyer:'', prix_vente_demande:'',
     nb_pieces:'', nb_chambres:'', nb_sdb:'', meuble:false,
@@ -266,7 +278,7 @@ export default function Biens() {
     return true
   }
 
-  const { loading:configLoading, typesBiens, typesParCategorie, statutsBiens, equipements, equipementsParCategorie, adresseSchema, paysActifs, villes } =
+  const { loading:configLoading, typesBiens, typesParCategorie, statutsBiens, statutsVente, equipements, equipementsParCategorie, adresseSchema, paysActifs, villes } =
     useBiensConfig(agence?.id, form.pays || agence?.pays)
 
   const resizingCol = useRef(null)
@@ -365,6 +377,7 @@ export default function Biens() {
         type:             form.type,           // colonne compat, conservee pour l'existant
         statut:           form.statut,         // colonne texte (catalogue statuts_biens)
         intention:        form.intention,
+        statut_vente:     form.statut_vente     || null,
         meuble:           form.meuble,
         pays:             form.pays            || agence.pays || null,
         adresse:          form.adresse         || null,
@@ -428,16 +441,19 @@ export default function Biens() {
         { data: equip },
         { data: mandatsData },
         { data: unites },
+        { data: opportunites },
       ] = await Promise.all([
         supabase.from('biens_proprietaires').select('*, proprietaires(id,nom,prenom,telephone,email)').eq('bien_id', bienId),
         supabase.from('biens_equipements').select('equipement_id, valeur').eq('bien_id', bienId),
         supabase.from('mandats').select('*').eq('bien_id', bienId).order('created_at', { ascending:false }).limit(1),
         supabase.from('biens').select('id,nom,type_bien,type,statut').eq('parent_bien_id', bienId),
+        supabase.from('opportunites_vente').select('*, contacts(id,display,email,tel_mobile)').eq('bien_id', bienId).order('created_at', { ascending:false }),
       ])
       setBienProps(props||[])
       setBienEquip(equip||[])
       setBienMandat(mandatsData?.[0]||null)
       setBienUnites(unites||[])
+      setBienOpportunites(opportunites||[])
     } catch(e) { console.error('loadBienDetail', e) }
     finally { setDetailLoading(false) }
   }
@@ -446,6 +462,7 @@ export default function Biens() {
     setEditForm({
       nom: selectedBien.nom||'', reference: selectedBien.reference||'',
       statut: selectedBien.statut||'disponible', intention: selectedBien.intention||'location',
+      statut_vente: selectedBien.statut_vente||'',
       adresse: selectedBien.adresse||'', ville: selectedBien.ville||'', quartier: selectedBien.quartier||'',
       description: selectedBien.description||'',
       superficie: selectedBien.superficie ?? '', nombre_pieces: selectedBien.nombre_pieces ?? '',
@@ -463,6 +480,7 @@ export default function Biens() {
       const payload = {
         nom: editForm.nom, reference: editForm.reference||null,
         statut: editForm.statut, intention: editForm.intention,
+        statut_vente: editForm.statut_vente||null,
         adresse: editForm.adresse||null, ville: editForm.ville||null, quartier: editForm.quartier||null,
         description: editForm.description||null,
         superficie: editForm.superficie?Number(editForm.superficie):null,
@@ -501,6 +519,29 @@ export default function Biens() {
     await supabase.from('biens_proprietaires').delete().eq('id',id)
   }
 
+  const searchContacts = async (q) => {
+    setContactSearch(q)
+    if (!q.trim() || !agence?.id) { setContactResults([]); return }
+    const { data } = await supabase.from('contacts').select('id,display,email,tel_mobile').eq('agence_id', agence.id).ilike('display', `%${q}%`).limit(8)
+    setContactResults(data||[])
+  }
+  const addOpportunite = async (contact) => {
+    const { data, error } = await supabase.from('opportunites_vente').insert({
+      bien_id: selectedBien.id, contact_id: contact.id, statut: 'visite_prevue',
+    }).select('*, contacts(id,display,email,tel_mobile)').single()
+    if (error) { toast.error(error.message); return }
+    setBienOpportunites(o=>[data, ...o])
+    setShowAddOpp(false); setContactSearch(''); setContactResults([])
+  }
+  const updateOpportuniteStatut = async (id, statut) => {
+    setBienOpportunites(o=>o.map(x=>x.id===id?{...x,statut}:x))
+    await supabase.from('opportunites_vente').update({ statut, updated_at: new Date().toISOString() }).eq('id', id)
+  }
+  const deleteOpportunite = async (id) => {
+    setBienOpportunites(o=>o.filter(x=>x.id!==id))
+    await supabase.from('opportunites_vente').delete().eq('id', id)
+  }
+
   const resetForm = () => {
     setStep(1)
     setSelectedProp(null)
@@ -509,7 +550,7 @@ export default function Biens() {
     setCoProprietaires([])
     setShowPaysOverride(false)
     setForm({
-      nom:'', type:'', statut:'', intention:'',
+      nom:'', type:'', statut:'', statut_vente:'', intention:'',
       pays:'', adresse:'', ville:'', quartier:'',
       superficie:'', loyer:'', prix_vente_demande:'',
       nb_pieces:'', nb_chambres:'', nb_sdb:'', meuble:false,
@@ -550,8 +591,8 @@ export default function Biens() {
     toast.success(data.length + ' bien(s) exporte(s)')
   }
 
-  const StatutBadge = ({ statut, size=12 }) => {
-    const cfg = getStatutCfg(statutsBiens, statut)
+  const StatutBadge = ({ statut, size=12, catalogue=statutsBiens }) => {
+    const cfg = getStatutCfg(catalogue, statut)
     return (
       <span style={{display:'inline-flex',alignItems:'center',gap:5,padding:'2px 9px',borderRadius:'100px',fontSize:size,fontWeight:600,background:cfg.bg,color:cfg.color}}>
         <span style={{width:6,height:6,borderRadius:'50%',background:cfg.dot,flexShrink:0}}/>
@@ -976,6 +1017,10 @@ export default function Biens() {
                   <div className="pb-sec" style={{display:'flex',alignItems:'center'}}>Statut actuel<span className="pb-req">*</span></div>
                   <StatutPicker statutsBiens={statutsBiens} value={form.statut} onChange={v=>setF('statut',v)}/>
                   {!form.statut&&<div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginTop:8}}>Choisissez le statut actuel du bien pour continuer.</div>}
+                  {(form.intention==='vente'||form.intention==='les_deux')&&(<>
+                    <div className="pb-sec">Statut de vente</div>
+                    <StatutPicker statutsBiens={statutsVente} value={form.statut_vente} onChange={v=>setF('statut_vente',v)}/>
+                  </>)}
                 </div>)}
 
                 {/* ── Step 3 : Localisation ── */}
@@ -1164,6 +1209,7 @@ export default function Biens() {
                       ['Type',         (()=>{const info=getTypeInfo(typesBiens,form.type);const TIcon=info.icon;return <span style={{display:'inline-flex',alignItems:'center',gap:6}}><TIcon size={14}/>{info.label}</span>})()],
                       ['Intention',    INTENTIONS.find(i=>i.val===form.intention)?.label||form.intention],
                       ['Statut',       getStatutCfg(statutsBiens,form.statut).label],
+                      ...(form.intention==='vente'||form.intention==='les_deux' ? [['Statut de vente', form.statut_vente ? getStatutCfg(statutsVente,form.statut_vente).label : '—']] : []),
                       ['Adresse',      form.adresse?`${form.adresse}${form.quartier?', '+form.quartier:''}, ${form.ville}`:form.ville||'—'],
                       ['Superficie',   form.superficie?form.superficie+' m²':'—'],
                       ['Meuble',       form.meuble?'Oui':'Non'],
@@ -1267,6 +1313,7 @@ export default function Biens() {
                   ['proprietaire','Propriete & gestion'],
                   ['finances','Finances'],
                   ...(selectedBien.is_immeuble?[['unites','Unites']]:[]),
+                  ...((selectedBien.intention==='vente'||selectedBien.intention==='les_deux')?[['vente','Vente']]:[]),
                   ['baux','Baux'],
                   ['paiements','Paiements'],
                 ].map(([k,l])=>(
@@ -1294,6 +1341,12 @@ export default function Biens() {
                     <div style={{marginBottom:16}}>
                       <StatutPicker statutsBiens={statutsBiens} value={editForm.statut} onChange={v=>setE('statut',v)}/>
                     </div>
+                    {(editForm.intention==='vente'||editForm.intention==='les_deux')&&(<>
+                      <div className="pb-sec">Statut de vente</div>
+                      <div style={{marginBottom:16}}>
+                        <StatutPicker statutsBiens={statutsVente} value={editForm.statut_vente} onChange={v=>setE('statut_vente',v)}/>
+                      </div>
+                    </>)}
                     <div className="pb-g2">
                       <div>
                         <label className="pb-lbl">Ville</label>
@@ -1336,6 +1389,9 @@ export default function Biens() {
                         {[
                           ['Statut',    <StatutBadge key="s" statut={selectedBien.statut}/>],
                           ['Intention', INTENTIONS.find(i=>i.val===selectedBien.intention)?.label||'Location'],
+                          ...(selectedBien.intention==='vente'||selectedBien.intention==='les_deux'
+                            ? [['Statut de vente', selectedBien.statut_vente ? <StatutBadge key="sv" statut={selectedBien.statut_vente} catalogue={statutsVente}/> : null]]
+                            : []),
                           ['Adresse',   selectedBien.adresse],
                           ['Meuble',    selectedBien.meuble?'Oui':'Non'],
                         ].map(([k,v])=>(
@@ -1542,6 +1598,63 @@ export default function Biens() {
                         </div>
                       )
                     })
+                  )}
+                </>
+              )}
+
+              {/* Tab Vente */}
+              {detailTab==='vente'&&(
+                <>
+                  <div className="pb-detail-grid" style={{marginBottom:10}}>
+                    <div className="pb-blk"><div className="pb-blk-lbl">Statut de vente</div>
+                      <div className="pb-blk-val">{selectedBien.statut_vente?<StatutBadge statut={selectedBien.statut_vente} catalogue={statutsVente}/>:'Non renseigne'}</div>
+                    </div>
+                    <div className="pb-blk"><div className="pb-blk-lbl">Prix demande</div>
+                      <div className="pb-blk-val">{selectedBien.prix_vente_demande!=null?fmt(selectedBien.prix_vente_demande)+' FCFA':'Non renseigne'}</div>
+                    </div>
+                  </div>
+                  <div className="pb-divider"/>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span className="pb-sec" style={{margin:0}}>Opportunites</span>
+                    <button className="pb-btn pb-btn-p" onClick={()=>setShowAddOpp(o=>!o)}><Plus size={13}/> Ajouter</button>
+                  </div>
+                  {showAddOpp&&(
+                    <div className="pb-field">
+                      <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:6,padding:'8px 12px',marginBottom:8}}>
+                        <Search size={13} color="rgba(255,255,255,0.3)"/>
+                        <input style={{background:'none',border:'none',outline:'none',fontFamily:'Inter,sans-serif',fontSize:13,color:'#e6edf3',width:'100%'}}
+                          value={contactSearch} onChange={e=>searchContacts(e.target.value)} placeholder="Rechercher un contact..."/>
+                      </div>
+                      {contactResults.map(c=>(
+                        <div key={c.id} className="pb-prop-item" onClick={()=>addOpportunite(c)}>
+                          <div className="pb-prop-avatar" style={{background:'#0078d4'}}>{(c.display||'?').slice(0,2).toUpperCase()}</div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{c.display}</div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{c.email||c.tel_mobile||''}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {bienOpportunites.length===0?(
+                    <div style={{textAlign:'center',padding:'30px 20px'}}>
+                      <User size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucune opportunite pour ce bien</div>
+                    </div>
+                  ):(
+                    bienOpportunites.map(o=>(
+                      <div key={o.id} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div className="pb-prop-avatar" style={{background:'#6c63ff'}}>{(o.contacts?.display||'?').slice(0,2).toUpperCase()}</div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{o.contacts?.display||'Contact supprime'}</div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{o.montant_offre?fmt(o.montant_offre)+' FCFA':'Pas d\'offre chiffree'}</div>
+                          </div>
+                          <StatutPicker statutsBiens={OPPORTUNITE_STATUTS} value={o.statut} onChange={v=>updateOpportuniteStatut(o.id,v)} size="small"/>
+                          <button className="pb-cls" onClick={()=>deleteOpportunite(o.id)}><X size={14}/></button>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </>
               )}

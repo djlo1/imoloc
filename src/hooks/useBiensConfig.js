@@ -8,6 +8,7 @@ export function useBiensConfig(agenceId, pays) {
   const [loading, setLoading] = useState(true)
   const [typesBiens, setTypesBiens] = useState([])
   const [statutsBiens, setStatutsBiens] = useState([])
+  const [statutsVente, setStatutsVente] = useState([])
   const [equipements, setEquipements] = useState([])
   const [adresseSchema, setAdresseSchema] = useState([])
   const [cadastreSchema, setCadastreSchema] = useState([])
@@ -27,6 +28,8 @@ export function useBiensConfig(agenceId, pays) {
           { data: typesDesactives },
           { data: statuts },
           { data: statutsDesactives },
+          { data: statutsVenteData },
+          { data: statutsVenteDesactives },
           { data: equips },
           { data: equipsDesactives },
           { data: schemaPays },
@@ -38,6 +41,8 @@ export function useBiensConfig(agenceId, pays) {
           supabase.from('agence_types_biens_desactives').select('type_bien_id').eq('agence_id', agenceId),
           supabase.from('statuts_biens').select('*').or(`agence_id.is.null,agence_id.eq.${agenceId}`).order('ordre'),
           supabase.from('agence_statuts_biens_desactives').select('statut_bien_id').eq('agence_id', agenceId),
+          supabase.from('statuts_vente').select('*').or(`agence_id.is.null,agence_id.eq.${agenceId}`).order('ordre'),
+          supabase.from('agence_statuts_vente_desactives').select('statut_vente_id').eq('agence_id', agenceId),
           supabase.from('equipements').select('*').or(`agence_id.is.null,agence_id.eq.${agenceId}`).order('categorie').order('ordre'),
           supabase.from('agence_equipements_desactives').select('equipement_id').eq('agence_id', agenceId),
           pays ? supabase.from('country_field_schemas').select('*').eq('pays', pays).order('domaine').order('ordre') : Promise.resolve({ data: [] }),
@@ -49,10 +54,12 @@ export function useBiensConfig(agenceId, pays) {
 
         const typesOff = new Set((typesDesactives||[]).map(x=>x.type_bien_id))
         const statutsOff = new Set((statutsDesactives||[]).map(x=>x.statut_bien_id))
+        const statutsVenteOff = new Set((statutsVenteDesactives||[]).map(x=>x.statut_vente_id))
         const equipsOff = new Set((equipsDesactives||[]).map(x=>x.equipement_id))
 
         setTypesBiens((types||[]).filter(t=>!typesOff.has(t.id)))
         setStatutsBiens((statuts||[]).filter(s=>!statutsOff.has(s.id)))
+        setStatutsVente((statutsVenteData||[]).filter(s=>!statutsVenteOff.has(s.id)))
         setEquipements((equips||[]).filter(e=>!equipsOff.has(e.id)))
 
         // Schema pays si dispo, sinon repli generique — jamais bloque.
@@ -87,7 +94,7 @@ export function useBiensConfig(agenceId, pays) {
   return {
     loading,
     typesBiens, typesParCategorie,
-    statutsBiens,
+    statutsBiens, statutsVente,
     equipements, equipementsParCategorie,
     adresseSchema, cadastreSchema, fiscaliteSchema,
     paysActifs, villes,
