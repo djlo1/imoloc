@@ -1,0 +1,846 @@
+<title>Architecture des Biens</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#f3f6f8;
+  --paper-raised:#ffffff;
+  --ink:#1a2530;
+  --ink-soft:#4c5c6b;
+  --ink-faint:#7c8b99;
+  --accent:#2b4c7e;
+  --accent-strong:#1e3a5f;
+  --accent-soft:#dfe8f1;
+  --accent-soft-line:#c7d5e3;
+  --amber:#b5691a;
+  --amber-soft:#f3e3cd;
+  --line:#c7d2dc;
+  --line-soft:#dde5ec;
+  --good:#1f7a4d;
+  --good-soft:#dcefe3;
+  --font-display:'Fraunces',ui-serif,Georgia,serif;
+  --font-body:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f151b;
+    --paper-raised:#161e26;
+    --ink:#e7edf3;
+    --ink-soft:#aab8c4;
+    --ink-faint:#7c8b99;
+    --accent:#7ea6da;
+    --accent-strong:#9dc0ea;
+    --accent-soft:#1c2a3a;
+    --accent-soft-line:#2c4058;
+    --amber:#e2ab5e;
+    --amber-soft:#3a2c18;
+    --line:#2a3a4a;
+    --line-soft:#212f3d;
+    --good:#4fbf85;
+    --good-soft:#173125;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f151b;
+  --paper-raised:#161e26;
+  --ink:#e7edf3;
+  --ink-soft:#aab8c4;
+  --ink-faint:#7c8b99;
+  --accent:#7ea6da;
+  --accent-strong:#9dc0ea;
+  --accent-soft:#1c2a3a;
+  --accent-soft-line:#2c4058;
+  --amber:#e2ab5e;
+  --amber-soft:#3a2c18;
+  --line:#2a3a4a;
+  --line-soft:#212f3d;
+  --good:#4fbf85;
+  --good-soft:#173125;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:15.5px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--accent-soft-line);color:var(--ink)}
+a{color:var(--accent-strong)}
+a:focus-visible,button:focus-visible,.toc a:focus-visible{outline:2px solid var(--accent-strong);outline-offset:2px}
+
+.shell{
+  display:grid;
+  grid-template-columns:280px minmax(0,1fr);
+  max-width:1320px;
+  margin:0 auto;
+}
+@media (max-width:980px){
+  .shell{grid-template-columns:1fr}
+}
+
+/* ── Sidebar / TOC ───────────────────────────── */
+.rail{
+  position:sticky;
+  top:0;
+  align-self:start;
+  height:100vh;
+  overflow-y:auto;
+  padding:34px 22px 34px 28px;
+  border-right:1px solid var(--line-soft);
+}
+@media (max-width:980px){
+  .rail{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line-soft);padding:24px 20px}
+}
+.rail-mark{
+  display:flex;align-items:center;gap:9px;
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-faint);
+  margin-bottom:22px;
+}
+.rail-mark .sq{
+  width:16px;height:16px;border:1.5px solid var(--accent);
+  transform:rotate(45deg);flex-shrink:0;
+}
+.rail h1{
+  font-family:var(--font-display);
+  font-size:1.5rem;
+  font-weight:600;
+  line-height:1.15;
+  margin:0 0 6px;
+  text-wrap:balance;
+}
+.rail .sub{
+  color:var(--ink-soft);
+  font-size:12.5px;
+  line-height:1.55;
+  margin:0 0 26px;
+  padding-bottom:22px;
+  border-bottom:1px solid var(--line-soft);
+}
+.toc{list-style:none;margin:0;padding:0;font-size:13px}
+.toc-group{margin-bottom:18px}
+.toc-group-label{
+  font-family:var(--font-mono);
+  font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-faint);
+  margin:0 0 7px;
+}
+.toc li{margin:0}
+.toc a{
+  display:block;
+  color:var(--ink-soft);
+  text-decoration:none;
+  padding:4px 0;
+  border-left:2px solid transparent;
+  padding-left:10px;
+  margin-left:-11px;
+  transition:color .12s, border-color .12s;
+}
+.toc a:hover{color:var(--ink);border-left-color:var(--line)}
+
+/* ── Main content ────────────────────────────── */
+main{padding:52px 56px 120px;min-width:0}
+@media (max-width:980px){main{padding:36px 20px 90px}}
+
+.hero{max-width:700px;margin-bottom:56px}
+.hero .eyebrow{
+  font-family:var(--font-mono);
+  font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--amber);
+  margin:0 0 14px;
+}
+.hero h1{
+  font-family:var(--font-display);
+  font-size:2.7rem;
+  font-weight:600;
+  line-height:1.08;
+  margin:0 0 18px;
+  text-wrap:balance;
+  color:var(--ink);
+}
+.hero p{
+  font-size:1.05rem;
+  color:var(--ink-soft);
+  max-width:62ch;
+  margin:0 0 8px;
+}
+.hero .meta{
+  display:flex;gap:22px;flex-wrap:wrap;
+  margin-top:26px;
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--ink-faint);
+}
+.hero .meta b{color:var(--ink-soft);font-weight:500}
+
+section{max-width:760px;margin:0 0 64px;scroll-margin-top:24px}
+section.wide{max-width:none}
+h2{
+  font-family:var(--font-display);
+  font-size:1.6rem;
+  font-weight:600;
+  margin:0 0 6px;
+  text-wrap:balance;
+  color:var(--ink);
+  display:flex;align-items:baseline;gap:12px;
+}
+h2 .num{
+  font-family:var(--font-mono);
+  font-size:.55em;
+  color:var(--ink-faint);
+  font-weight:500;
+}
+.section-intro{color:var(--ink-soft);font-size:14px;margin:0 0 26px;max-width:64ch}
+h3{
+  font-family:var(--font-body);
+  font-size:1.02rem;
+  font-weight:600;
+  margin:30px 0 10px;
+  color:var(--ink);
+}
+h3 .tag-num{
+  font-family:var(--font-mono);
+  font-size:11px;font-weight:500;
+  color:var(--paper-raised);
+  background:var(--accent);
+  padding:1px 7px;
+  border-radius:3px;
+  margin-right:9px;
+  vertical-align:1px;
+}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:22px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+code{
+  font-family:var(--font-mono);
+  font-size:.87em;
+  background:var(--accent-soft);
+  color:var(--accent-strong);
+  padding:1.5px 5px;
+  border-radius:3px;
+}
+
+.hr{border:none;border-top:1px solid var(--line-soft);margin:0 0 64px}
+
+/* callout blocks */
+.block{
+  border:1px solid var(--line-soft);
+  background:var(--paper-raised);
+  border-radius:8px;
+  padding:18px 20px;
+  margin:0 0 16px;
+}
+.block-label{
+  font-family:var(--font-mono);
+  font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-faint);
+  margin:0 0 8px;
+  display:flex;align-items:center;gap:7px;
+}
+.block.reuse{border-left:3px solid var(--good)}
+.block.reuse .block-label{color:var(--good)}
+.block.new{border-left:3px solid var(--accent)}
+.block.new .block-label{color:var(--accent-strong)}
+.block.defer{border-left:3px dashed var(--ink-faint);background:transparent}
+.block.amend{border-left:3px solid var(--amber);background:var(--amber-soft)}
+.block.amend .block-label{color:var(--amber)}
+.block p:last-child,.block ul:last-child{margin-bottom:0}
+
+.entity{
+  font-family:var(--font-mono);
+  font-size:.95em;
+  color:var(--accent-strong);
+  font-weight:600;
+}
+
+/* schema table */
+.schema-wrap{overflow-x:auto;margin:0 0 16px;border:1px solid var(--line-soft);border-radius:8px}
+table.schema{border-collapse:collapse;width:100%;font-size:13px;min-width:640px}
+table.schema th{
+  text-align:left;font-family:var(--font-mono);font-weight:600;
+  font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);
+  background:var(--accent-soft);
+  padding:10px 14px;border-bottom:1px solid var(--line-soft);
+}
+table.schema td{padding:10px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-soft)}
+table.schema tr:last-child td{border-bottom:none}
+table.schema td.tname{font-family:var(--font-mono);color:var(--ink);font-weight:600;white-space:nowrap}
+table.schema td.pt{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-faint);white-space:nowrap}
+
+/* flow diagram */
+.flow{
+  font-family:var(--font-mono);
+  font-size:13px;
+  background:var(--accent-soft);
+  border:1px solid var(--accent-soft-line);
+  border-radius:8px;
+  padding:20px 24px;
+  margin:0 0 20px;
+  color:var(--ink);
+  line-height:2;
+  white-space:pre;
+  overflow-x:auto;
+}
+.flow .arrow{color:var(--accent)}
+
+/* menu tree */
+.tree{
+  font-family:var(--font-mono);
+  font-size:13.5px;
+  background:var(--paper-raised);
+  border:1px solid var(--line-soft);
+  border-radius:8px;
+  padding:20px 24px;
+  margin:0 0 16px;
+  line-height:1.85;
+  white-space:pre;
+  overflow-x:auto;
+}
+.tree .new{color:var(--amber);font-weight:600}
+.tree .existing{color:var(--ink-soft)}
+
+/* pills */
+.pill-row{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}
+.pill{
+  font-family:var(--font-mono);font-size:12px;
+  border:1px solid var(--line);
+  color:var(--ink-soft);
+  padding:4px 11px;border-radius:100px;
+}
+
+/* two-col grid for role cards etc */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 16px}
+@media (max-width:640px){.cards{grid-template-columns:1fr}}
+.card{border:1px solid var(--line-soft);background:var(--paper-raised);border-radius:8px;padding:16px 18px}
+.card h4{margin:0 0 6px;font-size:14px;font-weight:600;font-family:var(--font-body)}
+.card p{margin:0;font-size:13px;color:var(--ink-soft)}
+
+/* coverage table */
+.cov-wrap{overflow-x:auto}
+table.cov{border-collapse:collapse;width:100%;font-size:13px}
+table.cov th{text-align:left;font-family:var(--font-mono);font-weight:600;font-size:11px;text-transform:uppercase;color:var(--ink-faint);padding:8px 12px;border-bottom:1px solid var(--line)}
+table.cov td{padding:8px 12px;border-bottom:1px solid var(--line-soft);color:var(--ink-soft)}
+table.cov td:first-child{color:var(--ink);font-weight:500}
+
+/* open questions */
+.qlist{list-style:none;margin:0;padding:0}
+.qlist li{
+  display:flex;gap:12px;
+  padding:14px 0;border-bottom:1px solid var(--line-soft);
+}
+.qlist li:last-child{border-bottom:none}
+.qmark{
+  font-family:var(--font-display);font-style:italic;
+  color:var(--amber);font-size:1.3rem;line-height:1;flex-shrink:0;
+}
+
+footer{
+  max-width:760px;
+  padding-top:24px;border-top:1px solid var(--line-soft);
+  color:var(--ink-faint);font-size:12.5px;font-family:var(--font-mono);
+}
+</style>
+
+<div class="shell">
+  <nav class="rail">
+    <div class="rail-mark"><span class="sq"></span> IMOLOC · SPEC BIENS</div>
+    <h1>Architecture des&nbsp;Biens</h1>
+    <p class="sub">Document de référence — refonte du module Biens immobiliers, tranchée point par point sur la proposition initiale à 43 points.</p>
+    <ul class="toc">
+      <li class="toc-group">
+        <p class="toc-group-label">Fondations</p>
+        <li><a href="#principes">Mécanismes transversaux</a></li>
+        <li><a href="#modele">Modèle central</a></li>
+      </li>
+      <li class="toc-group">
+        <p class="toc-group-label">Le bien</p>
+        <li><a href="#identification">Identification &amp; statuts</a></li>
+        <li><a href="#localisation">Localisation &amp; moteur pays</a></li>
+        <li><a href="#caracteristiques">Caractéristiques &amp; équipements</a></li>
+        <li><a href="#proprietaire-gestion">Propriété &amp; gestion</a></li>
+        <li><a href="#vente">Module Vente</a></li>
+      </li>
+      <li class="toc-group">
+        <p class="toc-group-label">Exploitation</p>
+        <li><a href="#finances">Finances &amp; facturation</a></li>
+        <li><a href="#compteurs-assurance-taxes">Compteurs, assurance, taxes</a></li>
+        <li><a href="#tickets-sinistres">Tickets &amp; sinistres</a></li>
+        <li><a href="#documents-medias">Documents &amp; médias</a></li>
+        <li><a href="#historique">Historique</a></li>
+      </li>
+      <li class="toc-group">
+        <p class="toc-group-label">Cadrage</p>
+        <li><a href="#regles-environnement">Règles, environnement, courte durée</a></li>
+        <li><a href="#champs-personnalises">Champs personnalisés</a></li>
+        <li><a href="#architecture-finale">Vue d'ensemble &amp; couverture</a></li>
+      </li>
+      <li class="toc-group">
+        <p class="toc-group-label">Livrables</p>
+        <li><a href="#formulaire">Formulaire final</a></li>
+        <li><a href="#menus">Menus &amp; rôles</a></li>
+        <li><a href="#entites">Récapitulatif des tables</a></li>
+        <li><a href="#differes">Chantiers différés</a></li>
+        <li><a href="#ouvertes">Questions ouvertes</a></li>
+      </li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <p class="eyebrow">Document de référence — Septembre 2026</p>
+      <h1>Repenser l'ajout et la gestion des biens</h1>
+      <p>ChatGPT a fourni une proposition en 43 points pour transformer l'ajout de bien d'un simple formulaire d'annonce en une fiche patrimoniale complète. Chaque point a été confronté au code réel d'Imoloc, gardé, adapté ou différé — avec, en cours de route, trois ajouts majeurs initiés par l'agence : un module Vente à part entière, un système de Tickets généralisé, et un menu Facturation dédié.</p>
+      <div class="meta">
+        <span><b>43</b> points tranchés</span>
+        <span><b>~24</b> nouvelles tables</span>
+        <span><b>2</b> espaces concernés — agence &amp; imoloc</span>
+        <span><b>3</b> chantiers notés pour plus tard</span>
+      </div>
+    </div>
+
+    <!-- ══════════════════ PRINCIPES ══════════════════ -->
+    <section id="principes">
+      <h2>Mécanismes transversaux</h2>
+      <p class="section-intro">Plutôt que 43 solutions isolées, la quasi-totalité des points se résout avec cinq mécanismes réutilisés partout. C'est ce qui garde l'ensemble maintenable.</p>
+
+      <h3>Catalogue configurable</h3>
+      <p>Chaque liste fermée (types de biens, statuts, équipements, types de documents, types de taxes, types de tickets) suit le même patron : une table de référence + une activation/désactivation par organisation + la possibilité d'ajouter une entrée personnalisée. Les colonnes <code>type_bien</code> et <code>statut_bien</code>, jusqu'ici des enums Postgres figés, migrent vers du texte validé côté application pour permettre ça.</p>
+
+      <h3>Moteur pays</h3>
+      <p>Un même catalogue de schémas par pays couvre quatre domaines : niveaux d'adresse, identifiants fonciers/cadastraux, types de taxes, informations environnementales (DPE...). Un schéma détaillé pour le Bénin, un schéma générique de secours pour tout pays pas encore documenté — aucun pays n'est jamais bloqué. Les valeurs vivent dans <code>biens.metadata</code> (jsonb) ; seuls les champs quasi universels (pays, ville, quartier) restent des colonnes réelles.</p>
+
+      <h3>Association polymorphe</h3>
+      <p>Les documents et l'historique s'attachent à n'importe quelle entité (<code>entite_type</code> + <code>entite_id</code>) plutôt que d'avoir une colonne de clé étrangère par type d'entité — indispensable vu le nombre de choses qui génèrent des documents (mandats, assurances, tickets, ventes...).</p>
+
+      <h3>Cascade de spécificité</h3>
+      <p>La commission (agence → propriétaire → bien) et, plus largement, les règles/tarifs suivent le même principe : le niveau le plus spécifique l'emporte, sinon on retombe sur le niveau au-dessus. Un badge affiche toujours d'où vient la valeur appliquée.</p>
+
+      <h3>Registre en append-only</h3>
+      <p>Tout ce qui doit rester auditable (relevés de compteurs, mouvements financiers futurs) s'enregistre comme une ligne ajoutée, jamais comme une valeur écrasée — la dernière valeur se déduit de la ligne la plus récente.</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ MODELE CENTRAL ══════════════════ -->
+    <section id="modele">
+      <h2>Modèle central</h2>
+      <p class="section-intro">Un bien reste une seule entité — pas d'objets séparés Property / Building / Land / Parking comme suggéré initialement.</p>
+
+      <div class="flow">biens
+  ├── is_immeuble = true, parent_bien_id = null      <span class="arrow">← l'immeuble</span>
+  │     ├── biens (parent_bien_id → immeuble)         <span class="arrow">← unité 1</span>
+  │     ├── biens (parent_bien_id → immeuble)         <span class="arrow">← unité 2</span>
+  │     └── biens (parent_bien_id → immeuble)         <span class="arrow">← unité 3</span>
+  │
+  └── biens (parent_bien_id = null, is_immeuble=false) <span class="arrow">← bien indépendant</span>
+        intention: location | vente | les_deux</div>
+
+      <p>Le type (<code>type_bien</code>) discrimine résidentiel / terrain / professionnel / collectif / stationnement / spécialisé. L'intention (<code>location</code> / <code>vente</code> / <code>les_deux</code>) discrimine le flux d'usage. La hiérarchie immeuble/unité se fait par auto-référence, pas par une table séparée — un immeuble de 50 lots n'est jamais 50 biens sans lien entre eux.</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ IDENTIFICATION ══════════════════ -->
+    <section id="identification">
+      <h2>Identification &amp; statuts <span class="num">points 2–3, 25</span></h2>
+
+      <div class="block new">
+        <p class="block-label">Nouveau</p>
+        <p><code>reference</code> (interne, éditable — les agences migrent souvent depuis une numérotation existante), <code>created_by</code>/<code>updated_by</code>, un flag <code>meuble</code> (booléen, remplace un champ "sous-type" séparé qui aurait dupliqué le catalogue de types).</p>
+      </div>
+
+      <h3>Catalogue de types — <em>complet</em></h3>
+      <p>Contrairement à l'approche initialement proposée (liste curatée), l'intégralité du catalogue ChatGPT est retenue : Résidentiel, Terrain, Professionnel, Immobilier collectif, Stationnement, Spécialisé — avec possibilité pour l'administrateur d'ajouter un type personnalisé.</p>
+
+      <h3>Catalogue de statuts</h3>
+      <p>12 statuts dédupliqués (Loué fusionné avec Occupé) : Brouillon, Actif, Disponible, Occupé, Réservé, Maintenance, Rénovation, En construction, Hors gestion, Hors marché, Retiré, Archivé. <code>statut_bien</code> migre lui aussi d'enum vers texte configurable.</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ LOCALISATION ══════════════════ -->
+    <section id="localisation">
+      <h2>Localisation &amp; moteur pays <span class="num">points 4–6</span></h2>
+      <p>L'organisation choisit déjà son pays dans Paramètres (<code>agence.pays</code>, existant). Aucune action de l'agent qui crée le bien : l'étape Localisation regarde ce pays, cherche son schéma détaillé, sinon prend le générique, et affiche les bons champs avec les bons libellés.</p>
+
+      <div class="block reuse">
+        <p class="block-label">Réutilisé</p>
+        <p>Le cadastre/foncier (Point 6) et la fiscalité (Point 29) et l'environnemental (Point 35) sont le <em>même</em> moteur pays — trois domaines de plus dans un seul catalogue, pas trois systèmes séparés.</p>
+      </div>
+
+      <h3>Géolocalisation</h3>
+      <p><code>latitude</code>/<code>longitude</code> en colonnes réelles, trois méthodes de saisie (géocodage automatique, repère déplaçable, saisie manuelle). Altitude, précision GPS, géofence : écartés, aucun usage réaliste identifié.</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ CARACTERISTIQUES ══════════════════ -->
+    <section id="caracteristiques">
+      <h2>Caractéristiques &amp; équipements <span class="num">points 7–21, 36</span></h2>
+      <p class="section-intro">Le plus gros volume de points (13 à 20 : appartement, maison, terrain, bureau, commerce, entrepôt...) se résume presque entièrement à un seul système, réutilisé encore et encore.</p>
+
+      <h3><span class="tag-num">9</span>Le système équipements</h3>
+      <p>Table <code>equipements</code> (catalogue) + <code>biens_equipements</code> (liaison, avec un champ <code>valeur</code> optionnel pour "nombre de places de parking" ou "nombre d'ascenseurs"). Catégories construites au fil des points : Sécurité, Parking &amp; accès, Espaces extérieurs, Réseaux, Aménagements bureau/commerce/entrepôt, Accessibilité, Pièces annexes.</p>
+
+      <h3><span class="tag-num">7</span>Superficies</h3>
+      <p>Nettoyage des doublons existants (<code>superficie</code>/<code>superficie_totale</code>). Socle retenu : <code>superficie_totale</code>, <code>habitable</code>, <code>terrain</code>, <code>construite</code>, puis <code>commerciale</code>/<code>stockage</code> activées au Point 19. Préférence d'unité (m²/ft²/acre) au niveau organisation, stockage interne toujours en m².</p>
+
+      <h3><span class="tag-num">14</span>Inventaire meublé</h3>
+      <p>Quand <code>meuble = true</code> : table <code>inventaire_items</code> (nom, catégorie, quantité, état, valeur, numéro de série) — distincte du système équipements car chaque ligne porte une donnée réelle, pas une simple coche.</p>
+
+      <h3><span class="tag-num">21</span>Immeuble &amp; unités</h3>
+      <p>Le point le plus structurant de toute la revue : <code>is_immeuble</code> + <code>parent_bien_id</code>. Le nombre d'unités/parkings ne se saisit jamais à la main — il se compte en interrogeant les enfants. Ascenseur, gardien, parties communes vivent sur l'immeuble parent, pas répétés sur chaque unité.</p>
+
+      <h3><span class="tag-num">22</span>Copropriété — optionnelle</h3>
+      <p>Toggle <code>en_copropriete</code> sur l'immeuble (concept peu formalisé au Bénin). Si activé : syndic, fonds de travaux sur l'immeuble ; quote-part/tantièmes sur chaque unité. Assemblées générales et conseil syndical différés — aucun usage identifié.</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ PROPRIETE ══════════════════ -->
+    <section id="proprietaire-gestion">
+      <h2>Propriété &amp; gestion <span class="num">points 23–24</span></h2>
+
+      <div class="block amend">
+        <p class="block-label">Construit maintenant, pas différé</p>
+        <p>Aucun cas réel de copropriété familiale aujourd'hui, mais la capacité est construite dès cette version : table de liaison <code>biens_proprietaires</code> (bien_id, proprietaire_id, <code>pourcentage</code>, dates, statut) remplace la simple FK. Par défaut un seul propriétaire à 100% implicite ; une case "Ce bien a plusieurs propriétaires" révèle la répartition (somme validée à 100%).</p>
+      </div>
+
+      <h3><span class="tag-num">24</span>Mandat &amp; cascade de commission</h3>
+      <p>Table <code>mandats</code> (type, numéro, dates, commission, agent responsable) plutôt que des colonnes sur <code>biens</code> — un mandat a une échéance à surveiller. La commission se résout en trois niveaux, du plus spécifique au plus général :</p>
+      <div class="flow">mandat (commission du bien)      <span class="arrow">→ si défini, l'emporte</span>
+   ↓ sinon
+propriétaire (taux négocié)       <span class="arrow">→ existant, agence_proprietaires</span>
+   ↓ sinon
+agence (taux par défaut)          <span class="arrow">→ nouveau, Paramètres</span></div>
+      <p>Le taux affiché porte toujours un badge indiquant son origine. Le mode de règlement au propriétaire (<code>proprietaires.mode_reversement</code>) réutilise les intégrations mobile money déjà câblées : virement bancaire, MTN Mobile Money, Moov Money (via PawaPay).</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ VENTE ══════════════════ -->
+    <section id="vente">
+      <h2>Module Vente <span class="num">extension du point 26</span></h2>
+      <p class="section-intro">Ajout majeur initié en cours de revue : Imoloc gère aussi la vente, pas seulement la location. Le bien reste une seule entité — c'est le point d'entrée dans le menu qui détermine le contexte, pas un second formulaire de création.</p>
+
+      <p><code>biens.intention</code> (<code>location</code> / <code>vente</code> / <code>les_deux</code>) est l'interrupteur. Tout le reste se réutilise : le mandat gagne un champ <code>categorie_mandat</code> (gestion_locative / vente) plutôt qu'une table parallèle ; l'acquéreur potentiel réutilise la table <code>contacts</code> existante via une nouvelle table légère <code>opportunites_vente</code> (statut, montant d'offre) ; les frais de notaire passent par le moteur pays ; les documents de vente sont de nouveaux types dans le système Documents.</p>
+
+      <h3>Conversion bidirectionnelle avec garde-fous</h3>
+      <p>Un bien locatif peut devenir "à vendre" et inversement — avec des avertissements proportionnés au risque :</p>
+      <ul>
+        <li><strong>Location → Vente</strong> avec bail actif : avertissement fort, case à cocher obligatoire ("Je comprends que ce bien reste loué"), avant que le bouton de confirmation ne s'active.</li>
+        <li><strong>Vente → Location</strong> avec une offre à un stade avancé (compromis signé) : avertissement équivalent.</li>
+      </ul>
+      <p>Ce patron de confirmation à deux niveaux (<code>ConfirmModal</code> léger / <code>ConfirmDangerModal</code> avec case obligatoire) est pensé comme réutilisable ailleurs dans l'app, pas seulement ici.</p>
+
+      <h3>Menu dédié</h3>
+      <p>Pas un simple embranchement du wizard — Vente a sa propre place dans le menu Biens, au même niveau que Location. Voir <a href="#menus">arborescence des menus</a>.</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ FINANCES ══════════════════ -->
+    <section id="finances">
+      <h2>Finances &amp; facturation <span class="num">points 26, 38</span></h2>
+
+      <h3><span class="tag-num">26</span>Loyer, charges, valeur</h3>
+      <p><code>frequence_paiement</code>, <code>depot_garantie_demande</code>, <code>indexation_type</code>. Nouvelle table <code>charges_bien</code> (eau, électricité, entretien...) — hors assurance et taxes, qui ont leurs propres entités dédiées.</p>
+      <div class="block defer">
+        <p class="block-label">Discussion notable</p>
+        <p>"Valeur du bien" (prix d'acquisition, valeur estimée) a d'abord été <strong>retirée</strong> — aucun module de vente n'existait alors, un champ jamais mis à jour n'aide personne. Réintroduite ensuite, correctement justifiée, une fois le module Vente construit.</p>
+      </div>
+
+      <h3><span class="tag-num">38</span>Configuration de gestion</h3>
+      <p><code>jour_echeance_loyer</code>, <code>penalite_retard_taux</code> comme défauts au niveau du bien. La comptabilité générale (plan comptable, centres de coûts) est explicitement écartée — aucun module comptable n'existe dans Imoloc, hors de portée tant qu'aucun besoin réel (export vers un logiciel externe) ne se confirme.</p>
+
+      <h3>Menu Facturation — imoloc center</h3>
+      <p>Le menu plat "Paiements" devient un menu "Facturation" plus large. À ne pas confondre avec le "Facturation" du Centre d'administration, qui reste dédié à l'abonnement Imoloc de l'organisation elle-même.</p>
+      <div class="tree"><span class="existing">Facturation (imoloc center)
+├── Paiements reçus</span>          <span class="existing">← existant, inchangé</span>
+<span class="new">├── Factures locataires      ← génération mensuelle automatique par bail
+├── Relevés propriétaires    ← revenus − commission − charges = net reversé
+├── Factures diverses        ← frais ponctuels (état des lieux, dossier...)
+└── Dépenses &amp; charges       ← vue consolidée (prestataires, taxes, assurances)</span></div>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ COMPTEURS ASSURANCE TAXES ══════════════════ -->
+    <section id="compteurs-assurance-taxes">
+      <h2>Compteurs, assurance, taxes <span class="num">points 27–29</span></h2>
+
+      <h3><span class="tag-num">27</span>Compteurs</h3>
+      <p>Table <code>compteurs</code> (type, numéro, fournisseur, <code>souscripteur</code> — qui paie l'abonnement) + registre append-only <code>releves_compteurs</code>, jamais un simple champ "dernier relevé" qui pourrait se désynchroniser.</p>
+      <div class="block amend">
+        <p class="block-label">Amendement — lien bail &amp; état des lieux</p>
+        <p><code>releves_compteurs.etat_des_lieux_id</code> relie un relevé à l'inspection qui l'a produit. L'état des lieux (déjà existant) gagne une section "Compteurs" pour les compteurs individuels, à l'entrée comme à la sortie — donne la consommation exacte de la période, utile en cas de litige sur le dépôt de garantie. Le contrat de bail généré affiche automatiquement le relevé d'entrée.</p>
+      </div>
+
+      <h3><span class="tag-num">28</span>Assurance</h3>
+      <p>Table <code>assurances</code> (police, dates, prime, franchise) — plusieurs polices possibles par bien. Récupère au passage les champs "zone inondable"/"risque naturel" différés du Point 17 : des informations déclarées à l'évaluation du risque, pas des champs génériques du bien.</p>
+
+      <h3><span class="tag-num">29</span>Taxes &amp; fiscalité</h3>
+      <p>Table <code>taxes_bien</code>, types pilotés par le moteur pays. Séparée des charges opérationnelles (Point 26) car une taxe est une obligation légale avec des pénalités de retard — mérite son propre suivi de conformité.</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ TICKETS SINISTRES ══════════════════ -->
+    <section id="tickets-sinistres">
+      <h2>Tickets &amp; sinistres <span class="num">points 30, 34</span></h2>
+
+      <div class="block amend">
+        <p class="block-label">Amendement majeur — de Maintenance à Tickets</p>
+        <p>Le module Maintenance est généralisé en un système <code>tickets</code> multi-types (<code>type_ticket</code> : Maintenance, Réclamation, Demande administrative, Signalement de dégât, Autre), multi-origines (<code>origine</code> : agence ou locataire, via l'espace mobile), avec une notion de <code>responsabilite</code> (agence/propriétaire/locataire — capture le cas d'un locataire qui gère lui-même une réparation mais doit tout de même la signaler).</p>
+      </div>
+
+      <p>Une table de configuration <code>type_ticket_routing</code> automatise le dispatching : selon le type, le ticket s'assigne à l'agent responsable du mandat, à l'équipe maintenance, ou à un prestataire par spécialité — et notifie via le système existant. Nouvelle table <code>prestataires</code>. Le menu "Maintenance" devient "Tickets" dans les deux espaces, filtrable par type.</p>
+
+      <h3><span class="tag-num">34</span>Sinistres</h3>
+      <p>Table <code>sinistres</code>, liée à une assurance, un prestataire, et éventuellement au ticket "Signalement de dégât" qui l'a déclenché (<code>ticket_origine_id</code>) — traçabilité complète du signalement initial au dossier clos.</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ DOCUMENTS ══════════════════ -->
+    <section id="documents-medias">
+      <h2>Documents &amp; médias <span class="num">points 31–32</span></h2>
+      <p>Table unique <code>documents</code>, association polymorphe (<code>entite_type</code>/<code>entite_id</code>) plutôt qu'une colonne de FK par type d'entité qui la référence — mandats, assurances, taxes, tickets, ventes y renvoient tous. Catalogue de types groupé par catégorie (Propriété, Technique, Administratif, Gestion). <code>visibilite</code> (interne agence / visible propriétaire / visible locataire / public) remplace une "confidentialité" vague — utile puisque propriétaires et locataires ont chacun leur espace. Stockage Supabase Storage, bucket privé par agence, URLs signées.</p>
+      <p>Les photos et médias ne sont pas un système séparé : ce sont des documents (<code>type_document="photo"</code>), avec un champ <code>localisation</code> (quelle pièce) et un <code>fichier_url</code> qui accepte aussi un lien externe pour les visites virtuelles hébergées ailleurs.</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ HISTORIQUE ══════════════════ -->
+    <section id="historique">
+      <h2>Historique <span class="num">point 33</span></h2>
+      <p>Table <code>historique</code>, même association polymorphe, mais réservée aux <strong>événements métier significatifs</strong> (changement de statut, de propriétaire, de gestionnaire, conversion Location↔Vente) — pas un trigger base de données qui journaliserait chaque modification de champ, trop bruyant pour rester lisible.</p>
+      <p>Paiements, documents, inspections, tickets ont déjà leur propre table : l'onglet "Historique" de la fiche du bien est une <strong>vue unifiée</strong> qui fusionne ces sources à l'affichage, sans dupliquer la donnée.</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ REGLES ENVIRONNEMENT ══════════════════ -->
+    <section id="regles-environnement">
+      <h2>Règles, environnement, courte durée <span class="num">points 35, 36, 37, 39</span></h2>
+
+      <div class="cards">
+        <div class="card">
+          <h4>Environnemental <span style="color:var(--ink-faint);font-weight:400">— pt. 35</span></h4>
+          <p>DPE/GES routés vers le moteur pays (4ᵉ domaine). Chauffage/énergie déjà couverts par les équipements. Isolation/recyclage écartés — aucune valeur opérationnelle identifiée.</p>
+        </div>
+        <div class="card">
+          <h4>Accessibilité <span style="color:var(--ink-faint);font-weight:400">— pt. 36</span></h4>
+          <p>Ferme la boucle des points 8/11/18 : nouvelle catégorie d'équipements (Accès PMR, rampe, sanitaires adaptés...).</p>
+        </div>
+        <div class="card">
+          <h4>Règles &amp; restrictions <span style="color:var(--ink-faint);font-weight:400">— pt. 37</span></h4>
+          <p>Animaux, fumeurs, sous-location, activité pro — champs directs sur <code>biens</code> (politiques, pas des équipements physiques). Niveau bien uniquement pour l'instant, pas de dérogation par bail.</p>
+        </div>
+        <div class="card">
+          <h4>Location courte durée <span style="color:var(--ink-faint);font-weight:400">— pt. 39</span></h4>
+          <p>Champs simples (check-in/out, tarifs) gardés par <code>location_courte_duree_autorisee</code>. Le calendrier de disponibilité est noté comme chantier séparé.</p>
+        </div>
+      </div>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ CHAMPS PERSONNALISES ══════════════════ -->
+    <section id="champs-personnalises">
+      <h2>Champs personnalisés <span class="num">point 40</span></h2>
+      <p>Le point le plus proche d'un moteur générique — mais rendu accessible par l'infrastructure déjà posée (<code>metadata</code> jsonb, en place depuis le Point 4). Table <code>champs_personnalises</code> (nom, type, type de bien applicable, obligatoire) + un rendu de formulaire générique.</p>
+      <p class="pill-row">
+        <span class="pill">Vague 1 — maintenant</span>
+        <span class="pill">Vague 2 — plus tard</span>
+      </p>
+      <p><strong>Vague 1 :</strong> Texte, Texte long, Nombre, Devise, Pourcentage, Date, Date+heure, Oui/Non, Liste, Liste multiple. <strong>Vague 2</strong> (différée — chaque type demande son propre widget) : Fichier, Image, Adresse, Coordonnées GPS, et les champs de relation (vers un utilisateur, un bien, un document).</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ ARCHITECTURE FINALE ══════════════════ -->
+    <section id="architecture-finale" class="wide">
+      <h2>Vue d'ensemble &amp; couverture <span class="num">points 41–42</span></h2>
+      <p class="section-intro">Le système de résolution des champs, et la vérification que chaque catégorie de la proposition initiale a bien un mécanisme concret dans l'architecture retenue.</p>
+
+      <div class="flow">agence.pays
+   ↓
+biens.type_bien              <span class="arrow">(catalogue + config organisation)</span>
+   ↓
+Configuration organisation   <span class="arrow">(types / statuts / équipements activés)</span>
+   ↓
+Champs standards + Champs conditionnels au type + Champs pays + Champs personnalisés agence</div>
+
+      <div class="schema-wrap cov-wrap">
+      <table class="cov">
+        <tr><th>Catégorie d'origine</th><th>Mécanisme retenu</th></tr>
+        <tr><td>Identification</td><td><code>biens</code> — nom, référence, type, statut</td></tr>
+        <tr><td>Location</td><td>Adresse + moteur pays</td></tr>
+        <tr><td>Geolocation</td><td><code>latitude</code>/<code>longitude</code></td></tr>
+        <tr><td>Legal information</td><td>Cadastre (metadata) + intention/statut de vente</td></tr>
+        <tr><td>Ownership</td><td><code>biens_proprietaires</code></td></tr>
+        <tr><td>Management</td><td><code>mandats</code></td></tr>
+        <tr><td>Characteristics</td><td>Champs de base + conditionnels par type</td></tr>
+        <tr><td>Amenities</td><td><code>equipements</code> / <code>biens_equipements</code></td></tr>
+        <tr><td>Financial</td><td>Loyer / <code>charges_bien</code> / prix de vente</td></tr>
+        <tr><td>Utilities</td><td>Équipements "Réseaux"</td></tr>
+        <tr><td>Insurance</td><td><code>assurances</code></td></tr>
+        <tr><td>Taxes</td><td><code>taxes_bien</code></td></tr>
+        <tr><td>Maintenance</td><td><code>tickets</code> généralisés</td></tr>
+        <tr><td>Documents</td><td><code>documents</code></td></tr>
+        <tr><td>Media</td><td><code>documents</code> (type photo/vidéo)</td></tr>
+        <tr><td>Units</td><td><code>parent_bien_id</code> / <code>is_immeuble</code></td></tr>
+        <tr><td>Tenancies</td><td><code>baux</code> (existant)</td></tr>
+        <tr><td>Meters</td><td><code>compteurs</code> / <code>releves_compteurs</code></td></tr>
+        <tr><td>Incidents</td><td><code>sinistres</code> + <code>tickets</code></td></tr>
+        <tr><td>Custom fields</td><td><code>champs_personnalises</code> + metadata</td></tr>
+        <tr><td>Audit history</td><td><code>historique</code></td></tr>
+      </table>
+      </div>
+
+      <div class="block defer" style="margin-top:20px">
+        <p class="block-label">Divergence assumée</p>
+        <p>ChatGPT proposait Property / Building / Land / Parking comme objets distincts. Imoloc garde une seule table <code>biens</code> avec un type discriminant + auto-référence — tous les mécanismes partagés (équipements, documents, mandats) s'appliquent uniformément, au prix de quelques colonnes non pertinentes selon le type.</p>
+      </div>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ FORMULAIRE FINAL ══════════════════ -->
+    <section id="formulaire">
+      <h2>Formulaire final <span class="num">point 43</span></h2>
+      <p class="section-intro">Remplace le formulaire monolithique à 19 étapes initialement proposé par un wizard rapide, puis une fiche enrichie à volonté — principe posé dès le Point 1 et tenu jusqu'au bout.</p>
+
+      <h3>Wizard "Ajouter un bien" — 7 étapes, ~2 minutes</h3>
+      <ol>
+        <li>Type &amp; catégorie + Intention (Location / Vente / Les deux)</li>
+        <li>Identification (nom, référence, statut initial)</li>
+        <li>Localisation (adresse selon le moteur pays, géolocalisation optionnelle)</li>
+        <li>Caractéristiques essentielles (conditionnel au type + champs personnalisés simples)</li>
+        <li>Propriétaire (simple par défaut, multi-propriétaire si coché)</li>
+        <li>Finances de base (loyer demandé ou prix de vente selon l'intention)</li>
+        <li>Récapitulatif</li>
+      </ol>
+
+      <h3>Fiche complète — remplie progressivement, rien de bloquant</h3>
+      <p class="pill-row">
+        <span class="pill">Informations</span>
+        <span class="pill">Caractéristiques &amp; Équipements</span>
+        <span class="pill">Propriétaire(s) &amp; Gestion</span>
+        <span class="pill">Finances</span>
+        <span class="pill">Compteurs</span>
+        <span class="pill">Assurance</span>
+        <span class="pill">Documents &amp; Photos</span>
+        <span class="pill">Immeuble / Unités</span>
+        <span class="pill">Vente</span>
+        <span class="pill">Tickets</span>
+        <span class="pill">Historique</span>
+      </p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ MENUS ══════════════════ -->
+    <section id="menus" class="wide">
+      <h2>Menus &amp; rôles</h2>
+
+      <h3>Arborescence Biens — identique dans les deux espaces</h3>
+      <div class="tree">Biens immobiliers <span class="existing">(agence)</span>  /  Biens <span class="existing">(imoloc)</span>
+├── Tous les biens
+<span class="new">├── Immeubles                    ← vue groupée</span>
+├── Location
+│   ├── Biens libres
+│   ├── Biens occupés
+│   └── En maintenance
+<span class="new">└── Vente
+    ├── Biens à vendre
+    ├── Opportunités             ← le pipeline acheteurs
+    └── Ventes conclues</span></div>
+
+      <h3>Deux rôles de facturation — accès détaillé à préciser plus tard</h3>
+      <div class="cards">
+        <div class="card">
+          <h4>Gestionnaire de facturation globale</h4>
+          <p>Rôle existant (<code>billing_admin</code>), relabellisé. Abonnement Imoloc de l'organisation <strong>+</strong> menu Facturation d'imoloc center.</p>
+        </div>
+        <div class="card">
+          <h4>Gestionnaire de facturation imoloc center</h4>
+          <p>Nouveau rôle (<code>billing_admin_imoloc</code>). Menu Facturation d'imoloc center <strong>uniquement</strong> — pas d'accès à l'abonnement de l'organisation.</p>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--ink-faint)">À construire : <code>/agence/*</code> est déjà protégé par rôle au niveau du routeur ; <code>/imoloc/*</code> n'a aujourd'hui aucune restriction par rôle — la visibilité fine par menu reste à implémenter.</p>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ ENTITES ══════════════════ -->
+    <section id="entites" class="wide">
+      <h2>Récapitulatif des nouvelles tables</h2>
+      <div class="schema-wrap">
+      <table class="schema">
+        <tr><th>Table</th><th>Origine</th><th>Rôle</th></tr>
+        <tr><td class="tname">biens_proprietaires</td><td class="pt">pt. 23</td><td>Remplace la FK simple — multi-propriétaires avec pourcentage</td></tr>
+        <tr><td class="tname">mandats</td><td class="pt">pt. 24, vente</td><td>Mandat de gestion locative ou de vente, commission, échéance</td></tr>
+        <tr><td class="tname">opportunites_vente</td><td class="pt">vente</td><td>Pipeline acheteurs, lié à <code>contacts</code></td></tr>
+        <tr><td class="tname">equipements / biens_equipements</td><td class="pt">pt. 9</td><td>Catalogue + coches, remplace des dizaines de colonnes booléennes</td></tr>
+        <tr><td class="tname">inventaire_items</td><td class="pt">pt. 14</td><td>Mobilier/électroménager des biens meublés, avec quantité/valeur</td></tr>
+        <tr><td class="tname">charges_bien</td><td class="pt">pt. 26</td><td>Charges récurrentes (eau, électricité, entretien...)</td></tr>
+        <tr><td class="tname">compteurs / releves_compteurs</td><td class="pt">pt. 27</td><td>Entité compteur + registre append-only des relevés</td></tr>
+        <tr><td class="tname">assurances</td><td class="pt">pt. 28</td><td>Polices d'assurance, dates d'expiration</td></tr>
+        <tr><td class="tname">taxes_bien</td><td class="pt">pt. 29</td><td>Obligations fiscales, pilotées par pays</td></tr>
+        <tr><td class="tname">tickets</td><td class="pt">pt. 30</td><td>Généralise "maintenances" — multi-type, multi-origine</td></tr>
+        <tr><td class="tname">prestataires</td><td class="pt">pt. 30</td><td>Artisans/fournisseurs liés aux tickets</td></tr>
+        <tr><td class="tname">type_ticket_routing</td><td class="pt">pt. 30</td><td>Config du dispatching automatique des tickets</td></tr>
+        <tr><td class="tname">documents</td><td class="pt">pt. 31–32</td><td>Association polymorphe — documents, photos, médias</td></tr>
+        <tr><td class="tname">historique</td><td class="pt">pt. 33</td><td>Événements métier significatifs, association polymorphe</td></tr>
+        <tr><td class="tname">sinistres</td><td class="pt">pt. 34</td><td>Dossiers sinistres, liés assurance/prestataire/ticket</td></tr>
+        <tr><td class="tname">champs_personnalises</td><td class="pt">pt. 40</td><td>Définitions de champs par organisation, vague 1</td></tr>
+        <tr><td class="tname">country_field_schemas</td><td class="pt">pt. 4/6/29/35</td><td>Moteur pays — adresse, cadastre, taxes, environnemental</td></tr>
+      </table>
+      </div>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ DIFFERES ══════════════════ -->
+    <section id="differes">
+      <h2>Chantiers différés</h2>
+      <p class="section-intro">Explicitement mis de côté comme travaux séparés, pas oubliés — à reprendre en profondeur quand leur tour viendra.</p>
+
+      <div class="block defer">
+        <p class="block-label">1 · Portefeuilles &amp; paiements scindés</p>
+        <p>Répartition automatique en temps réel des paiements locataires entre portefeuilles agence/propriétaire, selon le taux de commission effectif — configurable par accord avec chaque propriétaire. Registre <code>portefeuilles</code> + <code>transactions_portefeuille</code> append-only, retrait via PawaPay.</p>
+      </div>
+      <div class="block defer">
+        <p class="block-label">2 · Relances automatiques</p>
+        <p>Rappels automatiques (email/SMS) aux locataires en retard de paiement — fonctionnalité de communication, pas une donnée du bien.</p>
+      </div>
+      <div class="block defer">
+        <p class="block-label">3 · Calendrier de disponibilité</p>
+        <p>Moteur de blocage de dates pour la location courte durée, éventuelle synchronisation externe — un vrai mini système de réservation, aucune infrastructure existante à ce jour.</p>
+      </div>
+    </section>
+
+    <hr class="hr">
+
+    <!-- ══════════════════ OUVERTES ══════════════════ -->
+    <section id="ouvertes">
+      <h2>Questions encore ouvertes</h2>
+      <ul class="qlist">
+        <li><span class="qmark">?</span><span><code>reference</code> doit-elle rester verrouillée après création du bien, ou rester modifiable (proposition actuelle par défaut) ?</span></li>
+        <li><span class="qmark">?</span><span>Permissions détaillées des deux rôles de facturation (gestionnaire global vs imoloc center) — à trancher dans une prochaine session.</span></li>
+        <li><span class="qmark">?</span><span>Séquencement de l'implémentation : migration de schéma d'abord, ou un autre ordre ? Pas encore discuté.</span></li>
+      </ul>
+    </section>
+
+    <footer>
+      Imoloc — Architecture des Biens · document de synthèse, 43 points revus un par un · aucune implémentation commencée à ce stade
+    </footer>
+  </main>
+</div>
