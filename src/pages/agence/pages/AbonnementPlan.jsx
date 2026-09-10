@@ -52,8 +52,7 @@ export default function AbonnementPlan() {
     setLoading(true)
     try {
       const { data:{ user } } = await supabase.auth.getUser()
-      const { data:agList } = await supabase.from('agences').select('*')
-      const ag = agList?.find(a => a.profile_id === user.id) || agList?.[0]
+      const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
       setAgence(ag)
       if (ag?.id) {
         const { data:abList } = await supabase.from('abonnements').select('*').eq('agence_id', ag.id).order('created_at',{ascending:false}).limit(1)

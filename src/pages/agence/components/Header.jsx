@@ -44,8 +44,8 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
     const loadAgence = async () => {
       const { data:{ user } } = await supabase.auth.getUser()
       if (user) {
-        const { data:agList } = await supabase.from('agences').select('id').limit(1)
-        if (agList?.[0]) setAgenceId(agList[0].id)
+        const { data:ag } = await supabase.from('agences').select('id').eq('profile_id', user.id).single()
+        if (ag) setAgenceId(ag.id)
         // Compter les nouveautés non vues
         const { data:toutes } = await supabase.from('nouveautes').select('id').eq('publie', true)
         const { data:vues } = await supabase.from('nouveautes_vues').select('nouveaute_id').eq('user_id', user.id)
