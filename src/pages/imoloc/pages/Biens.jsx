@@ -3,7 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Home, Building, Trees, Building2, ParkingSquare, HardHat,
   Wallet, FileText, User, Trash2, Pencil, Ban, RefreshCw, Download,
-  Check, ArrowRight, Circle, Key, Tag,
+  Check, ArrowRight, Circle, Key, Tag, Plus, Layers, X, Save,
+  ChevronDown, Search, Sofa, Warehouse, Store, Hotel, Landmark,
+  School, FlaskConical, Hammer, Snowflake, Server, Tent, Sprout,
+  TreePine, Boxes, ShieldCheck,
 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
@@ -13,11 +16,33 @@ import ProgressBar from '../../../components/ui/ProgressBar'
 import { useBiensConfig, CATEGORIE_LABELS } from '../../../hooks/useBiensConfig'
 
 // ─── Constants ─────────────────────────────────────────────
-// Icones par categorie de type de bien (les ~68 valeurs du catalogue
-// types_biens sont chargees dynamiquement, voir useBiensConfig)
+// Icone de repli par categorie (si une valeur precise n'a pas d'icone dediee
+// dans VALEUR_ICONS ci-dessous)
 const CATEGORIE_ICONS = {
   residentiel:Home, terrain:Trees, professionnel:Building2,
   collectif:Building, stationnement:ParkingSquare, specialise:HardHat, autre:HardHat,
+}
+// Icone dediee par valeur de type — les ~68 valeurs du catalogue types_biens
+// sont chargees dynamiquement (voir useBiensConfig), mais l'icone reste
+// mappee ici cote front pour eviter de stocker des noms d'icones en base
+const VALEUR_ICONS = {
+  appartement:Building, studio:Sofa, loft:Sofa, duplex:Building, triplex:Building, penthouse:Building,
+  maison:Home, villa:Home, maison_mitoyenne:Home, maison_jumelee:Home, bungalow:Tent, chalet:Tent,
+  ferme:Sprout, residence:Building, residence_etudiante:School, residence_senior:Building,
+  residence_vacances:Hotel, chambre:Sofa, colocation:Sofa,
+  parcelle:Trees, terrain_residentiel:Trees, terrain_agricole:Sprout, terrain_commercial:Trees,
+  terrain_industriel:Trees, terrain_constructible:Trees, terrain_non_constructible:Trees,
+  terrain_forestier:TreePine, terrain_mixte:Trees, terrain_avec_batiment:Trees, terrain_vacant:Trees,
+  bureau:Building2, open_space:Building2, centre_affaires:Landmark, local_commercial:Store,
+  boutique:Store, magasin:Store, restaurant:Store, bar:Store, hotel:Hotel, entrepot:Warehouse,
+  hangar:Warehouse, atelier:Hammer, usine:Warehouse, laboratoire:FlaskConical, cabinet:Building2,
+  clinique:Building2, etablissement_scolaire:School, centre_formation:School,
+  immeuble_residentiel:Building, immeuble_commercial:Building, immeuble_mixte:Building,
+  complexe_immobilier:Boxes, centre_commercial:Store, parc_activites:Boxes, parc_industriel:Boxes,
+  parking:ParkingSquare, place_parking:ParkingSquare, garage:ParkingSquare, box:ParkingSquare, carport:ParkingSquare,
+  residence_hoteliere:Hotel, maison_hotes:Hotel, exploitation_agricole:Sprout,
+  entrepot_frigorifique:Snowflake, data_center:Server, local_technique:ShieldCheck,
+  infrastructure_specialisee:ShieldCheck, autre:HardHat,
 }
 const INTENTIONS = [
   { val:'location',   label:'Location',    desc:'Gere en location', icon:Key },
@@ -57,11 +82,89 @@ const getStatutCfg = (statutsBiens, valeur) => {
   const color = row?.couleur || '#8b949e'
   return { color, bg:`${color}1e`, label: row?.label || valeur || '—', dot: color }
 }
-// Type de bien a partir du catalogue dynamique — l'icone suit la categorie,
-// pas la valeur precise (68 types, pas la peine d'une icone chacun)
+// Type de bien a partir du catalogue dynamique
 const getTypeInfo = (typesBiens, valeur) => {
   const row = (typesBiens||[]).find(t=>t.valeur===valeur)
-  return { label: row?.label || valeur || '—', icon: CATEGORIE_ICONS[row?.categorie] || Home }
+  const icon = VALEUR_ICONS[valeur] || CATEGORIE_ICONS[row?.categorie] || Home
+  return { label: row?.label || valeur || '—', icon }
+}
+
+// ─── Menu deroulant de statut, reutilise page/wizard/fiche ──
+function StatutPicker({ statutsBiens, value, onChange, allowTous=false, size='normal' }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+  const cur = value && value!=='tous' ? statutsBiens.find(s=>s.valeur===value) : null
+  return (
+    <div ref={ref} style={{position:'relative',display:'inline-block'}}>
+      <button className="pb-btn" style={size==='small'?{padding:'6px 11px',fontSize:12.5}:{}} onClick={()=>setOpen(o=>!o)}>
+        {cur&&<span style={{width:7,height:7,borderRadius:'50%',background:cur.couleur||'#8b949e',flexShrink:0}}/>}
+        <span>Statut : <b style={{color:'#e6edf3',fontWeight:600}}>{cur?cur.label:'Tous'}</b></span>
+        <ChevronDown size={12}/>
+      </button>
+      {open&&(
+        <div className="pb-dropdown">
+          {allowTous&&(
+            <div className={`pb-dropdown-item ${(!value||value==='tous')?'on':''}`} onClick={()=>{onChange('tous');setOpen(false)}}>Tous</div>
+          )}
+          {statutsBiens.map(s=>(
+            <div key={s.valeur} className={`pb-dropdown-item ${value===s.valeur?'on':''}`} onClick={()=>{onChange(s.valeur);setOpen(false)}}>
+              <span style={{width:7,height:7,borderRadius:'50%',background:s.couleur||'#8b949e',flexShrink:0}}/>
+              {s.label}
+              {value===s.valeur&&<Check size={13} style={{marginLeft:'auto'}}/>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Liste recherchable de types, groupee par categorie ─────
+function TypeSearchList({ typesParCategorie, value, onChange }) {
+  const [q, setQ] = useState('')
+  const ql = q.trim().toLowerCase()
+  const groups = Object.entries(typesParCategorie).map(([cat,items])=>[
+    cat, ql ? items.filter(t=>t.label.toLowerCase().includes(ql)) : items
+  ]).filter(([,items])=>items.length>0)
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:6,padding:'8px 12px',marginBottom:12}}>
+        <Search size={13} color="rgba(255,255,255,0.3)"/>
+        <input style={{background:'none',border:'none',outline:'none',fontFamily:'Inter,sans-serif',fontSize:13,color:'#e6edf3',width:'100%'}}
+          value={q} onChange={e=>setQ(e.target.value)} placeholder="Rechercher un type de bien..."/>
+      </div>
+      <div style={{maxHeight:320,overflowY:'auto',border:'1px solid rgba(255,255,255,0.07)',borderRadius:8}}>
+        {groups.length===0?(
+          <div style={{padding:'24px 16px',textAlign:'center',fontSize:13,color:'rgba(255,255,255,0.3)'}}>Aucun type trouve</div>
+        ):groups.map(([cat,items])=>(
+          <div key={cat}>
+            <div style={{padding:'8px 14px',fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.3)',textTransform:'uppercase',letterSpacing:'0.06em',background:'rgba(255,255,255,0.02)',position:'sticky',top:0}}>
+              {CATEGORIE_LABELS[cat]||cat}
+            </div>
+            {items.map(t=>{
+              const Icon = VALEUR_ICONS[t.valeur] || CATEGORIE_ICONS[t.categorie] || Home
+              const on = value===t.valeur
+              return (
+                <div key={t.valeur} onClick={()=>onChange(t.valeur)}
+                  style={{display:'flex',alignItems:'center',gap:10,padding:'9px 14px',cursor:'pointer',fontSize:13.5,
+                    background:on?'rgba(0,120,212,0.1)':'transparent', color:on?'#4da6ff':'rgba(255,255,255,0.65)',
+                    borderLeft:on?'2px solid #0078d4':'2px solid transparent'}}>
+                  <Icon size={15}/> {t.label}
+                  {on&&<Check size={14} style={{marginLeft:'auto'}}/>}
+                </div>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 // ─── Composant principal ──────────────────────────────────
@@ -86,15 +189,21 @@ export default function ImolocBiens() {
   const [step, setStep]             = useState(1)
   const [saving, setSaving]         = useState(false)
 
+  // Fiche du bien selectionne
+  const [editMode, setEditMode]     = useState(false)
+  const [editForm, setEditForm]     = useState({})
+  const [bienProps, setBienProps]   = useState([])   // biens_proprietaires + proprietaire joint
+  const [bienEquip, setBienEquip]   = useState([])   // ids d'equipements coches pour ce bien
+  const [bienMandat, setBienMandat] = useState(null)
+  const [bienUnites, setBienUnites] = useState([])   // unites enfants si immeuble
+  const [detailLoading, setDetailLoading] = useState(false)
+
   // Pour l'etape 5 (proprietaire)
   const [proprietaires, setProprietaires] = useState([])
   const [propSearch, setPropSearch]       = useState('')
   const [selectedProp, setSelectedProp]   = useState(null)
   const [multiProp, setMultiProp]         = useState(false)
   const [coProprietaires, setCoProprietaires] = useState([]) // [{proprietaire, pourcentage}]
-
-  // Pour l'etape 1 (categorie active dans la grille de types)
-  const [activeCategorie, setActiveCategorie] = useState('residentiel')
 
   const [form, setForm] = useState({
     nom:'', type:'appartement', statut:'disponible', reference:'', intention:'location',
@@ -105,7 +214,7 @@ export default function ImolocBiens() {
   })
   const setF = (k,v) => setForm(f=>({...f,[k]:v}))
 
-  const { loading:configLoading, typesBiens, typesParCategorie, statutsBiens, adresseSchema } =
+  const { loading:configLoading, typesBiens, typesParCategorie, statutsBiens, equipements, equipementsParCategorie, adresseSchema } =
     useBiensConfig(agence?.id, agence?.pays)
 
   const resizingCol = useRef(null)
@@ -250,13 +359,100 @@ export default function ImolocBiens() {
     initData()
   }
 
+  // ─── Chargement de la fiche detaillee (propriete, equipements, mandat, unites) ───
+  useEffect(() => {
+    if (!selectedBien?.id) return
+    setEditMode(false)
+    loadBienDetail(selectedBien.id)
+  }, [selectedBien?.id])
+
+  const loadBienDetail = async (bienId) => {
+    setDetailLoading(true)
+    try {
+      const [
+        { data: props },
+        { data: equip },
+        { data: mandatsData },
+        { data: unites },
+      ] = await Promise.all([
+        supabase.from('biens_proprietaires').select('*, proprietaires(id,nom,prenom,telephone,email)').eq('bien_id', bienId),
+        supabase.from('biens_equipements').select('equipement_id, valeur').eq('bien_id', bienId),
+        supabase.from('mandats').select('*').eq('bien_id', bienId).order('created_at', { ascending:false }).limit(1),
+        supabase.from('biens').select('id,nom,type_bien,type,statut').eq('parent_bien_id', bienId),
+      ])
+      setBienProps(props||[])
+      setBienEquip(equip||[])
+      setBienMandat(mandatsData?.[0]||null)
+      setBienUnites(unites||[])
+    } catch(e) { console.error('loadBienDetail', e) }
+    finally { setDetailLoading(false) }
+  }
+
+  const startEdit = () => {
+    setEditForm({
+      nom: selectedBien.nom||'', reference: selectedBien.reference||'',
+      statut: selectedBien.statut||'disponible', intention: selectedBien.intention||'location',
+      adresse: selectedBien.adresse||'', ville: selectedBien.ville||'', quartier: selectedBien.quartier||'',
+      description: selectedBien.description||'',
+      superficie: selectedBien.superficie ?? '', nombre_pieces: selectedBien.nombre_pieces ?? '',
+      nombre_chambres: selectedBien.nombre_chambres ?? '', nombre_salles_bain: selectedBien.nombre_salles_bain ?? '',
+      meuble: !!selectedBien.meuble,
+      loyer: selectedBien.loyer ?? '', prix_vente_demande: selectedBien.prix_vente_demande ?? '',
+    })
+    setEditMode(true)
+  }
+  const setE = (k,v) => setEditForm(f=>({...f,[k]:v}))
+
+  const saveEdit = async () => {
+    setSaving(true)
+    try {
+      const payload = {
+        nom: editForm.nom, reference: editForm.reference||null,
+        statut: editForm.statut, intention: editForm.intention,
+        adresse: editForm.adresse||null, ville: editForm.ville||null, quartier: editForm.quartier||null,
+        description: editForm.description||null,
+        superficie: editForm.superficie?Number(editForm.superficie):null,
+        superficie_totale: editForm.superficie?Number(editForm.superficie):null,
+        nombre_pieces: editForm.nombre_pieces?Number(editForm.nombre_pieces):null,
+        nombre_chambres: editForm.nombre_chambres?Number(editForm.nombre_chambres):null,
+        nombre_salles_bain: editForm.nombre_salles_bain?Number(editForm.nombre_salles_bain):null,
+        meuble: editForm.meuble,
+        loyer: editForm.loyer?Number(editForm.loyer):null,
+        loyer_mensuel: editForm.loyer?Number(editForm.loyer):null,
+        prix_vente_demande: editForm.prix_vente_demande?Number(editForm.prix_vente_demande):null,
+      }
+      const { data, error } = await supabase.from('biens').update(payload).eq('id', selectedBien.id).select('*').single()
+      if (error) throw error
+      toast.success('Bien mis a jour')
+      setEditMode(false)
+      setSelectedBien(b=>({...b, ...data}))
+      initData()
+    } catch(e) { toast.error(e.message||'Erreur') }
+    finally { setSaving(false) }
+  }
+
+  const toggleBienEquip = async (equipementId) => {
+    const has = bienEquip.some(e=>e.equipement_id===equipementId)
+    if (has) {
+      setBienEquip(be=>be.filter(e=>e.equipement_id!==equipementId))
+      await supabase.from('biens_equipements').delete().eq('bien_id',selectedBien.id).eq('equipement_id',equipementId)
+    } else {
+      setBienEquip(be=>[...be,{equipement_id:equipementId, valeur:null}])
+      await supabase.from('biens_equipements').insert({bien_id:selectedBien.id, equipement_id:equipementId})
+    }
+  }
+
+  const removeBienProprietaire = async (id) => {
+    setBienProps(bp=>bp.filter(p=>p.id!==id))
+    await supabase.from('biens_proprietaires').delete().eq('id',id)
+  }
+
   const resetForm = () => {
     setStep(1)
     setSelectedProp(null)
     setPropSearch('')
     setMultiProp(false)
     setCoProprietaires([])
-    setActiveCategorie('residentiel')
     setForm({
       nom:'', type:'appartement', statut:'disponible', reference:'', intention:'location',
       adresse:'', ville:'Cotonou', quartier:'',
@@ -336,6 +532,10 @@ export default function ImolocBiens() {
         .pb-ftabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
         .pb-ftab{padding:5px 14px;border-radius:100px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.09);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.45);font-family:Inter,sans-serif;transition:all 0.15s}
         .pb-ftab.active{background:rgba(0,120,212,0.12);border-color:rgba(0,120,212,0.3);color:#4da6ff}
+        .pb-dropdown{position:absolute;top:calc(100% + 6px);left:0;min-width:220px;max-height:320px;overflow-y:auto;background:#1c2128;border:1px solid rgba(255,255,255,0.1);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,0.45);z-index:50;padding:5px}
+        .pb-dropdown-item{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:5px;font-size:13px;color:rgba(255,255,255,0.65);cursor:pointer;transition:background 0.1s;white-space:nowrap}
+        .pb-dropdown-item:hover{background:rgba(255,255,255,0.06)}
+        .pb-dropdown-item.on{background:rgba(0,120,212,0.1);color:#4da6ff;font-weight:600}
         .pb-selbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(0,120,212,0.07);border:1px solid rgba(0,120,212,0.18);border-radius:8px;margin-bottom:12px}
         .pb-tw{border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden}
         .pb-thead-bar{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02)}
@@ -416,7 +616,6 @@ export default function ImolocBiens() {
         .pb-type-item.on .pb-type-lbl{color:#e6edf3}
 
         /* ─ Statut pills ─ */
-        .pb-statut-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
         .pb-statut-pill{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;border:1.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);cursor:pointer;transition:all 0.15s;font-size:13px;font-weight:500;color:rgba(255,255,255,0.5)}
         .pb-statut-pill:hover{border-color:rgba(255,255,255,0.18)}
         .pb-statut-pill.on{font-weight:600}
@@ -511,12 +710,9 @@ export default function ImolocBiens() {
           </div>
         </div>
 
-        {/* Filtres statut — catalogue dynamique (Centre d'administration > Parametres) */}
-        <div className="pb-ftabs">
-          <button className={`pb-ftab ${filterStatut==='tous'?'active':''}`} onClick={()=>setFilterStatut('tous')}>Tous</button>
-          {statutsBiens.map(s=>(
-            <button key={s.valeur} className={`pb-ftab ${filterStatut===s.valeur?'active':''}`} onClick={()=>setFilterStatut(s.valeur)}>{s.label}</button>
-          ))}
+        {/* Filtre statut — catalogue dynamique (Centre d'administration > Parametres) */}
+        <div style={{marginBottom:16}}>
+          <StatutPicker statutsBiens={statutsBiens} value={filterStatut} onChange={setFilterStatut} allowTous/>
         </div>
 
         {selected.length>0&&(
@@ -701,34 +897,13 @@ export default function ImolocBiens() {
                 {/* ── Step 1 : Type & intention ── */}
                 {step===1&&(<>
                   <div className="pb-step-title">Type de bien et intention</div>
-                  <div className="pb-step-sub">Choisissez la categorie, le type precis, puis si ce bien est destine a la location, la vente, ou les deux.</div>
-                  <div className="pb-sec">Categorie</div>
-                  <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:16}}>
-                    {Object.keys(typesParCategorie).map(cat=>{
-                      const CIcon = CATEGORIE_ICONS[cat]||Home
-                      return (
-                        <div key={cat} onClick={()=>setActiveCategorie(cat)}
-                          style={{display:'inline-flex',alignItems:'center',gap:6,padding:'7px 13px',borderRadius:100,fontSize:12.5,fontWeight:500,cursor:'pointer',
-                            border:`1px solid ${activeCategorie===cat?'#0078d4':'rgba(255,255,255,0.1)'}`,
-                            background:activeCategorie===cat?'rgba(0,120,212,0.12)':'rgba(255,255,255,0.03)',
-                            color:activeCategorie===cat?'#4da6ff':'rgba(255,255,255,0.55)'}}>
-                          <CIcon size={13}/> {CATEGORIE_LABELS[cat]||cat}
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <div className="pb-type-grid">
-                    {configLoading?(
-                      <div style={{gridColumn:'1/-1',color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement du catalogue...</div>
-                    ):(typesParCategorie[activeCategorie]||[]).map(t=>{
-                      const TIcon = CATEGORIE_ICONS[t.categorie]||Home
-                      return (
-                      <div key={t.valeur} className={`pb-type-item ${form.type===t.valeur?'on':''}`} onClick={()=>setF('type',t.valeur)}>
-                        <div className="pb-type-ic-lg"><TIcon size={22}/></div>
-                        <div className="pb-type-lbl">{t.label}</div>
-                      </div>
-                    )})}
-                  </div>
+                  <div className="pb-step-sub">Recherchez le type precis, puis indiquez si ce bien est destine a la location, la vente, ou les deux.</div>
+                  <div className="pb-sec" style={{marginTop:0}}>Type de bien</div>
+                  {configLoading?(
+                    <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement du catalogue...</div>
+                  ):(
+                    <TypeSearchList typesParCategorie={typesParCategorie} value={form.type} onChange={v=>setF('type',v)}/>
+                  )}
                   <div className="pb-sec">Intention</div>
                   <div className="pb-type-grid" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
                     {INTENTIONS.map(it=>(
@@ -753,16 +928,7 @@ export default function ImolocBiens() {
                     <input className="pb-inp" value={form.reference} onChange={e=>setF('reference',e.target.value)} placeholder="Ex: BIEN-2026-0042 (optionnel)"/>
                   </div>
                   <div className="pb-sec">Statut actuel</div>
-                  <div className="pb-statut-row">
-                    {statutsBiens.map(s=>(
-                      <div key={s.valeur} className={`pb-statut-pill ${form.statut===s.valeur?'on':''}`}
-                        style={form.statut===s.valeur?{borderColor:s.couleur,background:`${s.couleur}1e`,color:s.couleur}:{}}
-                        onClick={()=>setF('statut',s.valeur)}>
-                        <span style={{width:7,height:7,borderRadius:'50%',background:s.couleur||'#8b949e',flexShrink:0}}/>
-                        {s.label}
-                      </div>
-                    ))}
-                  </div>
+                  <StatutPicker statutsBiens={statutsBiens} value={form.statut} onChange={v=>setF('statut',v)}/>
                 </>)}
 
                 {/* ── Step 3 : Localisation ── */}
@@ -1006,7 +1172,7 @@ export default function ImolocBiens() {
                 {[
                   {ic:FileText,lbl:'Voir les baux',   action:()=>navigate('/imoloc/baux')},
                   {ic:Wallet,  lbl:'Paiements',        action:()=>navigate('/imoloc/paiements')},
-                  {ic:Pencil,  lbl:'Modifier',          action:()=>{}},
+                  {ic:editMode?X:Pencil, lbl:editMode?'Annuler la modification':'Modifier', action:()=>editMode?setEditMode(false):startEdit()},
                   {ic:Trash2,  lbl:'Supprimer',         action:()=>{
                     if(!confirm('Supprimer ce bien ?')) return
                     supabase.from('biens').delete().eq('id',selectedBien.id).then(()=>{
@@ -1024,7 +1190,15 @@ export default function ImolocBiens() {
               </div>
 
               <div className="pb-detail-tabs">
-                {[['infos','Informations'],['proprietaire','Proprietaire'],['baux','Baux'],['paiements','Paiements']].map(([k,l])=>(
+                {[
+                  ['infos','Informations'],
+                  ['caracteristiques','Caracteristiques'],
+                  ['proprietaire','Propriete & gestion'],
+                  ['finances','Finances'],
+                  ...(selectedBien.is_immeuble?[['unites','Unites']]:[]),
+                  ['baux','Baux'],
+                  ['paiements','Paiements'],
+                ].map(([k,l])=>(
                   <button key={k} className={`pb-detail-tab ${detailTab===k?'active':''}`} onClick={()=>setDetailTab(k)}>{l}</button>
                 ))}
               </div>
@@ -1033,77 +1207,278 @@ export default function ImolocBiens() {
             <div className="pb-pb">
               {/* Tab Informations */}
               {detailTab==='infos'&&(
-                <>
-                  <div className="pb-detail-grid">
-                    <div>
-                      {[
-                        ['Type',      selectedBien.type],
-                        ['Ville',     `${selectedBien.ville||'—'}${selectedBien.quartier?`, ${selectedBien.quartier}`:''}` ],
-                        ['Superficie',selectedBien.superficie!=null?selectedBien.superficie+' m²':null],
-                        ['Pieces',    selectedBien.nombre_pieces!=null?selectedBien.nombre_pieces+' pieces':selectedBien.nb_pieces!=null?selectedBien.nb_pieces+' pieces':null],
-                      ].map(([k,v])=>(
-                        <div key={k} className="pb-blk">
-                          <div className="pb-blk-lbl">{k}</div>
-                          {v?<div className="pb-blk-val">{v}</div>:<div style={{fontSize:13,fontStyle:'italic',color:'rgba(255,255,255,0.25)'}}>Non renseigne</div>}
-                        </div>
-                      ))}
-                    </div>
-                    <div>
-                      {[
-                        ['Statut',    <StatutBadge key="s" statut={selectedBien.statut}/>],
-                        ['Adresse',   selectedBien.adresse],
-                        ['Loyer',     selectedBien.loyer!=null?fmt(selectedBien.loyer)+' FCFA/mois':null],
-                        ['Chambres',  selectedBien.nb_chambres!=null?selectedBien.nb_chambres+' chambre(s)':null],
-                      ].map(([k,v])=>(
-                        <div key={k} className="pb-blk">
-                          <div className="pb-blk-lbl">{k}</div>
-                          {v?<div className="pb-blk-val">{v}</div>:<div style={{fontSize:13,fontStyle:'italic',color:'rgba(255,255,255,0.25)'}}>Non renseigne</div>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  {selectedBien.description&&(
-                    <>
-                      <div className="pb-divider"/>
-                      <div className="pb-blk">
-                        <div className="pb-blk-lbl">Description</div>
-                        <div style={{fontSize:13.5,color:'rgba(255,255,255,0.45)',lineHeight:1.7,padding:'10px 14px',background:'rgba(255,255,255,0.02)',borderRadius:8,border:'1px solid rgba(255,255,255,0.06)'}}>
-                          {selectedBien.description}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  <div className="pb-divider"/>
-                  <div style={{fontSize:11.5,color:'rgba(255,255,255,0.25)',fontFamily:'monospace'}}>ID: {selectedBien.id}</div>
-                </>
-              )}
-
-              {/* Tab Proprietaire */}
-              {detailTab==='proprietaire'&&(
-                selectedBien.proprietaire?(
+                editMode?(
                   <>
-                    <div style={{display:'flex',alignItems:'center',gap:14,padding:'16px 0',marginBottom:20,borderBottom:'1px solid rgba(255,255,255,0.07)'}}>
-                      <div style={{width:48,height:48,borderRadius:'50%',background:'linear-gradient(135deg,#0078d4,#0078d488)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,fontWeight:800,color:'#fff',flexShrink:0}}>
-                        {((selectedBien.proprietaire.prenom?.[0]||'')+(selectedBien.proprietaire.nom?.[0]||'')).toUpperCase()||'?'}
+                    <div className="pb-field">
+                      <label className="pb-lbl">Nom du bien</label>
+                      <input className="pb-inp" value={editForm.nom} onChange={e=>setE('nom',e.target.value)}/>
+                    </div>
+                    <div className="pb-g2">
+                      <div>
+                        <label className="pb-lbl">Reference interne</label>
+                        <input className="pb-inp" value={editForm.reference} onChange={e=>setE('reference',e.target.value)}/>
                       </div>
                       <div>
-                        <div style={{fontSize:16,fontWeight:700,color:'#e6edf3'}}>{selectedBien.proprietaire.prenom} {selectedBien.proprietaire.nom}</div>
-                        <div style={{fontSize:13,color:'rgba(255,255,255,0.35)',marginTop:2}}>{selectedBien.proprietaire.telephone||'Pas de telephone'}</div>
+                        <label className="pb-lbl">Intention</label>
+                        <select className="pb-inp" value={editForm.intention} onChange={e=>setE('intention',e.target.value)}>
+                          {INTENTIONS.map(it=><option key={it.val} value={it.val}>{it.label}</option>)}
+                        </select>
                       </div>
                     </div>
-                    <button className="pb-btn pb-btn-p" style={{marginBottom:12}} onClick={()=>navigate('/imoloc/proprietaires')}>
-                      Voir le profil complet
+                    <div className="pb-sec">Statut</div>
+                    <div style={{marginBottom:16}}>
+                      <StatutPicker statutsBiens={statutsBiens} value={editForm.statut} onChange={v=>setE('statut',v)}/>
+                    </div>
+                    <div className="pb-g2">
+                      <div>
+                        <label className="pb-lbl">Ville</label>
+                        <input className="pb-inp" value={editForm.ville} onChange={e=>setE('ville',e.target.value)}/>
+                      </div>
+                      <div>
+                        <label className="pb-lbl">Quartier</label>
+                        <input className="pb-inp" value={editForm.quartier} onChange={e=>setE('quartier',e.target.value)}/>
+                      </div>
+                    </div>
+                    <div className="pb-field">
+                      <label className="pb-lbl">Adresse complete</label>
+                      <input className="pb-inp" value={editForm.adresse} onChange={e=>setE('adresse',e.target.value)}/>
+                    </div>
+                    <div className="pb-field">
+                      <label className="pb-lbl">Description</label>
+                      <textarea className="pb-inp" rows={3} value={editForm.description} onChange={e=>setE('description',e.target.value)} style={{resize:'vertical',minHeight:70}}/>
+                    </div>
+                    <button className="pb-btn pb-btn-p" disabled={saving} onClick={saveEdit}>
+                      <Save size={13}/> {saving?'Enregistrement...':'Enregistrer'}
                     </button>
                   </>
                 ):(
-                  <div style={{textAlign:'center',padding:'50px 20px'}}>
-                    <User size={36} style={{marginBottom:12,opacity:0.35}}/>
-                    <div style={{fontSize:14,color:'rgba(255,255,255,0.35)',marginBottom:18}}>Aucun proprietaire associe</div>
-                    <button className="pb-btn pb-btn-p" style={{margin:'0 auto'}} onClick={()=>navigate('/imoloc/proprietaires')}>
-                      Associer un proprietaire
+                  <>
+                    <div className="pb-detail-grid">
+                      <div>
+                        {[
+                          ['Type',      getTypeInfo(typesBiens, selectedBien.type_bien||selectedBien.type).label],
+                          ['Reference', selectedBien.reference],
+                          ['Ville',     `${selectedBien.ville||'—'}${selectedBien.quartier?`, ${selectedBien.quartier}`:''}` ],
+                          ['Superficie',selectedBien.superficie!=null?selectedBien.superficie+' m²':null],
+                        ].map(([k,v])=>(
+                          <div key={k} className="pb-blk">
+                            <div className="pb-blk-lbl">{k}</div>
+                            {v?<div className="pb-blk-val">{v}</div>:<div style={{fontSize:13,fontStyle:'italic',color:'rgba(255,255,255,0.25)'}}>Non renseigne</div>}
+                          </div>
+                        ))}
+                      </div>
+                      <div>
+                        {[
+                          ['Statut',    <StatutBadge key="s" statut={selectedBien.statut}/>],
+                          ['Intention', INTENTIONS.find(i=>i.val===selectedBien.intention)?.label||'Location'],
+                          ['Adresse',   selectedBien.adresse],
+                          ['Meuble',    selectedBien.meuble?'Oui':'Non'],
+                        ].map(([k,v])=>(
+                          <div key={k} className="pb-blk">
+                            <div className="pb-blk-lbl">{k}</div>
+                            {v?<div className="pb-blk-val">{v}</div>:<div style={{fontSize:13,fontStyle:'italic',color:'rgba(255,255,255,0.25)'}}>Non renseigne</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {selectedBien.description&&(
+                      <>
+                        <div className="pb-divider"/>
+                        <div className="pb-blk">
+                          <div className="pb-blk-lbl">Description</div>
+                          <div style={{fontSize:13.5,color:'rgba(255,255,255,0.45)',lineHeight:1.7,padding:'10px 14px',background:'rgba(255,255,255,0.02)',borderRadius:8,border:'1px solid rgba(255,255,255,0.06)'}}>
+                            {selectedBien.description}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    <div className="pb-divider"/>
+                    <div style={{fontSize:11.5,color:'rgba(255,255,255,0.25)',fontFamily:'monospace'}}>ID: {selectedBien.id}</div>
+                  </>
+                )
+              )}
+
+              {/* Tab Caracteristiques & equipements */}
+              {detailTab==='caracteristiques'&&(
+                editMode?(
+                  <>
+                    <div className="pb-g3">
+                      <div>
+                        <label className="pb-lbl">Superficie (m²)</label>
+                        <input className="pb-inp" type="number" value={editForm.superficie} onChange={e=>setE('superficie',e.target.value)}/>
+                      </div>
+                      <div>
+                        <label className="pb-lbl">Nb pieces</label>
+                        <input className="pb-inp" type="number" value={editForm.nombre_pieces} onChange={e=>setE('nombre_pieces',e.target.value)}/>
+                      </div>
+                      <div>
+                        <label className="pb-lbl">Chambres</label>
+                        <input className="pb-inp" type="number" value={editForm.nombre_chambres} onChange={e=>setE('nombre_chambres',e.target.value)}/>
+                      </div>
+                    </div>
+                    <div className="pb-field">
+                      <label className="pb-lbl">Salles de bain</label>
+                      <input className="pb-inp" type="number" style={{maxWidth:160}} value={editForm.nombre_salles_bain} onChange={e=>setE('nombre_salles_bain',e.target.value)}/>
+                    </div>
+                    <div className="pb-statut-pill" style={{display:'inline-flex',marginBottom:8,borderColor: editForm.meuble?'#0078d4':'rgba(255,255,255,0.08)', background: editForm.meuble?'rgba(0,120,212,0.1)':'rgba(255,255,255,0.02)', color: editForm.meuble?'#4da6ff':'rgba(255,255,255,0.5)'}}
+                      onClick={()=>setE('meuble',!editForm.meuble)}>
+                      {editForm.meuble&&<Check size={14}/>} Bien meuble
+                    </div>
+                    <button className="pb-btn pb-btn-p" style={{display:'block',marginTop:10}} disabled={saving} onClick={saveEdit}>
+                      <Save size={13}/> {saving?'Enregistrement...':'Enregistrer'}
                     </button>
+                  </>
+                ):(
+                  <>
+                    <div className="pb-detail-grid" style={{marginBottom:10}}>
+                      <div>
+                        <div className="pb-blk"><div className="pb-blk-lbl">Superficie</div><div className="pb-blk-val">{selectedBien.superficie!=null?selectedBien.superficie+' m²':'Non renseigne'}</div></div>
+                        <div className="pb-blk"><div className="pb-blk-lbl">Pieces</div><div className="pb-blk-val">{selectedBien.nombre_pieces ?? 'Non renseigne'}</div></div>
+                      </div>
+                      <div>
+                        <div className="pb-blk"><div className="pb-blk-lbl">Chambres / SDB</div><div className="pb-blk-val">{selectedBien.nombre_chambres??'—'} / {selectedBien.nombre_salles_bain??'—'}</div></div>
+                        <div className="pb-blk"><div className="pb-blk-lbl">Meuble</div><div className="pb-blk-val">{selectedBien.meuble?'Oui':'Non'}</div></div>
+                      </div>
+                    </div>
+                    <div className="pb-divider"/>
+                    <div className="pb-sec">Equipements</div>
+                    {detailLoading?(
+                      <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement...</div>
+                    ):(
+                      Object.entries(equipementsParCategorie).map(([cat,items])=>(
+                        <div key={cat} style={{marginBottom:16}}>
+                          <div style={{fontSize:11.5,fontWeight:700,color:'rgba(255,255,255,0.3)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>{cat.replace(/_/g,' ')}</div>
+                          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                            {items.map(eq=>{
+                              const on = bienEquip.some(be=>be.equipement_id===eq.id)
+                              return (
+                                <div key={eq.id} onClick={()=>toggleBienEquip(eq.id)}
+                                  style={{display:'inline-flex',alignItems:'center',gap:5,padding:'5px 11px',borderRadius:100,fontSize:12,cursor:'pointer',
+                                    border:`1px solid ${on?'#0078d4':'rgba(255,255,255,0.09)'}`,
+                                    background:on?'rgba(0,120,212,0.12)':'rgba(255,255,255,0.02)',
+                                    color:on?'#4da6ff':'rgba(255,255,255,0.45)'}}>
+                                  {on&&<Check size={11}/>} {eq.label}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </>
+                )
+              )}
+
+              {/* Tab Propriete & gestion */}
+              {detailTab==='proprietaire'&&(
+                <>
+                  <div className="pb-sec" style={{marginTop:0}}>Proprietaire(s)</div>
+                  {detailLoading?(
+                    <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement...</div>
+                  ):bienProps.length===0?(
+                    <div style={{textAlign:'center',padding:'30px 20px'}}>
+                      <User size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)',marginBottom:14}}>Aucun proprietaire associe</div>
+                      <button className="pb-btn pb-btn-p" style={{margin:'0 auto'}} onClick={()=>navigate('/imoloc/proprietaires')}>Associer un proprietaire</button>
+                    </div>
+                  ):(
+                    bienProps.map(bp=>(
+                      <div key={bp.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                        <div style={{width:38,height:38,borderRadius:'50%',background:'linear-gradient(135deg,#0078d4,#0078d488)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0}}>
+                          {((bp.proprietaires?.prenom?.[0]||'')+(bp.proprietaires?.nom?.[0]||'')).toUpperCase()||'?'}
+                        </div>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:13.5,fontWeight:600,color:'#e6edf3'}}>{bp.proprietaires?.prenom} {bp.proprietaires?.nom}</div>
+                          <div style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{bp.proprietaires?.telephone||'Pas de telephone'}</div>
+                        </div>
+                        <div style={{fontSize:14,fontWeight:700,color:'#4da6ff'}}>{bp.pourcentage}%</div>
+                        <button className="pb-cls" onClick={()=>removeBienProprietaire(bp.id)}><X size={15}/></button>
+                      </div>
+                    ))
+                  )}
+                  <div className="pb-divider"/>
+                  <div className="pb-sec">Gestion</div>
+                  {bienMandat?(
+                    <div className="pb-detail-grid">
+                      <div>
+                        <div className="pb-blk"><div className="pb-blk-lbl">Categorie</div><div className="pb-blk-val">{bienMandat.categorie_mandat==='vente'?'Mandat de vente':'Gestion locative'}</div></div>
+                        <div className="pb-blk"><div className="pb-blk-lbl">Statut</div><div className="pb-blk-val">{bienMandat.statut}</div></div>
+                      </div>
+                      <div>
+                        <div className="pb-blk"><div className="pb-blk-lbl">Commission gestion</div><div className="pb-blk-val">{bienMandat.commission_gestion!=null?bienMandat.commission_gestion+'%':'—'}</div></div>
+                        <div className="pb-blk"><div className="pb-blk-lbl">Echeance</div><div className="pb-blk-val">{bienMandat.date_fin?new Date(bienMandat.date_fin).toLocaleDateString('fr-FR'):'—'}</div></div>
+                      </div>
+                    </div>
+                  ):(
+                    <div style={{fontSize:13,color:'rgba(255,255,255,0.3)',fontStyle:'italic'}}>Aucun mandat enregistre pour ce bien.</div>
+                  )}
+                </>
+              )}
+
+              {/* Tab Finances */}
+              {detailTab==='finances'&&(
+                editMode?(
+                  <>
+                    {(selectedBien.intention==='location'||selectedBien.intention==='les_deux')&&(
+                      <div className="pb-field">
+                        <label className="pb-lbl">Loyer mensuel (FCFA)</label>
+                        <input className="pb-inp" type="number" value={editForm.loyer} onChange={e=>setE('loyer',e.target.value)}/>
+                      </div>
+                    )}
+                    {(selectedBien.intention==='vente'||selectedBien.intention==='les_deux')&&(
+                      <div className="pb-field">
+                        <label className="pb-lbl">Prix de vente demande (FCFA)</label>
+                        <input className="pb-inp" type="number" value={editForm.prix_vente_demande} onChange={e=>setE('prix_vente_demande',e.target.value)}/>
+                      </div>
+                    )}
+                    <button className="pb-btn pb-btn-p" disabled={saving} onClick={saveEdit}>
+                      <Save size={13}/> {saving?'Enregistrement...':'Enregistrer'}
+                    </button>
+                  </>
+                ):(
+                  <div className="pb-detail-grid">
+                    <div>
+                      <div className="pb-blk"><div className="pb-blk-lbl">Loyer mensuel</div><div className="pb-blk-val">{selectedBien.loyer!=null?fmt(selectedBien.loyer)+' FCFA':'Non renseigne'}</div></div>
+                    </div>
+                    <div>
+                      <div className="pb-blk"><div className="pb-blk-lbl">Prix de vente demande</div><div className="pb-blk-val">{selectedBien.prix_vente_demande!=null?fmt(selectedBien.prix_vente_demande)+' FCFA':'Non renseigne'}</div></div>
+                    </div>
                   </div>
                 )
+              )}
+
+              {/* Tab Unites (immeuble uniquement) */}
+              {detailTab==='unites'&&(
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span style={{fontSize:13,color:'rgba(255,255,255,0.4)'}}>{bienUnites.length} unite{bienUnites.length!==1?'s':''}</span>
+                    <button className="pb-btn pb-btn-p" onClick={()=>{
+                      resetForm()
+                      setF('ville', selectedBien.ville||'')
+                      setF('quartier', selectedBien.quartier||'')
+                      setF('adresse', selectedBien.adresse||'')
+                      setSelectedBien(null)
+                      setShowAddPanel(true)
+                    }}><Plus size={13}/> Ajouter une unite</button>
+                  </div>
+                  {bienUnites.length===0?(
+                    <div style={{textAlign:'center',padding:'30px 20px'}}>
+                      <Layers size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucune unite rattachee a cet immeuble</div>
+                    </div>
+                  ):(
+                    bienUnites.map(u=>{
+                      const UIcon = getTypeInfo(typesBiens, u.type_bien||u.type).icon
+                      return (
+                        <div key={u.id} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                          <div style={{width:32,height:32,borderRadius:7,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><UIcon size={15}/></div>
+                          <div style={{flex:1,fontSize:13.5,fontWeight:600,color:'#e6edf3'}}>{u.nom}</div>
+                          <StatutBadge statut={u.statut}/>
+                        </div>
+                      )
+                    })
+                  )}
+                </>
               )}
 
               {/* Tab Baux */}

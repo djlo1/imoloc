@@ -95,6 +95,15 @@ select {
 .rs-scroll-x::-webkit-scrollbar{ height:4px; }
 .rs-scroll-x::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.15); border-radius:2px; }
 
+/* Scrollbar fine et discrete, appliquee partout dans l application plutot
+   que la barre epaisse par defaut du systeme/navigateur */
+*{ scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.15) transparent; }
+*::-webkit-scrollbar{ width:6px; height:6px; }
+*::-webkit-scrollbar-track{ background:transparent; }
+*::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.15); border-radius:3px; }
+*::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,0.28); }
+*::-webkit-scrollbar-corner{ background:transparent; }
+
 /* Visibilite conditionnelle coherente (remplace les .hide-mobile ad hoc par fichier) */
 @media(max-width:768px){ .rs-hide-mobile{ display:none!important; } }
 @media(min-width:769px){ .rs-show-mobile{ display:none!important; } }
