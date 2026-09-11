@@ -19,7 +19,11 @@ const Abonnement = lazy(() => import('./pages/Abonnement'))
 const AbonnementPlan = lazy(() => import('./pages/AbonnementPlan'))
 const Securite = lazy(() => import('./pages/Securite'))
 const Parametres = lazy(() => import('./pages/Parametres'))
-const Rapports = lazy(() => import('./pages/Rapports'))
+// Rapports.jsx (agence) etait entierement decoratif (boutons PDF/Excel sans
+// onClick, aucune requete Supabase) — reutilise la vraie page imoloc, deja
+// autonome et generique (fetch par agence_id via profile_id, aucun chemin
+// /imoloc/... code en dur), diagnostic B2.
+const Rapports = lazy(() => import('../imoloc/pages/Rapports'))
 const Integrations = lazy(() => import('./pages/Integrations'))
 const Loci = lazy(() => import('./pages/Loci'))
 const ModelesDocuments = lazy(() => import('./pages/ModelesDocuments'))

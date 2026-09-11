@@ -116,7 +116,7 @@ export default function Facturation() {
           supabase.from('charges_bien').select('bien_id, montant').in('bien_id', bienIds),
           supabase.from('taxes_bien').select('bien_id, montant').in('bien_id', bienIds),
           supabase.from('assurances').select('bien_id, prime').in('bien_id', bienIds),
-          supabase.from('tickets').select('bien_id, cout_estime').eq('agence_id', agence.id).neq('statut','ferme'),
+          supabase.from('tickets').select('bien_id, cout_estime, cout_reel').eq('agence_id', agence.id).neq('statut','ferme'),
           supabase.from('biens').select('id,nom').eq('agence_id', agence.id),
         ])
         const parBien = {}
@@ -124,7 +124,7 @@ export default function Facturation() {
         for (const c of (charges||[])) { if (parBien[c.bien_id]) parBien[c.bien_id].charges += Number(c.montant||0) }
         for (const t of (taxes||[])) { if (parBien[t.bien_id]) parBien[t.bien_id].taxes += Number(t.montant||0) }
         for (const a of (assurances||[])) { if (parBien[a.bien_id]) parBien[a.bien_id].assurances += Number(a.prime||0) }
-        for (const tk of (tickets||[])) { if (parBien[tk.bien_id]) parBien[tk.bien_id].tickets += Number(tk.cout_estime||0) }
+        for (const tk of (tickets||[])) { if (parBien[tk.bien_id]) parBien[tk.bien_id].tickets += Number(tk.cout_reel ?? tk.cout_estime ?? 0) }
         setDepenses(Object.values(parBien).filter(d=>d.charges||d.taxes||d.assurances||d.tickets))
       }
     } catch(e) { console.error(e); toast.error('Erreur de chargement') }

@@ -64,13 +64,20 @@ const NAV = [
 ]
 
 const ADMIN_CENTERS = [
-  { label:'Centre Imoloc', path:'/agence/imoloc', icon:Building2 },
   { label:'Baux', path:'/agence/baux', icon:FileText },
   { label:'Rapports', path:'/agence/rapports', icon:BarChart3 },
   { label:'Tickets', path:'/agence/tickets', icon:Wrench },
   { label:'Tous les centres', path:'/agence', icon:LayoutGrid },
   { label:'Personnaliser la navigation', path:'/agence/parametres', icon:Pencil },
 ]
+// "Centre Imoloc" retire (2026-09-11, diagnostic B1) : shell entierement
+// duplique de l'espace imoloc, ou toutes les sous-pages sans exception
+// etaient des ComingSoon (Proprietaires/Biens/Locataires/Baux/Paiements/
+// Maintenance/Etats des lieux/Rapports) — les vraies pages existent deja
+// directement dans ce menu (Biens, Locataires, Paiements, Tickets) ou
+// dans l'espace imoloc. La route /agence/imoloc/* et son composant
+// (agence/imoloc/ImolocCenter.jsx) restent en place, juste plus lies
+// depuis la navigation.
 
 export default function Sidebar({ collapsed, mobileOpen, onClose }) {
   const location = useLocation()

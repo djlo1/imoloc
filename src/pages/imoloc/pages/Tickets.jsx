@@ -56,6 +56,7 @@ export default function Tickets() {
   const [fType, setFType]           = useState('tous')
   const [sel, setSel]               = useState(null)
   const [tab, setTab]               = useState('details')
+  const [coutReelInput, setCoutReelInput] = useState('')
   const [showAdd, setShowAdd]       = useState(false)
   const [step, setStep]             = useState(1)
   const [saving, setSaving]         = useState(false)
@@ -126,6 +127,22 @@ export default function Tickets() {
       await initData()
     } catch(e){toast.error(e.message)}
     finally{setSaving(false)}
+  }
+
+  useEffect(() => { setCoutReelInput(sel?.cout_reel ?? '') }, [sel?.id])
+
+  // Cout reel de l'intervention (distinct du cout estime saisi a la creation)
+  // — affiche depuis toujours dans la liste des tickets mais jamais
+  // modifiable nulle part, donc toujours vide. Repris par Facturation.jsx
+  // > Depenses & charges des qu'il est renseigne.
+  const saveCoutReel = async () => {
+    if (!sel) return
+    const valeur = coutReelInput===''?null:parseFloat(coutReelInput)
+    const { error } = await supabase.from('tickets').update({ cout_reel: valeur, updated_at:new Date().toISOString() }).eq('id', sel.id)
+    if (error) { toast.error(error.message); return }
+    setSel(prev=>prev?{...prev,cout_reel:valeur}:prev)
+    setTickets(prev=>prev.map(t=>t.id===sel.id?{...t,cout_reel:valeur}:t))
+    toast.success('Cout reel enregistre')
   }
 
   const changerStatut = async (ticket, newStatut) => {
@@ -320,6 +337,15 @@ export default function Tickets() {
                   ))}
                 </div>
                 {sel.description&&<div style={{marginBottom:14}}><div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:6,fontWeight:600,textTransform:'uppercase'}}>Description</div><div style={{fontSize:13,color:'rgba(255,255,255,0.7)',lineHeight:1.5,background:'rgba(255,255,255,0.02)',padding:12,borderRadius:8,border:'1px solid rgba(255,255,255,0.07)'}}>{sel.description}</div></div>}
+                <div style={{borderTop:'1px solid rgba(255,255,255,0.07)',paddingTop:14,marginBottom:14}}>
+                  <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:6,fontWeight:600,textTransform:'uppercase'}}>Cout reel de l'intervention</div>
+                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                    <input type="number" style={{...inp,maxWidth:180}} placeholder="Non renseigne" value={coutReelInput} onChange={e=>setCoutReelInput(e.target.value)}/>
+                    <span style={{fontSize:12.5,color:'rgba(255,255,255,0.4)'}}>FCFA</span>
+                    <button style={btnBase} onClick={saveCoutReel}>Enregistrer</button>
+                  </div>
+                  <div style={{fontSize:11.5,color:'rgba(255,255,255,0.3)',marginTop:6}}>Utilise dans Facturation &gt; Depenses &amp; charges des qu'il est renseigne — sinon le cout estime ({sel.cout_estime?Number(sel.cout_estime).toLocaleString('fr-FR')+' FCFA':'non renseigne'}) est utilise a la place.</div>
+                </div>
                 {sel.prestataires&&<div style={{borderTop:'1px solid rgba(255,255,255,0.07)',paddingTop:14,marginTop:4}}><div style={{fontSize:13,fontWeight:600,color:'#e6edf3',marginBottom:10}}>Prestataire</div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>{[['Nom',sel.prestataires.nom||'—'],['Telephone',sel.prestataires.telephone||'—'],['Email',sel.prestataires.email||'—']].map(([k,v])=>(<div key={k}><div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:3,fontWeight:600,textTransform:'uppercase'}}>{k}</div><div style={{fontSize:13,color:'#e6edf3'}}>{v}</div></div>))}</div></div>}
               </div>
             )}

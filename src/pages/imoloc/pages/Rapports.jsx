@@ -64,7 +64,7 @@ export default function Rapports() {
         supabase.from('locataires').select('id,statut_global').eq('agence_id',ag.id),
         supabase.from('baux').select('id,statut,loyer_mensuel').eq('agence_id',ag.id),
         supabase.from('paiements').select('id,montant,statut,date_echeance,date_paiement,retard_jours,bail_id,biens(nom)').eq('agence_id',ag.id),
-        supabase.from('maintenances').select('id,statut').eq('agence_id',ag.id),
+        supabase.from('tickets').select('id,statut').eq('agence_id',ag.id),
       ])
       const b=biens.data||[], l=locataires.data||[], bx=baux.data||[], p=paiements.data||[], m=maintenances.data||[]
       const occupes=b.filter(x=>x.statut==='occupe').length
