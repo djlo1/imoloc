@@ -357,14 +357,21 @@ export default function Paiements() {
     finally{ setLoading(false) }
   }
 
+  // Montant restant du sur une echeance (0 si deja soldee) — sert a la fois
+  // a prefiller le formulaire d'encaissement et a decider si un nouveau
+  // versement solde ou non l'echeance.
+  const reliquat = (p) => Math.max(0, Number(p.montant||0) - Number(p.montant_paye||0))
+
   const marquerPaye = async () => {
     if (!selPaie) return
     setSaving(true)
     try {
-      const montantPaye = parseFloat(payForm.montant_paye) || selPaie.montant
-      const isPartiel   = montantPaye < selPaie.montant
+      const versementActuel = parseFloat(payForm.montant_paye) || 0
+      const totalRecu = Number(selPaie.montant_paye||0) + versementActuel
+      const isPartiel = totalRecu < selPaie.montant
       const { error } = await supabase.from('paiements').update({
         statut:              isPartiel ? 'partiel' : 'paye',
+        montant_paye:        totalRecu,
         date_paiement:       payForm.date_paiement || new Date().toISOString(),
         mode_paiement:       payForm.mode,
         operateur:           payForm.operateur || null,
@@ -390,7 +397,7 @@ export default function Paiements() {
 
   const remettreEnAttente = async (p) => {
     if (!confirm('Remettre en attente ?')) return
-    const { error } = await supabase.from('paiements').update({ statut:'en_attente', date_paiement:null, reference_transaction:null }).eq('id', p.id)
+    const { error } = await supabase.from('paiements').update({ statut:'en_attente', date_paiement:null, reference_transaction:null, montant_paye:null }).eq('id', p.id)
     if (error) { toast.error(error.message); return }
     toast.success('Remis en attente'); setSelPaie(x=>x?{...x,statut:'en_attente'}:null); initData()
   }
@@ -433,14 +440,14 @@ export default function Paiements() {
 
   const stats = {
     attendu:  paiements.filter(p=>p.statut!=='annule').reduce((a,p)=>a+(p.montant||0),0),
-    encaisse: paiements.filter(p=>p.statut==='paye'||p.statut==='partiel').reduce((a,p)=>a+(p.montant||0),0),
+    encaisse: paiements.filter(p=>p.statut==='paye'||p.statut==='partiel').reduce((a,p)=>a+Number(p.montant_paye??p.montant??0),0),
     retard:   paiements.filter(p=>p.statut==='en_retard').length,
     attente:  paiements.filter(p=>p.statut==='en_attente').length,
   }
   const now = new Date()
   const moisPrec = new Date(now.getFullYear(), now.getMonth()-1)
-  const encaisseCeMois = paiements.filter(p=>p.date_paiement && (p.statut==='paye'||p.statut==='partiel') && new Date(p.date_paiement).getMonth()===now.getMonth() && new Date(p.date_paiement).getFullYear()===now.getFullYear()).reduce((a,p)=>a+(p.montant||0),0)
-  const encaisseMoisPrec = paiements.filter(p=>p.date_paiement && (p.statut==='paye'||p.statut==='partiel') && new Date(p.date_paiement).getMonth()===moisPrec.getMonth() && new Date(p.date_paiement).getFullYear()===moisPrec.getFullYear()).reduce((a,p)=>a+(p.montant||0),0)
+  const encaisseCeMois = paiements.filter(p=>p.date_paiement && (p.statut==='paye'||p.statut==='partiel') && new Date(p.date_paiement).getMonth()===now.getMonth() && new Date(p.date_paiement).getFullYear()===now.getFullYear()).reduce((a,p)=>a+Number(p.montant_paye??p.montant??0),0)
+  const encaisseMoisPrec = paiements.filter(p=>p.date_paiement && (p.statut==='paye'||p.statut==='partiel') && new Date(p.date_paiement).getMonth()===moisPrec.getMonth() && new Date(p.date_paiement).getFullYear()===moisPrec.getFullYear()).reduce((a,p)=>a+Number(p.montant_paye??p.montant??0),0)
   const encaisseTrend = encaisseMoisPrec>0 ? Math.round(((encaisseCeMois-encaisseMoisPrec)/encaisseMoisPrec)*100) : (encaisseCeMois>0?100:0)
   const tauxRecouvrement = stats.attendu>0 ? Math.round((stats.encaisse/stats.attendu)*100) : 0
 
@@ -573,7 +580,7 @@ export default function Paiements() {
                     <td className="fl-td"><SBadge s={p.statut}/></td>
                     <td className="fl-td" onClick={e=>e.stopPropagation()}>
                       {['en_attente','en_retard','partiel'].includes(p.statut)&&(
-                        <button className='px-btn px-btn-g' style={{padding:'4px 10px',fontSize:12}} onClick={()=>{setSelPaie(p);setPayForm({mode:'Mobile Money',operateur:'',reference:'',date_paiement:new Date().toISOString().split('T')[0],montant_paye:String(p.montant),notes:''});setShowPay(true)}}>Encaisser</button>
+                        <button className='px-btn px-btn-g' style={{padding:'4px 10px',fontSize:12}} onClick={()=>{setSelPaie(p);setPayForm({mode:'Mobile Money',operateur:'',reference:'',date_paiement:new Date().toISOString().split('T')[0],montant_paye:String(reliquat(p)),notes:''});setShowPay(true)}}>Encaisser</button>
                       )}
                     </td>
                   </tr>
@@ -603,7 +610,8 @@ export default function Paiements() {
               <div className='px-fld'>
                 <label className='px-lbl'>Montant encaisse (FCFA)</label>
                 <input autoFocus className='px-inp' type='number' min='0' value={payForm.montant_paye} onChange={e=>setPF('montant_paye',e.target.value)}/>
-                {payForm.montant_paye && parseFloat(payForm.montant_paye) < selPaie.montant && <div style={{display:'flex',alignItems:'center',gap:4,fontSize:12,color:'#6c63ff',marginTop:5}}><AlertTriangle/> Montant partiel — sera marque comme Partiel</div>}
+                {selPaie.montant_paye>0 && <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:5}}>Deja recu : {fmt(selPaie.montant_paye)} FCFA · Reliquat avant ce versement : {fmt(reliquat(selPaie))} FCFA</div>}
+                {payForm.montant_paye && (Number(selPaie.montant_paye||0)+parseFloat(payForm.montant_paye)) < selPaie.montant && <div style={{display:'flex',alignItems:'center',gap:4,fontSize:12,color:'#6c63ff',marginTop:5}}><AlertTriangle/> Montant partiel — sera marque comme Partiel</div>}
               </div>
               <div className='px-g2'>
                 <div>
@@ -653,7 +661,7 @@ export default function Paiements() {
                 <div style={{fontSize:13,color:'rgba(255,255,255,0.4)'}}>Echeance du {selPaie.date_echeance?new Date(selPaie.date_echeance).toLocaleDateString('fr-FR'):'—'}</div>
                 {selPaie.statut==='en_retard'&&selPaie.date_echeance&&<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:4,fontSize:12.5,color:'#ef4444',marginTop:4}}><AlertTriangle/> Retard de {Math.floor((new Date()-new Date(selPaie.date_echeance))/(1000*60*60*24))} jours</div>}
               </div>
-              {[['Bien',selPaie.biens?.nom||'—'],['Locataire',`${selPaie.locataires?.prenom||''} ${selPaie.locataires?.nom||'—'}`],['Periode',`${MOIS[(selPaie.periode_mois||1)-1]} ${selPaie.periode_annee||'—'}`],['Mode bail',selPaie.mode||'—'],['Ref. transaction',selPaie.reference_transaction||null],['Operateur',selPaie.operateur||null],['Date paiement',selPaie.date_paiement?new Date(selPaie.date_paiement).toLocaleDateString('fr-FR'):null],['Notes',selPaie.notes||null]].map(([k,v])=>v?(
+              {[['Bien',selPaie.biens?.nom||'—'],['Locataire',`${selPaie.locataires?.prenom||''} ${selPaie.locataires?.nom||'—'}`],['Periode',`${MOIS[(selPaie.periode_mois||1)-1]} ${selPaie.periode_annee||'—'}`],['Mode bail',selPaie.mode||'—'],selPaie.statut==='partiel'?['Montant recu',fmt(selPaie.montant_paye)+' FCFA']:null,selPaie.statut==='partiel'?['Reliquat',fmt(reliquat(selPaie))+' FCFA']:null,['Ref. transaction',selPaie.reference_transaction||null],['Operateur',selPaie.operateur||null],['Date paiement',selPaie.date_paiement?new Date(selPaie.date_paiement).toLocaleDateString('fr-FR'):null],['Notes',selPaie.notes||null]].filter(Boolean).map(([k,v])=>v?(
                 <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
                   <span style={{fontSize:13,color:'rgba(255,255,255,0.4)',width:140}}>{k}</span>
                   <span style={{fontSize:13.5,color:'#e6edf3',fontWeight:500,textAlign:'right'}}>{v}</span>
@@ -661,7 +669,7 @@ export default function Paiements() {
               ):null)}
               <div style={{marginTop:24,display:'flex',flexDirection:'column',gap:8}}>
                 {['en_attente','en_retard','partiel'].includes(selPaie.statut)&&(
-                  <button className='px-btn px-btn-g' style={{justifyContent:'center',padding:'11px',display:'flex',alignItems:'center',gap:6}} onClick={()=>{setPayForm({mode:'Mobile Money',operateur:'',reference:'',date_paiement:new Date().toISOString().split('T')[0],montant_paye:String(selPaie.montant),notes:''});setShowPay(true)}}><CheckCircle2/> Encaisser ce paiement</button>
+                  <button className='px-btn px-btn-g' style={{justifyContent:'center',padding:'11px',display:'flex',alignItems:'center',gap:6}} onClick={()=>{setPayForm({mode:'Mobile Money',operateur:'',reference:'',date_paiement:new Date().toISOString().split('T')[0],montant_paye:String(reliquat(selPaie)),notes:''});setShowPay(true)}}><CheckCircle2/> Encaisser ce paiement</button>
                 )}
                 {selPaie.statut==='paye'&&(
                   <button className='px-btn px-btn-y' style={{justifyContent:'center',padding:'11px',display:'flex',alignItems:'center',gap:6}} onClick={()=>remettreEnAttente(selPaie)}><Undo2/> Remettre en attente</button>
