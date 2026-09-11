@@ -343,6 +343,8 @@ export default function ImolocBiens() {
   const [newDocument, setNewDocument]       = useState({ nom:'', type_document:'', categorie:'', visibilite:'interne_agence', file:null })
   const [uploadingDoc, setUploadingDoc]     = useState(false)
   const [bienHistorique, setBienHistorique] = useState([])
+  const [bienBaux, setBienBaux]             = useState([])
+  const [bienPaiements, setBienPaiements]   = useState([])
 
   // Pour l'etape 5 (proprietaire)
   const [proprietaires, setProprietaires] = useState([])
@@ -585,6 +587,8 @@ export default function ImolocBiens() {
         { data: sinistres },
         { data: docs },
         { data: histo },
+        { data: baux },
+        { data: paiements },
       ] = await Promise.all([
         supabase.from('biens_proprietaires').select('*, proprietaires(id,nom,prenom,telephone,email)').eq('bien_id', bienId),
         supabase.from('biens_equipements').select('equipement_id, valeur').eq('bien_id', bienId),
@@ -597,6 +601,8 @@ export default function ImolocBiens() {
         supabase.from('sinistres').select('*').eq('bien_id', bienId).order('date_sinistre', { ascending:false }),
         supabase.from('documents').select('*').eq('entite_type','bien').eq('entite_id', bienId).order('created_at', { ascending:false }),
         supabase.from('historique').select('*').eq('entite_type','bien').eq('entite_id', bienId).order('created_at', { ascending:false }),
+        supabase.from('baux').select('*, locataires(nom,prenom)').eq('bien_id', bienId).order('date_debut', { ascending:false }),
+        supabase.from('paiements').select('*').eq('bien_id', bienId).order('date_echeance', { ascending:false }).limit(24),
       ])
       setBienProps(props||[])
       setBienEquip(equip||[])
@@ -607,6 +613,8 @@ export default function ImolocBiens() {
       setBienTaxes(taxes||[])
       setBienSinistres(sinistres||[])
       setBienHistorique(histo||[])
+      setBienBaux(baux||[])
+      setBienPaiements(paiements||[])
 
       if ((docs||[]).length>0) {
         const withUrls = await Promise.all((docs||[]).map(async d => {
@@ -2228,23 +2236,68 @@ export default function ImolocBiens() {
 
               {/* Tab Baux */}
               {detailTab==='baux'&&(
-                <div style={{textAlign:'center',padding:'60px 20px'}}>
-                  <FileText size={36} style={{marginBottom:12,opacity:0.3}}/>
-                  <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.35)',marginBottom:8}}>
-                    {selectedBien.nb_baux} bail{selectedBien.nb_baux!==1?'s':''} actif{selectedBien.nb_baux!==1?'s':''}
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span className="pb-sec" style={{margin:0}}>{bienBaux.length} bail{bienBaux.length!==1?'s':''}</span>
+                    <button className="pb-btn" onClick={()=>navigate('/imoloc/baux')}>Voir tous les baux</button>
                   </div>
-                  <div style={{fontSize:13,color:'rgba(255,255,255,0.25)',marginBottom:18}}>Module baux en cours de developpement</div>
-                  <button className="pb-btn" style={{margin:'0 auto'}} onClick={()=>navigate('/imoloc/baux')}>Voir les baux</button>
-                </div>
+                  {detailLoading?(
+                    <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement...</div>
+                  ):bienBaux.length===0?(
+                    <div style={{textAlign:'center',padding:'40px 20px'}}>
+                      <FileText size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucun bail pour ce bien</div>
+                    </div>
+                  ):(
+                    bienBaux.map(b=>(
+                      <div key={b.id} onClick={()=>navigate(`/imoloc/baux/${b.id}`)} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)',cursor:'pointer'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div className="pb-prop-avatar" style={{background:b.statut==='actif'?'#00c896':'#8b949e'}}><FileText size={14}/></div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{b.locataires?`${b.locataires.prenom||''} ${b.locataires.nom||''}`.trim():'—'} <span style={{fontWeight:400,color:'rgba(255,255,255,0.35)'}}>· {b.statut}</span></div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>
+                              {b.date_debut?new Date(b.date_debut).toLocaleDateString('fr-FR'):'—'} → {b.date_fin?new Date(b.date_fin).toLocaleDateString('fr-FR'):'—'}
+                              {b.loyer_mensuel!=null&&` · ${fmt(b.loyer_mensuel)} FCFA/mois`}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </>
               )}
 
               {/* Tab Paiements */}
               {detailTab==='paiements'&&(
-                <div style={{textAlign:'center',padding:'60px 20px'}}>
-                  <Wallet size={36} style={{marginBottom:12,opacity:0.3}}/>
-                  <div style={{fontSize:13,color:'rgba(255,255,255,0.25)',marginBottom:18}}>Module paiements en cours de developpement</div>
-                  <button className="pb-btn" style={{margin:'0 auto'}} onClick={()=>navigate('/imoloc/paiements')}>Voir les paiements</button>
-                </div>
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span className="pb-sec" style={{margin:0}}>{bienPaiements.length} echeance{bienPaiements.length!==1?'s':''} recente{bienPaiements.length!==1?'s':''}</span>
+                    <button className="pb-btn" onClick={()=>navigate('/imoloc/paiements')}>Voir tous les paiements</button>
+                  </div>
+                  {detailLoading?(
+                    <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement...</div>
+                  ):bienPaiements.length===0?(
+                    <div style={{textAlign:'center',padding:'40px 20px'}}>
+                      <Wallet size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucune echeance pour ce bien</div>
+                    </div>
+                  ):(
+                    bienPaiements.map(p=>(
+                      <div key={p.id} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div className="pb-prop-avatar" style={{background:p.statut==='paye'?'#00c896':p.statut==='en_retard'?'#ef4444':p.statut==='partiel'?'#6c63ff':'#8b949e'}}><Wallet size={14}/></div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{fmt(p.montant)} FCFA <span style={{fontWeight:400,color:'rgba(255,255,255,0.35)'}}>· {p.statut}</span></div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>
+                              Echeance {p.date_echeance?new Date(p.date_echeance).toLocaleDateString('fr-FR'):'—'}
+                              {p.statut==='partiel'&&p.montant_paye!=null&&` · ${fmt(p.montant_paye)} FCFA recus`}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </>
               )}
 
               {/* Tab Compteurs */}

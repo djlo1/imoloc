@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { User, Building2, Factory, Hourglass, RefreshCw, Download, Link2, Search, UserPlus, AlertTriangle, FileText, Pencil, Folder, Wallet, Check } from 'lucide-react'
+import { User, Building2, Factory, Hourglass, RefreshCw, Download, Link2, Search, UserPlus, AlertTriangle, FileText, Pencil, Folder, Wallet, Check, Upload, Image, Plus, X } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import StatusDot from '../../../components/ui/StatusDot'
 import toast from 'react-hot-toast'
 
+const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') : '—'
 const getInitials = (p) => ((p?.prenom?.[0]||'')+(p?.nom?.[0]||'')).toUpperCase() || '?'
 const COLORS = ['#0078d4','#6c63ff','#00c896','#f59e0b','#4da6ff','#a78bfa']
 const getColor = (i) => COLORS[i % COLORS.length]
@@ -76,7 +77,76 @@ export default function ImolocProprietaires() {
   const startX = useRef(0)
   const startW = useRef(0)
 
+  // Onglets Biens/Paiements/Documents de la fiche
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [propBiens, setPropBiens] = useState([])
+  const [propPaiements, setPropPaiements] = useState([])
+  const [propDocuments, setPropDocuments] = useState([])
+  const [showAddDocument, setShowAddDocument] = useState(false)
+  const [newDocument, setNewDocument] = useState({ nom:'', type_document:'', categorie:'', visibilite:'interne_agence', file:null })
+  const [uploadingDoc, setUploadingDoc] = useState(false)
+
   useEffect(() => { initData() }, [])
+
+  // Chargement des onglets Biens/Paiements/Documents de la fiche proprietaire
+  useEffect(() => {
+    if (!selectedProp?.id) return
+    loadProprietaireDetail(selectedProp.id)
+  }, [selectedProp?.id])
+
+  const loadProprietaireDetail = async (proprietaireId) => {
+    setDetailLoading(true)
+    try {
+      const { data: bp } = await supabase.from('biens_proprietaires').select('bien_id, pourcentage, statut').eq('proprietaire_id', proprietaireId).eq('statut','actif')
+      const bienIds = (bp||[]).map(x=>x.bien_id)
+      const [{ data: biensData }, { data: paiementsData }, { data: docs }] = await Promise.all([
+        bienIds.length>0 ? supabase.from('biens').select('id,nom,ville,statut,loyer').in('id', bienIds) : Promise.resolve({ data: [] }),
+        bienIds.length>0 ? supabase.from('paiements').select('*').in('bien_id', bienIds).order('date_echeance', { ascending:false }).limit(24) : Promise.resolve({ data: [] }),
+        supabase.from('documents').select('*').eq('entite_type','proprietaire').eq('entite_id', proprietaireId).order('created_at', { ascending:false }),
+      ])
+      setPropBiens(biensData||[])
+      setPropPaiements(paiementsData||[])
+      if ((docs||[]).length>0) {
+        const withUrls = await Promise.all((docs||[]).map(async d => {
+          const { data: signed } = await supabase.storage.from('documents').createSignedUrl(d.fichier_url, 3600)
+          return { ...d, signed_url: signed?.signedUrl||null }
+        }))
+        setPropDocuments(withUrls)
+      } else {
+        setPropDocuments([])
+      }
+    } catch(e) { console.error('loadProprietaireDetail', e) }
+    finally { setDetailLoading(false) }
+  }
+
+  const addDocumentProp = async () => {
+    if (!newDocument.file || !newDocument.nom || !selectedProp) { toast.error('Nom et fichier requis'); return }
+    setUploadingDoc(true)
+    try {
+      const { data:{ user } } = await supabase.auth.getUser()
+      const path = `${agence.id}/proprietaire/${selectedProp.id}/${Date.now()}_${newDocument.file.name}`
+      const { error: upErr } = await supabase.storage.from('documents').upload(path, newDocument.file)
+      if (upErr) throw upErr
+      const { data, error } = await supabase.from('documents').insert({
+        agence_id: agence.id, entite_type:'proprietaire', entite_id: selectedProp.id,
+        type_document: newDocument.type_document||'autre', categorie: newDocument.categorie||null,
+        nom: newDocument.nom, fichier_url: path, visibilite: newDocument.visibilite,
+        created_by: user.id,
+      }).select('*').single()
+      if (error) throw error
+      const { data: signed } = await supabase.storage.from('documents').createSignedUrl(path, 3600)
+      setPropDocuments(d=>[{ ...data, signed_url: signed?.signedUrl||null }, ...d])
+      setShowAddDocument(false)
+      setNewDocument({ nom:'', type_document:'', categorie:'', visibilite:'interne_agence', file:null })
+      toast.success('Document ajoute')
+    } catch(e) { toast.error(e.message||'Erreur upload') }
+    finally { setUploadingDoc(false) }
+  }
+  const deleteDocumentProp = async (doc) => {
+    setPropDocuments(d=>d.filter(x=>x.id!==doc.id))
+    await supabase.storage.from('documents').remove([doc.fichier_url])
+    await supabase.from('documents').delete().eq('id', doc.id)
+  }
 
   // Lien profond : /imoloc/proprietaires?proprietaire=<id> ouvre directement la fiche
   useEffect(() => {
@@ -1266,31 +1336,140 @@ export default function ImolocProprietaires() {
 
               {/* ── Tab Biens ── */}
               {detailTab==='biens'&&(
-                <div style={{textAlign:'center',padding:'60px 20px',color:'rgba(255,255,255,0.25)'}}>
-                  <div style={{marginBottom:14,opacity:0.4,display:'flex',justifyContent:'center'}}><Building2 size={36}/></div>
-                  <div style={{fontSize:15,fontWeight:600,marginBottom:8,color:'rgba(255,255,255,0.35)'}}>
-                    {selectedProp.nb_biens||0} bien{(selectedProp.nb_biens||0)!==1?'s':''} confie{(selectedProp.nb_biens||0)!==1?'s':''}
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span className="pp-sec" style={{margin:0}}>{propBiens.length} bien{propBiens.length!==1?'s':''} confie{propBiens.length!==1?'s':''}</span>
+                    <button className="pp-btn" onClick={()=>navigate('/imoloc/biens')}>Voir tous les biens</button>
                   </div>
-                  <button className="pp-btn pp-btn-p" style={{margin:'0 auto'}} onClick={()=>navigate('/imoloc/biens')}>
-                    Voir les biens
-                  </button>
-                </div>
-              )}
-
-              {/* ── Tab Documents ── */}
-              {detailTab==='documents'&&(
-                <div style={{textAlign:'center',padding:'60px 20px',color:'rgba(255,255,255,0.25)'}}>
-                  <div style={{marginBottom:14,opacity:0.4,display:'flex',justifyContent:'center'}}><Folder size={36}/></div>
-                  <div style={{fontSize:14,color:'rgba(255,255,255,0.3)'}}>Module documents en cours de developpement</div>
-                </div>
+                  {detailLoading?(
+                    <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement...</div>
+                  ):propBiens.length===0?(
+                    <div style={{textAlign:'center',padding:'40px 20px'}}>
+                      <Building2 size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucun bien confie</div>
+                    </div>
+                  ):(
+                    propBiens.map(b=>(
+                      <div key={b.id} onClick={()=>navigate(`/imoloc/biens?bien=${b.id}`)} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)',cursor:'pointer'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div className="pp-av" style={{background:'#0078d4'}}><Building2 size={14}/></div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{b.nom}</div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{b.ville||'—'} · {b.statut}{b.loyer!=null&&` · ${fmt(b.loyer)} FCFA/mois`}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </>
               )}
 
               {/* ── Tab Paiements ── */}
               {detailTab==='paiements'&&(
-                <div style={{textAlign:'center',padding:'60px 20px',color:'rgba(255,255,255,0.25)'}}>
-                  <div style={{marginBottom:14,opacity:0.4,display:'flex',justifyContent:'center'}}><Wallet size={36}/></div>
-                  <div style={{fontSize:14,color:'rgba(255,255,255,0.3)'}}>Module paiements en cours de developpement</div>
-                </div>
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span className="pp-sec" style={{margin:0}}>{propPaiements.length} echeance{propPaiements.length!==1?'s':''} recente{propPaiements.length!==1?'s':''}</span>
+                    <button className="pp-btn" onClick={()=>navigate('/imoloc/paiements')}>Voir tous les paiements</button>
+                  </div>
+                  {detailLoading?(
+                    <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement...</div>
+                  ):propPaiements.length===0?(
+                    <div style={{textAlign:'center',padding:'40px 20px'}}>
+                      <Wallet size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucune echeance sur les biens de ce proprietaire</div>
+                    </div>
+                  ):(
+                    propPaiements.map(p=>(
+                      <div key={p.id} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div className="pp-av" style={{background:p.statut==='paye'?'#00c896':p.statut==='en_retard'?'#ef4444':p.statut==='partiel'?'#6c63ff':'#8b949e'}}><Wallet size={14}/></div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{fmt(p.montant)} FCFA <span style={{fontWeight:400,color:'rgba(255,255,255,0.35)'}}>· {p.statut}</span></div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>
+                              Echeance {p.date_echeance?new Date(p.date_echeance).toLocaleDateString('fr-FR'):'—'}
+                              {p.statut==='partiel'&&p.montant_paye!=null&&` · ${fmt(p.montant_paye)} FCFA recus`}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </>
+              )}
+
+              {/* ── Tab Documents ── */}
+              {detailTab==='documents'&&(
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span className="pp-sec" style={{margin:0}}>Documents</span>
+                    <button className="pp-btn pp-btn-p" onClick={()=>setShowAddDocument(o=>!o)}><Plus size={13}/> Ajouter</button>
+                  </div>
+                  {showAddDocument&&(
+                    <div style={{background:'rgba(255,255,255,0.03)',padding:14,borderRadius:8,marginBottom:14}}>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                        <div style={{gridColumn:'1/-1'}}>
+                          <label className="pp-lbl">Nom <span style={{color:'#ef4444'}}>*</span></label>
+                          <input className="pp-inp" value={newDocument.nom} onChange={e=>setNewDocument(d=>({...d,nom:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pp-lbl">Type</label>
+                          <select className="pp-inp" value={newDocument.type_document} onChange={e=>setNewDocument(d=>({...d,type_document:e.target.value}))}>
+                            <option value="">Choisir...</option>
+                            <option value="piece_identite">Piece d'identite</option>
+                            <option value="contrat">Contrat</option>
+                            <option value="titre_foncier">Titre foncier</option>
+                            <option value="releve">Releve</option>
+                            <option value="autre">Autre</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="pp-lbl">Categorie</label>
+                          <select className="pp-inp" value={newDocument.categorie} onChange={e=>setNewDocument(d=>({...d,categorie:e.target.value}))}>
+                            <option value="">Non classee</option>
+                            <option value="propriete">Propriete</option>
+                            <option value="administratif">Administratif</option>
+                            <option value="gestion">Gestion</option>
+                          </select>
+                        </div>
+                        <div style={{gridColumn:'1/-1'}}>
+                          <label className="pp-lbl">Visibilite</label>
+                          <select className="pp-inp" value={newDocument.visibilite} onChange={e=>setNewDocument(d=>({...d,visibilite:e.target.value}))}>
+                            <option value="interne_agence">Interne agence</option>
+                            <option value="visible_proprietaire">Visible proprietaire</option>
+                            <option value="public">Public</option>
+                          </select>
+                        </div>
+                        <div style={{gridColumn:'1/-1'}}>
+                          <label className="pp-lbl">Fichier <span style={{color:'#ef4444'}}>*</span></label>
+                          <input type="file" onChange={e=>setNewDocument(d=>({...d,file:e.target.files?.[0]||null}))} style={{fontSize:12.5,color:'rgba(255,255,255,0.6)'}}/>
+                        </div>
+                      </div>
+                      <button className="pp-btn pp-btn-p" disabled={uploadingDoc} onClick={addDocumentProp}>{uploadingDoc?'Envoi...':'Ajouter le document'}</button>
+                    </div>
+                  )}
+                  {detailLoading?(
+                    <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Chargement...</div>
+                  ):propDocuments.length===0?(
+                    <div style={{textAlign:'center',padding:'40px 20px'}}>
+                      <Upload size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucun document</div>
+                    </div>
+                  ):(
+                    propDocuments.map(doc=>(
+                      <div key={doc.id} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div className="pp-av" style={{background:'#6c63ff'}}>{doc.type_document==='photo'?<Image size={14}/>:<FileText size={14}/>}</div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{doc.nom}</div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{doc.type_document}{doc.categorie&&` · ${doc.categorie}`} · {new Date(doc.created_at).toLocaleDateString('fr-FR')}</div>
+                          </div>
+                          {doc.signed_url&&<a href={doc.signed_url} target="_blank" rel="noopener noreferrer" className="pp-btn" style={{padding:'5px 10px',fontSize:12}}>Ouvrir</a>}
+                          <button className="pp-cls" onClick={()=>deleteDocumentProp(doc)}><X size={14}/></button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </>
               )}
             </div>
           </div>
