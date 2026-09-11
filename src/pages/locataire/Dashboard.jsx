@@ -55,8 +55,18 @@ export default function DashboardLocataire() {
         .select('*').eq('user_id', user.id).maybeSingle()
 
       if (!loc) {
+        // Repli par email : uniquement pour la toute premiere connexion,
+        // avant que le compte ne soit lie. Des qu'on trouve une
+        // correspondance, on "reclame" la fiche (user_id) pour que toute
+        // connexion suivante passe par le lien direct ci-dessus, plus fiable
+        // qu'une correspondance par email (qui pourrait ambigument
+        // correspondre a une autre fiche locataire, ex. une autre agence).
         const { data:locByEmail } = await supabase.from('locataires')
-          .select('*').eq('email', user.email).maybeSingle()
+          .select('*').eq('email', user.email).is('user_id', null).maybeSingle()
+        if (locByEmail?.id) {
+          await supabase.from('locataires').update({ user_id: user.id }).eq('id', locByEmail.id)
+          locByEmail.user_id = user.id
+        }
         setLocataire(locByEmail)
         if (locByEmail?.id) await loadBail(locByEmail.id, user.id)
       } else {

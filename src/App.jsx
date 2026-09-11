@@ -30,13 +30,18 @@ function PrivateRoute({ children, roles }) {
   const { user, profile, loading } = useAuthStore()
   if (loading) return <Loader />
   if (!user) return <Navigate to="/login" replace />
-  if (roles && profile && !roles.includes(profile.role)) {
-    // Rediriger vers le bon dashboard selon le rôle
+  // Sans role reconnu (profil manquant, ou role qui ne correspond a rien
+  // de connu), on refuse l'acces par defaut plutot que de laisser passer —
+  // avant, l'absence de correspondance ci-dessous retombait silencieusement
+  // sur "return children" en fin de fonction.
+  if (roles && (!profile || !roles.includes(profile.role))) {
+    // Rediriger vers le bon dashboard selon le rôle, si on en connait un
     const AGENCE_ROLES = ['agence','global_admin','user_admin','billing_admin','reports_reader','security_admin','password_admin','agent','comptable','lecteur']
-    if (AGENCE_ROLES.includes(profile.role)) return <Navigate to="/agence" replace />
-    if (profile.role === 'proprietaire') return <Navigate to="/proprietaire" replace />
-    if (profile.role === 'locataire') return <Navigate to="/locataire" replace />
-    if (profile.role === 'super_admin') return <Navigate to="/admin" replace />
+    if (profile && AGENCE_ROLES.includes(profile.role)) return <Navigate to="/agence" replace />
+    if (profile?.role === 'proprietaire') return <Navigate to="/proprietaire" replace />
+    if (profile?.role === 'locataire') return <Navigate to="/locataire" replace />
+    if (profile?.role === 'super_admin') return <Navigate to="/admin" replace />
+    return <Navigate to="/login" replace />
   }
   return children
 }
@@ -49,9 +54,12 @@ export default function App() {
     const fetchProfile = async (userId) => {
       try {
         const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-        if (mounted) setProfile(data || { id: userId, role: 'global_admin' })
+        // Ne jamais fabriquer un profil admin par defaut : un echec de
+        // lecture (reseau, RLS transitoire) doit bloquer l'acces aux pages
+        // protegees par role, pas promouvoir l'utilisateur en global_admin.
+        if (mounted) setProfile(data || null)
       } catch {
-        if (mounted) setProfile({ id: userId, role: 'global_admin' })
+        if (mounted) setProfile(null)
       } finally {
         if (mounted) setLoading(false)
       }
@@ -81,7 +89,7 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/agence/*" element={<PrivateRoute roles={['agence','global_admin','user_admin','billing_admin','reports_reader','security_admin','password_admin','agent','comptable','lecteur']}><DashboardAgence /></PrivateRoute>} />
         <Route path="/proprietaire/*" element={<PrivateRoute roles={['proprietaire']}><DashboardProprietaire /></PrivateRoute>} />
-        <Route path="/locataire/*" element={<PrivateRoute><DashboardLocataire /></PrivateRoute>} />
+        <Route path="/locataire/*" element={<PrivateRoute roles={['locataire']}><DashboardLocataire /></PrivateRoute>} />
         <Route path="/admin/*" element={<PrivateRoute roles={['super_admin']}><DashboardAdmin /></PrivateRoute>} />
         <Route path="/imoloc/*" element={<ImolocApp />} />
         <Route path="*" element={<Navigate to="/" replace />} />
