@@ -95,7 +95,6 @@ export default function DashboardAgence() {
                 <Route path="locataires" element={<Locataires />} />
                 <Route path="locataires/*" element={<Locataires />} />
                 <Route path="paiements" element={<Paiements />} />
-                <Route path="paiements/factures-locataires" element={<Facturation />} />
                 <Route path="paiements/factures-diverses" element={<Facturation />} />
                 <Route path="paiements/releves-proprietaires" element={<Facturation />} />
                 <Route path="paiements/depenses-charges" element={<Facturation />} />

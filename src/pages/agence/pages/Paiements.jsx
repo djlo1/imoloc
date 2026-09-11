@@ -393,7 +393,7 @@ export default function Paiements() {
           Accueil <span style={{ margin:'0 4px' }}>&gt;</span> <span style={{ color:'rgba(255,255,255,0.6)' }}>Facturation</span>
         </div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,marginBottom:20}}>
-          <div style={{fontSize:26,fontWeight:700,color:'#e6edf3',letterSpacing:'-0.02em',display:'flex',alignItems:'center',gap:10}}><CreditCard style={{width:22,height:22}}/> Paiements reçus</div>
+          <div style={{fontSize:26,fontWeight:700,color:'#e6edf3',letterSpacing:'-0.02em',display:'flex',alignItems:'center',gap:10}}><CreditCard style={{width:22,height:22}}/> Factures et paiements</div>
           <button className="pg-btn pg-btn-blue" onClick={() => setShowModal(true)}><Plus/> Enregistrer un paiement</button>
         </div>
 

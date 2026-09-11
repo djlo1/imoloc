@@ -40,6 +40,17 @@ const MODES = ['Mobile Money','Virement bancaire','Especes','Cheque']
 const MOIS  = ['Janvier','Fevrier','Mars','Avril','Mai','Juin','Juillet','Aout','Septembre','Octobre','Novembre','Decembre']
 const fmt   = (n) => n!=null ? Number(n).toLocaleString('fr-FR') : '—'
 
+const RefLink = ({ to, children }) => {
+  const navigate = useNavigate()
+  if (!children || children==='—') return <span style={{color:'rgba(255,255,255,0.3)'}}>—</span>
+  return (
+    <a href={to} onClick={e=>{e.preventDefault();e.stopPropagation();navigate(to)}} style={{color:'#4da6ff',textDecoration:'none',cursor:'pointer'}}
+      onMouseOver={e=>e.currentTarget.style.color='#6cb8ff'} onMouseOut={e=>e.currentTarget.style.color='#4da6ff'}>
+      {children}
+    </a>
+  )
+}
+
 // ─────────────────────────────────────────────────────────
 // Systeme de table Fluent — identique a celui du Centre
 // d'administration (Abonnement.jsx) et de Facturation.jsx.
@@ -270,6 +281,8 @@ export default function ImolocPaiements() {
   const [filterStatut, setFilter] = useState('tous')
   const [filterMois, setFilterMois]   = useState('tous')
   const [filterAnnee, setFilterAnnee] = useState('tous')
+  const [filterProprietaire, setFilterProprietaire] = useState('tous')
+  const proprietairesMap = useRef({})
   const [selPaie, setSelPaie]     = useState(null)
   const [showPay, setShowPay]     = useState(false)
   const [saving, setSaving]       = useState(false)
@@ -281,11 +294,12 @@ export default function ImolocPaiements() {
   const [sortDir, setSortDir] = useState('asc')
   const [vue, setVue] = useState('liste')
   const [colWidths, setColWidths] = useState({})
-  const COL_DEFAULTS = { periode:130, bien:170, locataire:170, echeance:130, montant:130, statut:160 }
+  const COL_DEFAULTS = { periode:130, bien:170, locataire:170, proprietaire:170, echeance:130, montant:130, statut:160 }
   const COLONNES = [
     { key:'periode', label:'Periode', field:'periode_annee' },
     { key:'bien', label:'Bien', field:'bien_nom' },
     { key:'locataire', label:'Locataire', field:'locataire_nom' },
+    { key:'proprietaire', label:'Proprietaire', field:'proprietaire_nom' },
     { key:'echeance', label:'Echeance', field:'date_echeance' },
     { key:'montant', label:'Montant', field:'montant' },
     { key:'statut', label:'Etat', field:'statut' },
@@ -309,11 +323,17 @@ export default function ImolocPaiements() {
       const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
       setAgence(ag)
       if (!ag?.id) return
-      const { data } = await supabase
-        .from('paiements')
-        .select('*, biens(nom,ville), locataires(nom,prenom), baux(date_debut,date_fin,loyer_mensuel)')
-        .eq('agence_id', ag.id)
-        .order('date_echeance', {ascending:true})
+      const [{ data }, { data: props }] = await Promise.all([
+        supabase
+          .from('paiements')
+          .select('*, biens(nom,ville,proprietaire_id), locataires(nom,prenom), baux(date_debut,date_fin,loyer_mensuel)')
+          .eq('agence_id', ag.id)
+          .order('date_echeance', {ascending:true}),
+        supabase.from('proprietaires').select('id,nom,prenom'),
+      ])
+      const propsById = {}
+      for (const p of (props||[])) propsById[p.id] = `${p.prenom||''} ${p.nom||''}`.trim()
+      proprietairesMap.current = propsById
       // Mettre a jour automatiquement en_retard
       const today = new Date()
       const toUpdate = (data||[]).filter(p => p.statut==='en_attente' && p.date_echeance && new Date(p.date_echeance) < today)
@@ -321,7 +341,13 @@ export default function ImolocPaiements() {
         await supabase.from('paiements').update({ statut:'en_retard' }).in('id', toUpdate.map(p=>p.id))
         toUpdate.forEach(p=>{ p.statut='en_retard' })
       }
-      setPaiements((data||[]).map(p => ({ ...p, bien_nom: p.biens?.nom||'', locataire_nom: `${p.locataires?.prenom||''} ${p.locataires?.nom||''}`.trim() })))
+      setPaiements((data||[]).map(p => ({
+        ...p,
+        bien_nom: p.biens?.nom||'',
+        locataire_nom: `${p.locataires?.prenom||''} ${p.locataires?.nom||''}`.trim(),
+        proprietaire_id: p.biens?.proprietaire_id || null,
+        proprietaire_nom: propsById[p.biens?.proprietaire_id] || '',
+      })))
     } catch(e){ console.error(e) }
     finally{ setLoading(false) }
   }
@@ -366,13 +392,16 @@ export default function ImolocPaiements() {
 
   const annees = [...new Set(paiements.map(p=>p.periode_annee).filter(Boolean))].sort((a,b)=>b-a)
 
+  const uniqueProprietaires = Object.entries(proprietairesMap.current).map(([id,nom])=>({ value:id, label:nom||'—' }))
+
   const filtered = paiements
     .filter(p => {
-      const ms = !search || `${p.bien_nom} ${p.locataire_nom}`.toLowerCase().includes(search.toLowerCase())
+      const ms = !search || `${p.bien_nom} ${p.locataire_nom}`.toLowerCase().includes(search.toLowerCase()) || p.locataire_id?.toLowerCase().includes(search.toLowerCase())
       const fs = filterStatut==='tous' || p.statut===filterStatut
       const fm = filterMois==='tous' || p.periode_mois===parseInt(filterMois)
       const fa = filterAnnee==='tous' || p.periode_annee===parseInt(filterAnnee)
-      return ms && fs && fm && fa
+      const fp = filterProprietaire==='tous' || p.proprietaire_id===filterProprietaire
+      return ms && fs && fm && fa && fp
     })
     .sort((a,b) => {
       if (!sortField) return 0
@@ -385,8 +414,8 @@ export default function ImolocPaiements() {
 
   const exporterCSV = (list) => {
     const lignes = [
-      ['Periode','Bien','Locataire','Echeance','Montant','Etat'],
-      ...list.map(p => [`${p.periode_mois}/${p.periode_annee}`, p.bien_nom, p.locataire_nom, p.date_echeance?new Date(p.date_echeance).toLocaleDateString('fr-FR'):'', `${fmt(p.montant)} FCFA`, S_CFG[p.statut]?.label||p.statut]),
+      ['Periode','Bien','Locataire','Proprietaire','Echeance','Montant','Etat'],
+      ...list.map(p => [`${p.periode_mois}/${p.periode_annee}`, p.bien_nom, p.locataire_nom, p.proprietaire_nom, p.date_echeance?new Date(p.date_echeance).toLocaleDateString('fr-FR'):'', `${fmt(p.montant)} FCFA`, S_CFG[p.statut]?.label||p.statut]),
     ]
     const csv = lignes.map(l => l.map(c => `"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n')
     const blob = new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8;' })
@@ -442,7 +471,7 @@ export default function ImolocPaiements() {
         <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14 }}>
           Accueil <span style={{ margin:'0 4px' }}>&gt;</span> <span style={{ color:'rgba(255,255,255,0.6)' }}>Facturation</span>
         </div>
-        <div style={{fontSize:26,fontWeight:700,color:'#e6edf3',letterSpacing:'-0.02em',marginBottom:20}}>Paiements reçus</div>
+        <div style={{fontSize:26,fontWeight:700,color:'#e6edf3',letterSpacing:'-0.02em',marginBottom:20}}>Factures et paiements</div>
 
         <div style={{ display:'flex', gap:10, padding:'14px 16px', background:'rgba(0,120,212,0.06)', borderRadius:2, marginBottom:24 }}>
           <Info style={{ color:'#4da6ff', flexShrink:0, marginTop:1 }}/>
@@ -490,6 +519,8 @@ export default function ImolocPaiements() {
             options={[{value:'tous',label:'Toutes'}, ...annees.map(a=>({value:String(a),label:String(a)}))]}/>
           <FilterPill label="Mois" value={filterMois} onChange={setFilterMois}
             options={[{value:'tous',label:'Tous'}, ...MOIS.map((m,i)=>({value:String(i+1),label:m}))]}/>
+          <FilterPill label="Proprietaire" value={filterProprietaire} onChange={setFilterProprietaire}
+            options={[{value:'tous',label:'Tous'}, ...uniqueProprietaires]}/>
         </div>
 
         {loading?(
@@ -526,8 +557,9 @@ export default function ImolocPaiements() {
                   <tr key={p.id} className={`fl-row${selected ? ' fl-row-selected' : ''}`} onClick={()=>setSelPaie(p)}>
                     <td className="fl-td"><FluentCheckbox checked={selected} onChange={()=>toggleSelectP(p.id)}/></td>
                     <td className="fl-td ind-td" style={{ fontWeight:600, '--ind-c':cfg.color }}>{moisLabel} {p.periode_annee}</td>
-                    <td className="fl-td">{p.bien_nom||'—'}</td>
-                    <td className="fl-td">{p.locataire_nom||'—'}</td>
+                    <td className="fl-td" onClick={ev=>ev.stopPropagation()}><RefLink to={`/imoloc/biens?bien=${p.bien_id}`}>{p.bien_nom||'—'}</RefLink></td>
+                    <td className="fl-td" onClick={ev=>ev.stopPropagation()}><RefLink to={`/imoloc/locataires?locataire=${p.locataire_id}`}>{p.locataire_nom||'—'}</RefLink></td>
+                    <td className="fl-td" onClick={ev=>ev.stopPropagation()}><RefLink to={`/imoloc/proprietaires?proprietaire=${p.proprietaire_id}`}>{p.proprietaire_nom||'—'}</RefLink></td>
                     <td className="fl-td" style={{color:'rgba(255,255,255,0.5)'}}>
                       {p.date_echeance?new Date(p.date_echeance).toLocaleDateString('fr-FR'):'—'}
                       {p.statut==='en_retard'&&p.date_echeance&&<span style={{color:'#ef4444'}}> · {Math.floor((new Date()-new Date(p.date_echeance))/(1000*60*60*24))}j</span>}
