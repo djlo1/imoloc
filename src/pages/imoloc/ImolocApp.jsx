@@ -111,7 +111,18 @@ export default function ImolocApp() {
     try {
       const { data:{ user } } = await supabase.auth.getUser()
       if (!user) { navigate("/login"); return }
-      const { data:ag } = await supabase.from("agences").select("*").eq("profile_id", user.id).single()
+      // Proprietaire du compte agence, sinon membre d'equipe via agence_users
+      // (meme resolution que agence/pages/Loci.jsx) — sans ce repli, un
+      // membre non-proprietaire n'a jamais d'agence resolue ici et voit un
+      // tableau de bord vide, alors que les pages elles-memes fonctionnent
+      // pour lui (RLS deja corrigee ailleurs pour biens/locataires).
+      let ag = (await supabase.from("agences").select("*").eq("profile_id", user.id).maybeSingle()).data
+      if (!ag) {
+        const { data:membership } = await supabase.from('agence_users').select('agence_id').eq('user_id', user.id).maybeSingle()
+        if (membership?.agence_id) {
+          ag = (await supabase.from('agences').select('*').eq('id', membership.agence_id).maybeSingle()).data
+        }
+      }
       setAgence(ag)
       if (ag?.id) {
         const [b,pr,l,bx,ret,rev] = await Promise.all([

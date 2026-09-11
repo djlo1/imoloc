@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { FileText, PenLine, RotateCcw, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
@@ -31,12 +31,20 @@ const addMonths = (d,n) => { const x=new Date(d); x.setMonth(x.getMonth()+n); re
 
 export default function ImolocBaux() {
   const navigate   = useNavigate()
+  const location   = useLocation()
   const [agence,setAgence]       = useState(null)
   const [baux,setBaux]           = useState([])
   const [loading,setLoading]     = useState(true)
   const [search,setSearch]       = useState('')
   const [filterStatut,setFilter] = useState('tous')
   const [filterEtape,setFEtape]  = useState('')
+
+  // Sous-menus sidebar /imoloc/baux/expiration et /imoloc/baux/termines —
+  // "termines" ne correspond a aucun statut unique, regroupe expire+resilie.
+  useEffect(() => {
+    const seg = location.pathname.split('/').pop()
+    if (seg === 'expiration' || seg === 'termines') setFilter(seg)
+  }, [location.pathname])
   const [showAdd,setShowAdd]     = useState(false)
   const [selBail,setSelBail]     = useState(null)
   const [detailTab,setTab]       = useState('infos')
@@ -318,6 +326,7 @@ export default function ImolocBaux() {
   const filtered = baux.filter(b=>{
     const ms = (b.titre||b.biens?.nom||b.locataires?.nom||'').toLowerCase().includes(search.toLowerCase())
     if(filterStatut==='expiration'){const f=b.date_fin?new Date(b.date_fin):null;return ms&&b.statut==='actif'&&f&&f<=in30&&f>=now}
+    if(filterStatut==='termines'){return ms&&(b.statut==='expire'||b.statut==='resilie')}
     const fs = filterStatut==='tous'||b.statut===filterStatut
     const fe = !filterEtape||b.etape===filterEtape
     return ms&&fs&&fe
@@ -439,7 +448,7 @@ export default function ImolocBaux() {
           </div>
         </div>
         <div style={{display:'flex',gap:4,marginBottom:16,flexWrap:'wrap'}}>
-          {[['tous','Tous'],['actif','Actifs'],['en_attente','En attente'],['expiration','Expiration proche'],['expire','Expires'],['resilie','Resilies']].map(([v,l])=>(
+          {[['tous','Tous'],['actif','Actifs'],['en_attente','En attente'],['expiration','Expiration proche'],['expire','Expires'],['resilie','Resilies'],['termines','Termines']].map(([v,l])=>(
             <button key={v} className={'bx-ftab'+(filterStatut===v?' on':'')} onClick={()=>setFilter(v)}>{l}</button>
           ))}
         </div>

@@ -45,6 +45,15 @@ export default function Locataires() {
   const [search, setSearch]         = useState('')
   const [filterStatut, setFilterStatut] = useState('tous')
   const [filterBail, setFilterBail] = useState('tous')
+
+  // Sous-menus sidebar /imoloc/locataires/historique et /imoloc/locataires/dossiers —
+  // "Historique" = locataires inactifs, "Dossiers" = locataires sans bail actif
+  // (fiche enregistree mais pas encore/plus logee).
+  useEffect(() => {
+    const seg = location.pathname.split('/').pop()
+    if (seg === 'historique') setFilterStatut('inactif')
+    if (seg === 'dossiers') setFilterBail('sans')
+  }, [location.pathname])
   const [selLoc, setSelLoc]         = useState(null)
   const [detailTab, setDetailTab]   = useState('profil')
   const [showAdd, setShowAdd]       = useState(false)
