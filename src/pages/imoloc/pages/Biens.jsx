@@ -89,6 +89,68 @@ const STEPS = [
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') : '—'
 
+// ─── Champ personnalise (Point 40, vague 1) : rendu generique
+// selon le type configure, valeur stockee dans biens.metadata ───
+function CustomFieldInput({ champ, value, onChange }) {
+  const opts = Array.isArray(champ.options) ? champ.options : []
+  switch (champ.type) {
+    case 'texte_long':
+      return <textarea className="pb-inp" rows={3} value={value||''} onChange={e=>onChange(e.target.value)} style={{resize:'vertical',minHeight:70}}/>
+    case 'nombre':
+    case 'devise':
+    case 'pourcentage':
+      return <input className="pb-inp" type="number" value={value??''} onChange={e=>onChange(e.target.value)}/>
+    case 'date':
+      return <input className="pb-inp" type="date" value={value||''} onChange={e=>onChange(e.target.value)}/>
+    case 'date_heure':
+      return <input className="pb-inp" type="datetime-local" value={value||''} onChange={e=>onChange(e.target.value)}/>
+    case 'oui_non':
+      return (
+        <div className="pb-statut-pill" style={{display:'inline-flex',borderColor:value?'#0078d4':'rgba(255,255,255,0.08)',background:value?'rgba(0,120,212,0.1)':'rgba(255,255,255,0.02)',color:value?'#4da6ff':'rgba(255,255,255,0.5)'}}
+          onClick={()=>onChange(!value)}>
+          {value&&<Check size={14}/>} {value?'Oui':'Non'}
+        </div>
+      )
+    case 'liste':
+      return (
+        <select className="pb-inp" value={value||''} onChange={e=>onChange(e.target.value)}>
+          <option value="">Choisir...</option>
+          {opts.map(o=><option key={o} value={o}>{o}</option>)}
+        </select>
+      )
+    case 'liste_multiple': {
+      const sel = Array.isArray(value) ? value : []
+      return (
+        <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+          {opts.map(o=>{
+            const on = sel.includes(o)
+            return (
+              <div key={o} onClick={()=>onChange(on?sel.filter(x=>x!==o):[...sel,o])}
+                style={{display:'inline-flex',alignItems:'center',gap:5,padding:'5px 11px',borderRadius:100,fontSize:12,cursor:'pointer',
+                  border:`1px solid ${on?'#0078d4':'rgba(255,255,255,0.09)'}`,
+                  background:on?'rgba(0,120,212,0.12)':'rgba(255,255,255,0.02)',
+                  color:on?'#4da6ff':'rgba(255,255,255,0.45)'}}>
+                {on&&<Check size={11}/>} {o}
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+    default:
+      return <input className="pb-inp" value={value||''} onChange={e=>onChange(e.target.value)}/>
+  }
+}
+const formatCustomFieldValue = (champ, value) => {
+  if (value==null || value==='' || (Array.isArray(value)&&value.length===0)) return 'Non renseigne'
+  if (champ.type==='oui_non') return value ? 'Oui' : 'Non'
+  if (champ.type==='liste_multiple') return Array.isArray(value) ? value.join(', ') : String(value)
+  if (champ.type==='devise') return `${Number(value).toLocaleString('fr-FR')} FCFA`
+  if (champ.type==='pourcentage') return `${value}%`
+  if (champ.type==='date') return new Date(value).toLocaleDateString('fr-FR')
+  return String(value)
+}
+
 // Reference auto-generee a partir du format de l'organisation (Centre
 // d'administration > Parametres) ou du format par defaut. Jetons geres :
 // {ANNEE}, {MOIS}, {SEQ}, {SEQ:04} (numero sequentiel avec zero-padding)
@@ -308,7 +370,7 @@ export default function ImolocBiens() {
     return true
   }
 
-  const { loading:configLoading, typesBiens, typesParCategorie, statutsBiens, statutsVente, equipements, equipementsParCategorie, adresseSchema, paysActifs, villes } =
+  const { loading:configLoading, typesBiens, typesParCategorie, statutsBiens, statutsVente, equipements, equipementsParCategorie, adresseSchema, environnementalSchema, paysActifs, villes, champsPersonnalises } =
     useBiensConfig(agence?.id, form.pays || agence?.pays)
 
   const resizingCol = useRef(null)
@@ -581,6 +643,17 @@ export default function ImolocBiens() {
       nombre_chambres: selectedBien.nombre_chambres ?? '', nombre_salles_bain: selectedBien.nombre_salles_bain ?? '',
       meuble: !!selectedBien.meuble,
       loyer: selectedBien.loyer ?? '', prix_vente_demande: selectedBien.prix_vente_demande ?? '',
+      animaux_autorises: !!selectedBien.animaux_autorises,
+      fumeurs_autorises: !!selectedBien.fumeurs_autorises,
+      sous_location_autorisee: !!selectedBien.sous_location_autorisee,
+      colocation_autorisee: !!selectedBien.colocation_autorisee,
+      activite_pro_autorisee: !!selectedBien.activite_pro_autorisee,
+      location_courte_duree_autorisee: !!selectedBien.location_courte_duree_autorisee,
+      regles: selectedBien.regles||'',
+      checkin_heure: selectedBien.checkin_heure||'', checkout_heure: selectedBien.checkout_heure||'',
+      tarif_nuitee: selectedBien.tarif_nuitee ?? '', nuits_minimum: selectedBien.nuits_minimum ?? '',
+      environnemental: {...(selectedBien.metadata?.environnemental||{})},
+      champsPerso: {...(selectedBien.metadata?.champs_personnalises||{})},
     })
     setEditMode(true)
   }
@@ -633,6 +706,22 @@ export default function ImolocBiens() {
         loyer: editForm.loyer?Number(editForm.loyer):null,
         loyer_mensuel: editForm.loyer?Number(editForm.loyer):null,
         prix_vente_demande: editForm.prix_vente_demande?Number(editForm.prix_vente_demande):null,
+        animaux_autorises: !!editForm.animaux_autorises,
+        fumeurs_autorises: !!editForm.fumeurs_autorises,
+        sous_location_autorisee: !!editForm.sous_location_autorisee,
+        colocation_autorisee: !!editForm.colocation_autorisee,
+        activite_pro_autorisee: !!editForm.activite_pro_autorisee,
+        location_courte_duree_autorisee: !!editForm.location_courte_duree_autorisee,
+        regles: editForm.regles||null,
+        checkin_heure: editForm.checkin_heure||null,
+        checkout_heure: editForm.checkout_heure||null,
+        tarif_nuitee: editForm.tarif_nuitee?Number(editForm.tarif_nuitee):null,
+        nuits_minimum: editForm.nuits_minimum?Number(editForm.nuits_minimum):null,
+        metadata: {
+          ...(selectedBien.metadata||{}),
+          environnemental: editForm.environnemental||{},
+          champs_personnalises: editForm.champsPerso||{},
+        },
       }
       const { data, error } = await supabase.from('biens').update(payload).eq('id', selectedBien.id).select('*').single()
       if (error) throw error
@@ -1647,6 +1736,7 @@ export default function ImolocBiens() {
                 {[
                   ['infos','Informations'],
                   ['caracteristiques','Caracteristiques'],
+                  ['regles','Regles & options'],
                   ['proprietaire','Propriete & gestion'],
                   ['finances','Finances'],
                   ...(selectedBien.is_immeuble?[['unites','Unites']]:[]),
@@ -1829,6 +1919,140 @@ export default function ImolocBiens() {
                         </div>
                       ))
                     )}
+                  </>
+                )
+              )}
+
+              {/* Tab Regles & options (points 35-37, 39-40) */}
+              {detailTab==='regles'&&(
+                editMode?(
+                  <>
+                    <div className="pb-sec" style={{marginTop:0}}>Regles et restrictions</div>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:16}}>
+                      {[
+                        ['animaux_autorises','Animaux autorises'],
+                        ['fumeurs_autorises','Fumeurs autorises'],
+                        ['sous_location_autorisee','Sous-location autorisee'],
+                        ['colocation_autorisee','Colocation autorisee'],
+                        ['activite_pro_autorisee','Activite professionnelle autorisee'],
+                        ['location_courte_duree_autorisee','Location courte duree autorisee'],
+                      ].map(([key,label])=>(
+                        <div key={key} className="pb-statut-pill" style={{borderColor:editForm[key]?'#0078d4':'rgba(255,255,255,0.08)',background:editForm[key]?'rgba(0,120,212,0.1)':'rgba(255,255,255,0.02)',color:editForm[key]?'#4da6ff':'rgba(255,255,255,0.5)'}}
+                          onClick={()=>setE(key,!editForm[key])}>
+                          {editForm[key]&&<Check size={14}/>} {label}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="pb-field">
+                      <label className="pb-lbl">Restrictions particulieres</label>
+                      <textarea className="pb-inp" rows={3} value={editForm.regles} onChange={e=>setE('regles',e.target.value)} style={{resize:'vertical',minHeight:70}} placeholder="Notes libres sur des restrictions specifiques a ce bien..."/>
+                    </div>
+
+                    {editForm.location_courte_duree_autorisee&&(<>
+                      <div className="pb-divider"/>
+                      <div className="pb-sec">Location courte duree</div>
+                      <div className="pb-g2">
+                        <div>
+                          <label className="pb-lbl">Heure d'arrivee (check-in)</label>
+                          <input className="pb-inp" type="time" value={editForm.checkin_heure} onChange={e=>setE('checkin_heure',e.target.value)}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Heure de depart (check-out)</label>
+                          <input className="pb-inp" type="time" value={editForm.checkout_heure} onChange={e=>setE('checkout_heure',e.target.value)}/>
+                        </div>
+                      </div>
+                      <div className="pb-g2">
+                        <div>
+                          <label className="pb-lbl">Tarif par nuit (FCFA)</label>
+                          <input className="pb-inp" type="number" value={editForm.tarif_nuitee} onChange={e=>setE('tarif_nuitee',e.target.value)}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Nombre minimum de nuits</label>
+                          <input className="pb-inp" type="number" value={editForm.nuits_minimum} onChange={e=>setE('nuits_minimum',e.target.value)}/>
+                        </div>
+                      </div>
+                    </>)}
+
+                    {environnementalSchema.length>0&&(<>
+                      <div className="pb-divider"/>
+                      <div className="pb-sec">Informations environnementales</div>
+                      {environnementalSchema.map(champ=>(
+                        <div key={champ.cle} className="pb-field">
+                          <label className="pb-lbl">{champ.label}</label>
+                          <input className="pb-inp" value={editForm.environnemental?.[champ.cle]||''}
+                            onChange={e=>setE('environnemental',{...editForm.environnemental,[champ.cle]:e.target.value})}/>
+                        </div>
+                      ))}
+                    </>)}
+
+                    {champsPersonnalises.filter(c=>!c.type_bien_applicable||c.type_bien_applicable===selectedBien.type_bien).length>0&&(<>
+                      <div className="pb-divider"/>
+                      <div className="pb-sec">Champs personnalises</div>
+                      {champsPersonnalises.filter(c=>!c.type_bien_applicable||c.type_bien_applicable===selectedBien.type_bien).map(champ=>(
+                        <div key={champ.id} className="pb-field">
+                          <label className="pb-lbl">{champ.nom}{champ.obligatoire&&<span style={{color:'#ef4444'}}> *</span>}</label>
+                          <CustomFieldInput champ={champ} value={editForm.champsPerso?.[champ.id]} onChange={v=>setE('champsPerso',{...editForm.champsPerso,[champ.id]:v})}/>
+                        </div>
+                      ))}
+                    </>)}
+
+                    <button className="pb-btn pb-btn-p" disabled={saving} onClick={saveEdit}>
+                      <Save size={13}/> {saving?'Enregistrement...':'Enregistrer'}
+                    </button>
+                  </>
+                ):(
+                  <>
+                    <div className="pb-sec" style={{marginTop:0}}>Regles et restrictions</div>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:16}}>
+                      {[
+                        ['animaux_autorises','Animaux autorises'],
+                        ['fumeurs_autorises','Fumeurs autorises'],
+                        ['sous_location_autorisee','Sous-location autorisee'],
+                        ['colocation_autorisee','Colocation autorisee'],
+                        ['activite_pro_autorisee','Activite professionnelle autorisee'],
+                        ['location_courte_duree_autorisee','Location courte duree autorisee'],
+                      ].map(([key,label])=>(
+                        <div key={key} style={{display:'inline-flex',alignItems:'center',gap:5,padding:'5px 11px',borderRadius:100,fontSize:12,
+                          border:`1px solid ${selectedBien[key]?'rgba(0,200,150,0.3)':'rgba(255,255,255,0.08)'}`,
+                          background:selectedBien[key]?'rgba(0,200,150,0.1)':'rgba(255,255,255,0.02)',
+                          color:selectedBien[key]?'#00c896':'rgba(255,255,255,0.35)'}}>
+                          {selectedBien[key]&&<Check size={11}/>} {label}
+                        </div>
+                      ))}
+                    </div>
+                    {selectedBien.regles&&(
+                      <div className="pb-blk" style={{marginBottom:16}}><div className="pb-blk-lbl">Restrictions particulieres</div><div className="pb-blk-val">{selectedBien.regles}</div></div>
+                    )}
+                    {selectedBien.location_courte_duree_autorisee&&(<>
+                      <div className="pb-divider"/>
+                      <div className="pb-sec">Location courte duree</div>
+                      <div className="pb-detail-grid">
+                        <div>
+                          <div className="pb-blk"><div className="pb-blk-lbl">Check-in / check-out</div><div className="pb-blk-val">{selectedBien.checkin_heure||'—'} / {selectedBien.checkout_heure||'—'}</div></div>
+                        </div>
+                        <div>
+                          <div className="pb-blk"><div className="pb-blk-lbl">Tarif / nuit</div><div className="pb-blk-val">{selectedBien.tarif_nuitee!=null?fmt(selectedBien.tarif_nuitee)+' FCFA':'—'}{selectedBien.nuits_minimum?` · min. ${selectedBien.nuits_minimum} nuits`:''}</div></div>
+                        </div>
+                      </div>
+                    </>)}
+                    {environnementalSchema.length>0&&(<>
+                      <div className="pb-divider"/>
+                      <div className="pb-sec">Informations environnementales</div>
+                      <div className="pb-detail-grid">
+                        {environnementalSchema.map(champ=>(
+                          <div key={champ.cle}><div className="pb-blk"><div className="pb-blk-lbl">{champ.label}</div><div className="pb-blk-val">{selectedBien.metadata?.environnemental?.[champ.cle]||'Non renseigne'}</div></div></div>
+                        ))}
+                      </div>
+                    </>)}
+                    {champsPersonnalises.filter(c=>!c.type_bien_applicable||c.type_bien_applicable===selectedBien.type_bien).length>0&&(<>
+                      <div className="pb-divider"/>
+                      <div className="pb-sec">Champs personnalises</div>
+                      <div className="pb-detail-grid">
+                        {champsPersonnalises.filter(c=>!c.type_bien_applicable||c.type_bien_applicable===selectedBien.type_bien).map(champ=>(
+                          <div key={champ.id}><div className="pb-blk"><div className="pb-blk-lbl">{champ.nom}</div><div className="pb-blk-val">{formatCustomFieldValue(champ, selectedBien.metadata?.champs_personnalises?.[champ.id])}</div></div></div>
+                        ))}
+                      </div>
+                    </>)}
                   </>
                 )
               )}
