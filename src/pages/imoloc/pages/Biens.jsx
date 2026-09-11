@@ -6,7 +6,7 @@ import {
   Check, ArrowRight, Circle, Key, Tag, Plus, Layers, X, Save,
   ChevronDown, Search, Sofa, Warehouse, Store, Hotel, Landmark,
   School, FlaskConical, Hammer, Snowflake, Server, Tent, Sprout,
-  TreePine, Boxes, ShieldCheck, Gauge, Receipt, AlertTriangle,
+  TreePine, Boxes, ShieldCheck, Gauge, Receipt, AlertTriangle, Upload, History, Image,
 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
@@ -58,6 +58,11 @@ const OPPORTUNITE_STATUTS = [
   { valeur:'refuse',        label:'Refuse',         couleur:'#ef4444' },
   { valeur:'annule',        label:'Annule',         couleur:'#4b5563' },
 ]
+
+const HISTORIQUE_ACTION_LABEL = {
+  statut_change: 'Changement de statut',
+  intention_change: "Changement d'intention",
+}
 
 const ALL_COLS = [
   { key:'displayName',   label:'Bien',          checked:true,  disabled:true },
@@ -271,6 +276,11 @@ export default function ImolocBiens() {
   const [bienSinistres, setBienSinistres]   = useState([])
   const [showAddSinistre, setShowAddSinistre] = useState(false)
   const [newSinistre, setNewSinistre]       = useState({ type_sinistre:'', date_sinistre:'', description:'', gravite:'moderee', assurance_id:'', cout:'', statut:'declare' })
+  const [bienDocuments, setBienDocuments]   = useState([])
+  const [showAddDocument, setShowAddDocument] = useState(false)
+  const [newDocument, setNewDocument]       = useState({ nom:'', type_document:'', categorie:'', visibilite:'interne_agence', file:null })
+  const [uploadingDoc, setUploadingDoc]     = useState(false)
+  const [bienHistorique, setBienHistorique] = useState([])
 
   // Pour l'etape 5 (proprietaire)
   const [proprietaires, setProprietaires] = useState([])
@@ -498,6 +508,8 @@ export default function ImolocBiens() {
         { data: assurances },
         { data: taxes },
         { data: sinistres },
+        { data: docs },
+        { data: histo },
       ] = await Promise.all([
         supabase.from('biens_proprietaires').select('*, proprietaires(id,nom,prenom,telephone,email)').eq('bien_id', bienId),
         supabase.from('biens_equipements').select('equipement_id, valeur').eq('bien_id', bienId),
@@ -508,6 +520,8 @@ export default function ImolocBiens() {
         supabase.from('assurances').select('*').eq('bien_id', bienId).order('created_at', { ascending:false }),
         supabase.from('taxes_bien').select('*').eq('bien_id', bienId).order('date_echeance', { ascending:true }),
         supabase.from('sinistres').select('*').eq('bien_id', bienId).order('date_sinistre', { ascending:false }),
+        supabase.from('documents').select('*').eq('entite_type','bien').eq('entite_id', bienId).order('created_at', { ascending:false }),
+        supabase.from('historique').select('*').eq('entite_type','bien').eq('entite_id', bienId).order('created_at', { ascending:false }),
       ])
       setBienProps(props||[])
       setBienEquip(equip||[])
@@ -517,6 +531,17 @@ export default function ImolocBiens() {
       setBienAssurances(assurances||[])
       setBienTaxes(taxes||[])
       setBienSinistres(sinistres||[])
+      setBienHistorique(histo||[])
+
+      if ((docs||[]).length>0) {
+        const withUrls = await Promise.all((docs||[]).map(async d => {
+          const { data: signed } = await supabase.storage.from('documents').createSignedUrl(d.fichier_url, 3600)
+          return { ...d, signed_url: signed?.signedUrl||null }
+        }))
+        setBienDocuments(withUrls)
+      } else {
+        setBienDocuments([])
+      }
 
       const compteurIds = (compteurs||[]).map(c=>c.id)
       if (compteurIds.length>0) {
@@ -598,6 +623,12 @@ export default function ImolocBiens() {
       }
       const { data, error } = await supabase.from('biens').update(payload).eq('id', selectedBien.id).select('*').single()
       if (error) throw error
+      if (selectedBien.statut !== payload.statut) {
+        logHistorique('statut_change', 'statut', selectedBien.statut, payload.statut)
+      }
+      if (selectedBien.intention !== payload.intention) {
+        logHistorique('intention_change', 'intention', selectedBien.intention, payload.intention)
+      }
       toast.success('Bien mis a jour')
       setEditMode(false)
       setSelectedBien(b=>({...b, ...data}))
@@ -729,6 +760,46 @@ export default function ImolocBiens() {
   const deleteSinistre = async (id) => {
     setBienSinistres(s=>s.filter(x=>x.id!==id))
     await supabase.from('sinistres').delete().eq('id', id)
+  }
+
+  // ── Phase 7 : documents (Storage) + historique ──
+  const addDocument = async () => {
+    if (!newDocument.file || !newDocument.nom) { toast.error('Nom et fichier requis'); return }
+    setUploadingDoc(true)
+    try {
+      const { data:{ user } } = await supabase.auth.getUser()
+      const path = `${agence.id}/bien/${selectedBien.id}/${Date.now()}_${newDocument.file.name}`
+      const { error: upErr } = await supabase.storage.from('documents').upload(path, newDocument.file)
+      if (upErr) throw upErr
+      const { data, error } = await supabase.from('documents').insert({
+        agence_id: agence.id, entite_type:'bien', entite_id: selectedBien.id,
+        type_document: newDocument.type_document||'autre', categorie: newDocument.categorie||null,
+        nom: newDocument.nom, fichier_url: path, visibilite: newDocument.visibilite,
+        created_by: user.id,
+      }).select('*').single()
+      if (error) throw error
+      const { data: signed } = await supabase.storage.from('documents').createSignedUrl(path, 3600)
+      setBienDocuments(d=>[{ ...data, signed_url: signed?.signedUrl||null }, ...d])
+      setShowAddDocument(false)
+      setNewDocument({ nom:'', type_document:'', categorie:'', visibilite:'interne_agence', file:null })
+      toast.success('Document ajoute')
+    } catch(e) { toast.error(e.message||'Erreur upload') }
+    finally { setUploadingDoc(false) }
+  }
+  const deleteDocument = async (doc) => {
+    setBienDocuments(d=>d.filter(x=>x.id!==doc.id))
+    await supabase.storage.from('documents').remove([doc.fichier_url])
+    await supabase.from('documents').delete().eq('id', doc.id)
+  }
+
+  const logHistorique = async (action, champ, ancienne, nouvelle) => {
+    const { data:{ user } } = await supabase.auth.getUser()
+    const { data, error } = await supabase.from('historique').insert({
+      agence_id: agence.id, entite_type:'bien', entite_id: selectedBien.id,
+      action, champ_modifie: champ, ancienne_valeur: ancienne!=null?String(ancienne):null, nouvelle_valeur: nouvelle!=null?String(nouvelle):null,
+      utilisateur_id: user.id, utilisateur_email: user.email,
+    }).select('*').single()
+    if (!error) setBienHistorique(h=>[data, ...h])
   }
 
   const resetForm = () => {
@@ -1572,6 +1643,8 @@ export default function ImolocBiens() {
                   ['assurance','Assurance'],
                   ['taxes','Taxes'],
                   ['sinistres','Sinistres'],
+                  ['documents','Documents'],
+                  ['historique','Historique'],
                 ].map(([k,l])=>(
                   <button key={k} className={`pb-detail-tab ${detailTab===k?'active':''}`} onClick={()=>setDetailTab(k)}>{l}</button>
                 ))}
@@ -2247,6 +2320,112 @@ export default function ImolocBiens() {
                         </div>
                       )
                     })
+                  )}
+                </>
+              )}
+
+              {/* Tab Documents */}
+              {detailTab==='documents'&&(
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <span className="pb-sec" style={{margin:0}}>Documents</span>
+                    <button className="pb-btn pb-btn-p" onClick={()=>setShowAddDocument(o=>!o)}><Plus size={13}/> Ajouter</button>
+                  </div>
+                  {showAddDocument&&(
+                    <div style={{background:'rgba(255,255,255,0.03)',padding:14,borderRadius:8,marginBottom:14}}>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                        <div style={{gridColumn:'1/-1'}}>
+                          <label className="pb-lbl">Nom<span className="pb-req">*</span></label>
+                          <input className="pb-inp" value={newDocument.nom} onChange={e=>setNewDocument(d=>({...d,nom:e.target.value}))}/>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Type</label>
+                          <select className="pb-inp" value={newDocument.type_document} onChange={e=>setNewDocument(d=>({...d,type_document:e.target.value}))}>
+                            <option value="">Choisir...</option>
+                            <option value="photo">Photo</option>
+                            <option value="bail">Bail</option>
+                            <option value="titre_foncier">Titre foncier</option>
+                            <option value="etat_des_lieux">Etat des lieux</option>
+                            <option value="facture">Facture</option>
+                            <option value="autre">Autre</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="pb-lbl">Categorie</label>
+                          <select className="pb-inp" value={newDocument.categorie} onChange={e=>setNewDocument(d=>({...d,categorie:e.target.value}))}>
+                            <option value="">Non classee</option>
+                            <option value="propriete">Propriete</option>
+                            <option value="technique">Technique</option>
+                            <option value="administratif">Administratif</option>
+                            <option value="gestion">Gestion</option>
+                          </select>
+                        </div>
+                        <div style={{gridColumn:'1/-1'}}>
+                          <label className="pb-lbl">Visibilite</label>
+                          <select className="pb-inp" value={newDocument.visibilite} onChange={e=>setNewDocument(d=>({...d,visibilite:e.target.value}))}>
+                            <option value="interne_agence">Interne agence</option>
+                            <option value="visible_proprietaire">Visible proprietaire</option>
+                            <option value="visible_locataire">Visible locataire</option>
+                            <option value="public">Public</option>
+                          </select>
+                        </div>
+                        <div style={{gridColumn:'1/-1'}}>
+                          <label className="pb-lbl">Fichier<span className="pb-req">*</span></label>
+                          <input type="file" onChange={e=>setNewDocument(d=>({...d,file:e.target.files?.[0]||null}))} style={{fontSize:12.5,color:'rgba(255,255,255,0.6)'}}/>
+                        </div>
+                      </div>
+                      <button className="pb-btn pb-btn-p" disabled={uploadingDoc} onClick={addDocument}>{uploadingDoc?'Envoi...':'Ajouter le document'}</button>
+                    </div>
+                  )}
+                  {bienDocuments.length===0?(
+                    <div style={{textAlign:'center',padding:'30px 20px'}}>
+                      <Upload size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucun document</div>
+                    </div>
+                  ):(
+                    bienDocuments.map(doc=>(
+                      <div key={doc.id} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div className="pb-prop-avatar" style={{background:'#6c63ff'}}>{doc.type_document==='photo'?<Image size={14}/>:<FileText size={14}/>}</div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>{doc.nom}</div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{doc.type_document}{doc.categorie&&` · ${doc.categorie}`} · {new Date(doc.created_at).toLocaleDateString('fr-FR')}</div>
+                          </div>
+                          {doc.signed_url&&<a href={doc.signed_url} target="_blank" rel="noopener noreferrer" className="pb-btn" style={{padding:'5px 10px',fontSize:12}}>Ouvrir</a>}
+                          <button className="pb-cls" onClick={()=>deleteDocument(doc)}><X size={14}/></button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </>
+              )}
+
+              {/* Tab Historique */}
+              {detailTab==='historique'&&(
+                <>
+                  <div style={{marginBottom:14}}>
+                    <span className="pb-sec" style={{margin:0}}>Historique</span>
+                  </div>
+                  {bienHistorique.length===0?(
+                    <div style={{textAlign:'center',padding:'30px 20px'}}>
+                      <History size={32} style={{marginBottom:10,opacity:0.3}}/>
+                      <div style={{fontSize:13.5,color:'rgba(255,255,255,0.35)'}}>Aucun evenement enregistre</div>
+                    </div>
+                  ):(
+                    bienHistorique.map(h=>(
+                      <div key={h.id} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div className="pb-prop-avatar" style={{background:'#8b949e'}}><History size={14}/></div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:'#e6edf3'}}>
+                              {HISTORIQUE_ACTION_LABEL[h.action]||h.action}
+                              {h.ancienne_valeur&&h.nouvelle_valeur&&<span style={{fontWeight:400,color:'rgba(255,255,255,0.5)'}}> — {h.ancienne_valeur} → {h.nouvelle_valeur}</span>}
+                            </div>
+                            <div style={{fontSize:11.5,color:'rgba(255,255,255,0.35)'}}>{h.utilisateur_email||'—'} · {new Date(h.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </>
               )}
