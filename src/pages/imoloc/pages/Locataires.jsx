@@ -164,11 +164,19 @@ export default function Locataires() {
         if (error) throw error
         locId = newLoc.id
 
-        // Creer compte utilisateur si demande
+        // Creer compte utilisateur si demande — passe par une edge function
+        // (cle service_role, cote serveur uniquement) : supabase.auth.admin
+        // n'existe pas cote navigateur, l'ancien appel direct etait un no-op
+        // silencieux qui ne creait jamais rien.
         if (form.creer_compte && form.email) {
-          const tempPwd = Math.random().toString(36).slice(-8)
-          await supabase.auth.admin?.createUser({email:form.email,password:tempPwd,email_confirm:true})
-            .catch(()=>null)
+          const { data: compteResult, error: compteErr } = await supabase.functions.invoke('create-locataire-account', {
+            body: { locataire_id: locId },
+          })
+          if (compteErr || !compteResult?.success) {
+            toast.error('Locataire ajoute, mais le compte n a pas pu etre cree : ' + (compteResult?.error || compteErr?.message || 'erreur inconnue'))
+          } else {
+            toast.success(`Compte cree pour ${compteResult.email} — mot de passe temporaire : ${compteResult.mot_de_passe_temporaire} (a transmettre au locataire)`, { duration: 15000 })
+          }
         }
       }
 
@@ -686,7 +694,7 @@ export default function Locataires() {
               <div>
                 <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:4}}>Compte utilisateur</div>
                 <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)',marginBottom:20}}>Creez un compte pour que le locataire puisse acceder a ses documents en ligne</div>
-                {locTrouve?.profile_id?(
+                {locTrouve?.user_id?(
                   <div style={{padding:'14px 16px',background:'rgba(0,200,150,0.06)',border:'1px solid rgba(0,200,150,0.15)',borderRadius:8,marginBottom:16}}>
                     <div style={{display:'flex',alignItems:'center',gap:5,fontSize:13,fontWeight:600,color:'#00c896',marginBottom:4}}><CheckCircle2 size={14}/> Compte existant</div>
                     <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>Ce locataire possede deja un compte Imoloc</div>

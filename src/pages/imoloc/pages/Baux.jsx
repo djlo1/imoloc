@@ -253,6 +253,17 @@ export default function ImolocBaux() {
     if (!confirm('Resilier ce bail ?')) return
     await supabase.from('baux').update({statut:'resilie',etape:'archive'}).eq('id',bail.id)
     if (bail.bien_id) await supabase.from('biens').update({statut:'disponible'}).eq('id',bail.bien_id)
+    // Annule les echeances futures encore dues (generees d'un coup a la
+    // signature pour toute la duree du bail) — sinon elles restent en base
+    // et basculent "en retard" pour un locataire qui n'est plus la.
+    const aujourdhui = new Date().toISOString().split('T')[0]
+    const { data: echeancesAnnulees } = await supabase.from('paiements')
+      .update({ statut:'annule' })
+      .eq('bail_id', bail.id)
+      .in('statut', ['en_attente','en_retard'])
+      .gt('date_echeance', aujourdhui)
+      .select('id')
+    if (echeancesAnnulees?.length) toast(`${echeancesAnnulees.length} echeance${echeancesAnnulees.length>1?'s':''} future${echeancesAnnulees.length>1?'s':''} annulee${echeancesAnnulees.length>1?'s':''}`, { icon:'ℹ️' })
     toast.success('Bail resilie.'); setSelBail(null); initData()
   }
 
