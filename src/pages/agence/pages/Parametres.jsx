@@ -30,12 +30,19 @@ export default function Parametres() {
   const [showAddChamp, setShowAddChamp] = useState(false)
   const [newChamp, setNewChamp] = useState({ nom:'', type:'texte', type_bien_applicable:'', obligatoire:false, options:'' })
 
+  // ── Commission par defaut (gestion locative) — dernier recours de la
+  // cascade utilisee par generer_releve_proprietaire() quand ni le mandat
+  // ni le taux negocie avec le proprietaire ne sont renseignes.
+  const [tauxDefautGestion, setTauxDefautGestion] = useState('')
+  const [savingTaux, setSavingTaux] = useState(false)
+
   useEffect(() => {
     const init = async () => {
       const { data:{ user } } = await supabase.auth.getUser()
-      const { data:ag } = await supabase.from('agences').select('id').eq('profile_id', user.id).single()
+      const { data:ag } = await supabase.from('agences').select('id, taux_commission_defaut_gestion').eq('profile_id', user.id).single()
       if (!ag?.id) return
       setAgenceId(ag.id)
+      setTauxDefautGestion(ag.taux_commission_defaut_gestion ?? '')
       const [{ data:tb }, { data:cp }] = await Promise.all([
         supabase.from('types_biens').select('valeur,label').or(`agence_id.is.null,agence_id.eq.${ag.id}`).order('label'),
         supabase.from('champs_personnalises').select('*').eq('agence_id', ag.id).eq('statut','actif').order('ordre'),
@@ -45,6 +52,14 @@ export default function Parametres() {
     }
     init()
   }, [])
+
+  const saveTauxDefaut = async () => {
+    setSavingTaux(true)
+    const { error } = await supabase.from('agences').update({ taux_commission_defaut_gestion: tauxDefautGestion===''?null:Number(tauxDefautGestion) }).eq('id', agenceId)
+    setSavingTaux(false)
+    if (error) { toast.error(error.message); return }
+    toast.success('Taux de commission par defaut enregistre')
+  }
 
   const addChamp = async () => {
     if (!newChamp.nom.trim()) { toast.error('Le nom du champ est requis'); return }
@@ -126,6 +141,20 @@ export default function Parametres() {
             <span style={{color:'rgba(255,255,255,0.4)',fontSize:14}}>jours</span>
           </div>
         </div>
+      </div>
+      <div className="par-card">
+        <div className="par-card-title"><Wallet size={16}/> Commission de gestion locative</div>
+        <div className="par-row">
+          <div>
+            <div className="par-row-title">Taux par defaut</div>
+            <div className="par-row-sub">Applique quand aucun taux specifique n'est negocie avec le proprietaire ni fixe par un mandat — sert de dernier recours dans le calcul des releves proprietaires.</div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <input className="par-input" type="number" step="0.1" min="0" max="100" value={tauxDefautGestion} onChange={e=>setTauxDefautGestion(e.target.value)} placeholder="Ex: 10"/>
+            <span style={{color:'rgba(255,255,255,0.4)',fontSize:14}}>%</span>
+          </div>
+        </div>
+        <button className="pg-btn pg-btn-blue" disabled={savingTaux||!agenceId} onClick={saveTauxDefaut}>{savingTaux?'Enregistrement...':'Enregistrer le taux'}</button>
       </div>
       <div className="par-card">
         <div className="par-card-title"><Bell size={16}/> Notifications</div>
