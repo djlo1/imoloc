@@ -185,9 +185,9 @@ export default function Tickets() {
   }).length
   const resolusTrend = resolusMoisPrec>0 ? Math.round(((stats.resolus_mois-resolusMoisPrec)/resolusMoisPrec)*100) : (stats.resolus_mois>0?100:0)
 
-  const inp = {width:'100%',padding:'8px 11px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:6,fontFamily:'Inter,sans-serif',fontSize:13,color:'#e6edf3',outline:'none',colorScheme:'dark',boxSizing:'border-box'}
+  const inp = {width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.3)',borderRadius:2,fontFamily:'Inter,sans-serif',fontSize:13,color:'#e6edf3',outline:'none',colorScheme:'dark',boxSizing:'border-box'}
   const sel2 = {...inp,cursor:'pointer',background:'rgba(20,27,40,0.95)'}
-  const lbl = {display:'block',fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:5}
+  const lbl = {display:'block',fontSize:13,fontWeight:400,color:'rgba(255,255,255,0.85)',marginBottom:6}
   const btnBase = {display:'inline-flex',alignItems:'center',gap:6,padding:'7px 14px',borderRadius:5,fontSize:13,fontWeight:500,cursor:'pointer',border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.6)',fontFamily:'Inter,sans-serif',transition:'all 0.15s'}
   const btnP = {...btnBase,background:'#0078d4',borderColor:'#0078d4',color:'#fff'}
 
@@ -319,7 +319,7 @@ export default function Tickets() {
                     <div key={k}><div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:3,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em'}}>{k}</div><div style={{fontSize:13.5,color:'#e6edf3'}}>{v}</div></div>
                   ))}
                 </div>
-                {sel.description&&<div style={{marginBottom:14}}><div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:6,fontWeight:600,textTransform:'uppercase'}}>Description</div><div style={{fontSize:13,color:'rgba(255,255,255,0.7)',lineHeight:1.7,background:'rgba(255,255,255,0.02)',padding:12,borderRadius:8,border:'1px solid rgba(255,255,255,0.07)'}}>{sel.description}</div></div>}
+                {sel.description&&<div style={{marginBottom:14}}><div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:6,fontWeight:600,textTransform:'uppercase'}}>Description</div><div style={{fontSize:13,color:'rgba(255,255,255,0.7)',lineHeight:1.5,background:'rgba(255,255,255,0.02)',padding:12,borderRadius:8,border:'1px solid rgba(255,255,255,0.07)'}}>{sel.description}</div></div>}
                 {sel.prestataires&&<div style={{borderTop:'1px solid rgba(255,255,255,0.07)',paddingTop:14,marginTop:4}}><div style={{fontSize:13,fontWeight:600,color:'#e6edf3',marginBottom:10}}>Prestataire</div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>{[['Nom',sel.prestataires.nom||'—'],['Telephone',sel.prestataires.telephone||'—'],['Email',sel.prestataires.email||'—']].map(([k,v])=>(<div key={k}><div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:3,fontWeight:600,textTransform:'uppercase'}}>{k}</div><div style={{fontSize:13,color:'#e6edf3'}}>{v}</div></div>))}</div></div>}
               </div>
             )}
@@ -335,7 +335,7 @@ export default function Tickets() {
                   {(sel.commentaires||[]).length===0?(<div style={{textAlign:'center',padding:30,border:'1px dashed rgba(255,255,255,0.08)',borderRadius:8}}><div style={{fontSize:13,color:'rgba(255,255,255,0.3)'}}>Aucun commentaire</div></div>):[...(sel.commentaires||[])].reverse().map(cm=>(
                     <div key={cm.id} style={{padding:'12px 14px',background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:8,marginBottom:8}}>
                       <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}><span style={{fontSize:12,fontWeight:600,color:'#4da6ff'}}>{cm.auteur}</span><span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{new Date(cm.date).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>
-                      <div style={{fontSize:13,color:'rgba(255,255,255,0.7)',lineHeight:1.6}}>{cm.texte}</div>
+                      <div style={{fontSize:13,color:'rgba(255,255,255,0.7)',lineHeight:1.45}}>{cm.texte}</div>
                     </div>
                   ))}
                 </div>
@@ -370,13 +370,13 @@ export default function Tickets() {
             </div>
             {step===1&&(<div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
-                <div style={{gridColumn:'1/-1'}}><label style={lbl}>Titre *</label><input style={inp} value={form.titre} onChange={e=>setF('titre',e.target.value)} placeholder="Ex: Fuite robinet cuisine"/></div>
+                <div style={{gridColumn:'1/-1'}}><label style={lbl}><span>Titre</span> <span style={{color:'#ef4444'}}>*</span></label><input style={inp} value={form.titre} onChange={e=>setF('titre',e.target.value)} placeholder="Ex: Fuite robinet cuisine"/></div>
                 <div><label style={lbl}>Categorie</label><select style={sel2} value={form.type_ticket} onChange={e=>setF('type_ticket',e.target.value)}>{Object.entries(TYPE_TICKET_CFG).map(([k,v])=><option key={k} value={k} style={{background:'#161b22'}}>{v.label}</option>)}</select></div>
                 <div><label style={lbl}>Specialite</label><select style={sel2} value={form.type} onChange={e=>setF('type',e.target.value)}>{Object.entries(TYPE_CFG).map(([k,v])=><option key={k} value={k} style={{background:'#161b22'}}>{v.label}</option>)}</select></div>
                 <div><label style={lbl}>Origine</label><select style={sel2} value={form.origine} onChange={e=>setF('origine',e.target.value)}><option value="agence" style={{background:'#161b22'}}>Agence</option><option value="locataire" style={{background:'#161b22'}}>Locataire</option></select></div>
                 <div><label style={lbl}>Responsabilite</label><select style={sel2} value={form.responsabilite} onChange={e=>setF('responsabilite',e.target.value)}><option value="agence" style={{background:'#161b22'}}>Agence</option><option value="proprietaire" style={{background:'#161b22'}}>Proprietaire</option><option value="locataire" style={{background:'#161b22'}}>Locataire</option></select></div>
                 <div><label style={lbl}>Priorite</label><select style={sel2} value={form.priorite} onChange={e=>setF('priorite',e.target.value)}>{Object.entries(PRIO_CFG).map(([k,v])=><option key={k} value={k} style={{background:'#161b22'}}>{v.label}</option>)}</select></div>
-                <div style={{gridColumn:'1/-1'}}><label style={lbl}>Bien concerne *</label><select style={sel2} value={form.bien_id} onChange={e=>setF('bien_id',e.target.value)}><option value="">Selectionner un bien</option>{biens.map(b=><option key={b.id} value={b.id} style={{background:'#161b22'}}>{b.nom}{b.ville?` (${b.ville})`:''}</option>)}</select></div>
+                <div style={{gridColumn:'1/-1'}}><label style={lbl}><span>Bien concerne</span> <span style={{color:'#ef4444'}}>*</span></label><select style={sel2} value={form.bien_id} onChange={e=>setF('bien_id',e.target.value)}><option value="">Selectionner un bien</option>{biens.map(b=><option key={b.id} value={b.id} style={{background:'#161b22'}}>{b.nom}{b.ville?` (${b.ville})`:''}</option>)}</select></div>
                 <div style={{gridColumn:'1/-1'}}><label style={lbl}>Locataire (optionnel)</label><select style={sel2} value={form.locataire_id} onChange={e=>setF('locataire_id',e.target.value)}><option value="">Aucun</option>{locataires.map(l=><option key={l.id} value={l.id} style={{background:'#161b22'}}>{l.prenom} {l.nom}</option>)}</select></div>
                 <div style={{gridColumn:'1/-1'}}><label style={lbl}>Description</label><textarea style={{...inp,minHeight:80,resize:'vertical'}} value={form.description} onChange={e=>setF('description',e.target.value)} placeholder="Decrivez le probleme..."/></div>
                 <div><label style={lbl}>Debut travaux</label><input type="date" style={inp} value={form.date_debut_travaux} onChange={e=>setF('date_debut_travaux',e.target.value)}/></div>
@@ -399,7 +399,7 @@ export default function Tickets() {
               </div>
               {showNewPrestataire&&(
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14,padding:12,background:'rgba(255,255,255,0.03)',borderRadius:8}}>
-                  <div style={{gridColumn:'1/-1'}}><label style={lbl}>Nom *</label><input style={inp} value={newPrestataire.nom} onChange={e=>setNewPrestataire(p=>({...p,nom:e.target.value}))}/></div>
+                  <div style={{gridColumn:'1/-1'}}><label style={lbl}><span>Nom</span> <span style={{color:'#ef4444'}}>*</span></label><input style={inp} value={newPrestataire.nom} onChange={e=>setNewPrestataire(p=>({...p,nom:e.target.value}))}/></div>
                   <div><label style={lbl}>Specialite</label><input style={inp} value={newPrestataire.specialite} onChange={e=>setNewPrestataire(p=>({...p,specialite:e.target.value}))}/></div>
                   <div><label style={lbl}>Telephone</label><input style={inp} value={newPrestataire.telephone} onChange={e=>setNewPrestataire(p=>({...p,telephone:e.target.value}))}/></div>
                   <div style={{gridColumn:'1/-1'}}><label style={lbl}>Email</label><input type="email" style={inp} value={newPrestataire.email} onChange={e=>setNewPrestataire(p=>({...p,email:e.target.value}))}/></div>

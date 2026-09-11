@@ -8,6 +8,7 @@ const Overview = lazy(() => import('./pages/Overview'))
 const Biens = lazy(() => import('./pages/Biens'))
 const Locataires = lazy(() => import('./pages/Locataires'))
 const Paiements = lazy(() => import('./pages/Paiements'))
+const Facturation = lazy(() => import('./pages/Facturation'))
 const Baux = lazy(() => import('./pages/Baux'))
 const Utilisateurs = lazy(() => import('./pages/Utilisateurs'))
 const Contacts = lazy(() => import('./pages/Contacts'))
@@ -94,6 +95,10 @@ export default function DashboardAgence() {
                 <Route path="locataires" element={<Locataires />} />
                 <Route path="locataires/*" element={<Locataires />} />
                 <Route path="paiements" element={<Paiements />} />
+                <Route path="paiements/factures-locataires" element={<Facturation />} />
+                <Route path="paiements/factures-diverses" element={<Facturation />} />
+                <Route path="paiements/releves-proprietaires" element={<Facturation />} />
+                <Route path="paiements/depenses-charges" element={<Facturation />} />
                 <Route path="baux" element={<Baux />} />
                 <Route path="utilisateurs" element={<Utilisateurs />} />
                 <Route path="utilisateurs/contacts" element={<Contacts />} />

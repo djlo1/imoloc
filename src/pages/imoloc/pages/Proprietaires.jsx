@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { User, Building2, Factory, Hourglass, RefreshCw, Download, Link2, Search, UserPlus, AlertTriangle, FileText, Pencil, Folder, Wallet, Check } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
@@ -35,6 +35,7 @@ const STEPS = [
 
 export default function ImolocProprietaires() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { profile } = useAuthStore()
   const [agence, setAgence] = useState(null)
   const [proprietaires, setProprietaires] = useState([])
@@ -76,6 +77,18 @@ export default function ImolocProprietaires() {
   const startW = useRef(0)
 
   useEffect(() => { initData() }, [])
+
+  // Lien profond : /imoloc/proprietaires?proprietaire=<id> ouvre directement la fiche
+  useEffect(() => {
+    if (proprietaires.length===0) return
+    const params = new URLSearchParams(location.search)
+    const propId = params.get('proprietaire')
+    if (propId) {
+      const p = proprietaires.find(x=>x.id===propId)
+      if (p) setSelectedProp(p)
+      navigate(location.pathname, { replace:true })
+    }
+  }, [proprietaires])
 
   const initData = async () => {
     setLoading(true)

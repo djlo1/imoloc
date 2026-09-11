@@ -348,6 +348,19 @@ export default function Biens() {
     return () => { cancelled = true }
   }, [specialFilter, agence?.id])
 
+  // Lien profond : /agence/biens?bien=<id> ouvre directement la fiche
+  // (permet aux autres pages de renvoyer vers un bien precis)
+  useEffect(() => {
+    if (biens.length===0) return
+    const params = new URLSearchParams(location.search)
+    const bienId = params.get('bien')
+    if (bienId) {
+      const b = biens.find(x=>x.id===bienId)
+      if (b) { setSelectedBien(b); setDetailTab('infos') }
+      navigate(location.pathname, { replace:true })
+    }
+  }, [biens])
+
   const updateOppListStatut = async (id, statut) => {
     setOppList(o=>o.map(x=>x.id===id?{...x,statut}:x))
     await supabase.from('opportunites_vente').update({ statut, updated_at: new Date().toISOString() }).eq('id', id)
@@ -958,9 +971,10 @@ export default function Biens() {
         /* ─ Champs ─ */
         .pb-g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
         .pb-g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
-        .pb-field{margin-bottom:16px}
-        .pb-lbl{display:block;font-size:12.5px;font-weight:600;color:rgba(255,255,255,0.5);margin-bottom:7px}
-        .pb-inp{width:100%;padding:9px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-family:Inter,sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s;color-scheme:dark}
+        .pb-field{margin-bottom:14px}
+        .pb-lbl{display:block;font-size:13px;font-weight:400;color:rgba(255,255,255,0.85);margin-bottom:6px}
+        .pb-inp{width:100%;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.3);border-radius:2px;font-family:Inter,sans-serif;font-size:13px;color:#e6edf3;outline:none;transition:border-color 0.15s;color-scheme:dark}
+        .pb-inp:focus{border-color:#4da6ff}
         .pb-inp:focus{border-color:#0078d4;background:rgba(255,255,255,0.07)}
         .pb-sec{font-size:11.5px;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.09em;margin:22px 0 14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.07)}
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Users, AlertTriangle, Check, CheckCircle2, ArrowRight, ArrowLeft, Paperclip } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
@@ -36,6 +37,8 @@ function Avatar({ loc, size=36, showStatus=false }) {
 }
 
 export default function Locataires() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [agence, setAgence]         = useState(null)
   const [locataires, setLocataires] = useState([])
   const [loading, setLoading]       = useState(true)
@@ -69,6 +72,18 @@ export default function Locataires() {
   const [bauxLoc, setBauxLoc] = useState([])
 
   useEffect(()=>{ initData() },[])
+
+  // Lien profond : /imoloc/locataires?locataire=<id> ouvre directement la fiche
+  useEffect(() => {
+    if (locataires.length===0) return
+    const params = new URLSearchParams(location.search)
+    const locId = params.get('locataire')
+    if (locId) {
+      const l = locataires.find(x=>x.id===locId)
+      if (l) setSelLoc(l)
+      navigate(location.pathname, { replace:true })
+    }
+  }, [locataires])
 
   const initData = async () => {
     setLoading(true)
