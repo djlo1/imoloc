@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   ArrowClockwise16Regular as RefreshCw,
   ArrowDownload16Regular as Download,
@@ -9,33 +10,57 @@ import {
   ArrowSortUp16Regular as ArrowSortUp,
   ArrowSortDown16Regular as ArrowSortDown,
   ChevronDown16Regular as ChevronDown,
-  Payment16Regular as CreditCard,
+  Info16Regular as Info,
+  CheckmarkCircle16Filled as CheckCircle2,
+  Wallet16Regular as Wallet,
   Warning16Regular as AlertTriangle,
   HourglassHalf16Regular as Hourglass,
   DocumentText32Regular as FileTextLarge,
   DataBarVertical16Regular as BarChartIcon,
-  Add16Regular as Plus,
-  Dismiss16Regular as X,
+  ArrowUndo16Regular as Undo2,
+  Prohibited16Regular as Ban,
+  DocumentText16Regular as FileText,
+  Home16Regular as Home,
+  Person16Regular as User,
 } from '@fluentui/react-icons'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 import Trend from '../../../components/ui/Trend'
+import ProgressBar from '../../../components/ui/ProgressBar'
 
-const MODES = ['Mobile Money','Virement bancaire','Espèces','Chèque','Carte bancaire']
-const STATUTS = ['payé','en attente','retard']
+// statut_paiement enum: en_attente, paye, en_retard, partiel, annule
 const S_CFG = {
-  'payé':       { color:'#00c896', bg:'rgba(0,200,150,0.12)',  label:'Payé' },
-  'en attente': { color:'#f59e0b', bg:'rgba(245,158,11,0.12)', label:'En attente' },
-  'retard':     { color:'#ef4444', bg:'rgba(239,68,68,0.12)',  label:'Retard' },
+  en_attente:{ color:'#f59e0b', bg:'rgba(245,158,11,0.12)', label:'A venir' },
+  paye:      { color:'#00c896', bg:'rgba(0,200,150,0.12)',  label:'Paye' },
+  en_retard: { color:'#ef4444', bg:'rgba(239,68,68,0.12)',  label:'En retard' },
+  partiel:   { color:'#6c63ff', bg:'rgba(108,99,255,0.12)', label:'Partiel' },
+  annule:    { color:'rgba(255,255,255,0.3)', bg:'rgba(255,255,255,0.05)', label:'Annule' },
 }
-const fmt = (n) => n!=null ? Number(n).toLocaleString('fr-FR') : '—'
+// Normalise d'anciens statuts saisis manuellement avant l'unification
+// des pages Paiements agence/imoloc (accents/espaces divergents).
+const STATUT_LEGACY = { 'payé':'paye', 'en attente':'en_attente', 'retard':'en_retard' }
+const normStatut = (s) => STATUT_LEGACY[s] || s
+const MODES = ['Mobile Money','Virement bancaire','Especes','Cheque']
+const MOIS  = ['Janvier','Fevrier','Mars','Avril','Mai','Juin','Juillet','Aout','Septembre','Octobre','Novembre','Decembre']
+const fmt   = (n) => n!=null ? Number(n).toLocaleString('fr-FR') : '—'
+
+const RefLink = ({ to, children }) => {
+  const navigate = useNavigate()
+  if (!children || children==='—') return <span style={{color:'rgba(255,255,255,0.3)'}}>—</span>
+  return (
+    <a href={to} onClick={e=>{e.preventDefault();e.stopPropagation();navigate(to)}} style={{color:'#4da6ff',textDecoration:'none',cursor:'pointer'}}
+      onMouseOver={e=>e.currentTarget.style.color='#6cb8ff'} onMouseOut={e=>e.currentTarget.style.color='#4da6ff'}>
+      {children}
+    </a>
+  )
+}
 
 // ─────────────────────────────────────────────────────────
 // Systeme de table Fluent — identique a celui du Centre
 // d'administration (Abonnement.jsx) et de Facturation.jsx.
 // ─────────────────────────────────────────────────────────
 const FLUENT_TABLE_CSS = `
-.fl-row { border-left:2px solid transparent; transition:background-color 0.1s ease; cursor:default; }
+.fl-row { border-left:2px solid transparent; transition:background-color 0.1s ease; cursor:pointer; }
 .fl-row:hover { background-color:#252525; }
 .fl-row-selected { background-color:#292929; border-left:2px solid #0078d4; }
 .fl-checkbox { width:16px; height:16px; border-radius:2px; border:1px solid rgba(255,255,255,0.35); background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:border-color 0.1s ease, background-color 0.1s ease; }
@@ -252,30 +277,36 @@ function MontantBarChart({ entrees, fmt }) {
 }
 
 export default function Paiements() {
+  const navigate   = useNavigate()
+  const [agence, setAgence]       = useState(null)
   const [paiements, setPaiements] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [agenceId, setAgenceId] = useState(null)
-  const [biens, setBiens] = useState([])
-  const [locataires, setLocataires] = useState([])
-  const [search, setSearch] = useState('')
-  const [filterStatut, setFilterStatut] = useState('tous')
-  const [form, setForm] = useState({ montant:'', mode:'Mobile Money', statut:'payé', date_paiement: new Date().toISOString().split('T')[0], bien_id:'', locataire_id:'', notes:'' })
-  const set = (k,v) => setForm(f=>({...f,[k]:v}))
+  const [loading, setLoading]     = useState(true)
+  const [search, setSearch]       = useState('')
+  const [filterStatut, setFilter] = useState('tous')
+  const [filterMois, setFilterMois]   = useState('tous')
+  const [filterAnnee, setFilterAnnee] = useState('tous')
+  const [filterProprietaire, setFilterProprietaire] = useState('tous')
+  const proprietairesMap = useRef({})
+  const [selPaie, setSelPaie]     = useState(null)
+  const [showPay, setShowPay]     = useState(false)
+  const [saving, setSaving]       = useState(false)
+  const [payForm, setPayForm]     = useState({ mode:'Mobile Money', operateur:'', reference:'', date_paiement:'', montant_paye:'', notes:'' })
+  const setPF = (k,v) => setPayForm(f=>({...f,[k]:v}))
 
   const [selectedP, setSelectedP] = useState([])
   const [sortField, setSortField] = useState(null)
   const [sortDir, setSortDir] = useState('asc')
   const [vue, setVue] = useState('liste')
   const [colWidths, setColWidths] = useState({})
-  const COL_DEFAULTS = { locataire:170, bien:170, montant:130, mode:150, date:130, statut:140 }
+  const COL_DEFAULTS = { periode:130, bien:170, locataire:170, proprietaire:170, echeance:130, montant:130, statut:160 }
   const COLONNES = [
-    { key:'locataire', label:'Locataire', field:'locataire_nom' },
+    { key:'periode', label:'Periode', field:'periode_annee' },
     { key:'bien', label:'Bien', field:'bien_nom' },
+    { key:'locataire', label:'Locataire', field:'locataire_nom' },
+    { key:'proprietaire', label:'Proprietaire', field:'proprietaire_nom' },
+    { key:'echeance', label:'Echeance', field:'date_echeance' },
     { key:'montant', label:'Montant', field:'montant' },
-    { key:'mode', label:'Mode', field:'mode' },
-    { key:'date', label:'Date', field:'date_paiement' },
-    { key:'statut', label:'Statut', field:'statut' },
+    { key:'statut', label:'Etat', field:'statut' },
   ]
   const resizeCol = (key, delta) => setColWidths(w => ({ ...w, [key]: Math.max(60, (w[key] ?? COL_DEFAULTS[key] ?? 140) + delta) }))
   const toggleSort = (field) => {
@@ -287,50 +318,95 @@ export default function Paiements() {
   const toggleSelectP = (id) => setSelectedP(s => s.includes(id) ? s.filter(x=>x!==id) : [...s, id])
   const toggleSelectAllP = (list) => setSelectedP(s => (list.length>0 && list.every(p=>s.includes(p.id))) ? [] : list.map(p=>p.id))
 
-  const chargerPaiements = async (agId) => {
-    const { data } = await supabase.from('paiements').select('*, biens(nom), locataires(nom,prenom)').eq('agence_id', agId).order('created_at',{ascending:false})
-    setPaiements((data||[]).map((p,i) => ({ ...p, id: p.id ?? `tmp-${i}`, bien_nom: p.biens?.nom||'', locataire_nom: p.locataires ? `${p.locataires.prenom||''} ${p.locataires.nom||''}`.trim() : '' })))
-  }
+  useEffect(()=>{ initData() },[]) // eslint-disable-line
 
-  useEffect(() => {
-    const init = async () => {
-      const { data:{user} } = await supabase.auth.getUser()
-      const { data:ag } = await supabase.from('agences').select('id').eq('profile_id', user.id).single()
-      if (ag) {
-        setAgenceId(ag.id)
-        const [,{ data:b },{ data:l }] = await Promise.all([
-          chargerPaiements(ag.id),
-          supabase.from('biens').select('id,nom').eq('agence_id', ag.id),
-          supabase.from('locataires').select('id,nom,prenom').eq('agence_id', ag.id),
-        ])
-        setBiens(b||[]); setLocataires(l||[])
+  const initData = async () => {
+    setLoading(true)
+    try {
+      const { data:{ user } } = await supabase.auth.getUser()
+      const { data:ag } = await supabase.from('agences').select('*').eq('profile_id', user.id).single()
+      setAgence(ag)
+      if (!ag?.id) return
+      const [{ data }, { data: props }] = await Promise.all([
+        supabase
+          .from('paiements')
+          .select('*, biens(nom,ville,proprietaire_id), locataires(nom,prenom), baux(date_debut,date_fin,loyer_mensuel)')
+          .eq('agence_id', ag.id)
+          .order('date_echeance', {ascending:true}),
+        supabase.from('proprietaires').select('id,nom,prenom'),
+      ])
+      const propsById = {}
+      for (const p of (props||[])) propsById[p.id] = `${p.prenom||''} ${p.nom||''}`.trim()
+      proprietairesMap.current = propsById
+      const normalise = (data||[]).map(p => ({ ...p, statut: normStatut(p.statut) }))
+      // Mettre a jour automatiquement en_retard
+      const today = new Date()
+      const toUpdate = normalise.filter(p => p.statut==='en_attente' && p.date_echeance && new Date(p.date_echeance) < today)
+      if (toUpdate.length > 0) {
+        await supabase.from('paiements').update({ statut:'en_retard' }).in('id', toUpdate.map(p=>p.id))
+        toUpdate.forEach(p=>{ p.statut='en_retard' })
       }
-      setLoading(false)
-    }
-    init()
-  }, [])
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const { error } = await supabase.from('paiements').insert({ ...form, agence_id: agenceId, montant: Number(form.montant) })
-    if (error) { toast.error(error.message); return }
-    toast.success('Paiement enregistré !')
-    setShowModal(false)
-    setForm({ montant:'', mode:'Mobile Money', statut:'payé', date_paiement: new Date().toISOString().split('T')[0], bien_id:'', locataire_id:'', notes:'' })
-    chargerPaiements(agenceId)
+      setPaiements(normalise.map(p => ({
+        ...p,
+        bien_nom: p.biens?.nom||'',
+        locataire_nom: `${p.locataires?.prenom||''} ${p.locataires?.nom||''}`.trim(),
+        proprietaire_id: p.biens?.proprietaire_id || null,
+        proprietaire_nom: propsById[p.biens?.proprietaire_id] || '',
+      })))
+    } catch(e){ console.error(e) }
+    finally{ setLoading(false) }
   }
 
-  const now = new Date()
-  const moisPrecedent = new Date(now.getFullYear(), now.getMonth()-1)
-  const totalMois = paiements.filter(p => p.statut === 'payé' && p.date_paiement && new Date(p.date_paiement).getMonth() === now.getMonth() && new Date(p.date_paiement).getFullYear() === now.getFullYear()).reduce((s,p) => s + Number(p.montant), 0)
-  const totalMoisPrecedent = paiements.filter(p => p.statut === 'payé' && p.date_paiement && new Date(p.date_paiement).getMonth() === moisPrecedent.getMonth() && new Date(p.date_paiement).getFullYear() === moisPrecedent.getFullYear()).reduce((s,p) => s + Number(p.montant), 0)
-  const totalMoisTrend = totalMoisPrecedent>0 ? Math.round(((totalMois-totalMoisPrecedent)/totalMoisPrecedent)*100) : (totalMois>0?100:0)
+  const marquerPaye = async () => {
+    if (!selPaie) return
+    setSaving(true)
+    try {
+      const montantPaye = parseFloat(payForm.montant_paye) || selPaie.montant
+      const isPartiel   = montantPaye < selPaie.montant
+      const { error } = await supabase.from('paiements').update({
+        statut:              isPartiel ? 'partiel' : 'paye',
+        date_paiement:       payForm.date_paiement || new Date().toISOString(),
+        mode_paiement:       payForm.mode,
+        operateur:           payForm.operateur || null,
+        reference_transaction: payForm.reference || null,
+        notes:               payForm.notes || null,
+      }).eq('id', selPaie.id)
+      if (error) throw new Error(error.message + ' [' + error.code + ']')
+      toast.success(isPartiel ? 'Paiement partiel enregistre !' : 'Paiement enregistre !')
+      setShowPay(false)
+      setSelPaie(null)
+      setPayForm({ mode:'Mobile Money', operateur:'', reference:'', date_paiement:'', montant_paye:'', notes:'' })
+      initData()
+    } catch(e){ toast.error(e.message) }
+    finally{ setSaving(false) }
+  }
+
+  const annulerPaiement = async (p) => {
+    if (!confirm('Annuler ce paiement ?')) return
+    const { error } = await supabase.from('paiements').update({ statut:'annule' }).eq('id', p.id)
+    if (error) { toast.error(error.message); return }
+    toast.success('Paiement annule'); setSelPaie(null); initData()
+  }
+
+  const remettreEnAttente = async (p) => {
+    if (!confirm('Remettre en attente ?')) return
+    const { error } = await supabase.from('paiements').update({ statut:'en_attente', date_paiement:null, reference_transaction:null }).eq('id', p.id)
+    if (error) { toast.error(error.message); return }
+    toast.success('Remis en attente'); setSelPaie(x=>x?{...x,statut:'en_attente'}:null); initData()
+  }
+
+  const annees = [...new Set(paiements.map(p=>p.periode_annee).filter(Boolean))].sort((a,b)=>b-a)
+
+  const uniqueProprietaires = Object.entries(proprietairesMap.current).map(([id,nom])=>({ value:id, label:nom||'—' }))
 
   const filtered = paiements
     .filter(p => {
-      const ms = !search || `${p.bien_nom} ${p.locataire_nom}`.toLowerCase().includes(search.toLowerCase())
+      const ms = !search || `${p.bien_nom} ${p.locataire_nom}`.toLowerCase().includes(search.toLowerCase()) || p.locataire_id?.toLowerCase().includes(search.toLowerCase())
       const fs = filterStatut==='tous' || p.statut===filterStatut
-      return ms && fs
+      const fm = filterMois==='tous' || p.periode_mois===parseInt(filterMois)
+      const fa = filterAnnee==='tous' || p.periode_annee===parseInt(filterAnnee)
+      const fp = filterProprietaire==='tous' || p.proprietaire_id===filterProprietaire
+      return ms && fs && fm && fa && fp
     })
     .sort((a,b) => {
       if (!sortField) return 0
@@ -343,65 +419,78 @@ export default function Paiements() {
 
   const exporterCSV = (list) => {
     const lignes = [
-      ['Locataire','Bien','Montant','Mode','Date','Statut'],
-      ...list.map(p => [p.locataire_nom, p.bien_nom, `${fmt(p.montant)} FCFA`, p.mode, p.date_paiement?new Date(p.date_paiement).toLocaleDateString('fr-FR'):'', S_CFG[p.statut]?.label||p.statut]),
+      ['Periode','Bien','Locataire','Proprietaire','Echeance','Montant','Etat'],
+      ...list.map(p => [`${p.periode_mois}/${p.periode_annee}`, p.bien_nom, p.locataire_nom, p.proprietaire_nom, p.date_echeance?new Date(p.date_echeance).toLocaleDateString('fr-FR'):'', `${fmt(p.montant)} FCFA`, S_CFG[p.statut]?.label||p.statut]),
     ]
     const csv = lignes.map(l => l.map(c => `"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n')
     const blob = new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = 'paiements-agence.csv'
+    a.href = url; a.download = `paiements-${agence?.nom||'agence'}.csv`
     a.click()
     URL.revokeObjectURL(url)
   }
 
+  const stats = {
+    attendu:  paiements.filter(p=>p.statut!=='annule').reduce((a,p)=>a+(p.montant||0),0),
+    encaisse: paiements.filter(p=>p.statut==='paye'||p.statut==='partiel').reduce((a,p)=>a+(p.montant||0),0),
+    retard:   paiements.filter(p=>p.statut==='en_retard').length,
+    attente:  paiements.filter(p=>p.statut==='en_attente').length,
+  }
+  const now = new Date()
+  const moisPrec = new Date(now.getFullYear(), now.getMonth()-1)
+  const encaisseCeMois = paiements.filter(p=>p.date_paiement && (p.statut==='paye'||p.statut==='partiel') && new Date(p.date_paiement).getMonth()===now.getMonth() && new Date(p.date_paiement).getFullYear()===now.getFullYear()).reduce((a,p)=>a+(p.montant||0),0)
+  const encaisseMoisPrec = paiements.filter(p=>p.date_paiement && (p.statut==='paye'||p.statut==='partiel') && new Date(p.date_paiement).getMonth()===moisPrec.getMonth() && new Date(p.date_paiement).getFullYear()===moisPrec.getFullYear()).reduce((a,p)=>a+(p.montant||0),0)
+  const encaisseTrend = encaisseMoisPrec>0 ? Math.round(((encaisseCeMois-encaisseMoisPrec)/encaisseMoisPrec)*100) : (encaisseCeMois>0?100:0)
+  const tauxRecouvrement = stats.attendu>0 ? Math.round((stats.encaisse/stats.attendu)*100) : 0
+
   const parMoisChart = {}
-  filtered.forEach(p => { if (p.statut==='payé' && p.date_paiement) { const d = new Date(p.date_paiement); const cle = `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; parMoisChart[cle] = (parMoisChart[cle]||0) + Number(p.montant||0) } })
+  filtered.forEach(p => { if (p.statut==='paye'||p.statut==='partiel') { const cle = `${String(p.periode_mois).padStart(2,'0')}/${p.periode_annee}`; parMoisChart[cle] = (parMoisChart[cle]||0) + Number(p.montant||0) } })
   const entreesChart = Object.entries(parMoisChart).sort((a,b) => { const [ma,ya]=a[0].split('/'); const [mb,yb]=b[0].split('/'); return new Date(ya,ma-1)-new Date(yb,mb-1) })
 
-  const SBadge = ({s}) => { const c=S_CFG[s]||S_CFG['en attente']; return <span style={{display:'inline-flex',alignItems:'center',gap:5,padding:'2px 9px',borderRadius:'100px',fontSize:11,fontWeight:600,background:c.bg,color:c.color}}><span style={{width:6,height:6,borderRadius:'50%',background:c.color,flexShrink:0}}/>{c.label}</span> }
+  const SBadge = ({s}) => { const c=S_CFG[s]||S_CFG.en_attente; return <span style={{display:'inline-flex',alignItems:'center',gap:5,padding:'2px 9px',borderRadius:'100px',fontSize:11,fontWeight:600,background:c.bg,color:c.color}}><span style={{width:6,height:6,borderRadius:'50%',background:c.color,flexShrink:0}}/>{c.label}</span> }
 
   const linkBtn = { background:'none', border:'none', color:'#4da6ff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', gap:6 }
-  const inp = { width:'100%', padding:'8px 10px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.3)', borderRadius:2, fontFamily:'Inter,sans-serif', fontSize:13, color:'#e6edf3', outline:'none', colorScheme:'dark', boxSizing:'border-box' }
-  const lbl = { display:'block', fontSize:13, fontWeight:400, color:'rgba(255,255,255,0.85)', marginBottom:6 }
 
   return (
     <>
       <style>{FLUENT_TABLE_CSS}</style>
       <style>{`
-        .pg-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
-        .pg-btn-blue{background:#0078d4;color:#fff}
-        .pg-btn-blue:hover{background:#006cc1}
-        .pg-btn-ghost{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.08)}
-        .pg-btn-ghost:hover{background:rgba(255,255,255,0.08);color:#e6edf3}
-        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
-        .modal{background:#161b22;border:1px solid rgba(255,255,255,0.08);border-radius:8px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
-        .modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.07)}
-        .modal-title{font-size:16px;font-weight:700;color:#e6edf3}
-        .modal-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);padding:5px;border-radius:4px;display:flex}
-        .modal-close:hover{background:rgba(255,255,255,0.06)}
-        .modal-body{padding:24px}
-        .modal-foot{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:flex-end;gap:10px}
-        .form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-        .form-field{margin-bottom:14px}
-        .form-input option{background:#1c2434}
-        @media(max-width:768px){.form-grid2{grid-template-columns:1fr}}
+        .px-ov{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;display:flex;justify-content:flex-end}
+        .px-panel{background:#161b22;border-left:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;animation:px-sl 0.22s ease;height:100%;overflow:hidden}
+        @keyframes px-sl{from{transform:translateX(100%)}to{transform:translateX(0)}}
+        .px-inp{width:100%;padding:9px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-family:Inter,sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s;color-scheme:dark}
+        .px-inp:focus{border-color:#0078d4}
+        .px-lbl{display:block;font-size:12.5px;font-weight:600;color:rgba(255,255,255,0.5);margin-bottom:7px}
+        .px-g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+        .px-fld{margin-bottom:14px}
+        .px-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:Inter,sans-serif;transition:all 0.15s;white-space:nowrap}
+        .px-btn:hover:not(:disabled){background:rgba(255,255,255,0.09);color:#e6edf3}
+        .px-btn-g{background:rgba(0,200,150,0.08);border-color:rgba(0,200,150,0.22);color:#00c896}
+        .px-btn-r{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.22);color:#ef4444}
+        .px-btn-y{background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.22);color:#f59e0b}
+        @media(max-width:700px){.px-g2{grid-template-columns:1fr}}
       `}</style>
 
       <div style={{minHeight:'100%'}}>
         <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14 }}>
           Accueil <span style={{ margin:'0 4px' }}>&gt;</span> <span style={{ color:'rgba(255,255,255,0.6)' }}>Facturation</span>
         </div>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,marginBottom:20}}>
-          <div style={{fontSize:26,fontWeight:700,color:'#e6edf3',letterSpacing:'-0.02em',display:'flex',alignItems:'center',gap:10}}><CreditCard style={{width:22,height:22}}/> Factures et paiements</div>
-          <button className="pg-btn pg-btn-blue" onClick={() => setShowModal(true)}><Plus/> Enregistrer un paiement</button>
+        <div style={{fontSize:26,fontWeight:700,color:'#e6edf3',letterSpacing:'-0.02em',marginBottom:20}}>Factures et paiements</div>
+
+        <div style={{ display:'flex', gap:10, padding:'14px 16px', background:'rgba(0,120,212,0.06)', borderRadius:2, marginBottom:24 }}>
+          <Info style={{ color:'#4da6ff', flexShrink:0, marginTop:1 }}/>
+          <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.6)', lineHeight:1.5 }}>
+            Connecte a <span style={{color:'#4da6ff',fontWeight:600}}>{agence?.nom}</span> — {paiements.length} echeance{paiements.length!==1?'s':''} au total.
+          </div>
         </div>
 
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
           {[
-            {ic:CreditCard,l:'Encaisse ce mois', v:fmt(totalMois)+' FCFA', c:'#00c896', trend:totalMoisTrend},
-            {ic:AlertTriangle,l:'Loyers en retard', v:paiements.filter(p=>p.statut==='retard').length, c:paiements.filter(p=>p.statut==='retard').length>0?'#ef4444':'rgba(255,255,255,0.3)'},
-            {ic:Hourglass,l:'En attente', v:paiements.filter(p=>p.statut==='en attente').length, c:'#f59e0b'},
+            {ic:Wallet,l:'Total attendu', v:fmt(stats.attendu)+' FCFA', c:'#e6edf3'},
+            {ic:CheckCircle2,l:'Encaisse', v:fmt(stats.encaisse)+' FCFA', c:'#00c896', trend:encaisseTrend},
+            {ic:AlertTriangle,l:'En retard', v:stats.retard, c:stats.retard>0?'#ef4444':'rgba(255,255,255,0.3)'},
+            {ic:Hourglass,l:'A venir', v:stats.attente, c:'#f59e0b'},
           ].map((s,i)=>(
             <div key={i} style={{borderLeft:`3px solid ${s.c}`,paddingLeft:14}}>
               <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}><s.ic style={{color:s.c}}/><span style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>{s.l}</span></div>
@@ -413,16 +502,30 @@ export default function Paiements() {
           ))}
         </div>
 
+        <div style={{marginBottom:20,padding:'12px 16px',background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10}}>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:7}}>
+            <span style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>Taux de recouvrement</span>
+            <span style={{fontSize:13,fontWeight:700,color:tauxRecouvrement>=80?'#00c896':tauxRecouvrement>=50?'#f59e0b':'#ef4444'}}>{tauxRecouvrement}%</span>
+          </div>
+          <ProgressBar value={tauxRecouvrement}/>
+        </div>
+
         <div style={{ display:'flex', alignItems:'center', gap:18, marginBottom:14, flexWrap:'wrap', paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-          <button onClick={()=>chargerPaiements(agenceId)} style={linkBtn}><RefreshCw/> Actualiser</button>
+          <button onClick={initData} style={linkBtn}><RefreshCw/> Actualiser</button>
           <button onClick={()=>exporterCSV(selectedP.length?filtered.filter(p=>selectedP.includes(p.id)):filtered)} style={linkBtn}><Download/> Exporter vers un fichier CSV</button>
           <SearchBox value={search} onChange={e=>setSearch(e.target.value)} placeholder="Bien, locataire..." style={{ minWidth:200 }}/>
           <div style={{ marginLeft:'auto' }}><ViewSwitcher value={vue} onChange={setVue}/></div>
         </div>
 
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18, flexWrap:'wrap' }}>
-          <FilterPill label="Statut" value={filterStatut} onChange={setFilterStatut}
-            options={[{value:'tous',label:'Tous'}, ...STATUTS.map(s=>({value:s,label:S_CFG[s].label}))]}/>
+          <FilterPill label="Etat" value={filterStatut} onChange={setFilter}
+            options={[{value:'tous',label:'Tous'}, ...Object.entries(S_CFG).map(([k,v])=>({value:k,label:v.label}))]}/>
+          <FilterPill label="Annee" value={filterAnnee} onChange={setFilterAnnee}
+            options={[{value:'tous',label:'Toutes'}, ...annees.map(a=>({value:String(a),label:String(a)}))]}/>
+          <FilterPill label="Mois" value={filterMois} onChange={setFilterMois}
+            options={[{value:'tous',label:'Tous'}, ...MOIS.map((m,i)=>({value:String(i+1),label:m}))]}/>
+          <FilterPill label="Proprietaire" value={filterProprietaire} onChange={setFilterProprietaire}
+            options={[{value:'tous',label:'Tous'}, ...uniqueProprietaires]}/>
         </div>
 
         {loading?(
@@ -432,14 +535,15 @@ export default function Paiements() {
         ):filtered.length===0?(
           <div style={{ textAlign:'center', padding:'60px', color:'rgba(255,255,255,0.3)' }}>
             <FileTextLarge style={{ marginBottom:12, opacity:0.3 }}/>
-            <div style={{ fontSize:14 }}>Aucun paiement trouvé</div>
+            <div style={{ fontSize:14 }}>Aucun paiement dans ce filtre</div>
           </div>
         ):(
           <div style={{ overflowX:'auto', overflowY:'visible' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse', minWidth:850, tableLayout:'fixed' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse', minWidth:900, tableLayout:'fixed' }}>
               <colgroup>
                 <col style={{ width:36 }}/>
                 {COLONNES.map(c => <col key={c.key} style={{ width:colWidths[c.key] ?? COL_DEFAULTS[c.key] }}/>)}
+                <col style={{ width:120 }}/>
               </colgroup>
               <thead><tr>
                 <th className="fl-th"><FluentCheckbox checked={filtered.length>0 && filtered.every(p=>selectedP.includes(p.id))} onChange={()=>toggleSelectAllP(filtered)}/></th>
@@ -448,19 +552,30 @@ export default function Paiements() {
                     <ColHeader label={c.label} sortDir={sortField===c.field ? sortDir : null} onSort={()=>toggleSort(c.field)} onResize={delta=>resizeCol(c.key, delta)}/>
                   </th>
                 ))}
+                <th className="fl-th"></th>
               </tr></thead>
               <tbody>{filtered.map(p=>{
-                const cfg = S_CFG[p.statut]||S_CFG['en attente']
+                const cfg = S_CFG[p.statut]||S_CFG.en_attente
                 const selected = selectedP.includes(p.id)
+                const moisLabel = p.periode_mois ? MOIS[p.periode_mois-1] : '—'
                 return (
-                  <tr key={p.id} className={`fl-row${selected ? ' fl-row-selected' : ''}`}>
+                  <tr key={p.id} className={`fl-row${selected ? ' fl-row-selected' : ''}`} onClick={()=>setSelPaie(p)}>
                     <td className="fl-td"><FluentCheckbox checked={selected} onChange={()=>toggleSelectP(p.id)}/></td>
-                    <td className="fl-td" style={{ fontWeight:600 }}>{p.locataire_nom||'—'}</td>
-                    <td className="fl-td">{p.bien_nom||'—'}</td>
-                    <td className="fl-td" style={{fontWeight:600,color:'#00c896'}}>{fmt(p.montant)} FCFA</td>
-                    <td className="fl-td" style={{color:'rgba(255,255,255,0.5)'}}>{p.mode||'—'}</td>
-                    <td className="fl-td" style={{color:'rgba(255,255,255,0.5)'}}>{p.date_paiement?new Date(p.date_paiement).toLocaleDateString('fr-FR'):'—'}</td>
+                    <td className="fl-td ind-td" style={{ fontWeight:600, '--ind-c':cfg.color }}>{moisLabel} {p.periode_annee}</td>
+                    <td className="fl-td" onClick={ev=>ev.stopPropagation()}><RefLink to={`/agence/biens?bien=${p.bien_id}`}>{p.bien_nom||'—'}</RefLink></td>
+                    <td className="fl-td" onClick={ev=>ev.stopPropagation()}><RefLink to={`/imoloc/locataires?locataire=${p.locataire_id}`}>{p.locataire_nom||'—'}</RefLink></td>
+                    <td className="fl-td" onClick={ev=>ev.stopPropagation()}><RefLink to={`/imoloc/proprietaires?proprietaire=${p.proprietaire_id}`}>{p.proprietaire_nom||'—'}</RefLink></td>
+                    <td className="fl-td" style={{color:'rgba(255,255,255,0.5)'}}>
+                      {p.date_echeance?new Date(p.date_echeance).toLocaleDateString('fr-FR'):'—'}
+                      {p.statut==='en_retard'&&p.date_echeance&&<span style={{color:'#ef4444'}}> · {Math.floor((new Date()-new Date(p.date_echeance))/(1000*60*60*24))}j</span>}
+                    </td>
+                    <td className="fl-td" style={{fontWeight:600,color:p.statut==='paye'?'#00c896':p.statut==='en_retard'?'#ef4444':'#ffffff'}}>{fmt(p.montant)} FCFA</td>
                     <td className="fl-td"><SBadge s={p.statut}/></td>
+                    <td className="fl-td" onClick={e=>e.stopPropagation()}>
+                      {['en_attente','en_retard','partiel'].includes(p.statut)&&(
+                        <button className='px-btn px-btn-g' style={{padding:'4px 10px',fontSize:12}} onClick={()=>{setSelPaie(p);setPayForm({mode:'Mobile Money',operateur:'',reference:'',date_paiement:new Date().toISOString().split('T')[0],montant_paye:String(p.montant),notes:''});setShowPay(true)}}>Encaisser</button>
+                      )}
+                    </td>
                   </tr>
                 )
               })}</tbody>
@@ -469,50 +584,94 @@ export default function Paiements() {
         )}
       </div>
 
-      {showModal && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
-          <div className="modal">
-            <div className="modal-head">
-              <div className="modal-title">Enregistrer un paiement</div>
-              <button className="modal-close" onClick={()=>setShowModal(false)}><X/></button>
+      {/* ── PANEL ENCAISSER ── */}
+      {showPay&&selPaie&&(
+        <div className='px-ov' onClick={e=>e.target===e.currentTarget&&setShowPay(false)}>
+          <div className='px-panel' style={{width:'min(460px,96vw)'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'20px 24px',borderBottom:'1px solid rgba(255,255,255,0.07)',flexShrink:0}}>
+              <div>
+                <div style={{fontSize:17,fontWeight:700,color:'#e6edf3'}}>Encaisser le paiement</div>
+                <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginTop:3}}>{MOIS[(selPaie.periode_mois||1)-1]} {selPaie.periode_annee} · {fmt(selPaie.montant)} FCFA</div>
+              </div>
+              <button onClick={()=>setShowPay(false)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',padding:5,borderRadius:4,display:'flex'}}><svg width='18' height='18' fill='none' stroke='currentColor' strokeWidth='1.5' viewBox='0 0 24 24'><path strokeLinecap='round' d='M6 18L18 6M6 6l12 12'/></svg></button>
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="form-field"><label style={lbl}>Locataire</label>
-                  <select style={inp} value={form.locataire_id} onChange={e=>set('locataire_id',e.target.value)}>
-                    <option value="">Sélectionner...</option>
-                    {locataires.map(l=><option key={l.id} value={l.id}>{l.prenom} {l.nom}</option>)}
+            <div style={{flex:1,overflowY:'auto',padding:'24px 28px'}}>
+              <div style={{padding:'12px 16px',borderRadius:8,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)',marginBottom:20}}>
+                <div style={{display:'flex',alignItems:'center',gap:5,fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:3}}><Home/> {selPaie.biens?.nom||'—'}</div>
+                <div style={{display:'flex',alignItems:'center',gap:5,fontSize:13,color:'rgba(255,255,255,0.5)'}}><User/> {selPaie.locataires?.prenom||''} {selPaie.locataires?.nom||'—'}</div>
+              </div>
+              <div className='px-fld'>
+                <label className='px-lbl'>Montant encaisse (FCFA)</label>
+                <input autoFocus className='px-inp' type='number' min='0' value={payForm.montant_paye} onChange={e=>setPF('montant_paye',e.target.value)}/>
+                {payForm.montant_paye && parseFloat(payForm.montant_paye) < selPaie.montant && <div style={{display:'flex',alignItems:'center',gap:4,fontSize:12,color:'#6c63ff',marginTop:5}}><AlertTriangle/> Montant partiel — sera marque comme Partiel</div>}
+              </div>
+              <div className='px-g2'>
+                <div>
+                  <label className='px-lbl'>Mode de paiement</label>
+                  <select className='px-inp' value={payForm.mode} onChange={e=>setPF('mode',e.target.value)}>
+                    {MODES.map(m=><option key={m} style={{background:'#161b22'}}>{m}</option>)}
                   </select>
                 </div>
-                <div className="form-field"><label style={lbl}>Bien</label>
-                  <select style={inp} value={form.bien_id} onChange={e=>set('bien_id',e.target.value)}>
-                    <option value="">Sélectionner...</option>
-                    {biens.map(b=><option key={b.id} value={b.id}>{b.nom}</option>)}
-                  </select>
+                <div>
+                  <label className='px-lbl'>Date de paiement</label>
+                  <input className='px-inp' type='date' value={payForm.date_paiement} onChange={e=>setPF('date_paiement',e.target.value)}/>
                 </div>
-                <div className="form-grid2">
-                  <div className="form-field"><label style={lbl}>Montant (FCFA) <span style={{color:'#ef4444'}}>*</span></label><input type="number" style={inp} value={form.montant} onChange={e=>set('montant',e.target.value)} required/></div>
-                  <div className="form-field"><label style={lbl}>Date <span style={{color:'#ef4444'}}>*</span></label><input type="date" style={inp} value={form.date_paiement} onChange={e=>set('date_paiement',e.target.value)} required/></div>
-                </div>
-                <div className="form-grid2">
-                  <div className="form-field"><label style={lbl}>Mode de paiement</label>
-                    <select style={inp} value={form.mode} onChange={e=>set('mode',e.target.value)}>
-                      {MODES.map(m=><option key={m}>{m}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-field"><label style={lbl}>Statut</label>
-                    <select style={inp} value={form.statut} onChange={e=>set('statut',e.target.value)}>
-                      {STATUTS.map(s=><option key={s}>{s}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="form-field"><label style={lbl}>Notes</label><textarea style={{...inp,lineHeight:1.5,resize:'vertical'}} rows={2} value={form.notes} onChange={e=>set('notes',e.target.value)}/></div>
               </div>
-              <div className="modal-foot">
-                <button type="button" className="pg-btn pg-btn-ghost" onClick={()=>setShowModal(false)}>Annuler</button>
-                <button type="submit" className="pg-btn pg-btn-blue">Enregistrer</button>
+              {(payForm.mode==='Mobile Money')&&(
+                <div className='px-g2'>
+                  <div><label className='px-lbl'>Operateur</label><input className='px-inp' value={payForm.operateur} onChange={e=>setPF('operateur',e.target.value)} placeholder='MTN / Moov...'/></div>
+                  <div><label className='px-lbl'>Reference transaction</label><input className='px-inp' value={payForm.reference} onChange={e=>setPF('reference',e.target.value)} placeholder='TXN...'/></div>
+                </div>
+              )}
+              {(payForm.mode!=='Mobile Money')&&(
+                <div className='px-fld'><label className='px-lbl'>Reference</label><input className='px-inp' value={payForm.reference} onChange={e=>setPF('reference',e.target.value)} placeholder='N° cheque, virement...'/></div>
+              )}
+              <div className='px-fld'><label className='px-lbl'>Notes (optionnel)</label><textarea className='px-inp' rows={2} value={payForm.notes} onChange={e=>setPF('notes',e.target.value)} placeholder='Remarques...' style={{resize:'vertical',minHeight:60}}/></div>
+            </div>
+            <div style={{padding:'16px 24px',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',gap:10,flexShrink:0}}>
+              <button onClick={()=>setShowPay(false)} style={{flex:1,padding:11,borderRadius:5,fontSize:14,fontWeight:600,cursor:'pointer',background:'rgba(255,255,255,0.05)',color:'rgba(255,255,255,0.6)',border:'1px solid rgba(255,255,255,0.1)',fontFamily:'Inter,sans-serif'}}>Annuler</button>
+              <button onClick={marquerPaye} disabled={saving||!payForm.montant_paye} style={{flex:2,padding:11,borderRadius:5,fontSize:14,fontWeight:600,cursor:'pointer',background:'#00c896',color:'#fff',border:'none',fontFamily:'Inter,sans-serif',opacity:saving||!payForm.montant_paye?0.4:1,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>{saving?'Enregistrement...':<><CheckCircle2/> Confirmer le paiement</>}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DRAWER DETAIL ── */}
+      {selPaie&&!showPay&&(
+        <div className='px-ov' onClick={e=>e.target===e.currentTarget&&setSelPaie(null)}>
+          <div className='px-panel' style={{width:'min(500px,96vw)'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'20px 24px',borderBottom:'1px solid rgba(255,255,255,0.07)',flexShrink:0}}>
+              <div>
+                <div style={{fontSize:17,fontWeight:700,color:'#e6edf3'}}>{MOIS[(selPaie.periode_mois||1)-1]} {selPaie.periode_annee}</div>
+                <div style={{marginTop:6}}><SBadge s={selPaie.statut}/></div>
               </div>
-            </form>
+              <button onClick={()=>setSelPaie(null)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',padding:5,borderRadius:4,display:'flex'}}><svg width='18' height='18' fill='none' stroke='currentColor' strokeWidth='1.5' viewBox='0 0 24 24'><path strokeLinecap='round' d='M6 18L18 6M6 6l12 12'/></svg></button>
+            </div>
+            <div style={{flex:1,overflowY:'auto',padding:'24px 28px'}}>
+              <div style={{textAlign:'center',padding:'20px 0 28px',borderBottom:'1px solid rgba(255,255,255,0.07)',marginBottom:24}}>
+                <div style={{fontSize:36,fontWeight:800,color:selPaie.statut==='paye'?'#00c896':selPaie.statut==='en_retard'?'#ef4444':'#e6edf3',marginBottom:6}}>{fmt(selPaie.montant)} FCFA</div>
+                <div style={{fontSize:13,color:'rgba(255,255,255,0.4)'}}>Echeance du {selPaie.date_echeance?new Date(selPaie.date_echeance).toLocaleDateString('fr-FR'):'—'}</div>
+                {selPaie.statut==='en_retard'&&selPaie.date_echeance&&<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:4,fontSize:12.5,color:'#ef4444',marginTop:4}}><AlertTriangle/> Retard de {Math.floor((new Date()-new Date(selPaie.date_echeance))/(1000*60*60*24))} jours</div>}
+              </div>
+              {[['Bien',selPaie.biens?.nom||'—'],['Locataire',`${selPaie.locataires?.prenom||''} ${selPaie.locataires?.nom||'—'}`],['Periode',`${MOIS[(selPaie.periode_mois||1)-1]} ${selPaie.periode_annee||'—'}`],['Mode bail',selPaie.mode||'—'],['Ref. transaction',selPaie.reference_transaction||null],['Operateur',selPaie.operateur||null],['Date paiement',selPaie.date_paiement?new Date(selPaie.date_paiement).toLocaleDateString('fr-FR'):null],['Notes',selPaie.notes||null]].map(([k,v])=>v?(
+                <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                  <span style={{fontSize:13,color:'rgba(255,255,255,0.4)',width:140}}>{k}</span>
+                  <span style={{fontSize:13.5,color:'#e6edf3',fontWeight:500,textAlign:'right'}}>{v}</span>
+                </div>
+              ):null)}
+              <div style={{marginTop:24,display:'flex',flexDirection:'column',gap:8}}>
+                {['en_attente','en_retard','partiel'].includes(selPaie.statut)&&(
+                  <button className='px-btn px-btn-g' style={{justifyContent:'center',padding:'11px',display:'flex',alignItems:'center',gap:6}} onClick={()=>{setPayForm({mode:'Mobile Money',operateur:'',reference:'',date_paiement:new Date().toISOString().split('T')[0],montant_paye:String(selPaie.montant),notes:''});setShowPay(true)}}><CheckCircle2/> Encaisser ce paiement</button>
+                )}
+                {selPaie.statut==='paye'&&(
+                  <button className='px-btn px-btn-y' style={{justifyContent:'center',padding:'11px',display:'flex',alignItems:'center',gap:6}} onClick={()=>remettreEnAttente(selPaie)}><Undo2/> Remettre en attente</button>
+                )}
+                {selPaie.statut!=='annule'&&selPaie.statut!=='paye'&&(
+                  <button className='px-btn px-btn-r' style={{justifyContent:'center',padding:'11px',display:'flex',alignItems:'center',gap:6}} onClick={()=>annulerPaiement(selPaie)}><Ban/> Annuler ce paiement</button>
+                )}
+                <button className='px-btn' style={{justifyContent:'center',padding:'11px',display:'flex',alignItems:'center',gap:6}} onClick={()=>{setSelPaie(null);navigate('/imoloc/baux')}}><FileText/> Voir le bail associe</button>
+              </div>
+            </div>
           </div>
         </div>
       )}
