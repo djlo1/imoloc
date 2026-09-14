@@ -38,13 +38,11 @@ export default function Login() {
     try {
       const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
       if (err) { setError(err.message); setLoading(false); return }
-      const { data: prof } = await supabase.from("profiles").select("role").eq("id", data.user.id).single()
-      const role = prof?.role || "global_admin"
-      const AGENCE = ["agence","global_admin","user_admin","billing_admin","reports_reader","security_admin","password_admin","agent","comptable","lecteur"]
-      if (role === "locataire") navigate("/locataire")
-      else if (role === "proprietaire") navigate("/proprietaire")
-      else if (role === "super_admin") navigate("/admin")
-      else if (AGENCE.includes(role)) navigate("/agence")
+      const { data: prof } = await supabase.from("profiles").select("espace").eq("id", data.user.id).single()
+      const espace = prof?.espace || "collaborateur"
+      if (espace === "locataire") navigate("/locataire")
+      else if (espace === "proprietaire") navigate("/proprietaire")
+      else if (espace === "super_admin") navigate("/admin")
       else navigate("/agence")
     } catch(e) { setError(e.message); setLoading(false) }
   }

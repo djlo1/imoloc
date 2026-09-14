@@ -30,17 +30,16 @@ function PrivateRoute({ children, roles }) {
   const { user, profile, loading } = useAuthStore()
   if (loading) return <Loader />
   if (!user) return <Navigate to="/login" replace />
-  // Sans role reconnu (profil manquant, ou role qui ne correspond a rien
+  // Sans espace reconnu (profil manquant, ou espace qui ne correspond a rien
   // de connu), on refuse l'acces par defaut plutot que de laisser passer —
   // avant, l'absence de correspondance ci-dessous retombait silencieusement
   // sur "return children" en fin de fonction.
-  if (roles && (!profile || !roles.includes(profile.role))) {
-    // Rediriger vers le bon dashboard selon le rôle, si on en connait un
-    const AGENCE_ROLES = ['agence','global_admin','user_admin','billing_admin','reports_reader','security_admin','password_admin','agent','comptable','lecteur']
-    if (profile && AGENCE_ROLES.includes(profile.role)) return <Navigate to="/agence" replace />
-    if (profile?.role === 'proprietaire') return <Navigate to="/proprietaire" replace />
-    if (profile?.role === 'locataire') return <Navigate to="/locataire" replace />
-    if (profile?.role === 'super_admin') return <Navigate to="/admin" replace />
+  if (roles && (!profile || !roles.includes(profile.espace))) {
+    // Rediriger vers le bon dashboard selon l'espace, si on en connait un
+    if (profile?.espace === 'collaborateur') return <Navigate to="/agence" replace />
+    if (profile?.espace === 'proprietaire') return <Navigate to="/proprietaire" replace />
+    if (profile?.espace === 'locataire') return <Navigate to="/locataire" replace />
+    if (profile?.espace === 'super_admin') return <Navigate to="/admin" replace />
     return <Navigate to="/login" replace />
   }
   return children
@@ -87,7 +86,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/agence/*" element={<PrivateRoute roles={['agence','global_admin','user_admin','billing_admin','reports_reader','security_admin','password_admin','agent','comptable','lecteur']}><DashboardAgence /></PrivateRoute>} />
+        <Route path="/agence/*" element={<PrivateRoute roles={['collaborateur']}><DashboardAgence /></PrivateRoute>} />
         <Route path="/proprietaire/*" element={<PrivateRoute roles={['proprietaire']}><DashboardProprietaire /></PrivateRoute>} />
         <Route path="/locataire/*" element={<PrivateRoute roles={['locataire']}><DashboardLocataire /></PrivateRoute>} />
         <Route path="/admin/*" element={<PrivateRoute roles={['super_admin']}><DashboardAdmin /></PrivateRoute>} />
