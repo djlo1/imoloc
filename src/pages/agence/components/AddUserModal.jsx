@@ -6,9 +6,8 @@ import toast from 'react-hot-toast'
 const STEPS = [
   { id:1, label:'Informations de base' },
   { id:2, label:'Licences de produits' },
-  { id:3, label:'Applications' },
-  { id:4, label:'Paramètres facultatifs' },
-  { id:5, label:'Terminer' },
+  { id:3, label:'Paramètres facultatifs' },
+  { id:4, label:'Terminer' },
 ]
 
 // Détecter le fournisseur d'email
@@ -528,16 +527,11 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                       <span className="au-plan-badge" style={{background:'rgba(0,120,212,0.12)',color:'#4da6ff',border:'1px solid rgba(0,120,212,0.3)'}}>{lic.prix_mensuel!=null?`${lic.prix_mensuel} FCFA/mois`:'Selon palier'}</span>
                     </div>
                   ))}
-                </>
-              )}
 
-              {/* ══ ÉTAPE 3 ══ */}
-              {step===3 && (
-                <>
-                  <div className="au-content-title">Applications</div>
-                  <div className="au-content-sub">Déterminées automatiquement par les licences attribuées à l'étape précédente — rien à choisir ici.</div>
+                  {/* Applications — déterminées par les licences, comme dans le Centre d'admin M365 */}
+                  <div className="au-section">Applications ({derivedApps.length})</div>
                   {derivedApps.length===0 ? (
-                    <div style={{fontSize:13,color:'rgba(255,255,255,0.35)',padding:'10px 0'}}>Aucune licence sélectionnée : aucune application accessible.</div>
+                    <div style={{fontSize:13,color:'rgba(255,255,255,0.35)',padding:'6px 0 10px'}}>Aucune licence sélectionnée : aucune application accessible.</div>
                   ) : (
                     <div className="au-apps-grid">
                       {derivedApps.map(nom => (
@@ -552,8 +546,8 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                 </>
               )}
 
-              {/* ══ ÉTAPE 4 ══ */}
-              {step===4 && (
+              {/* ══ ÉTAPE 3 ══ */}
+              {step===3 && (
                 <>
                   <div className="au-content-title">Paramètres facultatifs</div>
                   <div className="au-content-sub">Attribuez un ou plusieurs rôles et complétez le profil. Modifiable ultérieurement.</div>
@@ -595,8 +589,8 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                 </>
               )}
 
-              {/* ══ ÉTAPE 5 ══ */}
-              {step===5 && (
+              {/* ══ ÉTAPE 4 ══ */}
+              {step===4 && (
                 <>
                   <div style={{textAlign:'center',marginBottom:24}}>
                     <div className="au-success-ring">
