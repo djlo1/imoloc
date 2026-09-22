@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
 import AddUserModal from '../components/AddUserModal'
+import AdminShell from '../components/AdminShell'
 import {
   Users, Crown, Briefcase, Eye, FileText, ShieldCheck, RefreshCw, Mail, AlertTriangle,
   Trash2, Ban, Key, Lock, Pencil, User, Download, Upload,
@@ -696,50 +697,19 @@ export default function Utilisateurs() {
         @media(max-width:480px){.us-stats{grid-template-columns:1fr}}
       `}</style>
 
+      <AdminShell
+        activeKey={{actifs:'utilisateurs-actifs',contacts:'contacts',invites:'utilisateurs-invites',supprimes:'utilisateurs-supprimes'}[tab]}
+        breadcrumb={[{label:'Accueil',path:'/agence'},{label:{actifs:'Utilisateurs actifs',contacts:'Contacts',invites:'Utilisateurs invités',supprimes:'Utilisateurs supprimés'}[tab]}]}
+      >
       <div className="us-page">
-        {/* Breadcrumb */}
-        <div className="us-bc">
-          <span className="us-bcl" onClick={()=>navigate('/agence')}>Accueil</span>
-          <span style={{color:'rgba(255,255,255,0.2)'}}>›</span>
-          <span style={{color:'rgba(255,255,255,0.65)'}}>
-            {{actifs:'Utilisateurs actifs',contacts:'Contacts',invites:'Utilisateurs invités',supprimes:'Utilisateurs supprimés'}[tab]}
-          </span>
-        </div>
-
         {/* Titre */}
-        <div className="us-title">
+        <div className="as-h1">
           {{actifs:'Utilisateurs actifs',contacts:'Contacts',invites:'Utilisateurs invités',supprimes:'Utilisateurs supprimés'}[tab]}
         </div>
-        <div className="us-sub">
-          {tab==='actifs'&&`${actifs.length} utilisateur${actifs.length>1?'s':''} · ${agence?.nom||'Organisation'}`}
-          {tab==='invites'&&`${invites.length} invitation${invites.length>1?'s':''} en cours`}
-          {tab==='supprimes'&&`${supprimes.length} utilisateur${supprimes.length>1?'s':''} dans la corbeille`}
-          {tab==='contacts'&&'Personnes externes visibles par votre organisation'}
-        </div>
-
-
 
         {/* ══ PAGE UTILISATEURS ACTIFS ══ */}
         {tab==='actifs'&&(
           <>
-            {/* Stats */}
-            <div className="us-stats">
-              {[
-                {ic:Users,lbl:'Total',val:actifs.length,col:'#0078d4'},
-                {ic:Crown,lbl:'Administrateurs',val:actifs.filter(u=>u.role?.includes('admin')).length,col:'#ef4444'},
-                {ic:Briefcase,lbl:'Agents & Comptables',val:actifs.filter(u=>['agent','comptable'].includes(u.role)).length,col:'#6c63ff'},
-                {ic:Eye,lbl:'Lecteurs',val:actifs.filter(u=>u.role==='lecteur').length,col:'rgba(255,255,255,0.4)'},
-              ].map((s,i)=>(
-                <div key={i} className="us-sc ind-left" style={{'--ind-c':s.col}}>
-                  <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}>
-                    <s.ic size={16} color={s.col}/>
-                    <span className="us-sl">{s.lbl}</span>
-                  </div>
-                  <div className="us-sv" style={{color:s.col}}>{s.val}</div>
-                </div>
-              ))}
-            </div>
-
             {/* Toolbar */}
             <div className="us-toolbar">
               <button className="us-btn us-btn-p" onClick={()=>setShowAddUserModal(true)}>
@@ -2090,6 +2060,7 @@ export default function Utilisateurs() {
       )}
 
         </>
+      </AdminShell>
     </>
   )
 }
