@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Building2, Users, CreditCard, FileText, BarChart3, Wrench, Plug, Lock, Check, ArrowLeft, ArrowRight, Mail, User, AlertTriangle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Building2, Grid3x3, Lock, Check, ArrowLeft, ArrowRight, Mail, User, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -9,41 +9,6 @@ const STEPS = [
   { id:3, label:'Applications' },
   { id:4, label:'Paramètres facultatifs' },
   { id:5, label:'Terminer' },
-]
-
-const ROLES = [
-  { id:'global_admin', label:'Administrateur global', desc:'Accès complet à tous les paramètres.', badge:'', badgeColor:'#ef4444' },
-  { id:'user_admin', label:'Administrateur des utilisateurs', desc:'Gère les comptes, mots de passe et licences.', badge:'Élevé', badgeColor:'#f59e0b' },
-  { id:'billing_admin', label:'Administrateur de facturation', desc:'Gère abonnements, paiements et factures.', badge:'Élevé', badgeColor:'#f59e0b' },
-  { id:'reports_reader', label:'Administrateur des rapports', desc:'Accès aux statistiques. Lecture seule.', badge:'Standard', badgeColor:'#0078d4' },
-  { id:'security_admin', label:'Administrateur de sécurité', desc:'Gère politiques de sécurité et alertes.', badge:'Élevé', badgeColor:'#f59e0b' },
-  { id:'password_admin', label:'Administrateur des mots de passe', desc:'Peut réinitialiser les mots de passe.', badge:'Standard', badgeColor:'#0078d4' },
-  { id:'agent', label:'Agent', desc:'Accès opérationnel selon les permissions accordées.', badge:'Standard', badgeColor:'#0078d4' },
-  { id:'comptable', label:'Comptable', desc:'Accès paiements, rapports financiers et exports.', badge:'Standard', badgeColor:'#0078d4' },
-  { id:'lecteur', label:'Lecteur', desc:'Lecture seule de toutes les données.', badge:'Limité', badgeColor:'#6c63ff' },
-]
-
-const LICENCES = [
-  { id:'gestion_biens', label:'Gestion des biens immobiliers', desc:'Ajout, modification et suivi des biens', plan:'Basic', color:'#0078d4' },
-  { id:'gestion_locataires', label:'Gestion des locataires', desc:'Profils, historiques et dossiers locataires', plan:'Basic', color:'#0078d4' },
-  { id:'paiements', label:'Paiements & Loyers', desc:'Suivi des loyers, reçus et retards', plan:'Basic', color:'#0078d4' },
-  { id:'rapports', label:'Rapports & Statistiques', desc:'Tableaux de bord et exports', plan:'Standard', color:'#6c63ff' },
-  { id:'baux', label:'Gestion des baux', desc:'Création, renouvellement et résiliation', plan:'Standard', color:'#6c63ff' },
-  { id:'signature', label:'Signature électronique', desc:'Signature numérique des contrats', plan:'Standard', color:'#6c63ff' },
-  { id:'mobile_money', label:'Paiements Mobile Money', desc:'Intégration MTN MoMo, Moov, Wave', plan:'Standard', color:'#6c63ff' },
-  { id:'maintenance', label:'Gestion de la maintenance', desc:'Plaintes, interventions et suivi', plan:'Premium', color:'#f59e0b' },
-  { id:'api', label:'API & Intégrations avancées', desc:'Accès API et webhooks', plan:'Premium', color:'#f59e0b' },
-]
-
-const APPS = [
-  { id:'biens', label:'Biens immobiliers', icon:Building2 },
-  { id:'locataires', label:'Locataires', icon:Users },
-  { id:'paiements', label:'Paiements', icon:CreditCard },
-  { id:'baux', label:'Baux', icon:FileText },
-  { id:'rapports', label:'Rapports', icon:BarChart3 },
-  { id:'maintenance', label:'Maintenance', icon:Wrench },
-  { id:'integrations', label:'Intégrations', icon:Plug },
-  { id:'securite', label:'Sécurité', icon:Lock },
 ]
 
 // Détecter le fournisseur d'email
@@ -88,18 +53,62 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
   const [form, setForm] = useState({
     prenom:'', nom:'', email:'',
     auto_password:true, password:'', force_change:true,
-    licences:['gestion_biens','gestion_locataires','paiements'],
+    licences:[],
     no_licence:false,
-    apps:['biens','locataires','paiements'],
-    role:'agent',
+    roles:[],
     poste:'', departement:'', manager:'',
     telephone:'', email_secondaire:'', adresse:'',
     pays:'Bénin', langue:'Français', groupes:'',
   })
 
+  // Catalogue réel (domaine D/E) — plus de listes maison déconnectées de la base.
+  const [licencesData, setLicencesData] = useState([])
+  const [rolesData, setRolesData] = useState([])
+  const [loadingCatalog, setLoadingCatalog] = useState(true)
+
+  useEffect(() => {
+    (async () => {
+      const [{ data: lic, error: licErr }, { data: rl, error: rlErr }] = await Promise.all([
+        supabase.from('licences')
+          .select('id, type, nom, description, prix_mensuel, licences_applications(applications(code,nom))')
+          .eq('actif', true).order('nom'),
+        supabase.from('roles')
+          .select('id, code, nom, description, type, application:applications(code,nom)')
+          .eq('est_systeme', true).order('type').order('nom'),
+      ])
+      if (licErr) console.error('licences:', licErr)
+      if (rlErr) console.error('roles:', rlErr)
+      setLicencesData(lic || [])
+      setRolesData(rl || [])
+      setLoadingCatalog(false)
+    })()
+  }, [])
+
   const set = (k,v) => setForm(f=>({...f,[k]:v}))
   const toggleLicence = (id) => setForm(f=>({...f, licences: f.licences.includes(id)?f.licences.filter(l=>l!==id):[...f.licences,id]}))
-  const toggleApp = (id) => setForm(f=>({...f, apps: f.apps.includes(id)?f.apps.filter(a=>a!==id):[...f.apps,id]}))
+  const toggleRole = (id) => setForm(f=>({...f, roles: f.roles.includes(id)?f.roles.filter(r=>r!==id):[...f.roles,id]}))
+
+  const selectedLicences = form.no_licence ? [] : licencesData.filter(l => form.licences.includes(l.id))
+  const selectedRoles = rolesData.filter(r => form.roles.includes(r.id))
+  // Les applications ne se choisissent plus une par une : elles découlent
+  // des licences attribuées (licences_applications), comme validé dans
+  // l'architecture — plus de sélection manuelle déconnectée des licences.
+  const derivedApps = (() => {
+    const map = new Map()
+    selectedLicences.forEach(l => (l.licences_applications||[]).forEach(la => {
+      if (la.applications) map.set(la.applications.code, la.applications.nom)
+    }))
+    return Array.from(map.values())
+  })()
+  const rolesByGroup = (() => {
+    const groups = {}
+    rolesData.forEach(r => {
+      const key = r.type === 'transverse' ? 'Transverses' : (r.application?.nom || 'Applicatif')
+      if (!groups[key]) groups[key] = []
+      groups[key].push(r)
+    })
+    return groups
+  })()
 
   const provider = detectProvider(form.email)
   const canNext = () => {
@@ -118,6 +127,12 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
     setSaving(true)
     try {
       const finalPassword = form.auto_password ? (generatedPass || generatePassword()) : form.password
+      // profiles.role/agence_users.role (legacy) gardent le premier rôle
+      // choisi pour l'affichage — l'attribution réelle vit désormais dans
+      // agence_users_roles/licences_utilisateurs (domaines D/E).
+      const primaryRoleCode = selectedRoles[0]?.code || 'agent'
+      const roleLabel = selectedRoles.map(r => r.nom).join(', ') || 'Agent'
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
 
       // 1. Créer l'invitation en base
       const { data: inv, error: invError } = await supabase
@@ -127,11 +142,9 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
           email: form.email,
           prenom: form.prenom,
           nom: form.nom,
-          role: form.role,
+          role: roleLabel,
           password_temp: finalPassword,
           force_change_password: form.force_change,
-          licences: form.no_licence ? [] : form.licences,
-          apps: form.apps,
           poste: form.poste,
           departement: form.departement,
           statut: 'en_attente',
@@ -146,7 +159,7 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
         email: form.email,
         password: finalPassword,
         options: {
-          data: { prenom: form.prenom, nom: form.nom, role: form.role }
+          data: { prenom: form.prenom, nom: form.nom, role: primaryRoleCode }
         }
       })
 
@@ -159,24 +172,37 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
 
       // 4. Mettre à jour le profil si compte créé
       if (signUpData?.user?.id) {
+        const newUserId = signUpData.user.id
         await supabase.from('profiles').update({
           prenom: form.prenom,
           nom: form.nom,
           telephone: form.telephone,
-          role: form.role,
-        }).eq('id', signUpData.user.id)
+          role: primaryRoleCode,
+        }).eq('id', newUserId)
 
-        // Associer à l'agence
+        // Associer à l'agence, puis attribuer les vrais rôles et licences.
         if (agenceId) {
-          await supabase.from('agence_users').upsert({
+          const { data: au, error: auError } = await supabase.from('agence_users').insert({
             agence_id: agenceId,
-            user_id: signUpData.user.id,
-            role: form.role,
+            user_id: newUserId,
+            role: primaryRoleCode,
             poste: form.poste,
             departement: form.departement,
-            licences: form.no_licence ? [] : form.licences,
-            apps: form.apps,
-          })
+          }).select().single()
+          if (auError) throw auError
+
+          if (au?.id && selectedRoles.length) {
+            const { error: rolesErr } = await supabase.from('agence_users_roles').insert(
+              selectedRoles.map(r => ({ agence_user_id: au.id, role_id: r.id, attribue_par: currentUser?.id }))
+            )
+            if (rolesErr) console.error('agence_users_roles:', rolesErr)
+          }
+          if (selectedLicences.length) {
+            const { error: licErr } = await supabase.from('licences_utilisateurs').insert(
+              selectedLicences.map(l => ({ user_id: newUserId, agence_id: agenceId, licence_id: l.id, attribuee_par: currentUser?.id, actif: true }))
+            )
+            if (licErr) console.error('licences_utilisateurs:', licErr)
+          }
         }
       }
 
@@ -197,7 +223,7 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
           prenom: form.prenom,
           nom: form.nom,
           agenceName: agenceName,
-          role: ROLES.find(r => r.id === form.role)?.label || form.role,
+          role: roleLabel,
           password: finalPassword,
           force_change: form.force_change,
           loginUrl,
@@ -489,21 +515,17 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
               {step===2 && (
                 <>
                   <div className="au-content-title">Licences de produits</div>
-                  <div className="au-content-sub">Attribuez des licences pour donner accès aux fonctionnalités selon votre plan.</div>
+                  <div className="au-content-sub">Attribuez les licences de la suite Imoloc — une licence donne accès à une ou plusieurs applications (voir l'étape suivante).</div>
                   <div className="au-checkbox-wrap" onClick={()=>set('no_licence',!form.no_licence)} style={{marginBottom:18}}>
                     <div className={`au-checkbox ${form.no_licence?'checked':''}`}>{form.no_licence&&<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}</div>
-                    <div><div className="au-checkbox-lbl">Créer un utilisateur sans licence</div><div className="au-checkbox-sub">Accès aux fonctionnalités gratuites uniquement</div></div>
+                    <div><div className="au-checkbox-lbl">Créer un utilisateur sans licence</div><div className="au-checkbox-sub">Aucune application ne lui sera accessible tant qu'aucune licence ne lui est attribuée</div></div>
                   </div>
-                  {!form.no_licence && ['Basic','Standard','Premium'].map(plan => (
-                    <div key={plan}>
-                      <div className="au-section">{plan}</div>
-                      {LICENCES.filter(l=>l.plan===plan).map(lic => (
-                        <div key={lic.id} className={`au-licence-item ${form.licences.includes(lic.id)?'selected':''}`} onClick={()=>toggleLicence(lic.id)}>
-                          <div className={`au-licence-check ${form.licences.includes(lic.id)?'on':''}`}>{form.licences.includes(lic.id)&&<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}</div>
-                          <div style={{flex:1}}><div style={{fontSize:13.5,color:'#e6edf3',fontWeight:500,marginBottom:2}}>{lic.label}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{lic.desc}</div></div>
-                          <span className="au-plan-badge" style={{background:`${lic.color}18`,color:lic.color,border:`1px solid ${lic.color}30`}}>{lic.plan}</span>
-                        </div>
-                      ))}
+                  {loadingCatalog && <div style={{fontSize:13,color:'rgba(255,255,255,0.35)'}}>Chargement du catalogue…</div>}
+                  {!form.no_licence && licencesData.map(lic => (
+                    <div key={lic.id} className={`au-licence-item ${form.licences.includes(lic.id)?'selected':''}`} onClick={()=>toggleLicence(lic.id)}>
+                      <div className={`au-licence-check ${form.licences.includes(lic.id)?'on':''}`}>{form.licences.includes(lic.id)&&<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}</div>
+                      <div style={{flex:1}}><div style={{fontSize:13.5,color:'#e6edf3',fontWeight:500,marginBottom:2}}>{lic.nom}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{lic.description}</div></div>
+                      <span className="au-plan-badge" style={{background:'rgba(0,120,212,0.12)',color:'#4da6ff',border:'1px solid rgba(0,120,212,0.3)'}}>{lic.prix_mensuel!=null?`${lic.prix_mensuel} FCFA/mois`:'Selon palier'}</span>
                     </div>
                   ))}
                 </>
@@ -513,21 +535,20 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
               {step===3 && (
                 <>
                   <div className="au-content-title">Applications</div>
-                  <div className="au-content-sub">Sélectionnez les applications auxquelles cet utilisateur aura accès.</div>
-                  <div className="au-apps-grid">
-                    {APPS.map(app => (
-                      <div key={app.id} className={`au-app-item ${form.apps.includes(app.id)?'selected':''}`} onClick={()=>toggleApp(app.id)}>
-                        {form.apps.includes(app.id)&&<div className="au-app-check"><svg width="9" height="9" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg></div>}
-                        <div className="au-app-icon"><app.icon size={20}/></div>
-                        <div className="au-app-name">{app.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{display:'flex',gap:8,marginTop:16,flexWrap:'wrap'}}>
-                    <button onClick={()=>set('apps',APPS.map(a=>a.id))} style={{padding:'6px 14px',borderRadius:4,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',color:'rgba(255,255,255,0.55)',fontSize:12.5,cursor:'pointer',fontFamily:'Inter'}}>Tout sélectionner</button>
-                    <button onClick={()=>set('apps',[])} style={{padding:'6px 14px',borderRadius:4,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',color:'rgba(255,255,255,0.55)',fontSize:12.5,cursor:'pointer',fontFamily:'Inter'}}>Tout désélectionner</button>
-                    <button onClick={()=>set('apps',['biens','locataires'])} style={{padding:'6px 14px',borderRadius:4,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',color:'rgba(255,255,255,0.55)',fontSize:12.5,cursor:'pointer',fontFamily:'Inter'}}>Accès minimal</button>
-                  </div>
+                  <div className="au-content-sub">Déterminées automatiquement par les licences attribuées à l'étape précédente — rien à choisir ici.</div>
+                  {derivedApps.length===0 ? (
+                    <div style={{fontSize:13,color:'rgba(255,255,255,0.35)',padding:'10px 0'}}>Aucune licence sélectionnée : aucune application accessible.</div>
+                  ) : (
+                    <div className="au-apps-grid">
+                      {derivedApps.map(nom => (
+                        <div key={nom} className="au-app-item selected" style={{cursor:'default'}}>
+                          <div className="au-app-icon"><Grid3x3 size={20}/></div>
+                          <div className="au-app-name">{nom}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{marginTop:14,fontSize:12,color:'rgba(255,255,255,0.35)'}}>Imoloc ID et Imoloc Admin sont toujours accessibles, quelle que soit la licence.</div>
                 </>
               )}
 
@@ -535,21 +556,23 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
               {step===4 && (
                 <>
                   <div className="au-content-title">Paramètres facultatifs</div>
-                  <div className="au-content-sub">Définissez le rôle et complétez le profil. Modifiable ultérieurement.</div>
-                  <div className="au-section" style={{marginTop:0}}>Rôle dans l'organisation</div>
-                  <div style={{maxHeight:240,overflowY:'auto',paddingRight:4}}>
-                    {ROLES.map(role => (
-                      <div key={role.id} className={`au-role-item ${form.role===role.id?'selected':''}`} onClick={()=>set('role',role.id)}>
-                        <div className={`au-role-radio ${form.role===role.id?'on':''}`}/>
-                        <div style={{flex:1}}>
-                          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
-                            <span style={{fontSize:13.5,color:'#e6edf3',fontWeight:500}}>{role.label}</span>
-                            <span style={{padding:'1px 7px',borderRadius:'100px',fontSize:10,fontWeight:700,background:`${role.badgeColor}18`,color:role.badgeColor}}>{role.badge}</span>
+                  <div className="au-content-sub">Attribuez un ou plusieurs rôles et complétez le profil. Modifiable ultérieurement.</div>
+                  <div style={{maxHeight:320,overflowY:'auto',paddingRight:4}}>
+                    {Object.entries(rolesByGroup).map(([groupe, roles]) => (
+                      <div key={groupe}>
+                        <div className="au-section">{groupe}</div>
+                        {roles.map(role => (
+                          <div key={role.id} className={`au-role-item ${form.roles.includes(role.id)?'selected':''}`} onClick={()=>toggleRole(role.id)}>
+                            <div className={`au-licence-check ${form.roles.includes(role.id)?'on':''}`}>{form.roles.includes(role.id)&&<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}</div>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:13.5,color:'#e6edf3',fontWeight:500,marginBottom:2}}>{role.nom}</div>
+                              {role.description && <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',lineHeight:1.5}}>{role.description}</div>}
+                            </div>
                           </div>
-                          <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',lineHeight:1.5}}>{role.desc}</div>
-                        </div>
+                        ))}
                       </div>
                     ))}
+                    {!loadingCatalog && rolesData.length===0 && <div style={{fontSize:13,color:'rgba(255,255,255,0.35)'}}>Aucun rôle disponible.</div>}
                   </div>
                   <div className="au-section">Informations professionnelles</div>
                   <div className="au-grid2">
@@ -598,9 +621,9 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                   <div className="au-summary">
                     <div className="au-section" style={{marginTop:0}}>Accès & Rôle</div>
                     {[
-                      {k:'Rôle', v:ROLES.find(r=>r.id===form.role)?.label||'—'},
-                      {k:'Licences', v:form.no_licence?'Aucune licence':`${form.licences.length} licence${form.licences.length>1?'s':''}`},
-                      {k:'Applications', v:`${form.apps.length} application${form.apps.length>1?'s':''}`},
+                      {k:'Rôle(s)', v:selectedRoles.map(r=>r.nom).join(', ')||'Aucun'},
+                      {k:'Licences', v:form.no_licence?'Aucune licence':`${selectedLicences.length} licence${selectedLicences.length>1?'s':''}`},
+                      {k:'Applications', v:`${derivedApps.length} application${derivedApps.length>1?'s':''}`},
                       {k:'Poste', v:form.poste||'—'},
                     ].map((r,i)=>(
                       <div key={i} className="au-summary-row"><span className="au-summary-key">{r.k}</span><span className="au-summary-val">{r.v}</span></div>
@@ -625,7 +648,7 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                         <div style={{display:'flex',alignItems:'center',gap:6}}><Mail size={13}/> Email : <span style={{color:'#4da6ff'}}>{form.email || 'jean.dupont@gmail.com'}</span></div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}><Lock size={13}/> Mot de passe : <span style={{color:'#00c896'}}>{form.auto_password ? '(généré automatiquement)' : '(défini par l\'administrateur)'}</span></div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}><Building2 size={13}/> Organisation : <span style={{color:'#e6edf3'}}>{agenceName}</span></div>
-                        <div style={{display:'flex',alignItems:'center',gap:6}}><User size={13}/> Rôle : <span style={{color:'#e6edf3'}}>{ROLES.find(r=>r.id===form.role)?.label}</span></div>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}><User size={13}/> Rôle : <span style={{color:'#e6edf3'}}>{selectedRoles.map(r=>r.nom).join(', ')||'—'}</span></div>
                       </div>
                       <div style={{marginBottom:12}}>Cliquez sur le bouton ci-dessous pour accéder à votre espace :</div>
                       <div className="au-email-link" style={{display:'inline-flex',alignItems:'center',gap:6,cursor:'default'}}>
