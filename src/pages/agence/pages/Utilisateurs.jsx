@@ -24,14 +24,18 @@ const ROLES_COLORS = {
   reports_reader:'#0078d4', security_admin:'#f59e0b', password_admin:'#0078d4',
   agent:'#0078d4', comptable:'#6c63ff', lecteur:'#6c63ff', invite:'#a78bfa',
 }
-const LICENCES = {
-  global_admin:['Imoloc Pro','Loci IA','Gestion complète'],
-  user_admin:['Imoloc Standard','Gestion utilisateurs'],
-  billing_admin:['Imoloc Standard','Module facturation'],
-  reports_reader:['Imoloc Standard','Rapports & Analytics'],
-  agent:['Imoloc Standard'], comptable:['Imoloc Standard','Module comptabilité'],
-  lecteur:['Imoloc Lecteur'], invite:['Accès invité — Lecture seule'],
-}
+// Équivalent des "Filtres standard définis" de M365 (Billing admins, Global
+// admins...), avec les vrais rôles imoloc plutôt que ceux de Microsoft.
+const STANDARD_FILTERS = [
+  { key:'Tous', label:'Tous les utilisateurs' },
+  { key:'global_admin', label:'Administrateurs généraux' },
+  { key:'billing_admin', label:'Administrateurs de facturation' },
+  { key:'comptable', label:'Comptables' },
+  { key:'agent', label:'Agents' },
+  { key:'lecteur', label:'Lecteurs' },
+  { key:'unlicensed', label:'Utilisateurs sans licence' },
+  { key:'guest', label:'Utilisateurs invités' },
+]
 const ALL_COLS = [
   { key:'displayName', label:'Nom d\'affichage', checked:true, disabled:true },
   { key:'userPrincipalName', label:'Nom d\'utilisateur', checked:true },
@@ -91,11 +95,24 @@ export default function Utilisateurs() {
   ])
   const [bulkAdding, setBulkAdding] = useState(false)
   const [blockedUsers, setBlockedUsers] = useState([])
+  // Domaines D/E réels : licences_utilisateurs et agence_users_roles,
+  // par utilisateur — remplace les listes maison LICENCES/ROLES_LABELS
+  // affichées dans le tableau.
+  const [userLicencesMap, setUserLicencesMap] = useState({})
+  const [userRolesMap, setUserRolesMap] = useState({})
+  const [showToolbarMore, setShowToolbarMore] = useState(false)
+  const [showFilterDefDropdown, setShowFilterDefDropdown] = useState(false)
+  const [filterDefLabel, setFilterDefLabel] = useState('Couramment utilisé')
+  const [openChipFilter, setOpenChipFilter] = useState(null)
+  const [filterLicence, setFilterLicence] = useState(null)
+  const [filterDomaine, setFilterDomaine] = useState(null)
+  const [filterPays, setFilterPays] = useState(null)
   const [editMode, setEditMode] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [savingProfile, setSavingProfile] = useState(false)
   const [userAppareils, setUserAppareils] = useState([])
   const [userLicences, setUserLicences] = useState([])
+  const [licencesCatalogueFull, setLicencesCatalogueFull] = useState([])
   const [userDriveFiles, setUserDriveFiles] = useState([])
   const [driveStats, setDriveStats] = useState({utilise:0, max:5368709120})
   const [loadingUserData, setLoadingUserData] = useState(false)
@@ -139,7 +156,31 @@ export default function Utilisateurs() {
           supabase.from('utilisateurs_invites').select('*').eq('agence_id', ag.id).order('date_invitation',{ascending:false}),
         ])
         const userIds = [...new Set([ag.profile_id,...(auData||[]).map(u=>u.user_id).filter(Boolean)])]
-        const { data:profilesData } = await supabase.from('profiles').select('*').in('id', userIds)
+        const [{ data:profilesData }, { data:licData }, { data:roleData }, { data:blocData }] = await Promise.all([
+          supabase.from('profiles').select('*').in('id', userIds),
+          supabase.from('licences_utilisateurs').select('user_id, licences(nom)').eq('agence_id', ag.id).eq('actif', true),
+          supabase.from('agence_users_roles').select('agence_user_id, roles(nom)').in('agence_user_id', (auData||[]).map(a=>a.id)),
+          // connexions_bloquees n'a pas de agence_id — on filtre par user_id de l'agence (cf. policy).
+          userIds.length ? supabase.from('connexions_bloquees').select('user_id').in('user_id', userIds).eq('actif', true) : Promise.resolve({data:[]}),
+        ])
+        // agence_user_id -> user_id, pour rattacher les rôles réels (domaine E) à chaque profil.
+        const auIdToUserId = Object.fromEntries((auData||[]).map(a=>[a.id, a.user_id]))
+        const licMap = {}
+        ;(licData||[]).forEach(l => {
+          if (!l.licences?.nom) return
+          if (!licMap[l.user_id]) licMap[l.user_id] = []
+          licMap[l.user_id].push(l.licences.nom)
+        })
+        const roleMap = {}
+        ;(roleData||[]).forEach(r => {
+          const uid = auIdToUserId[r.agence_user_id]
+          if (!uid || !r.roles?.nom) return
+          if (!roleMap[uid]) roleMap[uid] = []
+          roleMap[uid].push(r.roles.nom)
+        })
+        setUserLicencesMap(licMap)
+        setUserRolesMap(roleMap)
+        setBlockedUsers((blocData||[]).map(b=>b.user_id))
         setActifs((profilesData||[]).map(p=>({
           ...p,
           isOwner: p.id===ag.profile_id,
@@ -166,18 +207,39 @@ export default function Utilisateurs() {
       pays: user.pays || 'Bénin',
     })
     try {
-      const [{ data:appData }, { data:licData }, { data:fileData }, { data:statData }] = await Promise.all([
+      const [{ data:appData }, { data:licData }, { data:fileData }, { data:statData }, { data:catData }] = await Promise.all([
         supabase.from('appareils_utilisateurs').select('*').eq('user_id', user.id).order('derniere_activite', {ascending:false}),
-        supabase.from('licences_utilisateurs').select('*, licences(*)').eq('user_id', user.id).eq('actif', true),
+        supabase.from('licences_utilisateurs').select('*, licences(*, licences_applications(applications(code,nom)))').eq('user_id', user.id).eq('actif', true),
         supabase.from('driveloc_fichiers').select('*').eq('user_id', user.id).order('created_at', {ascending:false}),
         supabase.from('driveloc_stats').select('*').eq('user_id', user.id).single(),
+        supabase.from('licences').select('id, nom, type, licences_applications(applications(code,nom))').eq('actif', true).order('nom'),
       ])
       setUserAppareils(appData || [])
       setUserLicences(licData || [])
       setUserDriveFiles(fileData || [])
       setDriveStats(statData || {stockage_utilise:0, stockage_max:5368709120})
+      setLicencesCatalogueFull(catData || [])
     } catch(e) { console.error(e) }
     finally { setLoadingUserData(false) }
+  }
+
+  const assignLicence = async (user, licence) => {
+    const { data:{ user: cu } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('licences_utilisateurs').insert({
+      user_id: user.id, agence_id: agence?.id, licence_id: licence.id, attribuee_par: cu?.id, actif: true,
+    })
+    if (error) return toast.error(error.message || 'Erreur')
+    toast.success(`${licence.nom} attribuée`)
+    await loadUserData(user)
+    fetchData()
+  }
+
+  const removeLicence = async (user, licenceUtilisateurId) => {
+    const { error } = await supabase.from('licences_utilisateurs').update({ actif:false }).eq('id', licenceUtilisateurId)
+    if (error) return toast.error(error.message || 'Erreur')
+    toast.success('Licence retirée')
+    await loadUserData(user)
+    fetchData()
   }
 
   const saveProfile = async () => {
@@ -252,12 +314,12 @@ export default function Utilisateurs() {
         if (result.error) throw new Error(result.error)
       }
 
-      // 2. Table connexions_bloquees
+      // 2. Table connexions_bloquees (pas de colonne agence_id — le scope
+      // passe par agence_users.user_id, cf. policy connexions_bloquees_scope)
       if (isBlocked) {
         await supabase.from('connexions_bloquees')
           .update({ actif: false, date_deblocage: new Date().toISOString() })
           .eq('user_id', user.id)
-          .eq('agence_id', agence.id)
           .eq('actif', true)
         setBlockedUsers(prev => prev.filter(id => id !== user.id))
         toast.success(`${user.prenom} ${user.nom} débloqué`)
@@ -265,7 +327,6 @@ export default function Utilisateurs() {
         const { data:{ user: cu } } = await supabase.auth.getUser()
         await supabase.from('connexions_bloquees').insert({
           user_id: user.id,
-          agence_id: agence.id,
           bloque_par: cu.id,
           raison: 'Bloqué par un administrateur',
         })
@@ -276,6 +337,22 @@ export default function Utilisateurs() {
     } catch(e) {
       toast.error(e.message || 'Erreur lors du blocage')
     }
+  }
+
+  // Envoie un vrai email de réinitialisation (Supabase Auth), pour un ou
+  // plusieurs utilisateurs — pas un mot de passe temporaire généré côté
+  // agence comme dans le flux d'invitation, mais un lien réel envoyé à
+  // l'utilisateur, plus adapté à un compte déjà actif.
+  const bulkResetPassword = async (userIds) => {
+    const targets = actifs.filter(u=>userIds.includes(u.id) && u.email)
+    if (!targets.length) return toast.error('Aucun email valide sélectionné')
+    let sent = 0
+    for (const u of targets) {
+      const { error } = await supabase.auth.resetPasswordForEmail(u.email)
+      if (!error) sent++
+    }
+    toast.success(`Email de réinitialisation envoyé à ${sent} utilisateur${sent>1?'s':''}`)
+    setSelected([])
   }
 
   const handleDelete = async (user) => {
@@ -361,17 +438,30 @@ export default function Utilisateurs() {
     toast.success(`${data.length} utilisateur${data.length>1?'s':''} exporté${data.length>1?'s':''}`)
   }
 
+  const licencesCatalogue = [...new Set(Object.values(userLicencesMap).flat())]
+  const domainesCatalogue = [...new Set(actifs.map(u=>u.email?.split('@')[1]).filter(Boolean))]
+  const paysCatalogue = [...new Set(actifs.map(u=>u.pays).filter(Boolean))]
+  const activeChipFilters = [
+    filterLicence&&'Licences', (filterStatut!=='Tous')&&'État de connexion', filterDomaine&&'Domaine', filterPays&&'Emplacement',
+  ].filter(Boolean)
+
   const filtered = actifs.filter(u => {
     const term = search.toLowerCase()
+    const roleOk = filterRole==='Tous' ? true
+      : filterRole==='unlicensed' ? !(userLicencesMap[u.id]?.length)
+      : filterRole==='guest' ? u.type_compte==='invite'
+      : u.role===filterRole
     return `${u.prenom} ${u.nom} ${u.email}`.toLowerCase().includes(term)
-      && (filterRole==='Tous' || u.role===filterRole)
-      && (filterStatut==='Tous' || (filterStatut==='Actif'&&(!u.statut||u.statut==='actif')) || (filterStatut==='Inactif'&&u.statut==='inactif'))
+      && roleOk
+      && (filterStatut==='Tous' || (filterStatut==='Actif'&&(!u.statut||u.statut==='actif')&&!blockedUsers.includes(u.id)) || (filterStatut==='Inactif'&&u.statut==='inactif') || (filterStatut==='Bloqué'&&blockedUsers.includes(u.id)))
+      && (!filterLicence || (userLicencesMap[u.id]||[]).includes(filterLicence))
+      && (!filterDomaine || u.email?.split('@')[1]===filterDomaine)
+      && (!filterPays || u.pays===filterPays)
   })
 
   const toggleSelect = (id) => setSelected(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id])
   const toggleAll = () => setSelected(s=>s.length===filtered.length?[]:filtered.map(u=>u.id))
   const rowH = viewMode==='compact' ? '38px' : '54px'
-  const ROLES_UNIQUES = [...new Set(actifs.map(u=>u.role))]
 
   return (
     <>
@@ -661,51 +751,92 @@ export default function Utilisateurs() {
                 const blob = new Blob([csv],{type:'text/csv'})
                 const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modele_utilisateurs.csv'; a.click()
                 toast.success('Modèle CSV téléchargé !')
-              }}><ClipboardList size={13}/> Modèles</button>
-              <button className="us-btn" onClick={()=>setShowBulkPanel(true)}><Users size={13}/> Ajouter plusieurs</button>
-              <button className="us-btn"><ShieldCheck size={13}/> MFA</button>
-              <div className="us-sep"/>
+              }}><ClipboardList size={13}/> Modèles utilisateur</button>
+              <button className="us-btn" onClick={()=>setShowBulkPanel(true)}><Users size={13}/> Ajouter plusieurs utilisateurs</button>
+              <button className="us-btn" onClick={()=>toast('Authentification multifacteur — bientôt disponible', {icon:'🔒'})}><ShieldCheck size={13}/> Authentification multifacteur</button>
               <button className="us-btn us-btn-d" disabled={selected.length===0} onClick={()=>{const u=actifs.find(x=>x.id===selected[0]);if(u)handleDelete(u)}}>
                 <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916"/></svg>
-                Supprimer{selected.length>0&&` (${selected.length})`}
+                Supprimer un utilisateur{selected.length>0&&` (${selected.length})`}
               </button>
-              <button className="us-btn us-btn-g" onClick={exportCSV}>
-                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-                Exporter{selected.length>0&&` (${selected.length})`}
-              </button>
-              <button className="us-btn" onClick={fetchData}><RefreshCw size={13}/></button>
+              <button className="us-btn" onClick={fetchData}><RefreshCw size={13}/> Actualiser</button>
               <div className="us-sr">
                 <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
-                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher dans la liste des utilisateurs"/>
+                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher dans la liste ..."/>
                 {search&&<button onClick={()=>setSearch('')} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:16,padding:0,lineHeight:1}}>×</button>}
+              </div>
+              <div style={{position:'relative'}}>
+                <button className="us-mbtn" style={{fontSize:18}} onClick={()=>setShowToolbarMore(v=>!v)}>···</button>
+                {showToolbarMore&&(
+                  <div className="us-dd" style={{right:0,minWidth:230}}>
+                    <button className="us-ddi" onClick={()=>{
+                      setShowToolbarMore(false)
+                      if (selected.length===0) return toast.error('Sélectionnez au moins un utilisateur')
+                      bulkResetPassword(selected)
+                    }}><Key size={14}/> Réinitialiser le mot de passe</button>
+                    <button className="us-ddi" onClick={()=>{setShowToolbarMore(false);exportCSV()}}><Download size={14}/> Exporter des utilisateurs</button>
+                    <button className="us-ddi" onClick={()=>{setShowToolbarMore(false);setViewMode(v=>v==='normal'?'compact':'normal')}}><Pencil size={14}/> Changer d'affichage</button>
+                    <div className="us-dds"/>
+                    <button className="us-ddi" disabled style={{opacity:0.4,cursor:'not-allowed'}} title="Bientôt disponible"><RefreshCw size={14}/> Synchronisation d'annuaires</button>
+                    <button className="us-ddi" disabled style={{opacity:0.4,cursor:'not-allowed'}} title="Bientôt disponible"><Info size={14}/> Statut de la configuration de Teams</button>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Filtres */}
-            <div className="us-filters">
+            <div className="us-filters" style={{position:'relative'}}>
               <span className="us-fl">Filtre défini :</span>
-              <button className={`us-fc ${filterRole==='Tous'?'on':''}`} onClick={()=>setFilterRole('Tous')}>Tous</button>
-              {ROLES_UNIQUES.map(r=>(
-                <button key={r} className={`us-fc ${filterRole===r?'on':''}`} onClick={()=>setFilterRole(filterRole===r?'Tous':r)}>
-                  {ROLES_LABELS[r]||r}
-                </button>
+              <button className="us-fc" style={{display:'inline-flex',alignItems:'center',gap:5,fontWeight:600,color:'#4da6ff'}} onClick={()=>setShowFilterDefDropdown(v=>!v)}>
+                {filterDefLabel} <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+              </button>
+              {showFilterDefDropdown&&(
+                <div className="us-dd" style={{left:0,top:'calc(100% + 4px)',minWidth:230}}>
+                  <button className="us-ddi" onClick={()=>{setShowFilterDefDropdown(false);toast('Enregistrement de filtres — bientôt disponible',{icon:'🔧'})}}>+ Nouveau filtre</button>
+                  <div className="us-dds"/>
+                  <div style={{padding:'8px 14px',fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>Filtres personnalisés définis</div>
+                  <div style={{padding:'2px 14px 8px',fontSize:12.5,color:'rgba(255,255,255,0.3)',fontStyle:'italic'}}>Aucun filtre personnalisé</div>
+                  <div className="us-dds"/>
+                  <div style={{padding:'8px 14px 2px',fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>Filtres standard définis</div>
+                  {STANDARD_FILTERS.map(f=>(
+                    <button key={f.key} className="us-ddi" onClick={()=>{setFilterRole(f.key);setFilterDefLabel(f.label);setShowFilterDefDropdown(false)}}>{f.label}</button>
+                  ))}
+                </div>
+              )}
+              {['Licences','État de connexion','Domaine','Emplacement'].map(chip=>(
+                <button key={chip} className={`us-fc ${activeChipFilters.includes(chip)?'on':''}`} onClick={()=>setOpenChipFilter(openChipFilter===chip?null:chip)}>{chip}</button>
               ))}
-              <div className="us-sep"/>
-              {['Tous','Actif','Inactif'].map(s=>(
-                <button key={s} className={`us-fc ${filterStatut===s?'on':''}`} onClick={()=>setFilterStatut(s)}>
-                  {s==='Tous'?'État de connexion':s}
-                </button>
-              ))}
+              {openChipFilter&&(
+                <div className="us-dd" style={{left:0,top:'calc(100% + 34px)',minWidth:220,padding:'6px 0'}}>
+                  {openChipFilter==='Licences'&&(licencesCatalogue.length===0
+                    ? <div style={{padding:'10px 14px',fontSize:12.5,color:'rgba(255,255,255,0.3)'}}>Aucune licence attribuée</div>
+                    : licencesCatalogue.map(l=>(
+                      <button key={l} className="us-ddi" onClick={()=>{setFilterLicence(filterLicence===l?null:l);setOpenChipFilter(null)}}>{filterLicence===l?'✓ ':''}{l}</button>
+                    )))}
+                  {openChipFilter==='État de connexion'&&['Actif','Inactif','Bloqué'].map(s=>(
+                    <button key={s} className="us-ddi" onClick={()=>{setFilterStatut(filterStatut===s?'Tous':s);setOpenChipFilter(null)}}>{filterStatut===s?'✓ ':''}{s}</button>
+                  ))}
+                  {openChipFilter==='Domaine'&&(domainesCatalogue.length===0
+                    ? <div style={{padding:'10px 14px',fontSize:12.5,color:'rgba(255,255,255,0.3)'}}>Aucun domaine</div>
+                    : domainesCatalogue.map(d=>(
+                      <button key={d} className="us-ddi" onClick={()=>{setFilterDomaine(filterDomaine===d?null:d);setOpenChipFilter(null)}}>{filterDomaine===d?'✓ ':''}{d}</button>
+                    )))}
+                  {openChipFilter==='Emplacement'&&(paysCatalogue.length===0
+                    ? <div style={{padding:'10px 14px',fontSize:12.5,color:'rgba(255,255,255,0.3)'}}>Aucun emplacement</div>
+                    : paysCatalogue.map(p=>(
+                      <button key={p} className="us-ddi" onClick={()=>{setFilterPays(filterPays===p?null:p);setOpenChipFilter(null)}}>{filterPays===p?'✓ ':''}{p}</button>
+                    )))}
+                </div>
+              )}
             </div>
 
             {/* Barre sélection */}
             {selected.length>0&&(
               <div className="us-selbar">
                 <span className="us-selbar-txt">{selected.length} utilisateur{selected.length>1?'s':''} sélectionné{selected.length>1?'s':''}</span>
-                <button className="us-btn" style={{padding:'5px 11px',fontSize:12}}>Modifier rôles</button>
-                <button className="us-btn" style={{padding:'5px 11px',fontSize:12}}>Réinitialiser MDP</button>
+                <button className="us-btn" style={{padding:'5px 11px',fontSize:12}} onClick={()=>toast('Modification groupée des rôles — bientôt disponible',{icon:'🔧'})}>Modifier rôles</button>
+                <button className="us-btn" style={{padding:'5px 11px',fontSize:12}} onClick={()=>bulkResetPassword(selected)}>Réinitialiser MDP</button>
                 <button className="us-btn us-btn-g" style={{padding:'5px 11px',fontSize:12}} onClick={exportCSV}>Exporter</button>
-                <button className="us-btn us-btn-d" style={{padding:'5px 11px',fontSize:12}}>Supprimer</button>
+                <button className="us-btn us-btn-d" style={{padding:'5px 11px',fontSize:12}} onClick={()=>{const u=actifs.find(x=>x.id===selected[0]);if(u)handleDelete(u)}}>Supprimer</button>
                 <button onClick={()=>setSelected([])} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:20,padding:'0 4px',lineHeight:1}}>×</button>
               </div>
             )}
@@ -730,7 +861,7 @@ export default function Utilisateurs() {
                 </div>
                 <button className="us-btn" style={{padding:'5px 12px',fontSize:12}} onClick={()=>setShowColsPanel(true)}>
                   <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z"/></svg>
-                  Choisir les colonnes
+                  Choisissez les colonnes
                 </button>
               </div>
 
@@ -837,17 +968,22 @@ export default function Utilisateurs() {
                           {cols.includes('userPrincipalName')&&<td style={{color:'rgba(255,255,255,0.45)',fontSize:12}}>{u.email||'—'}</td>}
                           {cols.includes('role')&&(
                             <td>
-                              <span className="us-pill" style={{background:`${col}18`,color:col,fontSize:11}}>
-                                {ROLES_LABELS[u.role]||u.role}
-                              </span>
+                              {(userRolesMap[u.id]||[]).length>0 ? (
+                                <span className="us-pill" style={{background:`${col}18`,color:col,fontSize:11}}>{userRolesMap[u.id].join(', ')}</span>
+                              ) : (
+                                <span className="us-pill" style={{background:`${col}18`,color:col,fontSize:11}}>{ROLES_LABELS[u.role]||u.role}</span>
+                              )}
                             </td>
                           )}
                           {cols.includes('licenses')&&(
                             <td>
-                              {viewMode==='compact'
-                                ? <span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>{(LICENCES[u.role]||['Imoloc Standard'])[0]}</span>
-                                : <div className="us-lic">{(LICENCES[u.role]||['Imoloc Standard']).map((l,j)=><div key={j} className="us-li">{l}</div>)}</div>
-                              }
+                              {(userLicencesMap[u.id]||[]).length===0 ? (
+                                <span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>Sans licence</span>
+                              ) : viewMode==='compact' ? (
+                                <span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>{userLicencesMap[u.id][0]}{userLicencesMap[u.id].length>1?` +${userLicencesMap[u.id].length-1}`:''}</span>
+                              ) : (
+                                <div className="us-lic">{userLicencesMap[u.id].map((l,j)=><div key={j} className="us-li">{l}</div>)}</div>
+                              )}
                             </td>
                           )}
                           {cols.includes('department')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{u.departement||'—'}</td>}
@@ -867,16 +1003,16 @@ export default function Utilisateurs() {
                           {cols.includes('lastSignIn')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{u.derniere_connexion?new Date(u.derniere_connexion).toLocaleDateString('fr-FR'):'—'}</td>}
                           {cols.includes('isGuest')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{u.type_compte==='invite'?'Oui':'—'}</td>}
                           <td onClick={e=>e.stopPropagation()} style={{position:'relative'}}>
+                            <button className="us-mbtn" title="Réinitialiser un mot de passe" onClick={e=>{e.stopPropagation();bulkResetPassword([u.id])}}><Key size={13}/></button>
                             <button className="us-mbtn" onClick={e=>{e.stopPropagation();setRowMenu(rowMenu===u.id?null:u.id)}}>···</button>
                             {rowMenu===u.id&&(
                               <div className="us-dd">
-                                <button className="us-ddi" onClick={()=>{setSelectedUser(u);loadUserData(u);setRowMenu(null)}}><User size={14}/> Voir le profil</button>
-                                <button className="us-ddi" onClick={()=>setRowMenu(null)}><Pencil size={14}/> Modifier</button>
-                                <button className="us-ddi" onClick={()=>setRowMenu(null)}><Key size={14}/> Gérer les rôles</button>
-                                <button className="us-ddi" onClick={()=>setRowMenu(null)}><Lock size={14}/> Réinitialiser le MDP</button>
-                                <button className="us-ddi" onClick={()=>setRowMenu(null)}><Ban size={14}/> Bloquer la connexion</button>
+                                <button className="us-ddi" onClick={()=>{setSelectedUser(u);setUserPanelTab('licences');loadUserData(u);setRowMenu(null)}}><Wallet size={14}/> Gérer les licences de produits</button>
+                                <button className="us-ddi" onClick={()=>{setRowMenu(null);toast('Gestion des groupes — bientôt disponible',{icon:'🔧'})}}><Users size={14}/> Gérer des groupes</button>
+                                {!u.isOwner&&<button className="us-ddi red" onClick={()=>{setRowMenu(null);handleDelete(u)}}><Trash2 size={14}/> Supprimer un utilisateur</button>}
+                                <button className="us-ddi" onClick={()=>{setSelectedUser(u);setUserPanelTab('compte');loadUserData(u);setEditMode(true);setRowMenu(null)}}><Mail size={14}/> Gérer les détails de connexion...</button>
                                 <div className="us-dds"/>
-                                {!u.isOwner&&<button className="us-ddi red" onClick={()=>{setRowMenu(null);handleDelete(u)}}><Trash2 size={14}/> Supprimer</button>}
+                                <button className="us-ddi" onClick={()=>{setRowMenu(null);toggleBlock(u)}}>{blockedUsers.includes(u.id)?<><Check size={14}/> Débloquer la connexion</>:<><Ban size={14}/> Bloquer la connexion</>}</button>
                               </div>
                             )}
                           </td>
@@ -1035,7 +1171,7 @@ export default function Utilisateurs() {
                     <div className="ud-role">{selectedUser.email}</div>
                     <div style={{marginTop:4}}>
                       <span className="us-pill" style={{background:`${ROLES_COLORS[selectedUser.role]||'#0078d4'}18`,color:ROLES_COLORS[selectedUser.role]||'#0078d4',fontSize:11}}>
-                        {ROLES_LABELS[selectedUser.role]||selectedUser.role}
+                        {(userRolesMap[selectedUser.id]||[]).join(', ')||ROLES_LABELS[selectedUser.role]||selectedUser.role}
                       </span>
                       {selectedUser.isOwner&&<span className="us-owner" style={{marginLeft:6,display:'inline-flex',alignItems:'center',gap:4}}><Crown size={10}/> Propriétaire</span>}
                     </div>
@@ -1284,63 +1420,62 @@ export default function Utilisateurs() {
                     <button style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:16,padding:4}}>×</button>
                   </div>
 
-                  {/* Sélecteur lieu */}
-                  <div style={{marginBottom:22}}>
-                    <div style={{fontSize:13,fontWeight:600,color:'#e6edf3',marginBottom:8}}>
-                      Sélectionner un lieu <span style={{color:'#ef4444'}}>*</span>
-                    </div>
-                    <select style={{width:'100%',padding:'9px 13px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:5,color:'#e6edf3',fontFamily:'Inter',fontSize:14,outline:'none'}}>
-                      <option value="BJ">Bénin</option>
-                      <option value="TG">Togo</option>
-                      <option value="CI">Côte d'Ivoire</option>
-                      <option value="SN">Sénégal</option>
-                      <option value="FR">France</option>
-                    </select>
-                  </div>
-
                   {/* Accordéon Licences */}
                   <div className="ud-accord">
                     <div className="ud-accord-head">
-                      <span>Licences ({userLicences.length||LICENCES[selectedUser.role]?.length||1})</span>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>
+                      <span>Licences attribuées ({userLicences.length})</span>
                     </div>
                     <div className="ud-accord-body">
-                      {userLicences.length>0 ? userLicences.map((lu,i)=>(
+                      {userLicences.length===0 && <div className="ud-empty-tab" style={{padding:'14px 0'}}>Aucune licence attribuée.</div>}
+                      {userLicences.map((lu,i)=>(
                         <div key={i} className="ud-lic-item">
                           <div className="ud-lic-cb">
                             <svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
                           </div>
                           <div style={{flex:1}}>
                             <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:3}}>{lu.licences?.nom||'Licence'}</div>
-                            <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>Attribuée le {new Date(lu.date_attribution).toLocaleDateString('fr-FR')}</div>
+                            <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>Attribuée le {lu.date_attribution?new Date(lu.date_attribution).toLocaleDateString('fr-FR'):'—'}</div>
                           </div>
-                          <span style={{fontSize:11,padding:'2px 8px',borderRadius:'100px',background:'rgba(0,200,150,0.1)',color:'#00c896',fontWeight:600}}>Actif</span>
-                        </div>
-                      )) : (LICENCES[selectedUser.role]||['Imoloc Standard']).map((l,i)=>(
-                        <div key={i} className="ud-lic-item">
-                          <div className="ud-lic-cb">
-                            <svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                          </div>
-                          <div>
-                            <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:3}}>{l}</div>
-                            <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>Attribué via le rôle</div>
-                          </div>
+                          <button className="ud-revoke-btn" onClick={()=>removeLicence(selectedUser, lu.id)}>Retirer</button>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Accordéon Applications */}
+                  {/* Licences disponibles à attribuer */}
+                  {licencesCatalogueFull.filter(l=>!userLicences.some(lu=>lu.licences?.id===l.id || lu.licence_id===l.id)).length>0 && (
+                    <div className="ud-accord">
+                      <div className="ud-accord-head">
+                        <span>Licences disponibles</span>
+                      </div>
+                      <div className="ud-accord-body">
+                        {licencesCatalogueFull.filter(l=>!userLicences.some(lu=>lu.licences?.id===l.id || lu.licence_id===l.id)).map(l=>(
+                          <div key={l.id} className="ud-lic-item">
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:3}}>{l.nom}</div>
+                              <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>{(l.licences_applications||[]).map(la=>la.applications?.nom).filter(Boolean).join(', ')||'—'}</div>
+                            </div>
+                            <button className="ud-link" style={{background:'none',border:'none',cursor:'pointer'}} onClick={()=>assignLicence(selectedUser, l)}>+ Attribuer</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Applications découlant des licences attribuées */}
                   <div className="ud-accord">
                     <div className="ud-accord-head">
-                      <span>Applications (3)</span>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+                      <span>Applications ({[...new Set(userLicences.flatMap(lu=>(lu.licences?.licences_applications||[]).map(la=>la.applications?.nom)))].filter(Boolean).length})</span>
+                    </div>
+                    <div className="ud-accord-body">
+                      {(()=>{
+                        const apps = [...new Set(userLicences.flatMap(lu=>(lu.licences?.licences_applications||[]).map(la=>la.applications?.nom)))].filter(Boolean)
+                        return apps.length===0
+                          ? <div className="ud-empty-tab" style={{padding:'14px 0'}}>Aucune application accessible tant qu'aucune licence n'est attribuée.</div>
+                          : apps.map(a=><div key={a} style={{fontSize:13.5,color:'rgba(255,255,255,0.65)',padding:'6px 0'}}>{a}</div>)
+                      })()}
                     </div>
                   </div>
-
-                  <button style={{marginTop:20,padding:'10px 22px',background:'#0078d4',border:'none',borderRadius:5,color:'#fff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
-                    Enregistrer les modifications
-                  </button>
                 </>
               )}
 
@@ -1499,7 +1634,7 @@ export default function Utilisateurs() {
         <div className="up-ov" onClick={e=>e.target===e.currentTarget&&setShowColsPanel(false)}>
           <div className="up-panel">
             <div className="up-head">
-              <span className="up-title">Choisir les colonnes</span>
+              <span className="up-title">Choisissez les colonnes</span>
               <button className="up-cls" onClick={()=>setShowColsPanel(false)}>
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
