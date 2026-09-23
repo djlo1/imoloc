@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import AddUserModal from '../components/AddUserModal'
 import AdminShell from '../components/AdminShell'
 import {
-  Users, Crown, Briefcase, Eye, FileText, ShieldCheck, RefreshCw, Mail, AlertTriangle,
+  Users, Crown, Briefcase, Eye, FileText, ShieldCheck, RefreshCw, Mail, AlertTriangle, UserPlus,
   Trash2, Ban, Key, Lock, Pencil, User, Download, Upload,
   Image as ImageIcon, Paperclip, ClipboardList, Folder, FolderOpen, Package,
   Laptop, Undo2, Circle, CheckCircle2, Smartphone, Sparkles, Wallet, Building2,
@@ -113,6 +113,9 @@ export default function Utilisateurs() {
   const [savingProfile, setSavingProfile] = useState(false)
   const [userAppareils, setUserAppareils] = useState([])
   const [userLicences, setUserLicences] = useState([])
+  const [userRoles, setUserRoles] = useState([])
+  const [userAgenceUserId, setUserAgenceUserId] = useState(null)
+  const [rolesCatalogueFull, setRolesCatalogueFull] = useState([])
   const [licencesCatalogueFull, setLicencesCatalogueFull] = useState([])
   const [userDriveFiles, setUserDriveFiles] = useState([])
   const [driveStats, setDriveStats] = useState({utilise:0, max:5368709120})
@@ -208,18 +211,34 @@ export default function Utilisateurs() {
       pays: user.pays || 'Bénin',
     })
     try {
-      const [{ data:appData }, { data:licData }, { data:fileData }, { data:statData }, { data:catData }] = await Promise.all([
+      const [{ data:appData }, { data:licData }, { data:fileData }, { data:statData }, { data:catData }, { data:roleCatData }] = await Promise.all([
         supabase.from('appareils_utilisateurs').select('*').eq('user_id', user.id).order('derniere_activite', {ascending:false}),
         supabase.from('licences_utilisateurs').select('*, licences(*, licences_applications(applications(code,nom)))').eq('user_id', user.id).eq('actif', true),
         supabase.from('driveloc_fichiers').select('*').eq('user_id', user.id).order('created_at', {ascending:false}),
         supabase.from('driveloc_stats').select('*').eq('user_id', user.id).single(),
         supabase.from('licences').select('id, nom, type, licences_applications(applications(code,nom))').eq('actif', true).order('nom'),
+        supabase.from('roles').select('id, code, nom, description, type, application:applications(code,nom)').eq('est_systeme', true).order('type').order('nom'),
       ])
       setUserAppareils(appData || [])
       setUserLicences(licData || [])
       setUserDriveFiles(fileData || [])
       setDriveStats(statData || {stockage_utilise:0, stockage_max:5368709120})
       setLicencesCatalogueFull(catData || [])
+      setRolesCatalogueFull(roleCatData || [])
+
+      // Rôles réels (domaine E) — le propriétaire du compte n'a pas de ligne
+      // agence_users : bypass total, rien à attribuer.
+      if (!user.isOwner && agence?.id) {
+        const { data: au } = await supabase.from('agence_users').select('id').eq('agence_id', agence.id).eq('user_id', user.id).maybeSingle()
+        setUserAgenceUserId(au?.id || null)
+        if (au?.id) {
+          const { data: rr } = await supabase.from('agence_users_roles').select('id, role_id, roles(id, nom, type, application:applications(nom))').eq('agence_user_id', au.id)
+          setUserRoles(rr || [])
+        } else setUserRoles([])
+      } else {
+        setUserAgenceUserId(null)
+        setUserRoles([])
+      }
     } catch(e) { console.error(e) }
     finally { setLoadingUserData(false) }
   }
@@ -239,6 +258,26 @@ export default function Utilisateurs() {
     const { error } = await supabase.from('licences_utilisateurs').update({ actif:false }).eq('id', licenceUtilisateurId)
     if (error) return toast.error(error.message || 'Erreur')
     toast.success('Licence retirée')
+    await loadUserData(user)
+    fetchData()
+  }
+
+  const assignRole = async (user, role) => {
+    if (!userAgenceUserId) return toast.error('Utilisateur sans compte de collaborateur (propriétaire)')
+    const { data:{ user: cu } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('agence_users_roles').insert({
+      agence_user_id: userAgenceUserId, role_id: role.id, attribue_par: cu?.id,
+    })
+    if (error) return toast.error(error.message || 'Erreur')
+    toast.success(`${role.nom} attribué`)
+    await loadUserData(user)
+    fetchData()
+  }
+
+  const removeRole = async (user, agenceUserRoleId) => {
+    const { error } = await supabase.from('agence_users_roles').delete().eq('id', agenceUserRoleId)
+    if (error) return toast.error(error.message || 'Erreur')
+    toast.success('Rôle retiré')
     await loadUserData(user)
     fetchData()
   }
@@ -487,7 +526,11 @@ export default function Utilisateurs() {
         .us-sl{font-size:11.5px;color:rgba(255,255,255,0.35)}
 
         /* Toolbar */
-        .us-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+        .us-toolbar{display:flex;align-items:center;gap:22px;margin-bottom:14px;flex-wrap:wrap}
+        .us-tbtn{display:inline-flex;align-items:center;gap:6px;padding:0;border:none;background:none;cursor:pointer;font-size:13.5px;font-weight:500;color:#4da6ff;font-family:'Inter',sans-serif;white-space:nowrap;transition:opacity 0.12s}
+        .us-tbtn:hover:not(:disabled){opacity:0.75}
+        .us-tbtn:disabled{opacity:0.35;cursor:not-allowed}
+        .us-tbtn.danger{color:#ff8a8a}
         .us-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:'Inter',sans-serif;transition:all 0.15s;white-space:nowrap}
         .us-btn:hover:not(:disabled){background:rgba(255,255,255,0.09);color:#e6edf3;border-color:rgba(255,255,255,0.15)}
         .us-btn:disabled{opacity:0.35;cursor:not-allowed}
@@ -712,42 +755,45 @@ export default function Utilisateurs() {
           <>
             {/* Toolbar */}
             <div className="us-toolbar">
-              <button className="us-btn us-btn-p" onClick={()=>setShowAddUserModal(true)}>
-                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                Ajouter un utilisateur
+              <button className="us-tbtn" onClick={()=>setShowAddUserModal(true)}><UserPlus size={15}/> Ajouter un utilisateur</button>
+              <button className="us-tbtn" onClick={()=>toast('Authentification multifacteur — bientôt disponible', {icon:'🔒'})}><Lock size={15}/> Authentification multifacteur</button>
+              <button className="us-tbtn" onClick={fetchData}><RefreshCw size={15}/> Actualiser</button>
+              <button className="us-tbtn danger" disabled={selected.length===0} onClick={()=>{const u=actifs.find(x=>x.id===selected[0]);if(u)handleDelete(u)}}>
+                <Users size={15}/> Supprimer un utilisateur{selected.length>0&&` (${selected.length})`}
               </button>
-              <button className="us-btn" onClick={()=>{
-                const csv = 'Prenom,Nom,Email,Role\nJean,Dupont,jean@exemple.com,agent'
-                const blob = new Blob([csv],{type:'text/csv'})
-                const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modele_utilisateurs.csv'; a.click()
-                toast.success('Modèle CSV téléchargé !')
-              }}><ClipboardList size={13}/> Modèles utilisateur</button>
-              <button className="us-btn" onClick={()=>setShowBulkPanel(true)}><Users size={13}/> Ajouter plusieurs utilisateurs</button>
-              <button className="us-btn" onClick={()=>toast('Authentification multifacteur — bientôt disponible', {icon:'🔒'})}><ShieldCheck size={13}/> Authentification multifacteur</button>
-              <button className="us-btn us-btn-d" disabled={selected.length===0} onClick={()=>{const u=actifs.find(x=>x.id===selected[0]);if(u)handleDelete(u)}}>
-                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916"/></svg>
-                Supprimer un utilisateur{selected.length>0&&` (${selected.length})`}
-              </button>
-              <button className="us-btn" onClick={fetchData}><RefreshCw size={13}/> Actualiser</button>
+              <button className="us-tbtn" disabled={selected.length===0} onClick={()=>{
+                if (selected.length===0) return toast.error('Sélectionnez au moins un utilisateur')
+                bulkResetPassword(selected)
+              }}><Key size={15}/> Réinitialiser le mot de passe</button>
+              <button className="us-tbtn" disabled={selected.length===0} onClick={()=>{
+                const u=actifs.find(x=>x.id===selected[0])
+                if (!u) return toast.error('Sélectionnez au moins un utilisateur')
+                setSelectedUser(u); setUserPanelTab('roles'); loadUserData(u)
+              }}><Users size={15}/> Gérer les rôles</button>
+              <button className="us-tbtn" onClick={exportCSV}><Download size={15}/> Exporter des utilisateurs</button>
               <div className="us-sr">
                 <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
                 <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher dans la liste ..."/>
                 {search&&<button onClick={()=>setSearch('')} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:16,padding:0,lineHeight:1}}>×</button>}
               </div>
+              <button className="us-tbtn" onClick={()=>setViewMode(v=>v==='normal'?'compact':'normal')}><Pencil size={15}/> Changer d'affichage</button>
               <div style={{position:'relative'}}>
                 <button className="us-mbtn" style={{fontSize:18}} onClick={()=>setShowToolbarMore(v=>!v)}>···</button>
                 {showToolbarMore&&(
                   <div className="us-dd" style={{right:0,minWidth:230}}>
+                    <button className="us-ddi" onClick={()=>{setShowToolbarMore(false);toast('Gestion des groupes — bientôt disponible',{icon:'🔧'})}}><Users size={14}/> Gérer des groupes</button>
                     <button className="us-ddi" onClick={()=>{
                       setShowToolbarMore(false)
-                      if (selected.length===0) return toast.error('Sélectionnez au moins un utilisateur')
-                      bulkResetPassword(selected)
-                    }}><Key size={14}/> Réinitialiser le mot de passe</button>
-                    <button className="us-ddi" onClick={()=>{setShowToolbarMore(false);exportCSV()}}><Download size={14}/> Exporter des utilisateurs</button>
-                    <button className="us-ddi" onClick={()=>{setShowToolbarMore(false);setViewMode(v=>v==='normal'?'compact':'normal')}}><Pencil size={14}/> Changer d'affichage</button>
-                    <div className="us-dds"/>
-                    <button className="us-ddi" disabled style={{opacity:0.4,cursor:'not-allowed'}} title="Bientôt disponible"><RefreshCw size={14}/> Synchronisation d'annuaires</button>
-                    <button className="us-ddi" disabled style={{opacity:0.4,cursor:'not-allowed'}} title="Bientôt disponible"><Info size={14}/> Statut de la configuration de Teams</button>
+                      const u=actifs.find(x=>x.id===selected[0])
+                      if (!u) return toast.error('Sélectionnez au moins un utilisateur')
+                      setSelectedUser(u); setUserPanelTab('compte'); loadUserData(u); setEditMode(true)
+                    }}><Pencil size={14}/> Gérer des informations de contact</button>
+                    <button className="us-ddi" onClick={()=>{
+                      setShowToolbarMore(false)
+                      const u=actifs.find(x=>x.id===selected[0])
+                      if (!u) return toast.error('Sélectionnez au moins un utilisateur')
+                      toggleBlock(u)
+                    }}><Ban size={14}/> Modifier l'état de connexion</button>
                   </div>
                 )}
               </div>
@@ -1169,9 +1215,9 @@ export default function Utilisateurs() {
               </div>
               <div className="ud-tabs" style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                 <div style={{display:'flex'}}>
-                  {['compte','appareils','licences','courrier','driveloc'].map(t=>(
+                  {['compte','roles','appareils','licences','courrier','driveloc'].map(t=>(
                     <button key={t} className={`ud-tab ${userPanelTab===t?'active':''}`} onClick={()=>setUserPanelTab(t)}>
-                      {{compte:'Compte',appareils:'Appareils',licences:'Licences et applications',courrier:'Courrier',driveloc:'DriveLoc'}[t]}
+                      {{compte:'Compte',roles:'Rôles',appareils:'Appareils',licences:'Licences et applications',courrier:'Courrier',driveloc:'DriveLoc'}[t]}
                     </button>
                   ))}
                 </div>
@@ -1336,6 +1382,49 @@ export default function Utilisateurs() {
                       <a href="#" className="ud-link">Gérer l'authentification multifacteur</a>
                     </div>
                   </div>
+                </>
+              )}
+
+              {/* ── Onglet Rôles ── */}
+              {userPanelTab==='roles'&&(
+                <>
+                  {selectedUser.isOwner ? (
+                    <div className="ud-field" style={{marginBottom:20}}>
+                      <div className="ud-field-lbl">Rôle</div>
+                      <div className="ud-field-val">Administrateur général — accès total, sans exception (propriétaire du compte)</div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="ud-section" style={{marginTop:0}}>Rôles attribués ({userRoles.length})</div>
+                      {userRoles.length===0 && <div className="ud-empty-tab" style={{padding:'14px 0'}}>Aucun rôle attribué.</div>}
+                      {userRoles.map(ur=>(
+                        <div key={ur.id} className="ud-lic-item">
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:2}}>{ur.roles?.nom}</div>
+                            <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>{ur.roles?.type==='transverse'?'Transverse':ur.roles?.application?.nom}</div>
+                          </div>
+                          <button className="ud-revoke-btn" onClick={()=>removeRole(selectedUser, ur.id)}>Retirer</button>
+                        </div>
+                      ))}
+
+                      {rolesCatalogueFull.filter(r=>!userRoles.some(ur=>ur.role_id===r.id)).length>0 && (
+                        <>
+                          <div className="ud-section">Rôles disponibles</div>
+                          <div style={{maxHeight:280,overflowY:'auto'}}>
+                            {rolesCatalogueFull.filter(r=>!userRoles.some(ur=>ur.role_id===r.id)).map(r=>(
+                              <div key={r.id} className="ud-lic-item">
+                                <div style={{flex:1}}>
+                                  <div style={{fontSize:13.5,color:'#e6edf3',fontWeight:500,marginBottom:2}}>{r.nom}</div>
+                                  <div style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{r.type==='transverse'?'Transverse':r.application?.nom}</div>
+                                </div>
+                                <button className="ud-link" style={{background:'none',border:'none',cursor:'pointer'}} onClick={()=>assignRole(selectedUser, r)}>+ Attribuer</button>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
                 </>
               )}
 
