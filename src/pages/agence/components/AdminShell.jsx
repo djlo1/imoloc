@@ -94,13 +94,13 @@ export default function AdminShell({ activeKey, breadcrumb, children }) {
   return (
     <div className="as-root">
       <style>{`
-        .as-root{position:fixed;inset:0;z-index:1000;overflow-y:auto;background:#0d1117;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:#e6edf3}
+        .as-root{position:fixed;inset:0;z-index:1000;overflow-y:auto;background:#1b1b1b;font-family:'Segoe UI','Inter',-apple-system,sans-serif;color:#e6edf3}
         .as-topbar{height:48px;background:#3d3766;display:flex;align-items:center;gap:14px;padding:0 12px;position:sticky;top:0;z-index:200;border-bottom:1px solid rgba(255,255,255,0.08)}
         .as-icon-btn{background:none;border:none;color:#fff;cursor:pointer;padding:7px;border-radius:4px;display:flex;align-items:center;justify-content:center;transition:background 0.12s}
         .as-icon-btn:hover{background:rgba(255,255,255,0.12)}
         .as-brand{display:flex;align-items:center;gap:9px;color:#fff;font-size:15px;font-weight:600;white-space:nowrap}
         .as-search{flex:1;max-width:680px;margin:0 auto;position:relative}
-        .as-search input{width:100%;height:32px;border-radius:4px;border:none;background:rgba(255,255,255,0.12);color:#fff;padding:0 36px 0 34px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none}
+        .as-search input{width:100%;height:32px;border-radius:4px;border:none;background:rgba(255,255,255,0.12);color:#fff;padding:0 36px 0 34px;font-size:13.5px;font-family:'Segoe UI','Inter',sans-serif;outline:none}
         .as-search input::placeholder{color:rgba(255,255,255,0.55)}
         .as-search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.55)}
         .as-search .as-kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:rgba(255,255,255,0.4)}
@@ -111,7 +111,7 @@ export default function AdminShell({ activeKey, breadcrumb, children }) {
         .as-badge-dot::after{content:'';position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:1.5px solid #3d3766}
         .as-org{color:#fff;font-size:13px;padding:0 8px;white-space:nowrap}
         .as-avatar{width:28px;height:28px;border-radius:50%;background:#0078d4;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0}
-        .as-profile-dd{position:absolute;right:12px;top:46px;background:#1c2434;border:1px solid rgba(255,255,255,0.1);border-radius:6px;box-shadow:0 8px 28px rgba(0,0,0,0.55);min-width:200px;z-index:250;overflow:hidden}
+        .as-profile-dd{position:absolute;right:12px;top:46px;background:#1b1b1b;border:1px solid rgba(255,255,255,0.1);border-radius:6px;box-shadow:0 8px 28px rgba(0,0,0,0.55);min-width:200px;z-index:250;overflow:hidden}
         .as-profile-dd-head{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.08)}
         .as-profile-dd-name{font-size:13.5px;font-weight:600;color:#e6edf3}
         .as-profile-dd-email{font-size:12px;color:rgba(255,255,255,0.4);margin-top:2px}
@@ -119,10 +119,10 @@ export default function AdminShell({ activeKey, breadcrumb, children }) {
         .as-profile-dd-item:hover{background:rgba(255,255,255,0.05)}
 
         .as-body{display:flex;align-items:stretch}
-        .as-sidebar{width:${collapsed ? '52px' : '236px'};flex-shrink:0;background:#161b22;border-right:1px solid rgba(255,255,255,0.07);padding:10px 8px;height:calc(100vh - 48px);position:sticky;top:48px;overflow-y:auto;transition:width 0.15s}
-        .as-nav-item{display:flex;align-items:center;gap:12px;width:100%;padding:7px 10px;border-radius:4px;background:none;border:none;cursor:pointer;font-size:13.5px;color:rgba(255,255,255,0.65);text-align:left;font-family:'Inter',sans-serif;white-space:nowrap;overflow:hidden}
+        .as-sidebar{width:${collapsed ? '52px' : '236px'};flex-shrink:0;background:#1b1b1b;border-right:1px solid rgba(255,255,255,0.07);padding:10px 8px;height:calc(100vh - 48px);position:sticky;top:48px;overflow-y:auto;transition:width 0.15s}
+        .as-nav-item{display:flex;align-items:center;gap:12px;width:100%;padding:7px 10px;border-radius:4px;background:none;border:none;cursor:pointer;font-size:13.5px;color:rgba(255,255,255,0.65);text-align:left;font-family:'Segoe UI','Inter',sans-serif;white-space:nowrap;overflow:hidden}
         .as-nav-item:hover{background:rgba(255,255,255,0.05)}
-        .as-nav-item.active{background:rgba(0,120,212,0.12);color:#4da6ff;font-weight:600;box-shadow:inset 3px 0 0 #0078d4}
+        .as-nav-item.active{background:rgba(0,120,212,0.12);color:#2c85dd;font-weight:600;box-shadow:inset 3px 0 0 #0078d4}
         .as-nav-item span{flex:1;overflow:hidden;text-overflow:ellipsis}
         .as-chev{flex-shrink:0}
         .as-nav-children{padding-left:29px}
@@ -133,7 +133,7 @@ export default function AdminShell({ activeKey, breadcrumb, children }) {
         .as-content{flex:1;min-width:0;padding:24px 32px 60px}
         .as-breadcrumb{font-size:12.5px;color:rgba(255,255,255,0.4);margin-bottom:6px;display:flex;align-items:center;gap:6px}
         .as-breadcrumb a{color:rgba(255,255,255,0.4);text-decoration:none}
-        .as-breadcrumb a:hover{text-decoration:underline;color:#4da6ff}
+        .as-breadcrumb a:hover{text-decoration:underline;color:#2c85dd}
         .as-h1{font-size:26px;font-weight:600;color:#e6edf3;margin:0 0 20px;letter-spacing:-0.01em}
 
         @media(max-width:900px){.as-sidebar{position:fixed;left:${collapsed ? '-236px' : '0'};z-index:150;box-shadow:${collapsed ? 'none' : '4px 0 18px rgba(0,0,0,0.4)'}}.as-content{padding:18px 16px 60px}}

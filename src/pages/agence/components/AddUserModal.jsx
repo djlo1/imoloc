@@ -243,7 +243,7 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
     <>
       <style>{`
         .au-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;display:flex;align-items:stretch;justify-content:flex-end;backdrop-filter:blur(6px)}
-        .au-panel{width:100%;max-width:860px;background:#161b22;display:flex;flex-direction:column;animation:au-slide 0.25s ease;overflow:hidden}
+        .au-panel{width:100%;max-width:860px;background:#1b1b1b;display:flex;flex-direction:column;animation:au-slide 0.25s ease;overflow:hidden}
         @keyframes au-slide{from{transform:translateX(100%)}to{transform:translateX(0)}}
         .au-head{display:flex;align-items:center;justify-content:space-between;padding:22px 32px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
         .au-head-title{font-size:22px;font-weight:700;color:#e6edf3;letter-spacing:-0.02em}
@@ -271,9 +271,9 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
         .au-field-full{grid-column:1/-1}
         .au-lbl{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);margin-bottom:6px;letter-spacing:0.03em}
         .au-lbl span{color:#ef4444;margin-left:2px}
-        .au-input{width:100%;padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;font-family:'Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s}
+        .au-input{width:100%;padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;font-family:'Segoe UI','Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s}
         .au-input:focus{border-color:#0078d4;background:rgba(255,255,255,0.07)}
-        .au-input option{background:#1c2434}
+        .au-input option{background:#1b1b1b}
         .au-input-wrap{position:relative}
         .au-input-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;pointer-events:none}
         .au-provider-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:500;margin-top:7px}
@@ -282,9 +282,9 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
         .au-copy{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.3);display:flex;padding:4px}
         .au-copy:hover{color:rgba(255,255,255,0.7)}
         .au-pass-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-        .au-pass-btn{padding:7px 14px;border-radius:5px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.55);font-family:'Inter',sans-serif;transition:all 0.15s;display:flex;align-items:center;gap:6px}
+        .au-pass-btn{padding:7px 14px;border-radius:5px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.55);font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s;display:flex;align-items:center;gap:6px}
         .au-pass-btn:hover{background:rgba(255,255,255,0.09);color:#e6edf3}
-        .au-pass-btn.blue{background:rgba(0,120,212,0.12);border-color:rgba(0,120,212,0.25);color:#4da6ff}
+        .au-pass-btn.blue{background:rgba(0,120,212,0.12);border-color:rgba(0,120,212,0.25);color:#2c85dd}
         .au-pass-btn.blue:hover{background:rgba(0,120,212,0.2)}
         .au-pass-strength{height:4px;border-radius:100px;margin-top:8px;transition:all 0.3s;background:rgba(255,255,255,0.06)}
         .au-pass-strength-fill{height:100%;border-radius:100px;transition:width 0.3s}
@@ -325,10 +325,10 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
         .au-email-preview-head{padding:12px 16px;background:rgba(0,120,212,0.08);border-bottom:1px solid rgba(255,255,255,0.07);font-size:12px;color:rgba(255,255,255,0.4);display:flex;align-items:center;gap:8px}
         .au-email-preview-body{padding:20px;font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7}
         .au-email-link{display:inline-block;padding:10px 22px;border-radius:6px;background:#0078d4;color:#fff;font-size:13.5px;font-weight:600;text-decoration:none;margin:14px 0}
-        .au-foot{padding:16px 32px;border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#161b22}
+        .au-foot{padding:16px 32px;border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#1b1b1b}
         .au-foot-left{font-size:13px;color:rgba(255,255,255,0.3)}
         .au-foot-btns{display:flex;gap:10px}
-        .au-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:4px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
+        .au-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:4px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .au-btn-blue{background:#0078d4;color:#fff}
         .au-btn-blue:hover:not(:disabled){background:#006cc1}
         .au-btn-blue:disabled{opacity:0.5;cursor:not-allowed}
@@ -524,7 +524,7 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                     <div key={lic.id} className={`au-licence-item ${form.licences.includes(lic.id)?'selected':''}`} onClick={()=>toggleLicence(lic.id)}>
                       <div className={`au-licence-check ${form.licences.includes(lic.id)?'on':''}`}>{form.licences.includes(lic.id)&&<svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}</div>
                       <div style={{flex:1}}><div style={{fontSize:13.5,color:'#e6edf3',fontWeight:500,marginBottom:2}}>{lic.nom}</div><div style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{lic.description}</div></div>
-                      <span className="au-plan-badge" style={{background:'rgba(0,120,212,0.12)',color:'#4da6ff',border:'1px solid rgba(0,120,212,0.3)'}}>{lic.prix_mensuel!=null?`${lic.prix_mensuel} FCFA/mois`:'Selon palier'}</span>
+                      <span className="au-plan-badge" style={{background:'rgba(0,120,212,0.12)',color:'#2c85dd',border:'1px solid rgba(0,120,212,0.3)'}}>{lic.prix_mensuel!=null?`${lic.prix_mensuel} FCFA/mois`:'Selon palier'}</span>
                     </div>
                   ))}
 
@@ -635,11 +635,11 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                     <div className="au-email-preview-body">
                       <div style={{marginBottom:8}}>Bonjour <strong style={{color:'#e6edf3'}}>{form.prenom || 'Prénom'} {form.nom || 'Nom'}</strong>,</div>
                       <div style={{marginBottom:12}}>
-                        Vous avez été invité(e) à rejoindre l'organisation <strong style={{color:'#4da6ff'}}>{agenceName}</strong> sur la plateforme <strong style={{color:'#4da6ff'}}>Imoloc</strong>.
+                        Vous avez été invité(e) à rejoindre l'organisation <strong style={{color:'#2c85dd'}}>{agenceName}</strong> sur la plateforme <strong style={{color:'#2c85dd'}}>Imoloc</strong>.
                       </div>
                       <div style={{marginBottom:8}}>Vos informations de connexion :</div>
                       <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:6,padding:'12px 14px',marginBottom:14,fontFamily:'monospace',fontSize:13}}>
-                        <div style={{display:'flex',alignItems:'center',gap:6}}><Mail size={13}/> Email : <span style={{color:'#4da6ff'}}>{form.email || 'jean.dupont@gmail.com'}</span></div>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}><Mail size={13}/> Email : <span style={{color:'#2c85dd'}}>{form.email || 'jean.dupont@gmail.com'}</span></div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}><Lock size={13}/> Mot de passe : <span style={{color:'#00c896'}}>{form.auto_password ? '(généré automatiquement)' : '(défini par l\'administrateur)'}</span></div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}><Building2 size={13}/> Organisation : <span style={{color:'#e6edf3'}}>{agenceName}</span></div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}><User size={13}/> Rôle : <span style={{color:'#e6edf3'}}>{selectedRoles.map(r=>r.nom).join(', ')||'—'}</span></div>

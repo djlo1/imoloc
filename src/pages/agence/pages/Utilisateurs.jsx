@@ -509,14 +509,14 @@ export default function Utilisateurs() {
         .us-page{animation:us-in 0.25s ease}
         @keyframes us-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
         .us-bc{display:flex;align-items:center;gap:7px;font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:16px}
-        .us-bcl{cursor:pointer;transition:color 0.1s}.us-bcl:hover{color:#4da6ff}
+        .us-bcl{cursor:pointer;transition:color 0.1s}.us-bcl:hover{color:#2c85dd}
         .us-title{font-size:24px;font-weight:700;color:#e6edf3;letter-spacing:-0.02em;margin-bottom:4px}
         .us-sub{font-size:13px;color:rgba(255,255,255,0.35);margin-bottom:22px}
         .us-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:20px}
-        .us-tab{padding:10px 18px;font-size:13.5px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap;display:flex;align-items:center;gap:7px}
+        .us-tab{padding:10px 18px;font-size:13.5px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Segoe UI','Inter',sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap;display:flex;align-items:center;gap:7px}
         .us-tab:hover{color:rgba(255,255,255,0.75)}.us-tab.active{color:#e6edf3;border-bottom-color:#0078d4}
         .us-cnt{font-size:11px;padding:1px 7px;border-radius:100px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.4)}
-        .us-tab.active .us-cnt{background:rgba(0,120,212,0.2);color:#4da6ff}
+        .us-tab.active .us-cnt{background:rgba(0,120,212,0.2);color:#2c85dd}
 
         /* Stats */
         .us-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
@@ -527,11 +527,11 @@ export default function Utilisateurs() {
 
         /* Toolbar */
         .us-toolbar{display:flex;align-items:center;gap:22px;margin-bottom:14px;flex-wrap:wrap}
-        .us-tbtn{display:inline-flex;align-items:center;gap:6px;padding:0;border:none;background:none;cursor:pointer;font-size:13.5px;font-weight:500;color:#4da6ff;font-family:'Inter',sans-serif;white-space:nowrap;transition:opacity 0.12s}
+        .us-tbtn{display:inline-flex;align-items:center;gap:6px;padding:0;border:none;background:none;cursor:pointer;font-size:13.5px;font-weight:500;color:#2c85dd;font-family:'Segoe UI','Inter',sans-serif;white-space:nowrap;transition:opacity 0.12s}
         .us-tbtn:hover:not(:disabled){opacity:0.75}
         .us-tbtn:disabled{opacity:0.35;cursor:not-allowed}
         .us-tbtn.danger{color:#ff8a8a}
-        .us-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:'Inter',sans-serif;transition:all 0.15s;white-space:nowrap}
+        .us-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s;white-space:nowrap}
         .us-btn:hover:not(:disabled){background:rgba(255,255,255,0.09);color:#e6edf3;border-color:rgba(255,255,255,0.15)}
         .us-btn:disabled{opacity:0.35;cursor:not-allowed}
         .us-btn-p{background:#0078d4;border-color:#0078d4;color:#fff}.us-btn-p:hover:not(:disabled){background:#006cc1;border-color:#006cc1}
@@ -540,18 +540,18 @@ export default function Utilisateurs() {
         .us-sep{width:1px;height:22px;background:rgba(255,255,255,0.08)}
         .us-sr{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:4px;padding:7px 12px;margin-left:auto;transition:border-color 0.15s}
         .us-sr:focus-within{border-color:rgba(0,120,212,0.4)}
-        .us-sr input{background:none;border:none;outline:none;font-family:'Inter',sans-serif;font-size:13px;color:#e6edf3;width:220px}
+        .us-sr input{background:none;border:none;outline:none;font-family:'Segoe UI','Inter',sans-serif;font-size:13px;color:#e6edf3;width:220px}
         .us-sr input::placeholder{color:rgba(255,255,255,0.25)}
 
         /* Filtres */
         .us-filters{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
         .us-fl{font-size:12px;color:rgba(255,255,255,0.3);margin-right:2px}
-        .us-fc{display:inline-flex;align-items:center;padding:4px 12px;border-radius:100px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.09);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);transition:all 0.15s;font-family:'Inter',sans-serif}
-        .us-fc:hover{background:rgba(255,255,255,0.08);color:#e6edf3}.us-fc.on{background:rgba(0,120,212,0.1);border-color:rgba(0,120,212,0.3);color:#4da6ff}
+        .us-fc{display:inline-flex;align-items:center;padding:4px 12px;border-radius:100px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:#363636;color:#e1e1e1;transition:all 0.15s;font-family:'Segoe UI','Inter',sans-serif}
+        .us-fc:hover{background:#3f3f3f;color:#fff}.us-fc.on{background:#363636;color:#2c85dd}
 
         /* Barre sélection */
         .us-selbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(0,120,212,0.07);border:1px solid rgba(0,120,212,0.18);border-radius:8px;margin-bottom:12px;animation:us-in 0.2s ease}
-        .us-selbar-txt{font-size:13px;color:#4da6ff;font-weight:500;flex:1}
+        .us-selbar-txt{font-size:13px;color:#2c85dd;font-weight:500;flex:1}
 
         /* Table */
         .us-tw{border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden}
@@ -571,18 +571,18 @@ export default function Utilisateurs() {
         .us-cb.on{background:#0078d4;border-color:#0078d4}
         .us-cb.half{background:rgba(0,120,212,0.3);border-color:#0078d4}
         .us-av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex-shrink:0;position:relative}
-        .us-avdot{position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;background:#00c896;border:2px solid #161b22}
+        .us-avdot{position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;background:#00c896;border:2px solid #1b1b1b}
         .us-uname{font-weight:600;color:#e6edf3;display:flex;align-items:center;gap:7px}
         .us-uemail{font-size:11.5px;color:rgba(255,255,255,0.35);margin-top:1px}
-        .us-owner{font-size:10px;font-weight:700;padding:1px 7px;border-radius:100px;background:rgba(0,120,212,0.12);color:#4da6ff;border:1px solid rgba(0,120,212,0.2)}
+        .us-owner{font-size:10px;font-weight:700;padding:1px 7px;border-radius:100px;background:rgba(0,120,212,0.12);color:#2c85dd;border:1px solid rgba(0,120,212,0.2)}
         .us-pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600}
         .us-lic{display:flex;flex-direction:column;gap:2px}
         .us-li{font-size:11px;color:rgba(255,255,255,0.5);display:flex;align-items:center;gap:5px}
         .us-li::before{content:'';width:4px;height:4px;border-radius:50%;background:#0078d4;flex-shrink:0}
         .us-mbtn{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.3);padding:5px 7px;border-radius:5px;font-size:15px;transition:all 0.1s;line-height:1}
         .us-mbtn:hover{background:rgba(255,255,255,0.07);color:#e6edf3}
-        .us-dd{position:absolute;right:8px;top:calc(100% - 4px);background:#1c2434;border:1px solid rgba(255,255,255,0.1);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,0.55);z-index:100;min-width:210px;overflow:hidden}
-        .us-ddi{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:13px;color:rgba(255,255,255,0.65);cursor:pointer;transition:background 0.1s;border:none;background:none;font-family:'Inter',sans-serif;width:100%;text-align:left}
+        .us-dd{position:absolute;right:8px;top:calc(100% - 4px);background:#1b1b1b;border:1px solid rgba(255,255,255,0.1);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,0.55);z-index:100;min-width:210px;overflow:hidden}
+        .us-ddi{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:13px;color:rgba(255,255,255,0.65);cursor:pointer;transition:background 0.1s;border:none;background:none;font-family:'Segoe UI','Inter',sans-serif;width:100%;text-align:left}
         .us-ddi:hover{background:rgba(255,255,255,0.05);color:#e6edf3}
         .us-ddi.red:hover{background:rgba(239,68,68,0.08);color:#ef4444}
         .us-dds{height:1px;background:rgba(255,255,255,0.07)}
@@ -593,7 +593,7 @@ export default function Utilisateurs() {
 
         /* Panel Colonnes */
         .up-ov{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;display:flex;justify-content:flex-end}
-        .up-panel{width:340px;height:100%;background:#161b22;border-left:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;animation:up-sl 0.2s ease}
+        .up-panel{width:340px;height:100%;background:#1b1b1b;border-left:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;animation:up-sl 0.2s ease}
         @keyframes up-sl{from{transform:translateX(100%)}to{transform:translateX(0)}}
         .up-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
         .up-title{font-size:16px;font-weight:700;color:#e6edf3}
@@ -610,13 +610,13 @@ export default function Utilisateurs() {
         .up-cb{width:17px;height:17px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0}
         .up-cb.on{background:#0078d4;border-color:#0078d4}.up-cb.dis{opacity:0.4;cursor:not-allowed}
         .up-foot{padding:16px 22px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-shrink:0}
-        .up-fbtn{flex:1;padding:10px;border-radius:5px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
+        .up-fbtn{flex:1;padding:10px;border-radius:5px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .up-fbtn-b{background:#0078d4;color:#fff}.up-fbtn-b:hover{background:#006cc1}
         .up-fbtn-g{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1)}.up-fbtn-g:hover{background:rgba(255,255,255,0.09);color:#e6edf3}
 
         /* Drawer utilisateur */
         .ud-ov{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;display:flex;justify-content:flex-end}
-        .ud-panel{width:920px;height:100%;background:#161b22;border-left:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;animation:up-sl 0.22s ease;overflow:hidden}
+        .ud-panel{width:920px;height:100%;background:#1b1b1b;border-left:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;animation:up-sl 0.22s ease;overflow:hidden}
         .ud-head{padding:32px 36px 0;background:linear-gradient(135deg,rgba(0,120,212,0.06),rgba(108,99,255,0.04));border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
         .ud-head-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
         .ud-av{width:86px;height:86px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#fff;flex-shrink:0}
@@ -627,7 +627,7 @@ export default function Utilisateurs() {
         
         
         .ud-tabs{display:flex;overflow-x:visible;gap:0;flex-wrap:wrap}
-        .ud-tab{padding:12px 20px;font-size:14px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap}
+        .ud-tab{padding:12px 20px;font-size:14px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Segoe UI','Inter',sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap}
         .ud-tab:hover{color:rgba(255,255,255,0.75)}.ud-tab.active{color:#e6edf3;border-bottom-color:#0078d4}
         .ud-body{flex:1;overflow-y:auto;padding:32px 36px}
         .ud-body::-webkit-scrollbar{width:4px}
@@ -638,7 +638,7 @@ export default function Utilisateurs() {
         .ud-field:hover{border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.04)}
         .ud-field-lbl{font-size:12px;color:rgba(255,255,255,0.35);font-weight:500;text-transform:uppercase;letter-spacing:0.06em}
         .ud-field-val{font-size:14.5px;color:#e6edf3;font-weight:500}
-        .ud-field-val a{color:#4da6ff;text-decoration:none}.ud-field-val a:hover{text-decoration:underline}
+        .ud-field-val a{color:#2c85dd;text-decoration:none}.ud-field-val a:hover{text-decoration:underline}
         .ud-field-val.empty{color:rgba(255,255,255,0.25);font-style:italic;font-weight:400}
         .ud-device-card{display:flex;align-items:center;gap:14px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;margin-bottom:10px;transition:all 0.15s}
         .ud-device-card:hover{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.05)}
@@ -652,7 +652,7 @@ export default function Utilisateurs() {
         .ud-mail-card:hover{border-color:rgba(255,255,255,0.12)}
         .ud-mail-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
         .ud-add-btn{display:flex;align-items:center;gap:8px;padding:11px 16px;border-radius:8px;border:1.5px dashed rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.4);font-family:Inter,sans-serif;font-size:13.5px;cursor:pointer;transition:all 0.15s;width:100%}
-        .ud-add-btn:hover{border-color:rgba(0,120,212,0.4);color:#4da6ff;background:rgba(0,120,212,0.05)}
+        .ud-add-btn:hover{border-color:rgba(0,120,212,0.4);color:#2c85dd;background:rgba(0,120,212,0.05)}
         .ud-file-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;margin-bottom:8px;transition:all 0.15s;cursor:pointer}
         .ud-file-card:hover{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.05)}
         .ud-file-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
@@ -664,13 +664,13 @@ export default function Utilisateurs() {
         .ud-drive-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
         .ud-drive-stat{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px 14px;text-align:center}
         .ud-sh{font-size:13px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
-        .ud-sa{font-size:12px;color:#4da6ff;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500;background:none;border:none;font-family:'Inter',sans-serif}
+        .ud-sa{font-size:12px;color:#2c85dd;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500;background:none;border:none;font-family:'Segoe UI','Inter',sans-serif}
         .ud-sa:hover{text-decoration:underline}
         .ud-row{display:flex;align-items:flex-start;justify-content:space-between;padding:15px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
         .ud-row:last-child{border-bottom:none}
         .ud-rk{font-size:14px;color:rgba(255,255,255,0.4);flex-shrink:0;width:200px}
         .ud-rv{font-size:14.5px;color:#e6edf3;font-weight:500;text-align:right;flex:1;word-break:break-word}
-        .ud-rv a{color:#4da6ff;text-decoration:none}.ud-rv a:hover{text-decoration:underline}
+        .ud-rv a{color:#2c85dd;text-decoration:none}.ud-rv a:hover{text-decoration:underline}
         .ud-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;transition:all 0.15s;cursor:pointer}
         .ud-card:hover{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.05)}
         .ud-group-av{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
@@ -706,24 +706,24 @@ export default function Utilisateurs() {
 
         /* Panel inviter */
         .ui-ov{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:450;display:flex;justify-content:flex-end}
-        .ui-panel{width:430px;height:100%;background:#161b22;border-left:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;animation:up-sl 0.2s ease}
+        .ui-panel{width:430px;height:100%;background:#1b1b1b;border-left:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;animation:up-sl 0.2s ease}
         .ui-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
         .ui-body{flex:1;overflow-y:auto;padding:22px}
         .ui-body::-webkit-scrollbar{width:4px}
         .ui-f{margin-bottom:16px}
         .ui-l{display:block;font-size:12.5px;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:7px}
-        .ui-i{width:100%;padding:10px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;font-family:'Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s}
+        .ui-i{width:100%;padding:10px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;font-family:'Segoe UI','Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s}
         .ui-i:focus{border-color:#0078d4;background:rgba(255,255,255,0.07)}
-        .ui-ta{width:100%;padding:10px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;font-family:'Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;resize:vertical;min-height:80px;transition:border-color 0.15s}
+        .ui-ta{width:100%;padding:10px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;font-family:'Segoe UI','Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;resize:vertical;min-height:80px;transition:border-color 0.15s}
         .ui-ta:focus{border-color:#0078d4}
         .ui-foot{padding:16px 22px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-shrink:0}
-        .ui-fb{flex:1;padding:10px;border-radius:5px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
+        .ui-fb{flex:1;padding:10px;border-radius:5px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .ui-fb-b{background:#0078d4;color:#fff}.ui-fb-b:hover:not(:disabled){background:#006cc1}.ui-fb-b:disabled{opacity:0.4;cursor:not-allowed}
         .ui-fb-g{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1)}.ui-fb-g:hover{background:rgba(255,255,255,0.09)}
 
         /* View toggle */
         .us-vtog{display:flex;gap:2px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:5px;padding:3px}
-        .us-vbtn{background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:3px;color:rgba(255,255,255,0.4);transition:all 0.15s;font-size:12px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:4px}
+        .us-vbtn{background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:3px;color:rgba(255,255,255,0.4);transition:all 0.15s;font-size:12px;font-family:'Segoe UI','Inter',sans-serif;display:flex;align-items:center;gap:4px}
         .us-vbtn.active{background:rgba(255,255,255,0.1);color:#e6edf3}
 
         @media(max-width:1100px){.us-stats{grid-template-columns:1fr 1fr}}
@@ -802,7 +802,7 @@ export default function Utilisateurs() {
             {/* Filtres */}
             <div className="us-filters" style={{position:'relative'}}>
               <span className="us-fl">Filtre défini :</span>
-              <button className="us-fc" style={{display:'inline-flex',alignItems:'center',gap:5,fontWeight:600,color:'#4da6ff'}} onClick={()=>setShowFilterDefDropdown(v=>!v)}>
+              <button className="us-fc" style={{display:'inline-flex',alignItems:'center',gap:5,fontWeight:600,color:'#2c85dd'}} onClick={()=>setShowFilterDefDropdown(v=>!v)}>
                 {filterDefLabel} <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
               </button>
               {showFilterDefDropdown&&(
@@ -1650,7 +1650,7 @@ export default function Utilisateurs() {
                   <div style={{borderTop:'1px solid rgba(255,255,255,0.07)',paddingTop:22}}>
                     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
                       <div style={{fontSize:15,fontWeight:700,color:'#e6edf3'}}>Fichiers de l'utilisateur</div>
-                      <button style={{display:'flex',alignItems:'center',gap:7,padding:'7px 14px',borderRadius:6,background:'rgba(0,120,212,0.1)',border:'1px solid rgba(0,120,212,0.25)',color:'#4da6ff',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
+                      <button style={{display:'flex',alignItems:'center',gap:7,padding:'7px 14px',borderRadius:6,background:'rgba(0,120,212,0.1)',border:'1px solid rgba(0,120,212,0.25)',color:'#2c85dd',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
                         <Package size={14}/> Télécharger tout en ZIP
                       </button>
                     </div>
@@ -1825,7 +1825,7 @@ export default function Utilisateurs() {
                       <div style={{fontSize:13.5,color:'rgba(255,255,255,0.45)',lineHeight:1.65}}>
                         Remplissez un tableau directement dans l'interface. Idéal pour ajouter quelques utilisateurs rapidement.
                       </div>
-                      {bulkMode==='manual'&&<div style={{marginTop:12,fontSize:12.5,color:'#4da6ff',fontWeight:600,display:'flex',alignItems:'center',gap:5}}><Check size={13}/> Sélectionné</div>}
+                      {bulkMode==='manual'&&<div style={{marginTop:12,fontSize:12.5,color:'#2c85dd',fontWeight:600,display:'flex',alignItems:'center',gap:5}}><Check size={13}/> Sélectionné</div>}
                     </div>
                     <div onClick={()=>setBulkMode('csv')}
                       style={{padding:'24px',borderRadius:10,border:`2px solid ${bulkMode==='csv'?'#0078d4':'rgba(255,255,255,0.08)'}`,background:bulkMode==='csv'?'rgba(0,120,212,0.07)':'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.15s'}}>
@@ -1834,7 +1834,7 @@ export default function Utilisateurs() {
                       <div style={{fontSize:13.5,color:'rgba(255,255,255,0.45)',lineHeight:1.65}}>
                         Téléchargez notre modèle CSV, remplissez-le et importez-le. Parfait pour un grand nombre d'utilisateurs.
                       </div>
-                      {bulkMode==='csv'&&<div style={{marginTop:12,fontSize:12.5,color:'#4da6ff',fontWeight:600,display:'flex',alignItems:'center',gap:5}}><Check size={13}/> Sélectionné</div>}
+                      {bulkMode==='csv'&&<div style={{marginTop:12,fontSize:12.5,color:'#2c85dd',fontWeight:600,display:'flex',alignItems:'center',gap:5}}><Check size={13}/> Sélectionné</div>}
                     </div>
                   </div>
 
@@ -1871,7 +1871,7 @@ export default function Utilisateurs() {
                           </div>
                         </div>
                         <button onClick={()=>setBulkRows(p=>[...p,{prenom:'',nom:'',email:'',role:'agent'}])}
-                          style={{display:'flex',alignItems:'center',gap:7,padding:'8px 16px',borderRadius:6,background:'rgba(0,120,212,0.1)',border:'1px solid rgba(0,120,212,0.25)',color:'#4da6ff',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
+                          style={{display:'flex',alignItems:'center',gap:7,padding:'8px 16px',borderRadius:6,background:'rgba(0,120,212,0.1)',border:'1px solid rgba(0,120,212,0.25)',color:'#2c85dd',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
                           <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                           Ajouter une ligne
                         </button>
@@ -1915,7 +1915,7 @@ export default function Utilisateurs() {
                                       style={{width:'100%',padding:'8px 8px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:5,fontFamily:'Inter',fontSize:12,color:'#e6edf3',outline:'none'}}
                                       value={row.role}
                                       onChange={e=>setBulkRows(prev=>prev.map((r,j)=>j===i?{...r,role:e.target.value}:r))}>
-                                      {Object.entries(ROLES_LABELS).map(([k,v])=><option key={k} value={k} style={{background:'#1c2434',color:'#e6edf3'}}>{v}</option>)}
+                                      {Object.entries(ROLES_LABELS).map(([k,v])=><option key={k} value={k} style={{background:'#1b1b1b',color:'#e6edf3'}}>{v}</option>)}
                                     </select>
                                   </td>
                                   <td style={{padding:'5px 6px',textAlign:'center'}}>
@@ -2061,15 +2061,15 @@ export default function Utilisateurs() {
                     </div>
                     <div>
                       <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:12}}>Agence de rattachement</div>
-                      <select style={{width:'100%',padding:'10px 13px',background:'#1c2434',border:'1px solid rgba(255,255,255,0.12)',borderRadius:5,fontFamily:'Inter',fontSize:14,color:'#e6edf3',outline:'none',colorScheme:'dark'}}>
-                        <option value="" style={{background:'#1c2434',color:'#e6edf3'}}>{agence?.nom||'Mon organisation'}</option>
+                      <select style={{width:'100%',padding:'10px 13px',background:'#1b1b1b',border:'1px solid rgba(255,255,255,0.12)',borderRadius:5,fontFamily:'Inter',fontSize:14,color:'#e6edf3',outline:'none',colorScheme:'dark'}}>
+                        <option value="" style={{background:'#1b1b1b',color:'#e6edf3'}}>{agence?.nom||'Mon organisation'}</option>
                       </select>
                     </div>
                     <div>
                       <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:8}}>Pays / Région</div>
-                      <select style={{width:'100%',padding:'10px 13px',background:'#1c2434',border:'1px solid rgba(255,255,255,0.12)',borderRadius:5,fontFamily:'Inter',fontSize:14,color:'#e6edf3',outline:'none',colorScheme:'dark'}}>
+                      <select style={{width:'100%',padding:'10px 13px',background:'#1b1b1b',border:'1px solid rgba(255,255,255,0.12)',borderRadius:5,fontFamily:'Inter',fontSize:14,color:'#e6edf3',outline:'none',colorScheme:'dark'}}>
                         {["Bénin","Togo","Côte d'Ivoire","Sénégal","Cameroun","Mali","Niger","Burkina Faso","France","Belgique"].map(p=>(
-                          <option key={p} value={p} style={{background:'#1c2434',color:'#e6edf3'}}>{p}</option>
+                          <option key={p} value={p} style={{background:'#1b1b1b',color:'#e6edf3'}}>{p}</option>
                         ))}
                       </select>
                     </div>
