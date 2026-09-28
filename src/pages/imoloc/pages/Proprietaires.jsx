@@ -432,7 +432,7 @@ export default function ImolocProprietaires() {
         .pp-stat-val{font-size:26px;font-weight:800;letter-spacing:-0.02em;margin-bottom:3px}
         .pp-stat-lbl{font-size:12px;color:rgba(255,255,255,0.35)}
         .pp-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap}
-        .pp-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:Inter,sans-serif;transition:all 0.15s;white-space:nowrap}
+        .pp-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:'Segoe UI',Inter,sans-serif;transition:all 0.15s;white-space:nowrap}
         .pp-btn:hover:not(:disabled){background:rgba(255,255,255,0.09);color:#e6edf3}
         .pp-btn-p{background:#0078d4;border-color:#0078d4;color:#fff}.pp-btn-p:hover:not(:disabled){background:#006cc1}
         .pp-btn-g{background:rgba(0,200,150,0.08);border-color:rgba(0,200,150,0.22);color:#00c896}
@@ -440,7 +440,7 @@ export default function ImolocProprietaires() {
         .pp-sep{width:1px;height:22px;background:rgba(255,255,255,0.08)}
         .pp-search{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:4px;padding:7px 12px;margin-left:auto;transition:border-color 0.15s}
         .pp-search:focus-within{border-color:rgba(0,120,212,0.4)}
-        .pp-search input{background:none;border:none;outline:none;font-family:Inter,sans-serif;font-size:13px;color:#e6edf3;width:220px}
+        .pp-search input{background:none;border:none;outline:none;font-family:'Segoe UI',Inter,sans-serif;font-size:13px;color:#e6edf3;width:220px}
         .pp-search input::placeholder{color:rgba(255,255,255,0.25)}
         .pp-selbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(0,120,212,0.07);border:1px solid rgba(0,120,212,0.18);border-radius:8px;margin-bottom:12px}
         .pp-tw{border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden}
@@ -464,7 +464,7 @@ export default function ImolocProprietaires() {
         .pp-empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.3)}
         .pp-foot{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:rgba(255,255,255,0.3)}
         .pp-vtog{display:flex;gap:2px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:5px;padding:3px}
-        .pp-vbtn{background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:3px;color:rgba(255,255,255,0.4);transition:all 0.15s;font-size:12px;font-family:Inter,sans-serif;display:flex;align-items:center;gap:4px}
+        .pp-vbtn{background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:3px;color:rgba(255,255,255,0.4);transition:all 0.15s;font-size:12px;font-family:'Segoe UI',Inter,sans-serif;display:flex;align-items:center;gap:4px}
         .pp-vbtn.active{background:rgba(255,255,255,0.1);color:#e6edf3}
 
         /* ─ Panel overlay ─ */
@@ -479,7 +479,7 @@ export default function ImolocProprietaires() {
         .pp-pb::-webkit-scrollbar{width:4px}
         .pp-pb::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
         .pp-pf{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-shrink:0}
-        .pp-pfb{flex:1;padding:11px;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:Inter,sans-serif;transition:all 0.15s}
+        .pp-pfb{flex:1;padding:11px;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI',Inter,sans-serif;transition:all 0.15s}
         .pp-pfb-b{background:#0078d4;color:#fff}.pp-pfb-b:hover{background:#006cc1}.pp-pfb-b:disabled{opacity:0.4;cursor:not-allowed}
         .pp-pfb-g{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1)}.pp-pfb-g:hover{background:rgba(255,255,255,0.09)}
 
@@ -514,7 +514,7 @@ export default function ImolocProprietaires() {
         .pp-g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
         .pp-field{margin-bottom:16px}
         .pp-lbl{display:block;font-size:12.5px;font-weight:600;color:rgba(255,255,255,0.5);margin-bottom:7px}
-        .pp-inp{width:100%;padding:9px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-family:Inter,sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s;color-scheme:dark}
+        .pp-inp{width:100%;padding:9px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-family:'Segoe UI',Inter,sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s;color-scheme:dark}
         .pp-inp:focus{border-color:#0078d4;background:rgba(255,255,255,0.07)}
         .pp-sec{font-size:11.5px;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.09em;margin:24px 0 14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.07)}
         
@@ -550,13 +550,13 @@ export default function ImolocProprietaires() {
         .pp-detail-panel{width:min(620px,96vw)}
         .pp-detail-head{padding:24px 28px 0;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
         .pp-detail-tabs{display:flex;margin-top:18px}
-        .pp-detail-tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:Inter,sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap}
+        .pp-detail-tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Segoe UI',Inter,sans-serif;color:rgba(255,255,255,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap}
         .pp-detail-tab:hover{color:rgba(255,255,255,0.75)}
         .pp-detail-tab.active{color:#e6edf3;border-bottom-color:#0078d4}
         .pp-blk{display:flex;flex-direction:column;gap:3px;margin-bottom:22px}
         .pp-blk-lbl{font-size:13px;font-weight:600;color:#e6edf3;margin-bottom:4px}
         .pp-blk-val{font-size:13.5px;color:rgba(255,255,255,0.5)}
-        .pp-blk-link{font-size:13px;color:#0078d4;cursor:pointer;background:none;border:none;font-family:Inter,sans-serif;padding:0;margin-top:2px;display:inline}
+        .pp-blk-link{font-size:13px;color:#0078d4;cursor:pointer;background:none;border:none;font-family:'Segoe UI',Inter,sans-serif;padding:0;margin-top:2px;display:inline}
         .pp-blk-link:hover{text-decoration:underline}
         .pp-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 2.5rem}
         .pp-divider{height:1px;background:rgba(255,255,255,0.07);margin:20px 0}
@@ -1261,10 +1261,10 @@ export default function ImolocProprietaires() {
                     Un email de confirmation a ete envoye au proprietaire. Des qu'il accepte, ses biens et locataires seront automatiquement transferes vers votre agence.
                   </div>
                   <div style={{display:'flex',gap:10,marginTop:12}}>
-                    <button style={{padding:'7px 14px',borderRadius:6,background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.3)',color:'#f59e0b',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
+                    <button style={{padding:'7px 14px',borderRadius:6,background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.3)',color:'#f59e0b',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}}>
                       Renvoyer l'email
                     </button>
-                    <button style={{padding:'7px 14px',borderRadius:6,background:'rgba(239,68,68,0.07)',border:'1px solid rgba(239,68,68,0.2)',color:'#ef4444',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}
+                    <button style={{padding:'7px 14px',borderRadius:6,background:'rgba(239,68,68,0.07)',border:'1px solid rgba(239,68,68,0.2)',color:'#ef4444',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}}
                       onClick={async()=>{
                         await supabase.from('agence_proprietaires').update({statut:'actif'}).eq('proprietaire_id',selectedProp.id).eq('agence_id',agence?.id)
                         toast.success('Validation annulee'); setSelectedProp(null); initData()

@@ -336,16 +336,16 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
         {menuOpen && (
           <div style={{position:'absolute',right:0,top:'100%',background:'#1c2434',border:'1px solid rgba(255,255,255,0.09)',borderRadius:7,zIndex:10,minWidth:160,boxShadow:'0 8px 24px rgba(0,0,0,0.5)',overflow:'hidden'}}>
             <button onClick={()=>{onOpen();setMenuOpen(false)}}
-              style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.65)',fontSize:13,fontFamily:'Inter',width:'100%',textAlign:'left'}}>
+              style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.65)',fontSize:13,fontFamily:'Segoe UI, Inter, sans-serif',width:'100%',textAlign:'left'}}>
               <Play size={11}/> Continuer la conversation
             </button>
             <button onClick={()=>{onFav();setMenuOpen(false)}}
-              style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.65)',fontSize:13,fontFamily:'Inter',width:'100%',textAlign:'left'}}>
+              style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.65)',fontSize:13,fontFamily:'Segoe UI, Inter, sans-serif',width:'100%',textAlign:'left'}}>
               <Star size={11}/> {isFav?'Retirer des favoris':'Mettre en favori'}
             </button>
             <div style={{height:'1px',background:'rgba(255,255,255,0.06)'}}/>
             <button onClick={()=>{onArchive();setMenuOpen(false)}}
-              style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(239,68,68,0.7)',fontSize:13,fontFamily:'Inter',width:'100%',textAlign:'left'}}>
+              style={{display:'flex',alignItems:'center',gap:8,padding:'9px 14px',background:'none',border:'none',cursor:'pointer',color:'rgba(239,68,68,0.7)',fontSize:13,fontFamily:'Segoe UI, Inter, sans-serif',width:'100%',textAlign:'left'}}>
               <Trash2 size={11}/> Archiver / Supprimer
             </button>
           </div>
@@ -382,7 +382,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
 
         /* Tabs */
         .loci-nav{display:flex;gap:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:4px;margin-bottom:24px;width:fit-content}
-        .loci-nav-tab{display:flex;align-items:center;gap:7px;padding:9px 20px;border-radius:7px;font-size:13.5px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;color:rgba(255,255,255,0.4);transition:all 0.2s}
+        .loci-nav-tab{display:flex;align-items:center;gap:7px;padding:9px 20px;border-radius:7px;font-size:13.5px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Segoe UI','Inter',sans-serif;color:rgba(255,255,255,0.4);transition:all 0.2s}
         .loci-nav-tab:hover{color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.04)}
         .loci-nav-tab.active{background:linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,200,150,0.1));color:#e6edf3;border:1px solid rgba(108,99,255,0.25)}
 
@@ -405,7 +405,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
         .loci-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
         .loci-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;animation:loci-fade-up 0.4s ease both}
         .loci-card-title{font-size:12px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:16px;text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;justify-content:space-between}
-        .loci-card-action{font-size:12px;color:#a78bfa;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;background:none;border:none;font-family:'Inter',sans-serif}
+        .loci-card-action{font-size:12px;color:#a78bfa;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;background:none;border:none;font-family:'Segoe UI','Inter',sans-serif}
 
         /* Insights */
         .loci-insight{display:flex;gap:12px;padding:14px;border-radius:10px;margin-bottom:10px;cursor:pointer;border:1px solid;transition:all 0.2s;animation:loci-fade-up 0.4s ease both}
@@ -468,10 +468,10 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
         .loci-thinking span:nth-child(2){animation-delay:0.15s}
         .loci-thinking span:nth-child(3){animation-delay:0.3s}
         .loci-sugs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0}
-        .loci-sug{padding:5px 12px;border-radius:100px;font-size:12px;cursor:pointer;border:1px solid rgba(108,99,255,0.25);background:rgba(108,99,255,0.07);color:rgba(167,139,250,0.85);transition:all 0.15s;white-space:nowrap;font-family:'Inter',sans-serif}
+        .loci-sug{padding:5px 12px;border-radius:100px;font-size:12px;cursor:pointer;border:1px solid rgba(108,99,255,0.25);background:rgba(108,99,255,0.07);color:rgba(167,139,250,0.85);transition:all 0.15s;white-space:nowrap;font-family:'Segoe UI','Inter',sans-serif}
         .loci-sug:hover{background:rgba(108,99,255,0.2);color:#a78bfa;transform:translateY(-1px)}
         .loci-input-row{display:flex;gap:8px;align-items:flex-end;padding:12px 16px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0}
-        .loci-input{flex:1;background:rgba(255,255,255,0.05);border:1.5px solid rgba(108,99,255,0.2);border-radius:10px;padding:10px 14px;font-family:'Inter',sans-serif;font-size:13.5px;color:#e6edf3;outline:none;resize:none;min-height:42px;max-height:120px;transition:border-color 0.2s;line-height:1.5}
+        .loci-input{flex:1;background:rgba(255,255,255,0.05);border:1.5px solid rgba(108,99,255,0.2);border-radius:10px;padding:10px 14px;font-family:'Segoe UI','Inter',sans-serif;font-size:13.5px;color:#e6edf3;outline:none;resize:none;min-height:42px;max-height:120px;transition:border-color 0.2s;line-height:1.5}
         .loci-input:focus{border-color:rgba(108,99,255,0.5);box-shadow:0 0 0 3px rgba(108,99,255,0.08)}
         .loci-input::placeholder{color:rgba(255,255,255,0.25)}
         .loci-send{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#6c63ff,#00c896);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s}
@@ -511,7 +511,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
         @media(max-width:600px){.loci-kpis{grid-template-columns:1fr}.loci-previsions{grid-template-columns:1fr 1fr}}
 
         /* Historique */
-        .loci-hist-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(108,99,255,0.25);background:rgba(108,99,255,0.08);color:#a78bfa;font-family:'Inter',sans-serif;transition:all 0.15s}
+        .loci-hist-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(108,99,255,0.25);background:rgba(108,99,255,0.08);color:#a78bfa;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .loci-hist-btn:hover{background:rgba(108,99,255,0.18)}
         .loci-hist-panel{width:260px;background:#161b22;border:1px solid rgba(108,99,255,0.2);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;animation:loci-fade-up 0.25s ease}
         .loci-hist-head{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
@@ -524,7 +524,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
         .loci-hist-item.active{background:rgba(108,99,255,0.1);border-color:rgba(108,99,255,0.25)}
         .loci-hist-item-title{font-size:12.5px;color:#e6edf3;font-weight:500;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .loci-hist-item-date{font-size:11px;color:rgba(255,255,255,0.3)}
-        .loci-hist-new{display:flex;align-items:center;gap:7px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#a78bfa;border:1px dashed rgba(108,99,255,0.25);margin:8px;transition:all 0.15s;background:none;font-family:'Inter',sans-serif;width:calc(100% - 16px);justify-content:center}
+        .loci-hist-new{display:flex;align-items:center;gap:7px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#a78bfa;border:1px dashed rgba(108,99,255,0.25);margin:8px;transition:all 0.15s;background:none;font-family:'Segoe UI','Inter',sans-serif;width:calc(100% - 16px);justify-content:center}
         .loci-hist-new:hover{background:rgba(108,99,255,0.1)}
         .loci-hist-empty{text-align:center;padding:24px;color:rgba(255,255,255,0.25);font-size:13px}
       `}</style>
@@ -791,7 +791,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                         value={histSearch}
                         onChange={e=>setHistSearch(e.target.value)}
                         placeholder="Rechercher..."
-                        style={{background:'none',border:'none',outline:'none',fontFamily:'Inter',fontSize:12.5,color:'#e6edf3',width:'100%'}}
+                        style={{background:'none',border:'none',outline:'none',fontFamily:'Segoe UI, Inter, sans-serif',fontSize:12.5,color:'#e6edf3',width:'100%'}}
                       />
                     </div>
                   </div>
@@ -887,7 +887,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                 <div style={{fontSize:13.5,color:'rgba(255,255,255,0.4)',maxWidth:600}}>Exploitez vos données immobilières avec des outils d'analyse avancés alimentés par l'IA.</div>
               </div>
               <button onClick={()=>navigate('/agence/loci/chat')}
-                style={{display:'flex',alignItems:'center',gap:8,padding:'10px 18px',borderRadius:8,background:'linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,200,150,0.1))',border:'1px solid rgba(108,99,255,0.3)',color:'#a78bfa',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter',flexShrink:0}}>
+                style={{display:'flex',alignItems:'center',gap:8,padding:'10px 18px',borderRadius:8,background:'linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,200,150,0.1))',border:'1px solid rgba(108,99,255,0.3)',color:'#a78bfa',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif',flexShrink:0}}>
                 <Sparkles size={14}/> Analyser avec Loci
               </button>
             </div>
@@ -945,7 +945,7 @@ ${isBilling ? `🧾 FACTURATION (visible car rôle: ${monRole}):
                   Basé sur vos données actuelles ({stats.biens} biens, {stats.taux}% d'occupation), Loci suggère de lancer une <strong style={{color:'rgba(255,255,255,0.75)'}}>optimisation des loyers</strong> et un <strong style={{color:'rgba(255,255,255,0.75)'}}>rapport de performance mensuel</strong> pour maximiser vos revenus.
                 </div>
                 <button onClick={()=>navigate('/agence/loci/chat')}
-                  style={{marginTop:12,display:'inline-flex',alignItems:'center',gap:7,padding:'8px 16px',borderRadius:7,background:'linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,200,150,0.1))',border:'1px solid rgba(108,99,255,0.3)',color:'#a78bfa',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
+                  style={{marginTop:12,display:'inline-flex',alignItems:'center',gap:7,padding:'8px 16px',borderRadius:7,background:'linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,200,150,0.1))',border:'1px solid rgba(108,99,255,0.3)',color:'#a78bfa',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}}>
                   Discuter avec Loci →
                 </button>
               </div>

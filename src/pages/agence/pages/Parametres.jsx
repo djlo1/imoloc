@@ -101,11 +101,11 @@ export default function Parametres() {
         .par-toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;transition:left 0.2s}
         .par-toggle.on::after{left:23px}
         .par-toggle.off::after{left:3px}
-        .par-select{padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-family:'Inter',sans-serif;font-size:13.5px;color:#e6edf3;outline:none;cursor:pointer;min-width:140px}
+        .par-select{padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-family:'Segoe UI','Inter',sans-serif;font-size:13.5px;color:#e6edf3;outline:none;cursor:pointer;min-width:140px}
         .par-select option{background:#1c2434}
-        .par-input{padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-family:'Inter',sans-serif;font-size:13.5px;color:#e6edf3;outline:none;width:100px}
+        .par-input{padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-family:'Segoe UI','Inter',sans-serif;font-size:13.5px;color:#e6edf3;outline:none;width:100px}
         .par-input:focus{border-color:#0078d4}
-        .pg-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s;margin-top:8px}
+        .pg-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s;margin-top:8px}
         .pg-btn-blue{background:#0078d4;color:#fff}
         .pg-btn-blue:hover{background:#006cc1}
       `}</style>

@@ -96,7 +96,7 @@ export default function Overview() {
       <style>{`
         /* ── Action bar ── */
         .ov-bar{display:flex;align-items:center;background:#1c2434;border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:0 4px;margin-bottom:24px;overflow:hidden}
-        .ov-bar-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;color:rgba(255,255,255,0.55);transition:all 0.1s;text-decoration:none;white-space:nowrap;flex-shrink:0}
+        .ov-bar-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Segoe UI','Inter',sans-serif;color:rgba(255,255,255,0.55);transition:all 0.1s;text-decoration:none;white-space:nowrap;flex-shrink:0}
         .ov-bar-btn:hover{background:rgba(255,255,255,0.06);color:#e6edf3}
         .ov-bar-sep{width:1px;height:20px;background:rgba(255,255,255,0.08);flex-shrink:0}
         .ov-bar-right{margin-left:auto;padding:0 12px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.5);white-space:nowrap}
@@ -105,7 +105,7 @@ export default function Overview() {
 
         /* ── Vue dropdown ── */
         .ov-vd{position:absolute;top:calc(100% + 4px);left:0;background:#1c2434;border:1px solid rgba(255,255,255,0.09);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:500;min-width:240px;overflow:hidden}
-        .ov-vd-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13.5px;color:rgba(255,255,255,0.6);cursor:pointer;transition:background 0.1s;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif}
+        .ov-vd-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13.5px;color:rgba(255,255,255,0.6);cursor:pointer;transition:background 0.1s;border:none;background:none;width:100%;text-align:left;font-family:'Segoe UI','Inter',sans-serif}
         .ov-vd-item:hover{background:rgba(255,255,255,0.05);color:#e6edf3}
         .ov-vd-item.active{color:#4da6ff}
         .ov-vd-check{width:16px;height:16px;flex-shrink:0}
@@ -128,10 +128,10 @@ export default function Overview() {
 
         /* ── Modal ── */
         .ov-form-lbl{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);margin-bottom:7px;text-transform:uppercase;letter-spacing:0.06em}
-        .ov-form-input{width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:7px;font-family:'Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s;margin-bottom:14px}
+        .ov-form-input{width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:7px;font-family:'Segoe UI','Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s;margin-bottom:14px}
         .ov-form-input:focus{border-color:#0078d4}
         .ov-form-input option{background:#1c2434}
-        .ov-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:6px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
+        .ov-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:6px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .ov-btn-blue{background:#0078d4;color:#fff}
         .ov-btn-blue:hover{background:#006cc1}
         .ov-btn-ghost{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.09)}
@@ -148,7 +148,7 @@ export default function Overview() {
         .ov-simple-status{display:flex;align-items:center;gap:7px;font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:8px}
         .ov-simple-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
         .ov-simple-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
-        .ov-simple-btn{padding:7px 14px;border-radius:5px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+        .ov-simple-btn{padding:7px 14px;border-radius:5px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
         .ov-simple-btn.blue{background:rgba(0,120,212,0.15);color:#4da6ff;border:1px solid rgba(0,120,212,0.25)}
         .ov-simple-btn.blue:hover{background:rgba(0,120,212,0.25)}
         .ov-simple-btn.ghost{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.08)}
@@ -162,7 +162,7 @@ export default function Overview() {
         .ov-card-title{font-size:13px;font-weight:600;color:rgba(255,255,255,0.5)}
         .ov-card-more{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.2);font-size:16px;padding:0}
         .ov-org-tabs{display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,0.07);margin-bottom:14px}
-        .ov-org-tab{padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;color:rgba(255,255,255,0.4);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s}
+        .ov-org-tab{padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'Segoe UI','Inter',sans-serif;color:rgba(255,255,255,0.4);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s}
         .ov-org-tab.active{color:#e6edf3;border-bottom-color:#0078d4}
         .ov-table{width:100%;border-collapse:collapse}
         .ov-table th{font-size:11px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.07em;padding:7px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.05)}

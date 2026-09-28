@@ -129,10 +129,10 @@ export default function NotificationsPanel({ userId, agenceId }) {
         .notif-head{padding:16px 18px 12px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
         .notif-head-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
         .notif-title{font-size:15px;font-weight:700;color:#e6edf3}
-        .notif-mark-all{background:none;border:none;cursor:pointer;color:#0078d4;font-size:12.5px;font-family:'Inter',sans-serif;padding:0;font-weight:500;transition:color 0.1s}
+        .notif-mark-all{background:none;border:none;cursor:pointer;color:#0078d4;font-size:12.5px;font-family:'Segoe UI','Inter',sans-serif;padding:0;font-weight:500;transition:color 0.1s}
         .notif-mark-all:hover{color:#4da6ff;text-decoration:underline}
         .notif-filters{display:flex;gap:4px}
-        .notif-filter{padding:5px 12px;border-radius:100px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.45);font-family:'Inter',sans-serif;transition:all 0.15s}
+        .notif-filter{padding:5px 12px;border-radius:100px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.45);font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .notif-filter:hover{background:rgba(255,255,255,0.09);color:#e6edf3}
         .notif-filter.active{background:rgba(0,120,212,0.15);color:#4da6ff}
         .notif-list{flex:1;overflow-y:auto}

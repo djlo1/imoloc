@@ -12,7 +12,7 @@ export default function Securite() {
         .sec-row-info{}
         .sec-row-title{font-size:14px;font-weight:500;color:#e6edf3;margin-bottom:3px}
         .sec-row-sub{font-size:12.5px;color:rgba(255,255,255,0.35)}
-        .sec-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);font-family:'Inter',sans-serif;transition:all 0.15s}
+        .sec-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .sec-btn:hover{background:rgba(255,255,255,0.09);color:#e6edf3}
         .sec-btn-blue{border-color:rgba(0,120,212,0.3);background:rgba(0,120,212,0.1);color:#4da6ff}
         .sec-btn-blue:hover{background:rgba(0,120,212,0.18)}

@@ -25,7 +25,7 @@ export default function Integrations() {
         .int-status.bientot{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.35)}
         .int-card-name{font-size:14px;font-weight:600;color:#e6edf3;margin-bottom:6px}
         .int-card-desc{font-size:12.5px;color:rgba(255,255,255,0.35);line-height:1.6;margin-bottom:18px}
-        .int-btn{width:100%;padding:9px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
+        .int-btn{width:100%;padding:9px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .int-btn.blue{background:rgba(0,120,212,0.15);color:#4da6ff;border:1px solid rgba(0,120,212,0.25)}
         .int-btn.blue:hover{background:rgba(0,120,212,0.25)}
         .int-btn.disabled{background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.06);cursor:not-allowed}

@@ -235,7 +235,7 @@ export default function AddTeamModal({ onClose, agenceId, agenceName='Mon organi
           onChange={e=>{setSearch(e.target.value);setOpen(true)}}
           onFocus={()=>setOpen(true)}
           placeholder={selected.length===0?placeholder:''}
-          style={{background:'none',border:'none',outline:'none',fontFamily:'Inter',fontSize:13.5,color:'#e6edf3',minWidth:160,flex:1}}
+          style={{background:'none',border:'none',outline:'none',fontFamily:'Segoe UI, Inter, sans-serif',fontSize:13.5,color:'#e6edf3',minWidth:160,flex:1}}
         />
       </div>
       {open && (
@@ -303,9 +303,9 @@ export default function AddTeamModal({ onClose, agenceId, agenceName='Mon organi
         .at-lbl{display:block;font-size:13px;font-weight:600;color:#e6edf3;margin-bottom:8px}
         .at-lbl span{color:#ef4444;margin-left:2px}
         .at-lbl-sub{font-size:12px;color:rgba(255,255,255,0.35);font-weight:400;margin-left:6px}
-        .at-input{width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;font-family:'Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s;margin-bottom:20px}
+        .at-input{width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;font-family:'Segoe UI','Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s;margin-bottom:20px}
         .at-input:focus{border-color:#0078d4;background:rgba(255,255,255,0.07)}
-        .at-textarea{width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;font-family:'Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;resize:vertical;min-height:100px;transition:border-color 0.15s;margin-bottom:6px}
+        .at-textarea{width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;font-family:'Segoe UI','Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;resize:vertical;min-height:100px;transition:border-color 0.15s;margin-bottom:6px}
         .at-textarea:focus{border-color:#0078d4}
         .at-info-box{display:flex;gap:10px;padding:12px 14px;border-radius:6px;background:rgba(0,120,212,0.08);border:1px solid rgba(0,120,212,0.2);margin-bottom:22px;font-size:13px;color:rgba(255,255,255,0.5);line-height:1.55}
         .at-warn-box{display:flex;gap:10px;padding:12px 14px;border-radius:6px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);margin-bottom:22px;font-size:13px;color:rgba(255,255,255,0.5);line-height:1.55}
@@ -324,7 +324,7 @@ export default function AddTeamModal({ onClose, agenceId, agenceName='Mon organi
         .at-agence-add:hover{border-color:rgba(0,120,212,0.4);color:#4da6ff;background:rgba(0,120,212,0.05)}
         .at-summary-section{margin-bottom:20px}
         .at-summary-head{font-size:12px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
-        .at-summary-edit{font-size:12px;color:#4da6ff;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif}
+        .at-summary-edit{font-size:12px;color:#4da6ff;cursor:pointer;background:none;border:none;font-family:'Segoe UI','Inter',sans-serif}
         .at-summary-edit:hover{text-decoration:underline}
         .at-summary-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:14px 16px}
         .at-summary-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13.5px}
@@ -335,7 +335,7 @@ export default function AddTeamModal({ onClose, agenceId, agenceName='Mon organi
         .at-foot{padding:18px 32px;border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#161b22}
         .at-foot-left{font-size:13px;color:rgba(255,255,255,0.3)}
         .at-foot-btns{display:flex;gap:10px}
-        .at-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 22px;border-radius:4px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
+        .at-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 22px;border-radius:4px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .at-btn-blue{background:#0078d4;color:#fff}
         .at-btn-blue:hover:not(:disabled){background:#006cc1}
         .at-btn-blue:disabled{opacity:0.4;cursor:not-allowed}

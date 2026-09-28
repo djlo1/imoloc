@@ -91,7 +91,7 @@ export default function Nouveautes() {
         .nv-version-lbl{font-size:12px;color:rgba(255,255,255,0.35);margin-top:4px}
 
         .nv-filters{display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap}
-        .nv-filter{padding:7px 16px;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s}
+        .nv-filter{padding:7px 16px;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .nv-filter:hover{background:rgba(255,255,255,0.08);color:#e6edf3}
         .nv-filter.active{background:rgba(0,120,212,0.12);border-color:rgba(0,120,212,0.3);color:#4da6ff}
 
@@ -281,7 +281,7 @@ export default function Nouveautes() {
 
             <div className="nv-modal-foot">
               <button onClick={()=>setSelected(null)}
-                style={{padding:'10px 24px',borderRadius:6,background:'#0078d4',border:'none',color:'#fff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>
+                style={{padding:'10px 24px',borderRadius:6,background:'#0078d4',border:'none',color:'#fff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}}>
                 Fermer
               </button>
             </div>

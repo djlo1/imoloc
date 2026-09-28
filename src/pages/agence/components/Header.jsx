@@ -101,7 +101,7 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
         .hd3-center{flex:1;display:flex;align-items:center;justify-content:center;padding:0 16px}
         .hd3-search{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:4px;padding:7px 14px;width:100%;max-width:600px;transition:all 0.15s}
         .hd3-search:focus-within{border-color:rgba(0,120,212,0.5);background:rgba(255,255,255,0.09)}
-        .hd3-search input{background:none;border:none;outline:none;font-family:'Inter',sans-serif;font-size:13px;color:#e6edf3;width:100%}
+        .hd3-search input{background:none;border:none;outline:none;font-family:'Segoe UI','Inter',sans-serif;font-size:13px;color:#e6edf3;width:100%}
         .hd3-search input::placeholder{color:rgba(255,255,255,0.25)}
         .hd3-search-hint{font-size:11px;color:rgba(255,255,255,0.2);flex-shrink:0;white-space:nowrap}
 
@@ -140,7 +140,7 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
         .hd3-settings-item:hover{background:rgba(255,255,255,0.04)}
         .hd3-settings-left{display:flex;align-items:center;gap:10px;font-size:13.5px;color:rgba(255,255,255,0.65)}
         .hd3-theme-btns{display:flex;gap:4px}
-        .hd3-theme-btn{padding:5px 10px;border-radius:5px;font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.45);font-family:'Inter',sans-serif;transition:all 0.15s}
+        .hd3-theme-btn{padding:5px 10px;border-radius:5px;font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.45);font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .hd3-theme-btn.active{background:rgba(0,120,212,0.2);border-color:rgba(0,120,212,0.4);color:#4da6ff}
 
         /* Nouveautés */
@@ -156,7 +156,7 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
         .hd3-profile-menu{width:260px;top:calc(100% + 4px);right:0}
         .hd3-profile-head{padding:16px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:12px}
         .hd3-profile-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0078d4,#6c63ff);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0}
-        .hd3-profile-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13.5px;color:rgba(255,255,255,0.55);cursor:pointer;transition:all 0.1s;text-decoration:none;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif}
+        .hd3-profile-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13.5px;color:rgba(255,255,255,0.55);cursor:pointer;transition:all 0.1s;text-decoration:none;border:none;background:none;width:100%;text-align:left;font-family:'Segoe UI','Inter',sans-serif}
         .hd3-profile-item:hover{background:rgba(255,255,255,0.04);color:#e6edf3}
         .hd3-profile-sep{height:1px;background:rgba(255,255,255,0.06);margin:4px 0}
         .hd3-profile-danger:hover{background:rgba(239,68,68,0.07)!important;color:#ef4444!important}
@@ -289,10 +289,10 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
                 <Link to="/agence/nouveautes" className="hd3-settings-item" onClick={closeAll} style={{display:'flex',alignItems:'center',justifyContent:'space-between',textDecoration:'none',color:'inherit'}}>
                   <span className="hd3-settings-left">Nouveautes {unreadNouveautes>0 && <span style={{marginLeft:6,width:8,height:8,borderRadius:'50%',background:'#0078d4',display:'inline-block'}}/>}</span>
                 </Link>
-                <button className="hd3-settings-item" onClick={()=>{setMoreOpen(false);setNotifOpen(true)}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',border:'none',background:'none',cursor:'pointer',fontFamily:'Inter,sans-serif'}}>
+                <button className="hd3-settings-item" onClick={()=>{setMoreOpen(false);setNotifOpen(true)}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',border:'none',background:'none',cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}}>
                   <span className="hd3-settings-left">Notifications {unreadCount>0 && <span style={{marginLeft:6,fontSize:11,color:'#ef4444'}}>({unreadCount})</span>}</span>
                 </button>
-                <button className="hd3-settings-item" onClick={()=>{setMoreOpen(false);setSettingsOpen(true)}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',border:'none',background:'none',cursor:'pointer',fontFamily:'Inter,sans-serif'}}>
+                <button className="hd3-settings-item" onClick={()=>{setMoreOpen(false);setSettingsOpen(true)}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',border:'none',background:'none',cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}}>
                   <span className="hd3-settings-left">Parametres</span>
                 </button>
                 <div className="hd3-settings-item" style={{cursor:'default'}}>
@@ -326,7 +326,7 @@ export default function Header({ onMenuClick, onToggleSidebar }) {
               <div className="hd3-drop hd3-notif-menu" style={{position:'absolute'}}>
                 <div className="hd3-notif-head">
                   <span style={{fontSize:14,fontWeight:600,color:'#e6edf3'}}>Notifications</span>
-                  <button style={{fontSize:12,color:'#4da6ff',background:'none',border:'none',cursor:'pointer',fontFamily:'Inter'}}>Tout marquer comme lu</button>
+                  <button style={{fontSize:12,color:'#4da6ff',background:'none',border:'none',cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}}>Tout marquer comme lu</button>
                 </div>
                 <div style={{maxHeight:300,overflowY:'auto'}}>
                   {NOTIFS.map((n,i) => (

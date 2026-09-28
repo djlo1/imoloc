@@ -49,13 +49,13 @@ export default function Locataires() {
       <style>{`
         .pg-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
         .pg-title{font-size:18px;font-weight:700;color:#e6edf3}
-        .pg-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
+        .pg-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .pg-btn-blue{background:#0078d4;color:#fff}
         .pg-btn-blue:hover{background:#006cc1}
         .pg-btn-ghost{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.08)}
         .pg-btn-ghost:hover{background:rgba(255,255,255,0.08);color:#e6edf3}
         .pg-search{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 14px;margin-bottom:20px}
-        .pg-search input{background:none;border:none;outline:none;font-family:'Inter',sans-serif;font-size:13.5px;color:#e6edf3;width:100%}
+        .pg-search input{background:none;border:none;outline:none;font-family:'Segoe UI','Inter',sans-serif;font-size:13.5px;color:#e6edf3;width:100%}
         .pg-search input::placeholder{color:rgba(255,255,255,0.22)}
         .loc-table{width:100%;border-collapse:collapse}
         .loc-table th{font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;padding:10px 16px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02)}
@@ -80,7 +80,7 @@ export default function Locataires() {
         .form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
         .form-field{margin-bottom:14px}
         .form-lbl{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);margin-bottom:7px;text-transform:uppercase;letter-spacing:0.06em}
-        .form-input{width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s}
+        .form-input{width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;font-family:'Segoe UI','Inter',sans-serif;font-size:14px;color:#e6edf3;outline:none;transition:border-color 0.15s}
         .form-input:focus{border-color:#0078d4}
         .form-section{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(0,120,212,0.7);margin:18px 0 14px;display:flex;align-items:center;gap:10px}
         .form-section::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.06)}

@@ -22,7 +22,7 @@ export default function Rapports() {
         .rap-card-title{font-size:15px;font-weight:600;color:#e6edf3;margin-bottom:6px}
         .rap-card-desc{font-size:13px;color:rgba(255,255,255,0.35);line-height:1.6;margin-bottom:18px}
         .rap-btns{display:flex;gap:8px}
-        .rap-btn{padding:7px 14px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
+        .rap-btn{padding:7px 14px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .rap-btn-ghost{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.08)}
         .rap-btn-ghost:hover{background:rgba(255,255,255,0.08);color:#e6edf3}
         @media(max-width:900px){.rap-grid{grid-template-columns:repeat(2,1fr)}}

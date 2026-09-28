@@ -96,11 +96,11 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
         .sb3-nav{flex:1;overflow-y:auto;padding:8px 0}
         .sb3-nav::-webkit-scrollbar{width:3px}
         .sb3-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
-        .sb3-item{display:flex;align-items:center;gap:10px;padding:7px ${collapsed?'14px':'14px'};cursor:pointer;transition:background 0.1s;position:relative;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;color:rgba(255,255,255,0.5);font-size:13px;font-weight:400;white-space:nowrap;overflow:hidden;text-decoration:none}
+        .sb3-item{display:flex;align-items:center;gap:10px;padding:7px ${collapsed?'14px':'14px'};cursor:pointer;transition:background 0.1s;position:relative;border:none;background:none;width:100%;text-align:left;font-family:'Segoe UI','Inter',sans-serif;color:rgba(255,255,255,0.5);font-size:13px;font-weight:400;white-space:nowrap;overflow:hidden;text-decoration:none}
         .sb3-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.85)}
         .sb3-item.active{background:rgba(0,120,212,0.12);color:#4da6ff}
         .sb3-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:#0078d4}
-        .sb3-loci{display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;transition:all 0.15s;position:relative;border:none;width:100%;text-align:left;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-decoration:none;background:linear-gradient(135deg,rgba(108,99,255,0.08),rgba(0,200,150,0.08));border-left:2px solid transparent;color:rgba(255,255,255,0.7)}
+        .sb3-loci{display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;transition:all 0.15s;position:relative;border:none;width:100%;text-align:left;font-family:'Segoe UI','Inter',sans-serif;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-decoration:none;background:linear-gradient(135deg,rgba(108,99,255,0.08),rgba(0,200,150,0.08));border-left:2px solid transparent;color:rgba(255,255,255,0.7)}
         .sb3-loci:hover{background:linear-gradient(135deg,rgba(108,99,255,0.15),rgba(0,200,150,0.15));color:#e6edf3}
         .sb3-loci.active{border-left-color:#6c63ff;color:#a78bfa}
         .sb3-loci-icon{width:16px;height:16px;flex-shrink:0;background:linear-gradient(135deg,#6c63ff,#00c896);border-radius:50%;display:flex;align-items:center;justify-content:center}
@@ -115,7 +115,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
         .sb3-sub-section{padding:7px 14px 3px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.2);text-transform:uppercase;letter-spacing:0.07em}
         .sb3-sep{height:1px;background:rgba(255,255,255,0.06);margin:6px 0}
         .sb3-section{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:8px 14px 4px;white-space:nowrap;overflow:hidden}
-        .sb3-admin{display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:12.5px;color:rgba(255,255,255,0.4);transition:all 0.1s;text-decoration:none;white-space:nowrap;overflow:hidden;border:none;background:none;font-family:'Inter',sans-serif;width:100%;text-align:left}
+        .sb3-admin{display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:12.5px;color:rgba(255,255,255,0.4);transition:all 0.1s;text-decoration:none;white-space:nowrap;overflow:hidden;border:none;background:none;font-family:'Segoe UI','Inter',sans-serif;width:100%;text-align:left}
         .sb3-admin:hover{color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.04)}
         .sb3-admin.active{color:#4da6ff}
         .sb3-footer{padding:8px;border-top:1px solid rgba(255,255,255,0.06)}

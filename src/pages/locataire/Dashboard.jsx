@@ -203,24 +203,24 @@ export default function DashboardLocataire() {
   const paieMois = paiementDuMois()
   const prochainPaie = bail ? new Date(new Date().getFullYear(), new Date().getMonth(), 1) : null
 
-  const inp = {width:'100%',padding:'12px 14px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:10,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:14,outline:'none',colorScheme:'dark',boxSizing:'border-box'}
+  const inp = {width:'100%',padding:'12px 14px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:10,color:'#e6edf3',fontFamily:'Segoe UI, Inter, sans-serif',fontSize:14,outline:'none',colorScheme:'dark',boxSizing:'border-box'}
   const lbl = {display:'block',fontSize:12,fontWeight:600,color:'rgba(255,255,255,0.5)',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.05em'}
-  const bP = {width:'100%',padding:'14px',borderRadius:12,border:'none',background:'linear-gradient(135deg,#10b981,#059669)',color:'#fff',fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Inter,sans-serif'}
-  const bS = {width:'100%',padding:'14px',borderRadius:12,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.05)',color:'rgba(255,255,255,0.7)',fontSize:14,fontWeight:500,cursor:'pointer',fontFamily:'Inter,sans-serif'}
+  const bP = {width:'100%',padding:'14px',borderRadius:12,border:'none',background:'linear-gradient(135deg,#10b981,#059669)',color:'#fff',fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}
+  const bS = {width:'100%',padding:'14px',borderRadius:12,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.05)',color:'rgba(255,255,255,0.7)',fontSize:14,fontWeight:500,cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}
 
   if (loading) return (
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100vh',background:'#0a0f1a',gap:16}}>
       <div style={{width:48,height:48,border:'3px solid rgba(16,185,129,0.2)',borderTop:'3px solid #10b981',borderRadius:'50%',animation:'spin 0.8s linear infinite'}}/>
-      <div style={{color:'rgba(255,255,255,0.4)',fontSize:14,fontFamily:'Inter,sans-serif'}}>Chargement...</div>
+      <div style={{color:'rgba(255,255,255,0.4)',fontSize:14,fontFamily:'Segoe UI, Inter, sans-serif'}}>Chargement...</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 
   return (
-    <div style={{maxWidth:480,margin:'0 auto',minHeight:'100vh',background:'#0a0f1a',fontFamily:'Inter,sans-serif',paddingBottom:80,position:'relative'}}>
+    <div style={{maxWidth:480,margin:'0 auto',minHeight:'100vh',background:'#0a0f1a',fontFamily:'Segoe UI, Inter, sans-serif',paddingBottom:80,position:'relative'}}>
       <style>{`
         *{box-sizing:border-box}
-        .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:none;background:none;cursor:pointer;transition:all 0.15s;font-family:Inter,sans-serif}
+        .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:none;background:none;cursor:pointer;transition:all 0.15s;font-family:'Segoe UI',Inter,sans-serif}
         .tab-icon{font-size:20px;line-height:1}
         .tab-label{font-size:10px;font-weight:500}
         .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;margin-bottom:14px}
@@ -329,7 +329,7 @@ export default function DashboardLocataire() {
                     {icon:Megaphone,label:'Signaler un probleme',color:'#f59e0b',action:()=>setShowPlainteModal(true)},
                     {icon:FileText,label:'Mes documents',color:'#0078d4',action:()=>setTab('documents')},
                   ].map(({icon:Icon,label,color,action})=>(
-                    <button key={label} onClick={action} style={{padding:'16px 12px',borderRadius:14,border:`1px solid ${color}33`,background:color+'0d',cursor:'pointer',textAlign:'center',fontFamily:'Inter,sans-serif'}}>
+                    <button key={label} onClick={action} style={{padding:'16px 12px',borderRadius:14,border:`1px solid ${color}33`,background:color+'0d',cursor:'pointer',textAlign:'center',fontFamily:'Segoe UI, Inter, sans-serif'}}>
                       <div style={{marginBottom:6,display:'flex',justifyContent:'center',color}}><Icon size={26}/></div>
                       <div style={{fontSize:12,fontWeight:600,color,lineHeight:1.3}}>{label}</div>
                     </button>
@@ -393,7 +393,7 @@ export default function DashboardLocataire() {
                   <div style={{fontSize:14,fontWeight:600,color:'#e6edf3'}}>{label}</div>
                   <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:2}}>{sub}</div>
                 </div>
-                {available && <button style={{padding:'8px 14px',borderRadius:8,border:`1px solid ${color}33`,background:color+'12',color:color,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Voir</button>}
+                {available && <button style={{padding:'8px 14px',borderRadius:8,border:`1px solid ${color}33`,background:color+'12',color:color,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}}>Voir</button>}
               </div>
             ))}
             <div className="card" style={{marginTop:20}}>

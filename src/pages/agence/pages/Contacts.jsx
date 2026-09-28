@@ -136,14 +136,14 @@ export default function Contacts() {
         .ct-mode:hover{background:rgba(255,255,255,0.06);color:#e6edf3}
         .ct-desc{font-size:13.5px;color:rgba(255,255,255,0.45);line-height:1.7;margin-bottom:22px;max-width:800px}
         .ct-toolbar{display:flex;align-items:center;gap:2px;margin-bottom:20px}
-        .ct-tbtn{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:#e6edf3;font-family:'Inter',sans-serif;transition:all 0.15s;white-space:nowrap;position:relative}
+        .ct-tbtn{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:#e6edf3;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s;white-space:nowrap;position:relative}
         .ct-tbtn:hover{background:rgba(255,255,255,0.07)}
         .ct-tbtn svg{color:#0078d4}
         .ct-tbtn-tooltip{position:absolute;top:calc(100% + 6px);left:0;background:#000;color:#fff;font-size:12px;padding:5px 10px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:10}
         .ct-tbtn:hover .ct-tbtn-tooltip{opacity:1}
         .ct-search-wrap{display:flex;align-items:center;gap:6px;margin-left:auto}
         .ct-search{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:3px;padding:7px 12px;min-width:260px}
-        .ct-search input{background:none;border:none;outline:none;font-family:'Inter',sans-serif;font-size:13px;color:#e6edf3;width:100%}
+        .ct-search input{background:none;border:none;outline:none;font-family:'Segoe UI','Inter',sans-serif;font-size:13px;color:#e6edf3;width:100%}
         .ct-search input::placeholder{color:rgba(255,255,255,0.3)}
         .ct-filter-btn{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);padding:7px;display:flex;transition:color 0.1s}
         .ct-filter-btn:hover{color:#e6edf3}
@@ -176,7 +176,7 @@ export default function Contacts() {
         .ct-field{margin-bottom:14px}
         .ct-lbl{display:block;font-size:13px;color:rgba(255,255,255,0.65);margin-bottom:6px}
         .ct-input-wrap{position:relative}
-        .ct-input{width:100%;padding:8px 32px 8px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:2px;font-family:'Inter',sans-serif;font-size:13.5px;color:#e6edf3;outline:none;transition:border-color 0.15s}
+        .ct-input{width:100%;padding:8px 32px 8px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:2px;font-family:'Segoe UI','Inter',sans-serif;font-size:13.5px;color:#e6edf3;outline:none;transition:border-color 0.15s}
         .ct-input:focus{border-color:#0078d4}
         .ct-req{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#ef4444;font-size:14px;font-weight:700;pointer-events:none}
         .ct-check-row{display:flex;align-items:center;gap:10px;margin-bottom:18px;cursor:pointer}
@@ -184,7 +184,7 @@ export default function Contacts() {
         .ct-cb.on{background:#0078d4;border-color:#0078d4}
         .ct-accord-head{display:flex;align-items:center;justify-content:space-between;padding:12px 0;cursor:pointer;border-top:1px solid rgba(255,255,255,0.07)}
         .ct-accord-lbl{font-size:13.5px;font-weight:600;color:rgba(255,255,255,0.7)}
-        .ct-add-btn{padding:9px 22px;border-radius:3px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s;background:#0078d4;color:#fff}
+        .ct-add-btn{padding:9px 22px;border-radius:3px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s;background:#0078d4;color:#fff}
         .ct-add-btn:disabled{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);cursor:not-allowed}
         .ct-add-btn:not(:disabled):hover{background:#006cc1}
 
@@ -196,21 +196,21 @@ export default function Contacts() {
         .ct-rules{padding-left:18px;margin-bottom:20px}
         .ct-rules li{font-size:13px;color:rgba(255,255,255,0.5);line-height:1.8;margin-bottom:2px}
         .ct-upload-row{display:flex;gap:0;margin-top:10px}
-        .ct-upload-input{flex:1;padding:'9px 12px';background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-right:none;border-radius:'2px 0 0 2px';font-family:'Inter',sans-serif;font-size:13px;color:'rgba(255,255,255,0.4)';outline:'none'}
-        .ct-upload-browse{padding:'9px 20px';background:#0078d4;border:none;border-radius:'0 2px 2px 0';color:#fff;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+        .ct-upload-input{flex:1;padding:'9px 12px';background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-right:none;border-radius:'2px 0 0 2px';font-family:'Segoe UI','Inter',sans-serif;font-size:13px;color:'rgba(255,255,255,0.4)';outline:'none'}
+        .ct-upload-browse{padding:'9px 20px';background:#0078d4;border:none;border-radius:'0 2px 2px 0';color:#fff;font-family:'Segoe UI','Inter',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
         .ct-cb-cell{width:44px;text-align:center}
         .ct-cb2{width:15px;height:15px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.12s;margin:0 auto;flex-shrink:0}
         .ct-cb2.on{background:#0078d4;border-color:#0078d4}
         .ct-cb2.half{background:rgba(0,120,212,0.3);border-color:#0078d4}
         .ct-selbar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(0,120,212,0.07);border:1px solid rgba(0,120,212,0.18);border-radius:8px;margin-bottom:12px;animation:ct-sl 0.2s ease}
         .ct-selbar-txt{font-size:13px;color:#4da6ff;font-weight:500;flex:1}
-        .ct-action-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:4px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:'Inter',sans-serif;transition:all 0.15s}
+        .ct-action-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:4px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .ct-action-btn:hover{background:rgba(255,255,255,0.09);color:#e6edf3}
         .ct-action-btn.red{border-color:rgba(239,68,68,0.22);background:rgba(239,68,68,0.07);color:#ef4444}
         .ct-action-btn.red:hover{background:rgba(239,68,68,0.15)}
         .ct-row-menu{position:relative}
         .ct-row-dd{position:absolute;right:0;top:calc(100% + 4px);background:#1c2434;border:1px solid rgba(255,255,255,0.1);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:50;min-width:180px;overflow:hidden}
-        .ct-row-ddi{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:13px;color:rgba(255,255,255,0.65);cursor:pointer;transition:background 0.1s;border:none;background:none;font-family:'Inter',sans-serif;width:100%;text-align:left}
+        .ct-row-ddi{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:13px;color:rgba(255,255,255,0.65);cursor:pointer;transition:background 0.1s;border:none;background:none;font-family:'Segoe UI','Inter',sans-serif;width:100%;text-align:left}
         .ct-row-ddi:hover{background:rgba(255,255,255,0.05);color:#e6edf3}
         .ct-row-ddi.red:hover{background:rgba(239,68,68,0.08);color:#ef4444}
         .ct-col-panel{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:300;display:flex;justify-content:flex-end}
@@ -552,7 +552,7 @@ export default function Contacts() {
                   <div style={{flex:1,padding:'9px 12px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.12)',borderRight:'none',borderRadius:'2px 0 0 2px',fontSize:13,color:csvFile?'#e6edf3':'rgba(255,255,255,0.3)'}}>
                     {csvFile?csvFile.name:'Aucun fichier sélectionné'}
                   </div>
-                  <label style={{padding:'9px 20px',background:'#0078d4',border:'none',borderRadius:'0 2px 2px 0',color:'#fff',fontFamily:'Inter',fontSize:13.5,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',display:'flex',alignItems:'center'}}>
+                  <label style={{padding:'9px 20px',background:'#0078d4',border:'none',borderRadius:'0 2px 2px 0',color:'#fff',fontFamily:'Segoe UI, Inter, sans-serif',fontSize:13.5,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',display:'flex',alignItems:'center'}}>
                     Parcourir
                     <input type="file" accept=".csv" style={{display:'none'}} onChange={async(e)=>{
                       const file = e.target.files[0]
@@ -609,8 +609,8 @@ export default function Contacts() {
               ))}
             </div>
             <div style={{padding:'14px 20px',borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',gap:10}}>
-              <button onClick={()=>setVisibleCols(['display','email','entreprise','tel_bureau','tel_mobile','synch'])} style={{flex:1,padding:'9px',borderRadius:5,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',color:'rgba(255,255,255,0.6)',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>Rétablir</button>
-              <button onClick={()=>setShowColsPanel(false)} style={{flex:1,padding:'9px',borderRadius:5,background:'#0078d4',border:'none',color:'#fff',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter'}}>Enregistrer</button>
+              <button onClick={()=>setVisibleCols(['display','email','entreprise','tel_bureau','tel_mobile','synch'])} style={{flex:1,padding:'9px',borderRadius:5,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',color:'rgba(255,255,255,0.6)',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}}>Rétablir</button>
+              <button onClick={()=>setShowColsPanel(false)} style={{flex:1,padding:'9px',borderRadius:5,background:'#0078d4',border:'none',color:'#fff',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}}>Enregistrer</button>
             </div>
           </div>
         </div>
