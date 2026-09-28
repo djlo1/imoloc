@@ -22,11 +22,14 @@ serve(async (req) => {
       .select()
       .single()
 
-    // Si paiement reussi -> activer l abonnement
+    // Si paiement reussi -> activer l abonnement (repart a 'actif' meme si
+    // l abonnement etait en_attente/suspendu — paiement tardif = reactivation)
     if (status === 'COMPLETED' && tx) {
+      const periode = tx.periode || 'mensuel'
       const dateDebut = new Date()
       const dateFin = new Date()
-      dateFin.setMonth(dateFin.getMonth() + 1)
+      if (periode === 'annuel') dateFin.setFullYear(dateFin.getFullYear() + 1)
+      else dateFin.setMonth(dateFin.getMonth() + 1)
 
       await supabase.from('abonnements').upsert({
         agence_id: tx.agence_id,
@@ -34,11 +37,31 @@ serve(async (req) => {
         statut: 'actif',
         date_debut: dateDebut.toISOString().split('T')[0],
         date_fin: dateFin.toISOString().split('T')[0],
+        grace_fin: null,
+        periode,
         prix_mensuel: tx.amount,
         renouvellement_auto: true,
         reference_paiement: depositId,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'agence_id' })
+
+      // Sieges Imoloc Manager choisis par l organisation : le total reel
+      // (inclus + achete) doit refleter nombre_licences ; on ne stocke dans
+      // agence_licences_achetees que la part au-dela de l inclus du palier.
+      const { data: plan } = await supabase.from('plans').select('id').eq('code', tx.plan_id).maybeSingle()
+      const { data: licenceManager } = await supabase.from('licences').select('id').eq('type', 'imoloc_standard').maybeSingle()
+      if (plan?.id && licenceManager?.id) {
+        const { data: pl } = await supabase.from('plans_licences').select('licences_incluses')
+          .eq('plan_id', plan.id).eq('licence_id', licenceManager.id).maybeSingle()
+        const inclus = pl?.licences_incluses ?? 0
+        const quantite = Math.max(0, (tx.nombre_licences || 0) - inclus)
+        await supabase.from('agence_licences_achetees').upsert({
+          agence_id: tx.agence_id,
+          licence_id: licenceManager.id,
+          quantite,
+          mis_a_jour_le: new Date().toISOString(),
+        }, { onConflict: 'agence_id,licence_id' })
+      }
 
       // Creer la facture
       await supabase.from('factures').insert({
@@ -48,7 +71,7 @@ serve(async (req) => {
         devise: tx.currency,
         statut: 'paye',
         date_paiement: new Date().toISOString(),
-        details: { plan: tx.plan_id, methode: 'Mobile Money', operateur: tx.correspondent, phone: tx.phone },
+        details: { plan: tx.plan_id, methode: 'Mobile Money', operateur: tx.correspondent, phone: tx.phone, nombre_licences: tx.nombre_licences || 0 },
       })
 
       // Notification

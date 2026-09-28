@@ -9,7 +9,7 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   try {
-    const { amount, currency, phone, correspondent, agence_id, plan_id } = await req.json()
+    const { amount, currency, phone, correspondent, agence_id, plan_id, nombre_licences, periode } = await req.json()
 
     if (!amount || !phone || !correspondent) {
       return new Response(JSON.stringify({ success: false, error: 'Parametres manquants' }), {
@@ -74,6 +74,8 @@ serve(async (req) => {
           correspondent,
           statut: 'INITIATED',
           pawapay_status: pawapayData.status,
+          nombre_licences: nombre_licences || 0,
+          periode: periode || 'mensuel',
         })
       } catch(dbErr) {
         console.error('DB save error (non-fatal):', dbErr)

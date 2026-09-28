@@ -22,7 +22,7 @@ serve(async (req) => {
       })
     }
 
-    const { agence_id, plan, prix_mensuel, prix_annuel } = await req.json()
+    const { agence_id, plan, prix_mensuel, prix_annuel, nombre_licences } = await req.json()
     if (!agence_id || !plan) {
       return new Response(JSON.stringify({ success: false, error: 'Parametres manquants' }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -63,6 +63,25 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: false, error: abError.message }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
+    }
+
+    // Sieges Imoloc Manager choisis pour l essai : accordes tout de suite,
+    // sans paiement (au-dela de l inclus gratuit du palier).
+    if (nombre_licences) {
+      const { data: planRow } = await supabase.from('plans').select('id').eq('code', plan).maybeSingle()
+      const { data: licenceManager } = await supabase.from('licences').select('id').eq('type', 'imoloc_standard').maybeSingle()
+      if (planRow?.id && licenceManager?.id) {
+        const { data: pl } = await supabase.from('plans_licences').select('licences_incluses')
+          .eq('plan_id', planRow.id).eq('licence_id', licenceManager.id).maybeSingle()
+        const inclus = pl?.licences_incluses ?? 0
+        const quantite = Math.max(0, nombre_licences - inclus)
+        await supabase.from('agence_licences_achetees').upsert({
+          agence_id,
+          licence_id: licenceManager.id,
+          quantite,
+          mis_a_jour_le: new Date().toISOString(),
+        }, { onConflict: 'agence_id,licence_id' })
+      }
     }
 
     await supabase.from('notifications').insert({

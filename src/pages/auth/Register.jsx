@@ -2,6 +2,12 @@ import { useState, useEffect } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { supabase } from "../../lib/supabase"
 import toast from "react-hot-toast"
+import Logo from "../../components/Logo"
+import PawapayCheckoutModal from "../agence/components/PawapayCheckoutModal"
+
+// Meme correspondance que AbonnementPlan.jsx : plans.code -> valeur enum
+// plan_abonnement (abonnements.plan / pawapay_transactions.plan_id).
+const CODE_TO_ENUM = { organisation_starter: "starter_o", organisation_business: "business_o" }
 
 const C = {
   blue:"#0067b8", hover:"#005da0", error:"#a4262c",
@@ -92,9 +98,12 @@ function Btn({children,onClick,disabled,outline,style={}}) {
 export default function Register() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
-  const [plan, setPlan] = useState("business")
+  const [plan, setPlan] = useState("organisation_business")
   const [duree, setDuree] = useState("mois")
   const [freq, setFreq] = useState("mensuel")
+  const [mode, setMode] = useState("essai") // "essai" (1 mois gratuit) | "payer" (paiement immediat)
+  const [nombreLicences, setNombreLicences] = useState(1)
+  const [plansCatalogue, setPlansCatalogue] = useState([])
   const [email, setEmail] = useState("")
   const [emailErr, setEmailErr] = useState("")
   const [subStep, setSubStep] = useState(1)
@@ -106,13 +115,33 @@ export default function Register() {
   const [showPwd, setShowPwd] = useState(false)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [agenceCreee, setAgenceCreee] = useState(null)
+  const [showPay, setShowPay] = useState(false)
 
-  const PLANS = {
-    starter:{id:"starter_o",nom:"Starter",mois:18000,an:15000,usersMax:3},
-    business:{id:"business_o",nom:"Business",mois:39000,an:32400,usersMax:10},
-  }
-  const p = PLANS[plan]
-  const pu = duree==="an"?p.an:p.mois
+  // Vrai catalogue (remplace l ancien objet PLANS code en dur) : prix reels
+  // et nombre de licences Imoloc Manager incluses par palier (plans_licences).
+  useEffect(() => {
+    (async () => {
+      const { data: plans } = await supabase.from("plans")
+        .select("id, code, nom, prix_mensuel, prix_mensuel_annuel, cout_utilisateur_supplementaire, quota_biens, quota_proprietaires, quota_stockage_go")
+        .in("code", ["organisation_starter", "organisation_business"]).order("ordre_affichage")
+      const { data: licenceManager } = await supabase.from("licences").select("id").eq("type", "imoloc_standard").maybeSingle()
+      let inclusMap = {}
+      if (licenceManager?.id && plans?.length) {
+        const { data: pl } = await supabase.from("plans_licences").select("plan_id, licences_incluses")
+          .eq("licence_id", licenceManager.id).in("plan_id", plans.map(x => x.id))
+        ;(pl || []).forEach(r => { inclusMap[r.plan_id] = r.licences_incluses })
+      }
+      setPlansCatalogue((plans || []).map(x => ({ ...x, licences_incluses_manager: inclusMap[x.id] ?? 1 })))
+    })()
+  }, [])
+
+  const p = plansCatalogue.find(x => x.code === plan) || { nom: plan === "organisation_starter" ? "Starter" : "Business", prix_mensuel: 0, prix_mensuel_annuel: 0, licences_incluses_manager: 1, cout_utilisateur_supplementaire: 0 }
+  const seatsInclus = p.licences_incluses_manager || 1
+  useEffect(() => { setNombreLicences(seatsInclus) }, [plan, seatsInclus])
+  const extraSeats = Math.max(0, nombreLicences - seatsInclus)
+  const prixBase = duree === "an" ? p.prix_mensuel_annuel : p.prix_mensuel
+  const pu = Number(prixBase || 0) + extraSeats * Number(p.cout_utilisateur_supplementaire || 0)
   const total = pu
   const trial = new Date(); trial.setMonth(trial.getMonth()+1)
   const trialStr = trial.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})
@@ -162,37 +191,51 @@ export default function Register() {
       return
     }
 
-    const { error:trialErr } = await supabase.functions.invoke("create-trial", {
-      body: { agence_id: agence.id, plan: p.id, prix_mensuel: p.mois, prix_annuel: p.an },
-    })
-    if(trialErr) console.error("Trial creation error:", trialErr)
-
-    setLoading(false)
-    setSuccess(true)
+    if (mode === "essai") {
+      const { error:trialErr } = await supabase.functions.invoke("create-trial", {
+        body: { agence_id: agence.id, plan: CODE_TO_ENUM[plan], prix_mensuel: p.prix_mensuel, prix_annuel: p.prix_mensuel_annuel, nombre_licences: nombreLicences },
+      })
+      if(trialErr) console.error("Trial creation error:", trialErr)
+      setLoading(false)
+      setSuccess(true)
+    } else {
+      // Paiement immediat : le succes n est declare qu une fois le paiement confirme.
+      setAgenceCreee(agence)
+      setLoading(false)
+      setShowPay(true)
+    }
   }
 
   const RightPanel = () => (
     <div style={{background:"#faf9f8",padding:"32px 24px",display:"flex",flexDirection:"column",borderLeft:"1px solid "+C.sep}}>
-      <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:3}}>Imoloc {p.nom} &mdash; Essai</div>
-      <div style={{fontSize:12,color:C.text2,marginBottom:16}}>Inscription &agrave; votre essai gratuit</div>
-      <Check>Jusqu&apos;&agrave; <strong>{p.usersMax} utilisateurs</strong> inclus dans ce plan</Check>
+      <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:3}}>{p.nom} &mdash; {mode==="essai"?"Essai":"Abonnement"}</div>
+      <div style={{fontSize:12,color:C.text2,marginBottom:16}}>{mode==="essai"?"Inscription à votre essai gratuit":"Souscription immediate"}</div>
+      <Check><strong>{nombreLicences} licence(s)</strong> Imoloc Manager ({seatsInclus} incluse(s) dans ce plan)</Check>
       <Check>Toutes les fonctionnalit&eacute;s du produit payant incluses</Check>
-      <Check><strong>Aucun paiement</strong> requis pour commencer</Check>
-      <Check>Annulation possible avant le <strong>{trialStr}</strong></Check>
+      {mode==="essai" ? (
+        <>
+          <Check><strong>Aucun paiement</strong> requis pour commencer</Check>
+          <Check>Facturation automatique apr&egrave;s le <strong>{trialStr}</strong></Check>
+        </>
+      ) : (
+        <Check>Paiement <strong>Mobile Money</strong> s&eacute;curis&eacute;</Check>
+      )}
       <div style={{height:1,background:C.sep,margin:"16px 0"}}/>
       <div style={{background:C.bg,padding:12,marginBottom:16}}>
         <div style={{fontSize:11,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:8}}>R&eacute;sum&eacute; de la commande</div>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:4}}>
-          <span style={{color:C.text2}}>Imoloc {p.nom}</span>
+          <span style={{color:C.text2}}>{p.nom} &mdash; {nombreLicences} licence(s)</span>
           <span style={{fontWeight:600,color:C.text}}>{FMT(total)} FCFA</span>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:4}}>
-          <span style={{color:C.text2}}>Essai gratuit</span>
-          <span style={{color:C.green,fontWeight:600}}>&minus;{FMT(total)} FCFA</span>
-        </div>
+        {mode==="essai" && (
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:4}}>
+            <span style={{color:C.text2}}>Essai gratuit</span>
+            <span style={{color:C.green,fontWeight:600}}>&minus;{FMT(total)} FCFA</span>
+          </div>
+        )}
         <div style={{borderTop:"1px solid "+C.sep,paddingTop:8,display:"flex",justifyContent:"space-between",fontWeight:700,fontSize:14}}>
           <span>D&ucirc; aujourd&apos;hui</span>
-          <span>0,00 FCFA</span>
+          <span>{mode==="essai"?"0,00":FMT(total)} FCFA</span>
         </div>
       </div>
       <div style={{height:1,background:C.sep,margin:"0 0 16px"}}/>
@@ -229,17 +272,14 @@ export default function Register() {
       `}</style>
 
       <div style={{background:"#fff",borderBottom:"1px solid "+C.sep,padding:"11px 32px"}}>
-        <Link to="/" style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:26,height:26,background:C.blue,borderRadius:3,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          </div>
-          <span style={{fontSize:14,fontWeight:600,color:C.text}}>Imoloc</span>
+        <Link to="/" style={{display:"flex",alignItems:"center",textDecoration:"none"}}>
+          <Logo size={26} textSize={14} gap={8} />
         </Link>
       </div>
 
       <div style={{textAlign:"center",padding:"28px 20px 0"}}>
-        <h1 style={{fontSize:26,fontWeight:600,color:C.text,marginBottom:6}}>Imoloc {p.nom} &mdash; Essai</h1>
-        <p style={{fontSize:14,color:C.text2}}>Un mois gratuit &mdash; aucun paiement requis aujourd&apos;hui</p>
+        <h1 style={{fontSize:26,fontWeight:600,color:C.text,marginBottom:6}}>{p.nom} &mdash; {mode==="essai"?"Essai":"Abonnement"}</h1>
+        <p style={{fontSize:14,color:C.text2}}>{mode==="essai"?"Un mois gratuit — aucun paiement requis aujourd’hui":"Paiement Mobile Money — activation immediate"}</p>
       </div>
 
       <div style={{maxWidth:1100,margin:"24px auto 48px",padding:"0 20px"}}>
@@ -253,13 +293,13 @@ export default function Register() {
                 <div style={{width:72,height:72,borderRadius:"50%",background:"#dff6dd",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
                   <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                 </div>
-                <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:10}}>Votre essai est activ&eacute; !</h2>
+                <h2 style={{fontSize:24,fontWeight:600,color:C.text,marginBottom:10}}>{mode==="essai"?"Votre essai est activé !":"Votre abonnement est actif !"}</h2>
                 <p style={{fontSize:14,color:C.text2,lineHeight:1.7,marginBottom:6}}>
                   Bienvenue <strong style={{color:C.text}}>{prenom} {nom}</strong> !
                 </p>
                 <p style={{fontSize:13,color:C.text2,lineHeight:1.7,marginBottom:28}}>
                   Votre compte a &eacute;t&eacute; cr&eacute;&eacute; avec <strong>{email}</strong>.<br/>
-                  Essai gratuit actif jusqu&apos;au <strong>{trialStr}</strong>.
+                  {mode==="essai" ? <>Essai gratuit actif jusqu&apos;au <strong>{trialStr}</strong>.</> : <>Abonnement {p.nom} actif avec <strong>{nombreLicences} licence(s)</strong>.</>}
                 </p>
                 <Btn onClick={()=>navigate("/agence")} style={{padding:"10px 32px",fontSize:15}}>
                   Acc&eacute;der &agrave; mon espace &rarr;
@@ -272,25 +312,39 @@ export default function Register() {
             {!success && step===1 && (
               <div>
                 <Stepper step={1}/>
-                <h2 style={{fontSize:22,fontWeight:600,color:C.text,marginBottom:8}}>Essayer gratuitement pendant un mois</h2>
-                <p style={{fontSize:13,color:C.text2,marginBottom:28,lineHeight:1.65}}>Configurez votre abonnement.</p>
+                <h2 style={{fontSize:22,fontWeight:600,color:C.text,marginBottom:8}}>Configurez votre abonnement</h2>
+                <p style={{fontSize:13,color:C.text2,marginBottom:28,lineHeight:1.65}}>Choisissez un plan, un nombre de licences, puis un essai gratuit ou un paiement immediat.</p>
 
                 <div style={{marginBottom:22}}>
                   <div style={{fontSize:12,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:10}}>Plan</div>
                   {[
-                    {id:"starter",label:"Imoloc Starter",desc:"Pour les petites agences",usersMax:3},
-                    {id:"business",label:"Imoloc Business",desc:"Pour les agences en croissance",rec:true,usersMax:10},
-                  ].map(o=>(
-                    <label key={o.id} style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",padding:"8px 0",borderBottom:"1px solid "+C.sep}}>
-                      <input type="radio" name="plan" checked={plan===o.id} onChange={()=>setPlan(o.id)}
+                    {code:"organisation_starter",desc:"Pour les petites agences"},
+                    {code:"organisation_business",desc:"Pour les agences en croissance",rec:true},
+                  ].map(o=>{
+                    const info = plansCatalogue.find(x=>x.code===o.code)
+                    return (
+                    <label key={o.code} style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",padding:"8px 0",borderBottom:"1px solid "+C.sep}}>
+                      <input type="radio" name="plan" checked={plan===o.code} onChange={()=>setPlan(o.code)}
                         style={{width:16,height:16,accentColor:C.blue,flexShrink:0,marginTop:2,cursor:"pointer"}}/>
                       <div>
-                        <span style={{fontSize:14,color:C.text}}>{o.label}</span>
+                        <span style={{fontSize:14,color:C.text}}>{info?.nom || o.code}</span>
                         {o.rec&&<span style={{marginLeft:8,fontSize:11,color:C.blue,fontWeight:600,padding:"1px 6px",border:"1px solid "+C.blue,borderRadius:2}}>Recommand&eacute;</span>}
-                        <div style={{fontSize:12,color:C.text2,marginTop:2}}>{o.desc} &mdash; {o.usersMax} utilisateurs inclus &mdash; {FMT(duree==="an"?(o.id==="starter"?15000:32400):(o.id==="starter"?18000:39000))} FCFA/mois</div>
+                        <div style={{fontSize:12,color:C.text2,marginTop:2}}>{o.desc} &mdash; {info?.licences_incluses_manager ?? 1} licence(s) incluse(s) &mdash; {FMT(duree==="an"?info?.prix_mensuel_annuel:info?.prix_mensuel)} FCFA/mois</div>
                       </div>
                     </label>
-                  ))}
+                  )})}
+                </div>
+
+                <div style={{marginBottom:22}}>
+                  <div style={{fontSize:12,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:10}}>Nombre de licences Imoloc Manager</div>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <button type="button" onClick={()=>setNombreLicences(n=>Math.max(seatsInclus,n-1))}
+                      style={{width:30,height:30,border:"1px solid "+C.border,background:"#fff",borderRadius:2,cursor:"pointer",fontSize:16,color:C.text}}>&minus;</button>
+                    <span style={{fontSize:16,fontWeight:600,color:C.text,minWidth:28,textAlign:"center"}}>{nombreLicences}</span>
+                    <button type="button" onClick={()=>setNombreLicences(n=>n+1)}
+                      style={{width:30,height:30,border:"1px solid "+C.border,background:"#fff",borderRadius:2,cursor:"pointer",fontSize:16,color:C.text}}>+</button>
+                    <span style={{fontSize:12,color:C.text2}}>{seatsInclus} incluse(s), {FMT(p.cout_utilisateur_supplementaire)} FCFA/mois par licence suppl&eacute;mentaire</span>
+                  </div>
                 </div>
 
                 <div style={{marginBottom:22}}>
@@ -306,35 +360,40 @@ export default function Register() {
                 </div>
 
                 <div style={{marginBottom:24}}>
-                  <div style={{fontSize:12,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:10}}>Fr&eacute;quence de facturation</div>
-                  <div style={{position:"relative",display:"inline-block",minWidth:280}}>
-                    <select value={freq} onChange={e=>setFreq(e.target.value)}
-                      style={{width:"100%",padding:"7px 30px 7px 10px",border:"1px solid "+C.border,borderRadius:2,background:"#fff",fontSize:14,fontFamily:"inherit",color:C.text,outline:"none",cursor:"pointer",appearance:"none"}}>
-                      <option value="mensuel">Tous les mois &mdash; {FMT(pu)} FCFA/mois</option>
-                      <option value="annuel">Une fois par an &mdash; {FMT(pu*12)} FCFA/an</option>
-                    </select>
-                    <svg style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={C.text2} strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
-                  </div>
+                  <div style={{fontSize:12,fontWeight:600,color:C.text2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:10}}>Comment souhaitez-vous commencer ?</div>
+                  {[["essai","Essai gratuit (1 mois)","Aucun paiement aujourd’hui, facturation automatique à la fin de l’essai"],["payer","Payer maintenant","Paiement Mobile Money, abonnement actif immédiatement"]].map(([v,l,s])=>(
+                    <label key={v} style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",padding:"8px 0",borderBottom:"1px solid "+C.sep}}>
+                      <input type="radio" name="mode" checked={mode===v} onChange={()=>setMode(v)}
+                        style={{width:16,height:16,accentColor:C.blue,flexShrink:0,marginTop:2,cursor:"pointer"}}/>
+                      <div>
+                        <span style={{fontSize:14,color:C.text}}>{l}</span>
+                        <div style={{fontSize:12,color:C.text2,marginTop:2}}>{s}</div>
+                      </div>
+                    </label>
+                  ))}
                 </div>
 
                 <div style={{borderTop:"1px solid "+C.sep,paddingTop:18,marginBottom:18}}>
                   <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12}}>R&eacute;sum&eacute; de la commande</div>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6}}>
-                    <span style={{color:C.text2}}>Imoloc {p.nom} &mdash; {p.usersMax} utilisateurs inclus</span>
+                    <span style={{color:C.text2}}>{p.nom} &mdash; {nombreLicences} licence(s)</span>
                     <span style={{fontWeight:600}}>{FMT(total)} FCFA</span>
                   </div>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6,color:C.green}}>
-                    <span>Essai gratuit (1 mois)</span>
-                    <span style={{fontWeight:600}}>&minus;{FMT(total)} FCFA</span>
-                  </div>
+                  {mode==="essai" && (
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6,color:C.green}}>
+                      <span>Essai gratuit (1 mois)</span>
+                      <span style={{fontWeight:600}}>&minus;{FMT(total)} FCFA</span>
+                    </div>
+                  )}
                   <div style={{borderTop:"1px solid "+C.sep,paddingTop:8,display:"flex",justifyContent:"space-between",fontWeight:700,fontSize:14}}>
                     <span>Paiement d&ucirc; aujourd&apos;hui (hors taxes)</span>
-                    <span>0,00 FCFA</span>
+                    <span>{mode==="essai"?"0,00":FMT(total)} FCFA</span>
                   </div>
-                  <p style={{fontSize:11,color:C.text2,marginTop:10,lineHeight:1.6}}>
-                    Une fois l&apos;essai termin&eacute;, votre abonnement devient payant sauf annulation avant le {trialStr}.{" "}
-                    <a href="#" style={{fontSize:11}}>En savoir plus</a>
-                  </p>
+                  {mode==="essai" && (
+                    <p style={{fontSize:11,color:C.text2,marginTop:10,lineHeight:1.6}}>
+                      Une fois l&apos;essai termin&eacute;, une demande de paiement pour {nombreLicences} licence(s) vous sera envoy&eacute;e, avec 15 jours pour r&eacute;gler avant suspension.
+                    </p>
+                  )}
                 </div>
 
                 <Btn onClick={()=>setStep(2)}>Suivant</Btn>
@@ -411,7 +470,7 @@ export default function Register() {
                 <div style={{display:"flex",gap:12}}>
                   <Btn outline onClick={()=>setStep(2)}>Pr&eacute;c&eacute;dent</Btn>
                   <Btn onClick={finaliser} disabled={loading} style={{padding:"9px 28px"}}>
-                    {loading?<span style={{display:"flex",alignItems:"center",gap:8}}><span style={{width:14,height:14,border:"2px solid rgba(255,255,255,0.4)",borderTop:"2px solid #fff",borderRadius:"50%",display:"inline-block",animation:"spin 0.75s linear infinite"}}/>Cr&eacute;ation...</span>:"Commencer mon essai gratuit"}
+                    {loading?<span style={{display:"flex",alignItems:"center",gap:8}}><span style={{width:14,height:14,border:"2px solid rgba(255,255,255,0.4)",borderTop:"2px solid #fff",borderRadius:"50%",display:"inline-block",animation:"spin 0.75s linear infinite"}}/>Cr&eacute;ation...</span>:(mode==="essai"?"Commencer mon essai gratuit":"Cr\u00e9er le compte et payer")}
                   </Btn>
                 </div>
               </div>
@@ -430,6 +489,18 @@ export default function Register() {
         </div>
         <span style={{fontSize:11,color:C.text2}}>&copy; 2026 Imoloc</span>
       </div>
+
+      <PawapayCheckoutModal
+        open={showPay}
+        planNom={p.nom}
+        planCode={CODE_TO_ENUM[plan]}
+        montant={total}
+        periode={duree==="an"?"annuel":"mensuel"}
+        nombreLicences={nombreLicences}
+        agenceId={agenceCreee?.id}
+        onClose={()=>setShowPay(false)}
+        onSuccess={()=>{ setShowPay(false); setSuccess(true) }}
+      />
     </div>
   )
 }

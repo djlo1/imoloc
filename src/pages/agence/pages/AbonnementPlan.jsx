@@ -1,41 +1,34 @@
 import { useState, useEffect } from 'react'
-import { Check, Smartphone, CheckCircle2, XCircle, Mail } from 'lucide-react'
+import { Check, Mail } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import toast from 'react-hot-toast'
 import ProgressBar from '../../../components/ui/ProgressBar'
+import PawapayCheckoutModal from '../components/PawapayCheckoutModal'
 
-const PLANS = {
-  particulier: [
-    { id:'starter_p', nom:'Starter', prix_mois:5, prix_mois_fcfa:3000, prix_an:4, prix_an_fcfa:2400, desc:'Pour les proprietaires independants', couleur:'#0078d4',
-      features:['10 biens','30 locataires','Baux et contrats','Gestion factures','Modeles basiques','Support email'] },
-    { id:'pro_p', nom:'Pro', prix_mois:12, prix_mois_fcfa:7200, prix_an:10, prix_an_fcfa:6000, desc:'Pour les proprietaires actifs', couleur:'#00c896', recommande:true,
-      features:['Biens illimites','Locataires illimites','Baux et contrats','Modeles avances','Rapports','Gestion locataire','Signature electronique','Loci IA','Support prioritaire'] },
-  ],
-  organisation: [
-    { id:'starter_o', nom:'Starter', prix_mois:30, prix_mois_fcfa:18000, prix_an:25, prix_an_fcfa:15000, desc:'Pour les petites agences', couleur:'#0078d4',
-      features:['50 biens','3 utilisateurs','20 proprietaires','Baux et contrats','Modeles documents','Rapports basiques','Support email'] },
-    { id:'business_o', nom:'Business', prix_mois:65, prix_mois_fcfa:39000, prix_an:54, prix_an_fcfa:32400, desc:'Pour les agences en croissance', couleur:'#00c896', recommande:true,
-      features:['500 biens','10 utilisateurs','60 proprietaires','Rapports avances','Signature electronique','Loci IA','Portail mobile locataire','API','Support prioritaire'] },
-    { id:'enterprise_o', nom:'Enterprise', prix_mois:null, prix_mois_fcfa:null, prix_an:null, prix_an_fcfa:null, desc:'Pour les grandes organisations', couleur:'#8b5cf6',
-      features:['Biens illimites','Utilisateurs illimites','Multi-agences','Rapports personnalises','SLA garanti','Support 24/7 dedie','Formation incluse','API avancee'] },
-  ],
+// Correspondance code plans.code (nouveau catalogue) -> valeur enum
+// plan_abonnement (abonnements.plan / pawapay_transactions.plan_id), telle
+// que definie par abonnements_map_plan_id() en base. "Imoloc Business
+// Premium" n a pas de valeur enum moderne dediee (seule l ancienne valeur
+// historique 'premium' y pointe) : non vendable en libre-service pour
+// l instant, comme avant cette refonte.
+const CODE_TO_ENUM = {
+  organisation_starter: 'starter_o',
+  organisation_business: 'business_o',
+  organisation_business_premium: 'business_premium_o',
+  organisation_enterprise: 'enterprise_o',
+  particulier_starter: 'starter_p',
+  particulier_pro: 'pro_p',
 }
+const PLAN_COULEURS = { organisation_starter:'#0078d4', organisation_business:'#00c896', organisation_business_premium:'#f59e0b', organisation_enterprise:'#8b5cf6', particulier_starter:'#0078d4', particulier_pro:'#00c896' }
 
 const STATUT_CFG = {
-  actif:   { color:'#00c896', bg:'rgba(0,200,150,0.1)', label:'Actif' },
-  essai:   { color:'#0078d4', bg:'rgba(0,120,212,0.1)', label:'Essai gratuit' },
-  expire:  { color:'#ef4444', bg:'rgba(239,68,68,0.1)', label:'Expire' },
-  annule:  { color:'#8b949e', bg:'rgba(139,148,158,0.1)', label:'Annule' },
-  en_attente: { color:'#f59e0b', bg:'rgba(245,158,11,0.1)', label:'En attente' },
+  actif:      { color:'#00c896', bg:'rgba(0,200,150,0.1)', label:'Actif' },
+  essai:      { color:'#0078d4', bg:'rgba(0,120,212,0.1)', label:'Essai gratuit' },
+  expire:     { color:'#ef4444', bg:'rgba(239,68,68,0.1)', label:'Expire' },
+  annule:     { color:'#8b949e', bg:'rgba(139,148,158,0.1)', label:'Annule' },
+  en_attente: { color:'#f59e0b', bg:'rgba(245,158,11,0.1)', label:'En attente de paiement' },
+  suspendu:   { color:'#ef4444', bg:'rgba(239,68,68,0.1)', label:'Suspendu' },
 }
-
-const CORRESPONDENTS = [
-  { id: 'MTN_MOMO_BEN', label: 'MTN Mobile Money', pays: 'Benin', indicatif: '229', longueur: 11, color: '#f59e0b' },
-  { id: 'MOOV_BEN', label: 'Moov Money', pays: 'Benin', indicatif: '229', longueur: 11, color: '#0078d4' },
-  { id: 'MOOV_TGO', label: 'Moov Money', pays: 'Togo', indicatif: '228', longueur: 11, color: '#0078d4' },
-  { id: 'ORANGE_SEN', label: 'Orange Money', pays: 'Senegal', indicatif: '221', longueur: 12, color: '#f97316' },
-  { id: 'WAVE_SEN', label: 'Wave', pays: 'Senegal', indicatif: '221', longueur: 12, color: '#00c896' },
-]
 
 export default function AbonnementPlan() {
   const [tab, setTab]             = useState('plan')
@@ -44,7 +37,7 @@ export default function AbonnementPlan() {
   const [loading, setLoading]     = useState(true)
   const [periode, setPeriode]     = useState('mois')
   const [typeCompte, setTypeCompte] = useState('organisation')
-  const [paying, setPaying]       = useState(null)
+  const [plansCatalogue, setPlansCatalogue] = useState([])
 
   useEffect(() => { init() }, [])
 
@@ -60,93 +53,52 @@ export default function AbonnementPlan() {
       }
       const { data:prof } = await supabase.from('profiles').select('type_compte').eq('id', user.id).maybeSingle()
       if (prof?.type_compte) setTypeCompte(prof.type_compte === 'particulier' ? 'particulier' : 'organisation')
+
+      // Vrai catalogue (remplace l ancien objet PLANS code en dur) — inclut
+      // le nombre de licences Imoloc Manager incluses par palier, necessaire
+      // pour calculer le prix des sieges supplementaires a l achat.
+      const { data: plans } = await supabase.from('plans')
+        .select('id, code, nom, famille, prix_mensuel, prix_mensuel_annuel, cout_utilisateur_supplementaire, quota_biens, quota_proprietaires, quota_stockage_go, est_sur_devis')
+        .order('ordre_affichage')
+      const { data: licenceManager } = await supabase.from('licences').select('id').eq('type', 'imoloc_standard').maybeSingle()
+      let inclusMap = {}
+      if (licenceManager?.id) {
+        const { data: pl } = await supabase.from('plans_licences').select('plan_id, licences_incluses').eq('licence_id', licenceManager.id)
+        ;(pl || []).forEach(r => { inclusMap[r.plan_id] = r.licences_incluses })
+      }
+      setPlansCatalogue((plans || []).map(p => ({ ...p, licences_incluses_manager: inclusMap[p.id] ?? 1 })))
     } catch(e) { console.error('Init error:', e) }
     finally { setLoading(false) }
   }
 
-  const getPlanInfo = () => {
-    if (!abonnement) return null
-    const allPlans = [...PLANS.particulier, ...PLANS.organisation]
-    return allPlans.find(p => p.id === abonnement.plan) || null
-  }
+  const getPlanInfo = () => plansCatalogue.find(p => p.id === abonnement?.plan_id) || null
 
-  const [showPayModal, setShowPayModal] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(null)
-  const [payForm, setPayForm] = useState({ phone: '', correspondent: 'MTN_MOMO_BEN' })
-  const [payStatus, setPayStatus] = useState(null) // null | 'pending' | 'success' | 'failed'
-  const [depositId, setDepositId] = useState(null)
+  const [nombreLicences, setNombreLicences] = useState(1)
+  const [showSeatStep, setShowSeatStep] = useState(false)
+  const [showPayModal, setShowPayModal] = useState(false)
 
   const souscirePlan = (plan) => {
-    if (!plan.prix_mois_fcfa) {
-      toast('Contactez-nous pour l offre Enterprise : contact@imoloc.lt', { icon: <Mail size={16}/> })
+    if (plan.est_sur_devis) {
+      toast('Contactez-nous pour cette offre : contact@imoloc.lt', { icon: <Mail size={16}/> })
       return
     }
     setSelectedPlan(plan)
-    setPayStatus(null)
-    setDepositId(null)
-    setPayForm({ phone: '', correspondent: 'MTN_MOMO_BEN' })
-    setShowPayModal(true)
+    if (plan.famille === 'organisation') {
+      setNombreLicences(plan.licences_incluses_manager || 1)
+      setShowSeatStep(true)
+    } else {
+      // Comptes particulier : mono-utilisateur, pas de selection de sieges.
+      setNombreLicences(1)
+      setShowPayModal(true)
+    }
   }
 
-  const lancerPaiement = async () => {
-    if (!payForm.phone || payForm.phone.length < 8) { toast.error('Numero de telephone invalide'); return }
-    setPaying(selectedPlan.id)
-    setPayStatus('pending')
-    try {
-      const montant = periode === 'mois' ? selectedPlan.prix_mois_fcfa : selectedPlan.prix_an_fcfa * 12
-      const { data, error } = await supabase.functions.invoke('pawapay-deposit', {
-        body: {
-          amount: montant,
-          currency: 'XOF',
-          phone: payForm.phone.replace(/\s/g, ''),
-          correspondent: payForm.correspondent,
-          agence_id: agence?.id,
-          plan_id: selectedPlan.id,
-        }
-      })
-      if (error) { toast.error('Erreur reseau: ' + error.message); setPayStatus('failed'); setPaying(null); return }
-      if (!data?.success) { toast.error(data?.error || 'Paiement rejete'); setPayStatus('failed'); setPaying(null); return }
-      setDepositId(data.depositId)
-      toast.success('Demande envoyee ! Approuvez sur votre telephone.')
-      pollStatus(data.depositId, selectedPlan, agence)
-    } catch(e) { toast.error(e.message); setPayStatus('failed'); setPaying(null) }
-  }
-
-  const pollStatus = async (depId, plan, ag) => {
-    let attempts = 0
-    const interval = setInterval(async () => {
-      attempts++
-      try {
-        const { data } = await supabase.functions.invoke('pawapay-status', { body: { depositId: depId } })
-        if (data?.status === 'COMPLETED') {
-          clearInterval(interval)
-          // L activation reelle (upsert abonnements + facture) se fait cote serveur
-          // via le webhook pawapay-callback (service_role). Le client n a plus le droit
-          // d ecrire directement dans abonnements/factures : on relit juste le resultat.
-          let confirmed = false
-          for (let tries = 0; tries < 6 && !confirmed; tries++) {
-            const { data: ab } = await supabase.from('abonnements').select('statut,plan').eq('agence_id', ag.id).single()
-            if (ab?.statut === 'actif' && ab?.plan === plan.id) confirmed = true
-            else await new Promise(r => setTimeout(r, 1500))
-          }
-          setPayStatus('success')
-          setPaying(null)
-          toast.success(confirmed ? 'Paiement confirme ! Abonnement active.' : 'Paiement confirme, activation en cours...')
-          setTimeout(() => { setShowPayModal(false); init(); setTab('plan') }, 2000)
-        } else if (data?.status === 'FAILED' || data?.status === 'REJECTED') {
-          clearInterval(interval)
-          setPayStatus('failed')
-          setPaying(null)
-          toast.error('Paiement echoue. Veuillez reessayer.')
-        } else if (attempts >= 20) {
-          clearInterval(interval)
-          setPayStatus('failed')
-          setPaying(null)
-          toast.error('Timeout - verifiez votre telephone et reessayez.')
-        }
-      } catch(e) { console.error(e) }
-    }, 5000)
-  }
+  const seatsInclus = selectedPlan?.licences_incluses_manager ?? 1
+  const extraSeats = Math.max(0, nombreLicences - seatsInclus)
+  const prixBase = periode === 'mois' ? selectedPlan?.prix_mensuel : selectedPlan?.prix_mensuel_annuel
+  const montantMensuelEquiv = Number(prixBase || 0) + extraSeats * Number(selectedPlan?.cout_utilisateur_supplementaire || 0)
+  const montantTotal = periode === 'mois' ? montantMensuelEquiv : montantMensuelEquiv * 12
 
   const fmt = n => Number(n||0).toLocaleString('fr-FR')
   const planInfo = getPlanInfo()
@@ -192,7 +144,7 @@ export default function AbonnementPlan() {
                   <span style={{ fontSize:12, padding:'3px 10px', borderRadius:100, fontWeight:600, background:sc.bg, color:sc.color }}>{sc.label}</span>
                   {abonnement?.date_fin && <span style={{ fontSize:12, color:'rgba(255,255,255,0.35)' }}>Expire le {new Date(abonnement.date_fin).toLocaleDateString('fr-FR')}</span>}
                 </div>
-                {planInfo && <div style={{ fontSize:24, fontWeight:700, color:'#00c896' }}>{fmt(planInfo.prix_mois_fcfa)} FCFA<span style={{ fontSize:14, color:'rgba(255,255,255,0.4)', fontWeight:400 }}>/mois</span></div>}
+                {planInfo && <div style={{ fontSize:24, fontWeight:700, color:'#00c896' }}>{fmt(planInfo.prix_mensuel)} FCFA<span style={{ fontSize:14, color:'rgba(255,255,255,0.4)', fontWeight:400 }}>/mois</span></div>}
                 <button style={{ ...bP, marginTop:16, width:'100%', justifyContent:'center' }} onClick={()=>setTab('changer')}>
                   Changer de plan
                 </button>
@@ -224,9 +176,9 @@ export default function AbonnementPlan() {
               <div style={{ fontSize:14, fontWeight:600, color:'#e6edf3', marginBottom:16 }}>Utilisation de votre plan</div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:16 }}>
                 {[
-                  { label:'Biens', val:agence?._count?.biens||0, max:planInfo?.id?.includes('starter')?50:planInfo?.id?.includes('pro')?null:500 },
-                  { label:'Utilisateurs', val:1, max:planInfo?.id?.includes('starter_o')?3:planInfo?.id?.includes('business')?10:null },
-                  { label:'Stockage', val:'2.1 GB', max:'5 GB', nobar:true },
+                  { label:'Biens', val:agence?._count?.biens||0, max:planInfo?.quota_biens ?? null },
+                  { label:'Proprietaires', val:agence?._count?.proprietaires||0, max:planInfo?.quota_proprietaires ?? null },
+                  { label:'Stockage', val:'—', max:planInfo?.quota_stockage_go ? planInfo.quota_stockage_go+' Go' : null, nobar:true },
                 ].map(({label,val,max,nobar})=>{
                   const pct = !nobar && max ? Math.min((Number(val)/Number(max))*100,100) : 0
                   return (
@@ -259,52 +211,54 @@ export default function AbonnementPlan() {
               </div>
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:`repeat(${PLANS[typeCompte].length},1fr)`, gap:16 }}>
-              {PLANS[typeCompte].map(plan => {
-                const isCurrent = abonnement?.plan === plan.id
-                const prix = periode === 'mois' ? plan.prix_mois_fcfa : plan.prix_an_fcfa
-                const prixLabel = periode === 'mois' ? '/mois' : '/mois (annuel)'
-                return (
-                  <div key={plan.id} className={'plan-card'+(isCurrent?' active':'')+(plan.recommande?' recommande':'')}>
-                    {plan.recommande && <div style={{ position:'absolute', top:-11, left:'50%', transform:'translateX(-50%)', fontSize:11, fontWeight:700, padding:'2px 12px', borderRadius:100, background:plan.couleur, color:'#fff', whiteSpace:'nowrap' }}>Recommande</div>}
-                    {isCurrent && <div style={{ position:'absolute', top:-11, right:16, fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:100, background:'#0078d4', color:'#fff' }}>Actuel</div>}
+            {(() => {
+              const liste = plansCatalogue.filter(p => p.famille === typeCompte && CODE_TO_ENUM[p.code])
+              const RECOMMANDE = new Set(['particulier_pro','organisation_business'])
+              return (
+                <div style={{ display:'grid', gridTemplateColumns:`repeat(${liste.length||1},1fr)`, gap:16 }}>
+                  {liste.map(plan => {
+                    const isCurrent = abonnement?.plan_id === plan.id
+                    const prix = periode === 'mois' ? plan.prix_mensuel : plan.prix_mensuel_annuel
+                    const couleur = PLAN_COULEURS[plan.code] || '#0078d4'
+                    const feats = plan.famille === 'organisation'
+                      ? [`${plan.quota_biens ?? 'Illimite'} biens`, `${plan.quota_proprietaires ?? 'Illimite'} proprietaires`, `${plan.quota_stockage_go} Go de stockage`, `${plan.licences_incluses_manager} licence(s) Imoloc Manager incluse(s)`, `${fmt(plan.cout_utilisateur_supplementaire)} FCFA/licence supplementaire`]
+                      : [`${plan.quota_biens ?? 'Illimite'} biens`, `${plan.quota_stockage_go} Go de stockage`]
+                    return (
+                      <div key={plan.id} className={'plan-card'+(isCurrent?' active':'')+(RECOMMANDE.has(plan.code)?' recommande':'')}>
+                        {RECOMMANDE.has(plan.code) && <div style={{ position:'absolute', top:-11, left:'50%', transform:'translateX(-50%)', fontSize:11, fontWeight:700, padding:'2px 12px', borderRadius:100, background:couleur, color:'#fff', whiteSpace:'nowrap' }}>Recommande</div>}
+                        {isCurrent && <div style={{ position:'absolute', top:-11, right:16, fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:100, background:'#0078d4', color:'#fff' }}>Actuel</div>}
 
-                    <div style={{ fontSize:18, fontWeight:700, color:plan.couleur, marginBottom:6 }}>{plan.nom}</div>
-                    <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:16 }}>{plan.desc}</div>
+                        <div style={{ fontSize:18, fontWeight:700, color:couleur, marginBottom:16 }}>{plan.nom}</div>
 
-                    {prix ? (
-                      <div style={{ marginBottom:20 }}>
-                        <span style={{ fontSize:30, fontWeight:800, color:'#e6edf3' }}>{fmt(prix)}</span>
-                        <span style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginLeft:4 }}>FCFA{prixLabel}</span>
-                        <div style={{ fontSize:11.5, color:'rgba(255,255,255,0.3)', marginTop:3 }}>≈ {periode==='mois'?plan.prix_mois:plan.prix_an} USD</div>
-                      </div>
-                    ) : (
-                      <div style={{ fontSize:22, fontWeight:700, color:'rgba(255,255,255,0.5)', marginBottom:20 }}>Sur devis</div>
-                    )}
-
-                    <div style={{ flex:1, marginBottom:20 }}>
-                      {plan.features.map((f,i)=>(
-                        <div key={i} className="feat-item">
-                          <Check size={14} style={{ color:plan.couleur, flexShrink:0 }}/> {f}
+                        <div style={{ marginBottom:20 }}>
+                          <span style={{ fontSize:30, fontWeight:800, color:'#e6edf3' }}>{fmt(prix)}</span>
+                          <span style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginLeft:4 }}>FCFA{periode==='mois'?'/mois':'/mois (annuel)'}</span>
                         </div>
-                      ))}
-                    </div>
 
-                    <button
-                      style={{ ...bP, width:'100%', justifyContent:'center', background:isCurrent?'rgba(255,255,255,0.05)':plan.couleur, borderColor:isCurrent?'rgba(255,255,255,0.1)':plan.couleur, color:isCurrent?'rgba(255,255,255,0.4)':'#fff', cursor:isCurrent?'default':'pointer', opacity:paying===plan.id?0.6:1 }}
-                      disabled={isCurrent || paying===plan.id}
-                      onClick={()=>!isCurrent&&souscirePlan(plan)}>
-                      {paying===plan.id?'Redirection..':isCurrent?'Plan actuel':!prix?'Nous contacter':'Souscrire'}
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
+                        <div style={{ flex:1, marginBottom:20 }}>
+                          {feats.map((f,i)=>(
+                            <div key={i} className="feat-item">
+                              <Check size={14} style={{ color:couleur, flexShrink:0 }}/> {f}
+                            </div>
+                          ))}
+                        </div>
+
+                        <button
+                          style={{ ...bP, width:'100%', justifyContent:'center', background:isCurrent?'rgba(255,255,255,0.05)':couleur, borderColor:isCurrent?'rgba(255,255,255,0.1)':couleur, color:isCurrent?'rgba(255,255,255,0.4)':'#fff', cursor:isCurrent?'default':'pointer' }}
+                          disabled={isCurrent}
+                          onClick={()=>!isCurrent&&souscirePlan(plan)}>
+                          {isCurrent?'Plan actuel':'Souscrire'}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
 
             <div style={{ marginTop:20, padding:'14px 18px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:8 }}>
               <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.4)', lineHeight:1.7 }}>
-                Paiement securise via <strong style={{ color:'#00c896' }}>FedaPay</strong> (Mobile Money) et <strong style={{ color:'#0078d4' }}>Stripe</strong> (cartes).
-                Annulation possible a tout moment. Remboursement pro-rata sous 7 jours.
+                Paiement securise via <strong style={{ color:'#00c896' }}>Mobile Money</strong> (MTN, Moov, Orange, Wave).
                 Besoin d aide ? <span style={{ color:'#4da6ff', cursor:'pointer' }}>contact@imoloc.lt</span>
               </div>
             </div>
@@ -312,79 +266,43 @@ export default function AbonnementPlan() {
         )}
       </div>
 
-      {/* MODAL PAIEMENT PAWAPAY */}
-      {showPayModal && selectedPlan && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div style={{background:'#0d1117',border:'1px solid rgba(255,255,255,0.12)',borderRadius:14,width:'100%',maxWidth:480,padding:28}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
-              <div>
-                <div style={{fontSize:17,fontWeight:700,color:'#e6edf3'}}>Paiement Mobile Money</div>
-                <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginTop:2}}>Plan {selectedPlan.nom} — {periode==='mois'?selectedPlan.prix_mois_fcfa?.toLocaleString('fr-FR'):selectedPlan.prix_an_fcfa?.toLocaleString('fr-FR')} FCFA/{periode==='mois'?'mois':'mois (annuel)'}</div>
-              </div>
-              {payStatus!=='pending' && <button onClick={()=>{setShowPayModal(false);setPaying(null)}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:22}}>x</button>}
+      {/* ETAPE INTERMEDIAIRE : NOMBRE DE LICENCES (organisation uniquement) */}
+      {showSeatStep && selectedPlan && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:499,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div style={{background:'#0d1117',border:'1px solid rgba(255,255,255,0.12)',borderRadius:14,width:'100%',maxWidth:420,padding:28}}>
+            <div style={{fontSize:17,fontWeight:700,color:'#e6edf3',marginBottom:4}}>Nombre de licences Imoloc Manager</div>
+            <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:20,lineHeight:1.6}}>
+              Plan {selectedPlan.nom} — {seatsInclus} incluse(s), {fmt(selectedPlan.cout_utilisateur_supplementaire)} FCFA/mois par licence supplementaire.
             </div>
-
-            {payStatus===null && (
-              <div>
-                <div style={{marginBottom:14}}>
-                  <label style={{display:'block',fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.05em'}}>Operateur Mobile Money</label>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                    {CORRESPONDENTS.map(op=>(
-                      <div key={op.id} onClick={()=>setPayForm(p=>({...p,correspondent:op.id}))} style={{padding:'10px 12px',borderRadius:8,border:`1.5px solid ${payForm.correspondent===op.id?op.color:'rgba(255,255,255,0.08)'}`,background:payForm.correspondent===op.id?op.color+'12':'rgba(255,255,255,0.02)',cursor:'pointer',transition:'all 0.15s'}}>
-                        <div style={{fontSize:12.5,fontWeight:600,color:payForm.correspondent===op.id?op.color:'rgba(255,255,255,0.6)'}}>{op.label}</div>
-                        <div style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>{op.pays}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{marginBottom:20}}>
-                  <label style={{display:'block',fontSize:11.5,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.05em'}}>Numero de telephone</label>
-                  <input style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:7,color:'#e6edf3',fontFamily:'Inter,sans-serif',fontSize:15,outline:'none',colorScheme:'dark',boxSizing:'border-box'}}
-                    type="tel" placeholder="Ex: 22996000000" value={payForm.phone} onChange={e=>setPayForm(p=>({...p,phone:e.target.value}))}/>
-                  <div style={{fontSize:11,color:'rgba(255,255,255,0.25)',marginTop:5}}>Incluez le code pays (229 pour Benin, 228 pour Togo)</div>
-                </div>
-                <div style={{padding:'10px 14px',background:'rgba(0,120,212,0.06)',border:'1px solid rgba(0,120,212,0.15)',borderRadius:8,marginBottom:16}}>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.5)',lineHeight:1.6}}>Vous allez recevoir une notification USSD sur votre telephone. Approuvez le paiement pour activer votre abonnement.</div>
-                </div>
-                <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
-                  <button style={{...bB}} onClick={()=>{setShowPayModal(false);setPaying(null)}}>Annuler</button>
-                  <button style={{...bP,opacity:paying?0.6:1}} disabled={!!paying} onClick={lancerPaiement}>{paying?'Envoi...':'Payer '+((periode==='mois'?selectedPlan.prix_mois_fcfa:selectedPlan.prix_an_fcfa)||0).toLocaleString('fr-FR')+' FCFA'}</button>
-                </div>
-              </div>
-            )}
-
-            {payStatus==='pending' && (
-              <div style={{textAlign:'center',padding:'20px 0'}}>
-                <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}><Smartphone size={40} color="#0078d4"/></div>
-                <div style={{fontSize:16,fontWeight:600,color:'#e6edf3',marginBottom:8}}>En attente de confirmation</div>
-                <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:20,lineHeight:1.7}}>Une notification USSD a ete envoyee sur votre telephone.<br/>Approuvez le paiement pour continuer.</div>
-                <div style={{display:'flex',justifyContent:'center',gap:6}}>
-                  {[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:'50%',background:'#0078d4',animation:`pulse 1.4s ease-in-out ${i*0.2}s infinite`}}/>)}
-                </div>
-                <style>{`@keyframes pulse{0%,80%,100%{opacity:0.3;transform:scale(0.8)}40%{opacity:1;transform:scale(1)}}`}</style>
-                <div style={{marginTop:20,fontSize:12,color:'rgba(255,255,255,0.25)'}}>Ref: {depositId?.slice(0,8)}...</div>
-              </div>
-            )}
-
-            {payStatus==='success' && (
-              <div style={{textAlign:'center',padding:'20px 0'}}>
-                <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}><CheckCircle2 size={40} color="#00c896"/></div>
-                <div style={{fontSize:16,fontWeight:600,color:'#00c896',marginBottom:8}}>Paiement confirme !</div>
-                <div style={{fontSize:13,color:'rgba(255,255,255,0.4)'}}>Votre abonnement {selectedPlan.nom} est maintenant actif.</div>
-              </div>
-            )}
-
-            {payStatus==='failed' && (
-              <div style={{textAlign:'center',padding:'20px 0'}}>
-                <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}><XCircle size={40} color="#ef4444"/></div>
-                <div style={{fontSize:16,fontWeight:600,color:'#ef4444',marginBottom:8}}>Paiement echoue</div>
-                <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:16}}>Le paiement n a pas pu etre traite.</div>
-                <button style={{...bP,margin:'0 auto'}} onClick={()=>setPayStatus(null)}>Reessayer</button>
-              </div>
-            )}
+            <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:20}}>
+              <button style={bB} onClick={()=>setNombreLicences(n=>Math.max(seatsInclus,n-1))}>−</button>
+              <div style={{fontSize:24,fontWeight:700,color:'#e6edf3',minWidth:44,textAlign:'center'}}>{nombreLicences}</div>
+              <button style={bB} onClick={()=>setNombreLicences(n=>n+1)}>+</button>
+              <span style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>licence(s) au total</span>
+            </div>
+            <div style={{padding:'12px 14px',background:'rgba(255,255,255,0.03)',borderRadius:8,marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>Total {periode==='mois'?'mensuel':'annuel'}</span>
+              <span style={{fontSize:16,fontWeight:700,color:'#00c896'}}>{fmt(montantTotal)} FCFA</span>
+            </div>
+            <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+              <button style={bB} onClick={()=>setShowSeatStep(false)}>Annuler</button>
+              <button style={bP} onClick={()=>{setShowSeatStep(false);setShowPayModal(true)}}>Continuer</button>
+            </div>
           </div>
         </div>
       )}
+
+      <PawapayCheckoutModal
+        open={showPayModal}
+        planNom={selectedPlan?.nom}
+        planCode={CODE_TO_ENUM[selectedPlan?.code]}
+        montant={montantTotal}
+        periode={periode==='mois'?'mensuel':'annuel'}
+        nombreLicences={nombreLicences}
+        agenceId={agence?.id}
+        onClose={()=>setShowPayModal(false)}
+        onSuccess={()=>{ init(); setTab('plan') }}
+      />
     </>
   )
 }
