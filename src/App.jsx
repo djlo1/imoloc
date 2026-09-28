@@ -8,6 +8,7 @@ import { useAuthStore } from './store/authStore'
 const Landing = lazy(() => import('./pages/Landing'))
 const Login = lazy(() => import('./pages/auth/Login'))
 const Register = lazy(() => import('./pages/auth/Register'))
+const ChangePassword = lazy(() => import('./pages/auth/ChangePassword'))
 const DashboardAgence = lazy(() => import('./pages/agence/Dashboard'))
 const DashboardProprietaire = lazy(() => import('./pages/proprietaire/Dashboard'))
 const DashboardLocataire = lazy(() => import('./pages/locataire/Dashboard'))
@@ -26,10 +27,21 @@ function Loader() {
   )
 }
 
+function RequireSession({ children }) {
+  const { user, loading } = useAuthStore()
+  if (loading) return <Loader />
+  if (!user) return <Navigate to="/login" replace />
+  return children
+}
+
 function PrivateRoute({ children, roles }) {
   const { user, profile, loading } = useAuthStore()
   if (loading) return <Loader />
   if (!user) return <Navigate to="/login" replace />
+  // Case "Demander a cet utilisateur de modifier son mot de passe lors de sa
+  // premiere connexion" (creation, reinitialisation) : tant que ce drapeau
+  // est vrai, aucune page protegee n'est accessible avant le changement.
+  if (profile?.doit_changer_mot_de_passe) return <Navigate to="/changer-mot-de-passe" replace />
   // Sans espace reconnu (profil manquant, ou espace qui ne correspond a rien
   // de connu), on refuse l'acces par defaut plutot que de laisser passer —
   // avant, l'absence de correspondance ci-dessous retombait silencieusement
@@ -86,6 +98,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/changer-mot-de-passe" element={<RequireSession><ChangePassword /></RequireSession>} />
         <Route path="/agence/*" element={<PrivateRoute roles={['collaborateur']}><DashboardAgence /></PrivateRoute>} />
         <Route path="/proprietaire/*" element={<PrivateRoute roles={['proprietaire']}><DashboardProprietaire /></PrivateRoute>} />
         <Route path="/locataire/*" element={<PrivateRoute roles={['locataire']}><DashboardLocataire /></PrivateRoute>} />

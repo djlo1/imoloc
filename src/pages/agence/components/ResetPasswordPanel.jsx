@@ -154,6 +154,10 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
           if (result.error) throw new Error(result.error)
         }
 
+        // Rend la case "Demander à modifier le mot de passe" ci-dessous
+        // réellement effective (lue par PrivateRoute à chaque connexion).
+        await supabase.from('profiles').update({ doit_changer_mot_de_passe: forceChange }).eq('id', user.id)
+
         // 2. Sauvegarder dans invitations
         await supabase.from('invitations').insert({
           agence_id: agenceId,
@@ -178,7 +182,7 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
               role: user.role || 'Agent',
               password: newPass,
               force_change: forceChange,
-              loginUrl: `${window.location.origin}/login`,
+              loginUrl: `${window.location.origin}/login?email=${encodeURIComponent(user.email)}`,
               isReset: true,
             }),
           })
@@ -228,7 +232,7 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
         .rp-panel{width:420px;height:100%;background:#161b22;display:flex;flex-direction:column;animation:rp-slide 0.2s ease;border-left:1px solid rgba(255,255,255,0.07);overflow:hidden}
         @keyframes rp-slide{from{transform:translateX(100%)}to{transform:translateX(0)}}
         .rp-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
-        .rp-back{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:12px;display:flex;align-items:center;gap:6px;font-family:'Inter',sans-serif;padding:0;transition:color 0.1s}
+        .rp-back{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:12px;display:flex;align-items:center;gap:6px;font-family:'Segoe UI','Inter',sans-serif;padding:0;transition:color 0.1s}
         .rp-back:hover{color:#e6edf3}
         .rp-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);padding:4px;border-radius:4px;display:flex;transition:all 0.1s}
         .rp-close:hover{background:rgba(255,255,255,0.06);color:#e6edf3}
@@ -238,7 +242,7 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
         .rp-body::-webkit-scrollbar{width:4px}
         .rp-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
         .rp-search{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:5px;padding:8px 12px;margin-bottom:12px}
-        .rp-search input{background:none;border:none;outline:none;font-family:'Inter',sans-serif;font-size:13.5px;color:#e6edf3;width:100%}
+        .rp-search input{background:none;border:none;outline:none;font-family:'Segoe UI','Inter',sans-serif;font-size:13.5px;color:#e6edf3;width:100%}
         .rp-search input::placeholder{color:rgba(255,255,255,0.25)}
         .rp-select-all{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:8px;cursor:pointer}
         .rp-checkbox{width:17px;height:17px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s}
@@ -266,7 +270,7 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
         .rp-copy-btn:hover{color:#e6edf3}
         .rp-empty{text-align:center;padding:40px 20px;color:rgba(255,255,255,0.3);font-size:13.5px}
         .rp-foot{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-shrink:0}
-        .rp-btn{flex:1;padding:10px;border-radius:6px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s}
+        .rp-btn{flex:1;padding:10px;border-radius:6px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Segoe UI','Inter',sans-serif;transition:all 0.15s}
         .rp-btn-blue{background:#0078d4;color:#fff}
         .rp-btn-blue:hover:not(:disabled){background:#006cc1}
         .rp-btn-blue:disabled{opacity:0.4;cursor:not-allowed}
@@ -471,7 +475,7 @@ export default function ResetPasswordPanel({ onClose, agenceId }) {
                       navigator.clipboard.writeText(text)
                       toast.success('Tous les mots de passe copiés !')
                     }}
-                    style={{display:'flex',alignItems:'center',gap:7,padding:'7px 14px',borderRadius:5,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',color:'rgba(255,255,255,0.55)',fontSize:13,cursor:'pointer',fontFamily:'Inter'}}>
+                    style={{display:'flex',alignItems:'center',gap:7,padding:'7px 14px',borderRadius:5,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.09)',color:'rgba(255,255,255,0.55)',fontSize:13,cursor:'pointer',fontFamily:'Segoe UI, Inter, sans-serif'}}>
                     <ClipboardList size={14}/> Copier tout
                   </button>
                 </div>

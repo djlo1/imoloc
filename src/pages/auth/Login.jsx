@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { useNavigate, Link, useSearchParams } from "react-router-dom"
 import { supabase } from "../../lib/supabase"
 import toast from "react-hot-toast"
+import Logo from "../../components/Logo"
 
 export default function Login() {
   const navigate = useNavigate()
@@ -17,6 +18,16 @@ export default function Login() {
     if (params.get("demo") === "1") {
       setEmail("demo@imoloc.lt")
       setPassword("Demo1234!")
+      return
+    }
+    // Lien "Accéder à Imoloc" des emails (invitation, réinitialisation) :
+    // l'email est déjà connu du destinataire (affiché juste au-dessus dans
+    // le message), pas la peine de le lui refaire retaper — on le pré-remplit
+    // et on saute directement à la saisie du mot de passe.
+    const emailParam = params.get("email")
+    if (emailParam) {
+      setEmail(emailParam)
+      setStep(2)
     }
   }, [])
 
@@ -155,14 +166,8 @@ export default function Login() {
 
         {/* LOGO */}
         <div style={{ marginBottom: 28 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
-            <div style={{ width: 28, height: 28, background: "#0067b8", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-            </div>
-            <span style={{ fontSize: 18, fontWeight: 700, color: "#1a1a1a", letterSpacing: "-0.02em" }}>Imoloc</span>
+          <div style={{ marginBottom: 32 }}>
+            <Logo size={28} />
           </div>
           <h1 style={{ fontSize: 26, fontWeight: 400, color: "#1a1a1a", margin: 0, letterSpacing: "-0.01em" }}>
             Se connecter
