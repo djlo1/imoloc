@@ -1,32 +1,20 @@
 import { useState, useEffect, useRef } from 'react'
-import { Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Building2, Sparkles } from 'lucide-react'
+import { Routes, Route, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Building2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/authStore'
 import toast from 'react-hot-toast'
 
 // ── Pages ─────────────────────────────────────────────────
 import ImolocDashboard from './pages/ImolocDashboard'
-import Tickets from './pages/Tickets'
 import EtatsDesLieux from './pages/EtatsDesLieux'
-import Rapports from './pages/Rapports'
 import BailDetail from './pages/BailDetail'
 import { changeLanguage, getCurrentLang } from '../../i18n'
 import NotificationsPanel from '../agence/components/NotificationsPanel'
 import Proprietaires from './pages/Proprietaires'
-import Biens from './pages/Biens'
-import Locataires from './pages/Locataires'
 import Baux from './pages/Baux'
-import Paiements from './pages/Paiements'
-import Facturation from './pages/Facturation'
-
-const Soon = ({ title, icon }) => (
-  <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:400,gap:16}}>
-    <div style={{opacity:0.35}}>{icon}</div>
-    <div style={{fontSize:19,fontWeight:600,color:"rgba(255,255,255,0.5)"}}>{title}</div>
-    <div style={{fontSize:13.5,color:"rgba(255,255,255,0.25)"}}>Module en cours de developpement</div>
-  </div>
-)
+import RequireLicencedApp from '../agence/components/RequireLicencedApp'
+import RequireResource from '../agence/components/RequireResource'
 
 // ── Nav items ─────────────────────────────────────────────
 const NAV = [
@@ -404,22 +392,28 @@ export default function ImolocApp() {
           {/* Contenu */}
           <div className="im-content">
             <Routes>
-              <Route index element={<ImolocDashboard agence={agence} stats={stats} navigate={navigate}/>} />
-              <Route path="proprietaires/*" element={<Proprietaires />} />
-              <Route path="biens/*" element={<Biens />} />
-              <Route path="locataires/*" element={<Locataires />} />
-              <Route path="baux/expiration" element={<Baux />} />
-              <Route path="baux/termines" element={<Baux />} />
-              <Route path="baux/:id" element={<BailDetail />} />
-              <Route path="baux/*" element={<Baux />} />
-              <Route path="paiements" element={<Paiements />} />
-              <Route path="paiements/factures-diverses" element={<Facturation />} />
-              <Route path="paiements/releves-proprietaires" element={<Facturation />} />
-              <Route path="paiements/depenses-charges" element={<Facturation />} />
-              <Route path="loci/*" element={<Soon title="Loci IA" icon={<Sparkles size={52}/>}/>} />
-              <Route path="maintenance/*" element={<Tickets />} />
-              <Route path="etats-lieux/*" element={<EtatsDesLieux />} />
-              <Route path="rapports/*" element={<Rapports />} />
+              {/* Biens/Locataires/Paiements/Loci/Maintenance/Rapports ont un
+                  vrai equivalent protege sous /agence/* — on redirige plutot
+                  que de laisser un contournement sans aucun controle d'acces
+                  (abonnement/licence/ressource). Baux, Proprietaires et
+                  Etats des lieux n'ont pas encore d'equivalent reel cote
+                  /agence : ils restent ici, mais desormais proteges. */}
+              <Route index element={<RequireLicencedApp app="imoloc_manager"><ImolocDashboard agence={agence} stats={stats} navigate={navigate}/></RequireLicencedApp>} />
+              <Route path="proprietaires/*" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="proprietaires"><Proprietaires /></RequireResource></RequireLicencedApp>} />
+              <Route path="biens/*" element={<Navigate to="/agence/biens" replace />} />
+              <Route path="locataires/*" element={<Navigate to="/agence/locataires" replace />} />
+              <Route path="baux/expiration" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="baux"><Baux /></RequireResource></RequireLicencedApp>} />
+              <Route path="baux/termines" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="baux"><Baux /></RequireResource></RequireLicencedApp>} />
+              <Route path="baux/:id" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="baux"><BailDetail /></RequireResource></RequireLicencedApp>} />
+              <Route path="baux/*" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="baux"><Baux /></RequireResource></RequireLicencedApp>} />
+              <Route path="paiements" element={<Navigate to="/agence/paiements" replace />} />
+              <Route path="paiements/factures-diverses" element={<Navigate to="/agence/paiements/factures-diverses" replace />} />
+              <Route path="paiements/releves-proprietaires" element={<Navigate to="/agence/paiements/releves-proprietaires" replace />} />
+              <Route path="paiements/depenses-charges" element={<Navigate to="/agence/paiements/depenses-charges" replace />} />
+              <Route path="loci/*" element={<Navigate to="/agence/loci" replace />} />
+              <Route path="maintenance/*" element={<Navigate to="/agence/tickets" replace />} />
+              <Route path="etats-lieux/*" element={<RequireLicencedApp app="imoloc_manager"><EtatsDesLieux /></RequireLicencedApp>} />
+              <Route path="rapports/*" element={<Navigate to="/agence/rapports" replace />} />
             </Routes>
           </div>
         </div>

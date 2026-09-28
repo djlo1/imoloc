@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import { useAuthStore } from '../../../store/authStore'
+import { useAbonnementStatut } from '../../../lib/abonnement'
 import toast from 'react-hot-toast'
 import AddUserModal from '../components/AddUserModal'
 import AdminShell from '../components/AdminShell'
@@ -12,6 +14,20 @@ import {
   Laptop, Undo2, Circle, CheckCircle2, Smartphone, Sparkles, Wallet, Building2,
   BarChart3, Check, PenLine, Construction, Contact2, Info, Send, Clock,
 } from 'lucide-react'
+import {
+  FluentProvider, webDarkTheme, Button, SearchBox,
+  Menu, MenuTrigger, MenuPopover, MenuList, MenuItem, MenuDivider,
+  Overflow, OverflowItem, useOverflowMenu, useIsOverflowItemVisible,
+} from '@fluentui/react-components'
+import { MoreHorizontal20Regular, ChevronDown16Regular, ChevronUp16Regular, TableEdit16Regular, MoreVertical20Regular, ClipboardArrowRight20Regular, Mention20Regular } from '@fluentui/react-icons'
+// Icônes MDL2 — le vrai jeu d'icônes utilisé par le centre d'administration M365
+// (Fluent 2 / @fluentui/react-icons a un style différent, avec badges pleins ;
+// les captures de référence montrent des pictogrammes fins sans remplissage).
+import {
+  AddFriendIcon, PageListIcon, PeopleAddIcon, LockIcon, UserRemoveIcon, RefreshIcon, SearchIcon,
+  PasswordFieldIcon, PermissionsIcon, ExportIcon, AlignLeftIcon, GroupIcon,
+  EditContactIcon, BlockContactIcon,
+} from '@fluentui/react-icons-mdl2'
 
 // ── Constantes ──────────────────────────────────────────
 const ROLES_LABELS = {
@@ -41,7 +57,7 @@ const ALL_COLS = [
   { key:'displayName', label:'Nom d\'affichage', checked:true, disabled:true },
   { key:'userPrincipalName', label:'Nom d\'utilisateur', checked:true },
   { key:'licenses', label:'Licences', checked:true },
-  { key:'role', label:'Rôle', checked:true },
+  { key:'role', label:'Rôle', checked:false },
   { key:'isGuest', label:'Invité', checked:false },
   { key:'signInStatus', label:'État de connexion', checked:false },
   { key:'department', label:'Département', checked:false },
@@ -50,16 +66,68 @@ const ALL_COLS = [
   { key:'jobTitle', label:'Titre', checked:false },
   { key:'city', label:'Ville', checked:false },
   { key:'country', label:'Pays ou région', checked:false },
-  { key:'office', label:'Bureau', checked:false },
-  { key:'usageLocation', label:'Lieu d\'utilisation', checked:false },
   { key:'lastSignIn', label:'Dernière connexion', checked:false },
 ]
 const DEFAULT_COLS = ALL_COLS.filter(c=>c.checked).map(c=>c.key)
 const getInitials = (p) => ((p?.prenom?.[0]||'')+(p?.nom?.[0]||'')).toUpperCase() || p?.email?.[0]?.toUpperCase() || '?'
 
+// Toolbar responsive comme sur le vrai M365 (vérifié en redimensionnant la
+// fenêtre en direct) : les boutons se replient dans "···" un par un en
+// partant de la droite quand la largeur manque, et reviennent sur la ligne
+// dès que la place revient — pas un simple defilement horizontal.
+function ToolbarOverflowItem({ id, itemKey, icon, disabled, onClick, children, priority }) {
+  return (
+    <OverflowItem id={id} priority={priority}>
+      <Button appearance="subtle" size="small" style={{whiteSpace:'nowrap',flexShrink:0}} icon={icon} disabled={disabled} onClick={onClick}>{children}</Button>
+    </OverflowItem>
+  )
+}
+function ToolbarOverflowMenuItem({ id, icon, disabled, onClick, children }) {
+  const isVisible = useIsOverflowItemVisible(id)
+  if (isVisible) return null
+  return <MenuItem icon={icon} disabled={disabled} onClick={onClick}>{children}</MenuItem>
+}
+function ToolbarOverflowMenu({ items, staticItems }) {
+  const { ref } = useOverflowMenu()
+  return (
+    <Menu>
+      <MenuTrigger disableButtonEnhancement>
+        <Button appearance="subtle" ref={ref} style={{marginLeft:6,flexShrink:0}} icon={<MoreHorizontal20Regular/>}/>
+      </MenuTrigger>
+      <MenuPopover>
+        <MenuList>
+          {items.map(it=>(
+            <ToolbarOverflowMenuItem key={it.id} id={it.id} icon={it.icon} disabled={it.disabled} onClick={it.onClick}>{it.label}</ToolbarOverflowMenuItem>
+          ))}
+          {items.length>0&&staticItems.length>0&&<MenuDivider/>}
+          {staticItems}
+        </MenuList>
+      </MenuPopover>
+    </Menu>
+  )
+}
+// Le champ "Rechercher dans la liste" participe au même système d'Overflow
+// Fluent que le reste de la barre d'outils (au lieu d'un seuil de largeur
+// mesuré séparément, qui se désynchronise facilement de l'espace réellement
+// disponible) : quand la place manque, Fluent le retire lui-même de la ligne
+// et cette icône de repli apparaît à la place, toujours accessible. Au clic,
+// plutôt qu'un panneau flottant par-dessus la barre, elle déplie le champ
+// sur la ligne elle-même (les autres boutons cèdent la place) — repli
+// automatique dès qu'on quitte le champ vide.
+function ToolbarSearchFallback({ id, onExpand }) {
+  const isVisible = useIsOverflowItemVisible(id)
+  if (isVisible) return null
+  return (
+    <Button appearance="subtle" size="small" style={{flexShrink:0}} icon={<SearchIcon style={{fontSize:14}}/>} onClick={onExpand} title="Rechercher dans la liste"/>
+  )
+}
+
 // ── Composant principal ──────────────────────────────────
 export default function Utilisateurs() {
   const { profile } = useAuthStore()
+  // Licences = donnees des applications payantes surfacees dans Imoloc Admin :
+  // en lecture seule (attribution/retrait bloques) quand l abonnement est suspendu.
+  const { suspendu } = useAbonnementStatut()
   const location = useLocation()
   const navigate = useNavigate()
   const tab = location.pathname.includes('/invites') ? 'invites'
@@ -72,6 +140,7 @@ export default function Utilisateurs() {
   const [supprimes, setSupprimes] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [toolbarSearchExpanded, setToolbarSearchExpanded] = useState(false)
   const [selected, setSelected] = useState([])
   const [viewMode, setViewMode] = useState('normal') // 'normal' | 'compact'
   const [cols, setCols] = useState(DEFAULT_COLS)
@@ -79,10 +148,20 @@ export default function Utilisateurs() {
   const [filterRole, setFilterRole] = useState('Tous')
   const [filterStatut, setFilterStatut] = useState('Tous')
   const [showColsPanel, setShowColsPanel] = useState(false)
+  const [resetPwUser, setResetPwUser] = useState(null)
+  const [resetPwStep, setResetPwStep] = useState('form')
+  const [resetPwAuto, setResetPwAuto] = useState(false)
+  const [resetPwValue, setResetPwValue] = useState('')
+  const [resetPwShow, setResetPwShow] = useState(false)
+  const [resetPwNotify, setResetPwNotify] = useState(false)
+  const [resetPwSaving, setResetPwSaving] = useState(false)
+  const [resetPwResult, setResetPwResult] = useState(null)
+  const [resetPwResultShow, setResetPwResultShow] = useState(false)
   const [showInvitePanel, setShowInvitePanel] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
   const [userPanelTab, setUserPanelTab] = useState('compte')
   const [rowMenu, setRowMenu] = useState(null)
+  const [rowMenuPos, setRowMenuPos] = useState(null)
   const [inviteForm, setInviteForm] = useState({ email:'', prenom:'', nom:'', organisation:'', message:'' })
   const [inviting, setInviting] = useState(false)
   const [showAddUserModal, setShowAddUserModal] = useState(false)
@@ -101,10 +180,7 @@ export default function Utilisateurs() {
   // affichées dans le tableau.
   const [userLicencesMap, setUserLicencesMap] = useState({})
   const [userRolesMap, setUserRolesMap] = useState({})
-  const [showToolbarMore, setShowToolbarMore] = useState(false)
-  const [showFilterDefDropdown, setShowFilterDefDropdown] = useState(false)
   const [filterDefLabel, setFilterDefLabel] = useState('Couramment utilisé')
-  const [openChipFilter, setOpenChipFilter] = useState(null)
   const [filterLicence, setFilterLicence] = useState(null)
   const [filterDomaine, setFilterDomaine] = useState(null)
   const [filterPays, setFilterPays] = useState(null)
@@ -115,6 +191,7 @@ export default function Utilisateurs() {
   const [userLicences, setUserLicences] = useState([])
   const [userRoles, setUserRoles] = useState([])
   const [userAgenceUserId, setUserAgenceUserId] = useState(null)
+  const [userRessourcesDesactivees, setUserRessourcesDesactivees] = useState([])
   const [rolesCatalogueFull, setRolesCatalogueFull] = useState([])
   const [licencesCatalogueFull, setLicencesCatalogueFull] = useState([])
   const [userDriveFiles, setUserDriveFiles] = useState([])
@@ -127,6 +204,17 @@ export default function Utilisateurs() {
 
   useEffect(() => { fetchData() }, [])
   useEffect(() => { setSelected([]) }, [tab])
+
+  // Menu "⋮" de ligne — ferme au clic extérieur et à Échap (le menu lui-même
+  // est rendu en portail vers document.body, donc hors de la ligne du tableau).
+  useEffect(() => {
+    if (!rowMenu) return
+    const onKey = (e) => { if (e.key === 'Escape') setRowMenu(null) }
+    const onDocClick = () => setRowMenu(null)
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDocClick)
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onDocClick) }
+  }, [rowMenu])
 
   // Resize colonnes
   const startResize = useCallback((e, colKey) => {
@@ -213,10 +301,10 @@ export default function Utilisateurs() {
     try {
       const [{ data:appData }, { data:licData }, { data:fileData }, { data:statData }, { data:catData }, { data:roleCatData }] = await Promise.all([
         supabase.from('appareils_utilisateurs').select('*').eq('user_id', user.id).order('derniere_activite', {ascending:false}),
-        supabase.from('licences_utilisateurs').select('*, licences(*, licences_applications(applications(code,nom)))').eq('user_id', user.id).eq('actif', true),
+        supabase.from('licences_utilisateurs').select('*, licences(*, licences_applications(applications(code,nom,ressources(id,code,nom,assignable_individuellement))))').eq('user_id', user.id).eq('actif', true),
         supabase.from('driveloc_fichiers').select('*').eq('user_id', user.id).order('created_at', {ascending:false}),
         supabase.from('driveloc_stats').select('*').eq('user_id', user.id).single(),
-        supabase.from('licences').select('id, nom, type, licences_applications(applications(code,nom))').eq('actif', true).order('nom'),
+        supabase.from('licences').select('id, nom, type, licences_applications(applications(code,nom,ressources(id,code,nom,assignable_individuellement)))').eq('actif', true).order('nom'),
         supabase.from('roles').select('id, code, nom, description, type, application:applications(code,nom)').eq('est_systeme', true).order('type').order('nom'),
       ])
       setUserAppareils(appData || [])
@@ -234,10 +322,13 @@ export default function Utilisateurs() {
         if (au?.id) {
           const { data: rr } = await supabase.from('agence_users_roles').select('id, role_id, roles(id, nom, type, application:applications(nom))').eq('agence_user_id', au.id)
           setUserRoles(rr || [])
-        } else setUserRoles([])
+          const { data: rd } = await supabase.from('agence_users_ressources_desactivees').select('ressource_id').eq('agence_user_id', au.id)
+          setUserRessourcesDesactivees((rd || []).map(r => r.ressource_id))
+        } else { setUserRoles([]); setUserRessourcesDesactivees([]) }
       } else {
         setUserAgenceUserId(null)
         setUserRoles([])
+        setUserRessourcesDesactivees([])
       }
     } catch(e) { console.error(e) }
     finally { setLoadingUserData(false) }
@@ -280,6 +371,25 @@ export default function Utilisateurs() {
     toast.success('Rôle retiré')
     await loadUserData(user)
     fetchData()
+  }
+
+  // Composante ("plan de service") décochée/recochée pour cet utilisateur
+  // précis — même mécanisme que assignLicence/removeLicence ci-dessus, mais
+  // au niveau de agence_users_ressources_desactivees.
+  const toggleRessourceUtilisateur = async (user, ressourceId, actuellementDesactivee) => {
+    if (!userAgenceUserId) return toast.error('Utilisateur sans compte de collaborateur (propriétaire)')
+    if (actuellementDesactivee) {
+      const { error } = await supabase.from('agence_users_ressources_desactivees')
+        .delete().eq('agence_user_id', userAgenceUserId).eq('ressource_id', ressourceId)
+      if (error) return toast.error(error.message || 'Erreur')
+      toast.success('Application réactivée')
+    } else {
+      const { error } = await supabase.from('agence_users_ressources_desactivees')
+        .insert({ agence_user_id: userAgenceUserId, ressource_id: ressourceId })
+      if (error) return toast.error(error.message || 'Erreur')
+      toast.success('Application désactivée')
+    }
+    await loadUserData(user)
   }
 
   const saveProfile = async () => {
@@ -393,6 +503,42 @@ export default function Utilisateurs() {
     }
     toast.success(`Email de réinitialisation envoyé à ${sent} utilisateur${sent>1?'s':''}`)
     setSelected([])
+  }
+
+  // Panneau "Réinitialiser le mot de passe" — reproduction du flux M365. La
+  // définition directe du mot de passe (auth.admin.updateUserById) exige la
+  // clé service_role, jamais exposable côté navigateur : l'appel réel passe
+  // par la fonction Edge reset-user-password (vérifie que l'appelant est
+  // propriétaire de l'agence ou a la permission utilisateurs.reinitialiser_mdp).
+  const openResetPassword = (u) => {
+    setResetPwUser(u); setResetPwStep('form'); setResetPwAuto(false)
+    setResetPwValue(''); setResetPwShow(false); setResetPwNotify(false)
+    setResetPwResult(null); setResetPwResultShow(false)
+    setRowMenu(null)
+  }
+
+  const submitResetPassword = async () => {
+    if (!resetPwUser) return
+    if (!resetPwAuto && (!resetPwValue || resetPwValue.length < 8)) {
+      return toast.error('Le mot de passe doit comporter au moins 8 caractères')
+    }
+    setResetPwSaving(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-user-password`, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', Authorization:`Bearer ${session?.access_token}` },
+        body: JSON.stringify({ target_user_id: resetPwUser.id, new_password: resetPwAuto ? undefined : resetPwValue, auto_generate: resetPwAuto, notify: resetPwNotify }),
+      })
+      const data = await res.json()
+      if (!data.success) { toast.error(data.error || 'Erreur'); return }
+      setResetPwResult({ email: resetPwUser.email, password: data.password })
+      setResetPwStep('success')
+    } catch (e) {
+      toast.error('Erreur de connexion')
+    } finally {
+      setResetPwSaving(false)
+    }
   }
 
   const handleDelete = async (user) => {
@@ -553,21 +699,26 @@ export default function Utilisateurs() {
         .us-selbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(0,120,212,0.07);border:1px solid rgba(0,120,212,0.18);border-radius:8px;margin-bottom:12px;animation:us-in 0.2s ease}
         .us-selbar-txt{font-size:13px;color:#2c85dd;font-weight:500;flex:1}
 
-        /* Table */
-        .us-tw{border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden}
-        .us-thead-bar{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02)}
+        /* Table — reproduction M365 (docs/ref image 53) : pas de cadre, pas de bandeau
+           Normal/Compact, en-tête discret, lignes qui grandissent avec le texte qui retourne
+           à la ligne (licences, noms d'utilisateur longs) plutôt que d'être tronqué. */
+        .us-tw{border-top:1px solid #323232}
         .us-table{width:100%;border-collapse:collapse;table-layout:fixed}
-        .us-table th{font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.4);padding:9px 14px;text-align:left;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.07);white-space:nowrap;position:relative;user-select:none;overflow:hidden}
+        .us-table th{font-size:13px;font-weight:400;color:rgba(255,255,255,0.55);padding:12px 14px;text-align:left;border-bottom:1px solid #323232;white-space:nowrap;position:relative;user-select:none;overflow:hidden}
         .us-table th:first-child{width:44px;text-align:center}
-        .us-table td{padding:0 14px;font-size:13px;color:rgba(255,255,255,0.65);border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .us-table td:first-child{text-align:center}
-        .us-table tr{transition:background 0.08s;height:${rowH}}
+        .us-table td{padding:8px 14px;font-size:13px;color:rgba(255,255,255,0.65);border-bottom:1px solid #323232;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .us-table td:first-child{text-align:center;vertical-align:middle}
+        .us-table tr{transition:background 0.08s;min-height:${rowH}}
         .us-table tr:hover td{background:rgba(255,255,255,0.025);cursor:pointer}
         .us-table tr.sel td{background:rgba(0,120,212,0.06)}
         .us-table tr:last-child td{border-bottom:none}
         .us-resize-handle{position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;background:transparent;z-index:1}
         .us-resize-handle:hover,.us-resize-handle:active{background:rgba(0,120,212,0.4)}
-        .us-cb{width:15px;height:15px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.12s;margin:0 auto;flex-shrink:0}
+        .us-cb{width:15px;height:15px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.12s;margin:0 auto;flex-shrink:0}
+        .us-rowdots{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.3);padding:2px;display:flex;align-items:center;justify-content:center;border-radius:4px;flex-shrink:0}
+        .us-rowdots:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7)}
+        .us-rowdots-hover{opacity:0;transition:opacity 0.1s}
+        .us-table tr:hover .us-rowdots-hover,.us-rowdots-hover.open{opacity:1}
         .us-cb.on{background:#0078d4;border-color:#0078d4}
         .us-cb.half{background:rgba(0,120,212,0.3);border-color:#0078d4}
         .us-av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex-shrink:0;position:relative}
@@ -581,8 +732,9 @@ export default function Utilisateurs() {
         .us-li::before{content:'';width:4px;height:4px;border-radius:50%;background:#0078d4;flex-shrink:0}
         .us-mbtn{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.3);padding:5px 7px;border-radius:5px;font-size:15px;transition:all 0.1s;line-height:1}
         .us-mbtn:hover{background:rgba(255,255,255,0.07);color:#e6edf3}
-        .us-dd{position:absolute;right:8px;top:calc(100% - 4px);background:#1b1b1b;border:1px solid rgba(255,255,255,0.1);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,0.55);z-index:100;min-width:210px;overflow:hidden}
-        .us-ddi{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:13px;color:rgba(255,255,255,0.65);cursor:pointer;transition:background 0.1s;border:none;background:none;font-family:'Segoe UI','Inter',sans-serif;width:100%;text-align:left}
+        .us-dd{position:fixed;background:${webDarkTheme.colorNeutralBackground1};border:1px solid ${webDarkTheme.colorNeutralStroke1};border-radius:${webDarkTheme.borderRadiusMedium};box-shadow:${webDarkTheme.shadow16};z-index:1100;min-width:230px;overflow:hidden;padding:4px 0}
+        .us-ddi{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:12.5px;color:rgba(255,255,255,0.65);cursor:pointer;transition:background 0.1s;border:none;background:none;font-family:'Segoe UI','Inter',sans-serif;width:100%;text-align:left;white-space:nowrap}
+        .us-ddi svg{flex-shrink:0}
         .us-ddi:hover{background:rgba(255,255,255,0.05);color:#e6edf3}
         .us-ddi.red:hover{background:rgba(239,68,68,0.08);color:#ef4444}
         .us-dds{height:1px;background:rgba(255,255,255,0.07)}
@@ -745,142 +897,161 @@ export default function Utilisateurs() {
         breadcrumb={[{label:'Accueil',path:'/agence'},{label:{actifs:'Utilisateurs actifs',contacts:'Contacts',invites:'Utilisateurs invités',supprimes:'Utilisateurs supprimés'}[tab]}]}
       >
       <div className="us-page">
-        {/* Titre */}
-        <div className="as-h1">
-          {{actifs:'Utilisateurs actifs',contacts:'Contacts',invites:'Utilisateurs invités',supprimes:'Utilisateurs supprimés'}[tab]}
-        </div>
+        {tab!=='actifs'&&(
+          <div className="as-h1">
+            {{contacts:'Contacts',invites:'Utilisateurs invités',supprimes:'Utilisateurs supprimés'}[tab]}
+          </div>
+        )}
 
-        {/* ══ PAGE UTILISATEURS ACTIFS ══ */}
+        {/* ══ PAGE UTILISATEURS ACTIFS — reproduction Fluent UI de docs/ref/utilisateurs-actifs.png ══ */}
         {tab==='actifs'&&(
-          <>
-            {/* Toolbar */}
-            <div className="us-toolbar">
-              <button className="us-tbtn" onClick={()=>setShowAddUserModal(true)}><UserPlus size={15}/> Ajouter un utilisateur</button>
-              <button className="us-tbtn" onClick={()=>toast('Authentification multifacteur — bientôt disponible', {icon:'🔒'})}><Lock size={15}/> Authentification multifacteur</button>
-              <button className="us-tbtn" onClick={fetchData}><RefreshCw size={15}/> Actualiser</button>
-              <button className="us-tbtn danger" disabled={selected.length===0} onClick={()=>{const u=actifs.find(x=>x.id===selected[0]);if(u)handleDelete(u)}}>
-                <Users size={15}/> Supprimer un utilisateur{selected.length>0&&` (${selected.length})`}
-              </button>
-              <button className="us-tbtn" disabled={selected.length===0} onClick={()=>{
-                if (selected.length===0) return toast.error('Sélectionnez au moins un utilisateur')
-                bulkResetPassword(selected)
-              }}><Key size={15}/> Réinitialiser le mot de passe</button>
-              <button className="us-tbtn" disabled={selected.length===0} onClick={()=>{
-                const u=actifs.find(x=>x.id===selected[0])
-                if (!u) return toast.error('Sélectionnez au moins un utilisateur')
-                setSelectedUser(u); setUserPanelTab('roles'); loadUserData(u)
-              }}><Users size={15}/> Gérer les rôles</button>
-              <button className="us-tbtn" onClick={exportCSV}><Download size={15}/> Exporter des utilisateurs</button>
-              <div className="us-sr">
-                <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg>
-                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher dans la liste ..."/>
-                {search&&<button onClick={()=>setSearch('')} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:16,padding:0,lineHeight:1}}>×</button>}
-              </div>
-              <button className="us-tbtn" onClick={()=>setViewMode(v=>v==='normal'?'compact':'normal')}><Pencil size={15}/> Changer d'affichage</button>
-              <div style={{position:'relative'}}>
-                <button className="us-mbtn" style={{fontSize:18}} onClick={()=>setShowToolbarMore(v=>!v)}>···</button>
-                {showToolbarMore&&(
-                  <div className="us-dd" style={{right:0,minWidth:230}}>
-                    <button className="us-ddi" onClick={()=>{setShowToolbarMore(false);toast('Gestion des groupes — bientôt disponible',{icon:'🔧'})}}><Users size={14}/> Gérer des groupes</button>
-                    <button className="us-ddi" onClick={()=>{
-                      setShowToolbarMore(false)
-                      const u=actifs.find(x=>x.id===selected[0])
-                      if (!u) return toast.error('Sélectionnez au moins un utilisateur')
-                      setSelectedUser(u); setUserPanelTab('compte'); loadUserData(u); setEditMode(true)
-                    }}><Pencil size={14}/> Gérer des informations de contact</button>
-                    <button className="us-ddi" onClick={()=>{
-                      setShowToolbarMore(false)
-                      const u=actifs.find(x=>x.id===selected[0])
-                      if (!u) return toast.error('Sélectionnez au moins un utilisateur')
-                      toggleBlock(u)
-                    }}><Ban size={14}/> Modifier l'état de connexion</button>
+          <FluentProvider theme={webDarkTheme} style={{background:'transparent',fontFamily:"'Segoe UI','Segoe UI Web (West European)',-apple-system,sans-serif"}}>
+            <div style={{fontSize:28,fontWeight:600,color:'#fff',padding:'20px 0 0'}}>Utilisateurs actifs</div>
+            <div style={{height:1,background:'#323232',margin:'16px 0 0'}}/>
+
+            {/* Toolbar — repli responsive comme sur le vrai M365 (vérifié en redimensionnant
+                admin.cloud.microsoft en direct) : les boutons se replient un par un dans "···"
+                en partant de la droite quand la largeur manque, et reviennent sur la ligne dès
+                que la place revient. Le jeu de boutons change aussi selon la sélection — vérifié
+                dans les deux états. "Overflow"/"OverflowItem" de Fluent gèrent la mesure réelle. */}
+            {(() => {
+              // 3 états distincts vérifiés en direct : aucune sélection, une seule ligne, ou
+              // plusieurs lignes. En sélection multiple, "Gérer les licences de produits" et
+              // "Gérer les rôles" disparaissent — ce sont des actions par utilisateur unique,
+              // qui n'ont pas de sens sur plusieurs personnes à la fois.
+              const dynamicItems = selected.length===0 ? [
+                { id:'templates', icon:<PageListIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Modèles utilisateur', onClick:()=>toast('Modèles utilisateur — bientôt disponible',{icon:'🔧'}) },
+                { id:'bulk-add', icon:<PeopleAddIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Ajouter plusieurs utilisateurs', onClick:()=>toast('Ajout en masse — bientôt disponible',{icon:'🔧'}) },
+                { id:'mfa', icon:<LockIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Authentification multifacteur', onClick:()=>toast('Authentification multifacteur — bientôt disponible', {icon:'🔒'}) },
+                { id:'delete', icon:<UserRemoveIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Supprimer un utilisateur', disabled:true, onClick:()=>{} },
+                { id:'refresh', icon:<RefreshIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Actualiser', onClick:fetchData },
+              ] : selected.length===1 ? [
+                { id:'mfa', icon:<LockIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Authentification multifacteur', onClick:()=>toast('Authentification multifacteur — bientôt disponible', {icon:'🔒'}) },
+                { id:'refresh', icon:<RefreshIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Actualiser', onClick:fetchData },
+                { id:'delete', icon:<UserRemoveIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Supprimer un utilisateur', onClick:()=>{const u=actifs.find(x=>x.id===selected[0]);if(u)handleDelete(u)} },
+                { id:'reset-pwd', icon:<PasswordFieldIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Réinitialiser le mot de passe', onClick:()=>{const u=actifs.find(x=>x.id===selected[0]);if(u)openResetPassword(u)} },
+                { id:'licenses', icon:<ClipboardArrowRight20Regular style={{fontSize:18,color:'#2c85dd'}}/>, label:'Gérer les licences de produits', onClick:()=>{const u=actifs.find(x=>x.id===selected[0]);if(u){setSelectedUser(u);setUserPanelTab('licences');loadUserData(u)}} },
+                { id:'roles', icon:<PermissionsIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Gérer les rôles', onClick:()=>{const u=actifs.find(x=>x.id===selected[0]);if(u){setSelectedUser(u);setUserPanelTab('roles');loadUserData(u)}} },
+                { id:'export', icon:<ExportIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Exporter des utilisateurs', onClick:exportCSV },
+              ] : [
+                { id:'refresh', icon:<RefreshIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Actualiser', onClick:fetchData },
+                { id:'delete', icon:<UserRemoveIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:`Supprimer un utilisateur (${selected.length})`, onClick:()=>{const u=actifs.find(x=>x.id===selected[0]);if(u)handleDelete(u)} },
+                { id:'reset-pwd', icon:<PasswordFieldIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Réinitialiser le mot de passe', onClick:()=>bulkResetPassword(selected) },
+                { id:'export', icon:<ExportIcon style={{fontSize:18,color:'#2c85dd'}}/>, label:'Exporter des utilisateurs', onClick:exportCSV },
+              ]
+              const staticMenuItems = [
+                <MenuItem key="display" icon={<AlignLeftIcon/>} onClick={()=>setViewMode(v=>v==='normal'?'compact':'normal')}>Changer d'affichage</MenuItem>,
+                <MenuItem key="groups" icon={<GroupIcon/>} onClick={()=>toast('Gestion des groupes — bientôt disponible',{icon:'🔧'})}>Gérer des groupes</MenuItem>,
+                <MenuItem key="contact-info" icon={<EditContactIcon/>} disabled={selected.length===0} onClick={()=>{
+                  const u=actifs.find(x=>x.id===selected[0])
+                  if (!u) return toast.error('Sélectionnez au moins un utilisateur')
+                  setSelectedUser(u); setUserPanelTab('compte'); loadUserData(u); setEditMode(true)
+                }}>Gérer des informations de contact</MenuItem>,
+                <MenuItem key="conn-status" icon={<BlockContactIcon/>} disabled={selected.length===0} onClick={()=>{
+                  const u=actifs.find(x=>x.id===selected[0])
+                  if (!u) return toast.error('Sélectionnez au moins un utilisateur')
+                  toggleBlock(u)
+                }}>Modifier l'état de connexion</MenuItem>,
+              ]
+              if (toolbarSearchExpanded) {
+                return (
+                  <div style={{display:'flex',alignItems:'center',height:44,gap:6}}>
+                    <SearchBox
+                      autoFocus
+                      placeholder="Rechercher dans la liste ..."
+                      style={{flex:1,fontSize:13}}
+                      value={search}
+                      onChange={(_,d)=>setSearch(d.value)}
+                      onBlur={()=>{ if(!search) setToolbarSearchExpanded(false) }}
+                    />
                   </div>
-                )}
-              </div>
-            </div>
+                )
+              }
+              return (
+                <Overflow minimumVisible={1}>
+                  <div style={{display:'flex',alignItems:'center',height:44,gap:6,flexWrap:'nowrap',minWidth:0}}>
+                    <OverflowItem id="add" priority={dynamicItems.length+1}>
+                      <Button appearance="subtle" size="small" style={{whiteSpace:'nowrap',flexShrink:0}} icon={<AddFriendIcon style={{fontSize:18,color:'#2c85dd'}}/>} onClick={()=>setShowAddUserModal(true)}>Ajouter un utilisateur</Button>
+                    </OverflowItem>
+                    {dynamicItems.map((it,i)=>(
+                      <ToolbarOverflowItem key={it.id} id={it.id} icon={it.icon} disabled={it.disabled} onClick={it.onClick} priority={dynamicItems.length-i}>{it.label}</ToolbarOverflowItem>
+                    ))}
+                    <OverflowItem id="search" priority={0}>
+                      <div style={{marginLeft:'auto',flexShrink:0}}>
+                        <SearchBox placeholder="Rechercher dans la liste ..." style={{width:220,fontSize:13}} value={search} onChange={(_,d)=>setSearch(d.value)}/>
+                      </div>
+                    </OverflowItem>
+                    <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
+                      <ToolbarSearchFallback id="search" onExpand={()=>setToolbarSearchExpanded(true)}/>
+                      <ToolbarOverflowMenu items={dynamicItems} staticItems={staticMenuItems}/>
+                    </div>
+                  </div>
+                </Overflow>
+              )
+            })()}
 
             {/* Filtres */}
-            <div className="us-filters" style={{position:'relative'}}>
-              <span className="us-fl">Filtre défini :</span>
-              <button className="us-fc" style={{display:'inline-flex',alignItems:'center',gap:5,fontWeight:600,color:'#2c85dd'}} onClick={()=>setShowFilterDefDropdown(v=>!v)}>
-                {filterDefLabel} <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
-              </button>
-              {showFilterDefDropdown&&(
-                <div className="us-dd" style={{left:0,top:'calc(100% + 4px)',minWidth:230}}>
-                  <button className="us-ddi" onClick={()=>{setShowFilterDefDropdown(false);toast('Enregistrement de filtres — bientôt disponible',{icon:'🔧'})}}>+ Nouveau filtre</button>
-                  <div className="us-dds"/>
-                  <div style={{padding:'8px 14px',fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>Filtres personnalisés définis</div>
-                  <div style={{padding:'2px 14px 8px',fontSize:12.5,color:'rgba(255,255,255,0.3)',fontStyle:'italic'}}>Aucun filtre personnalisé</div>
-                  <div className="us-dds"/>
-                  <div style={{padding:'8px 14px 2px',fontSize:11.5,color:'rgba(255,255,255,0.3)'}}>Filtres standard définis</div>
-                  {STANDARD_FILTERS.map(f=>(
-                    <button key={f.key} className="us-ddi" onClick={()=>{setFilterRole(f.key);setFilterDefLabel(f.label);setShowFilterDefDropdown(false)}}>{f.label}</button>
-                  ))}
-                </div>
-              )}
+            <div style={{display:'flex',alignItems:'center',gap:8,marginTop:24,paddingBottom:16,flexWrap:'wrap'}}>
+              <Menu>
+                <MenuTrigger disableButtonEnhancement>
+                  <button style={{display:'inline-flex',alignItems:'center',gap:6,background:'none',border:'none',color:'#e1e1e1',fontSize:14,cursor:'pointer',fontFamily:'inherit',padding:0}}>
+                    Filtre défini: <span style={{fontWeight:700,color:'#fff'}}>{filterDefLabel}</span> <ChevronDown16Regular/>
+                  </button>
+                </MenuTrigger>
+                <MenuPopover>
+                  <MenuList>
+                    <MenuItem onClick={()=>toast('Enregistrement de filtres — bientôt disponible',{icon:'🔧'})}>+ Nouveau filtre</MenuItem>
+                    <MenuDivider/>
+                    <MenuItem disabled>Filtres personnalisés définis — aucun</MenuItem>
+                    <MenuDivider/>
+                    {STANDARD_FILTERS.map(f=>(
+                      <MenuItem key={f.key} onClick={()=>{setFilterRole(f.key);setFilterDefLabel(f.label)}}>{f.label}</MenuItem>
+                    ))}
+                  </MenuList>
+                </MenuPopover>
+              </Menu>
               {['Licences','État de connexion','Domaine','Emplacement'].map(chip=>(
-                <button key={chip} className={`us-fc ${activeChipFilters.includes(chip)?'on':''}`} onClick={()=>setOpenChipFilter(openChipFilter===chip?null:chip)}>{chip}</button>
+                <Menu key={chip}>
+                  <MenuTrigger disableButtonEnhancement>
+                    <button style={{borderRadius:999,border:'none',background:'#363636',color:activeChipFilters.includes(chip)?'#2c85dd':'#e1e1e1',fontSize:12,fontWeight:500,padding:'4px 10px',height:24,cursor:'pointer',fontFamily:'inherit'}}>{chip}</button>
+                  </MenuTrigger>
+                  <MenuPopover>
+                    <MenuList>
+                      {chip==='Licences'&&(licencesCatalogue.length===0
+                        ? <MenuItem disabled>Aucune licence attribuée</MenuItem>
+                        : licencesCatalogue.map(l=>(
+                          <MenuItem key={l} onClick={()=>setFilterLicence(filterLicence===l?null:l)}>{filterLicence===l?'✓ ':''}{l}</MenuItem>
+                        )))}
+                      {chip==='État de connexion'&&['Actif','Inactif','Bloqué'].map(s=>(
+                        <MenuItem key={s} onClick={()=>setFilterStatut(filterStatut===s?'Tous':s)}>{filterStatut===s?'✓ ':''}{s}</MenuItem>
+                      ))}
+                      {chip==='Domaine'&&(domainesCatalogue.length===0
+                        ? <MenuItem disabled>Aucun domaine</MenuItem>
+                        : domainesCatalogue.map(d=>(
+                          <MenuItem key={d} onClick={()=>setFilterDomaine(filterDomaine===d?null:d)}>{filterDomaine===d?'✓ ':''}{d}</MenuItem>
+                        )))}
+                      {chip==='Emplacement'&&(paysCatalogue.length===0
+                        ? <MenuItem disabled>Aucun emplacement</MenuItem>
+                        : paysCatalogue.map(p=>(
+                          <MenuItem key={p} onClick={()=>setFilterPays(filterPays===p?null:p)}>{filterPays===p?'✓ ':''}{p}</MenuItem>
+                        )))}
+                    </MenuList>
+                  </MenuPopover>
+                </Menu>
               ))}
-              {openChipFilter&&(
-                <div className="us-dd" style={{left:0,top:'calc(100% + 34px)',minWidth:220,padding:'6px 0'}}>
-                  {openChipFilter==='Licences'&&(licencesCatalogue.length===0
-                    ? <div style={{padding:'10px 14px',fontSize:12.5,color:'rgba(255,255,255,0.3)'}}>Aucune licence attribuée</div>
-                    : licencesCatalogue.map(l=>(
-                      <button key={l} className="us-ddi" onClick={()=>{setFilterLicence(filterLicence===l?null:l);setOpenChipFilter(null)}}>{filterLicence===l?'✓ ':''}{l}</button>
-                    )))}
-                  {openChipFilter==='État de connexion'&&['Actif','Inactif','Bloqué'].map(s=>(
-                    <button key={s} className="us-ddi" onClick={()=>{setFilterStatut(filterStatut===s?'Tous':s);setOpenChipFilter(null)}}>{filterStatut===s?'✓ ':''}{s}</button>
-                  ))}
-                  {openChipFilter==='Domaine'&&(domainesCatalogue.length===0
-                    ? <div style={{padding:'10px 14px',fontSize:12.5,color:'rgba(255,255,255,0.3)'}}>Aucun domaine</div>
-                    : domainesCatalogue.map(d=>(
-                      <button key={d} className="us-ddi" onClick={()=>{setFilterDomaine(filterDomaine===d?null:d);setOpenChipFilter(null)}}>{filterDomaine===d?'✓ ':''}{d}</button>
-                    )))}
-                  {openChipFilter==='Emplacement'&&(paysCatalogue.length===0
-                    ? <div style={{padding:'10px 14px',fontSize:12.5,color:'rgba(255,255,255,0.3)'}}>Aucun emplacement</div>
-                    : paysCatalogue.map(p=>(
-                      <button key={p} className="us-ddi" onClick={()=>{setFilterPays(filterPays===p?null:p);setOpenChipFilter(null)}}>{filterPays===p?'✓ ':''}{p}</button>
-                    )))}
-                </div>
-              )}
             </div>
+          </FluentProvider>
+        )}
 
-            {/* Barre sélection */}
-            {selected.length>0&&(
-              <div className="us-selbar">
-                <span className="us-selbar-txt">{selected.length} utilisateur{selected.length>1?'s':''} sélectionné{selected.length>1?'s':''}</span>
-                <button className="us-btn" style={{padding:'5px 11px',fontSize:12}} onClick={()=>toast('Modification groupée des rôles — bientôt disponible',{icon:'🔧'})}>Modifier rôles</button>
-                <button className="us-btn" style={{padding:'5px 11px',fontSize:12}} onClick={()=>bulkResetPassword(selected)}>Réinitialiser MDP</button>
-                <button className="us-btn us-btn-g" style={{padding:'5px 11px',fontSize:12}} onClick={exportCSV}>Exporter</button>
-                <button className="us-btn us-btn-d" style={{padding:'5px 11px',fontSize:12}} onClick={()=>{const u=actifs.find(x=>x.id===selected[0]);if(u)handleDelete(u)}}>Supprimer</button>
-                <button onClick={()=>setSelected([])} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.3)',fontSize:20,padding:'0 4px',lineHeight:1}}>×</button>
-              </div>
-            )}
+        {tab==='actifs'&&(
+          <>
+            {/* Pas de barre "X sélectionné" séparée : le vrai M365 n'a que la toolbar
+                contextuelle ci-dessus, vérifié en direct sur admin.cloud.microsoft. */}
 
-            {/* Table */}
+            {/* Table — reproduction exacte de docs/ref (image 53) : plus de barre Normal/Compact,
+                plus d'avatar ni de pastille de statut, "Choisissez les colonnes" dans la ligne
+                d'en-tête elle-même, licences en texte simple qui retourne à la ligne. */}
             <div className="us-tw">
-              <div className="us-thead-bar">
-                <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>
-                    {filtered.length} utilisateur{filtered.length>1?'s':''}{filtered.length!==actifs.length&&` (filtré)`}
-                  </span>
-                  <div className="us-vtog">
-                    <button className={`us-vbtn ${viewMode==='normal'?'active':''}`} onClick={()=>setViewMode('normal')}>
-                      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
-                      Normal
-                    </button>
-                    <button className={`us-vbtn ${viewMode==='compact'?'active':''}`} onClick={()=>setViewMode('compact')}>
-                      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M3.75 9h16.5m-16.5 6.75h16.5"/></svg>
-                      Compact
-                    </button>
-                  </div>
-                </div>
-                <button className="us-btn" style={{padding:'5px 12px',fontSize:12}} onClick={()=>setShowColsPanel(true)}>
-                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z"/></svg>
-                  Choisissez les colonnes
-                </button>
-              </div>
-
               <div style={{overflowX:'auto'}}>
                 <table className="us-table" ref={tableRef}>
                   <thead>
@@ -892,11 +1063,11 @@ export default function Utilisateurs() {
                         </div>
                       </th>
                       <th style={{width:colWidths['displayName']||220,minWidth:120}}>
-                        Nom d'affichage
+                        <span style={{display:'inline-flex',alignItems:'center',gap:5}}>Nom d'affichage <ChevronUp16Regular/></span>
                         <div className="us-resize-handle" onMouseDown={e=>startResize(e,'displayName')}/>
                       </th>
                       {cols.includes('userPrincipalName')&&(
-                        <th style={{width:colWidths['userPrincipalName']||200,minWidth:100}}>
+                        <th style={{width:colWidths['userPrincipalName']||220,minWidth:100}}>
                           Nom d'utilisateur
                           <div className="us-resize-handle" onMouseDown={e=>startResize(e,'userPrincipalName')}/>
                         </th>
@@ -908,7 +1079,7 @@ export default function Utilisateurs() {
                         </th>
                       )}
                       {cols.includes('licenses')&&(
-                        <th style={{width:colWidths['licenses']||200,minWidth:120}}>
+                        <th style={{width:colWidths['licenses']||360,minWidth:160}}>
                           Licences
                           <div className="us-resize-handle" onMouseDown={e=>startResize(e,'licenses')}/>
                         </th>
@@ -932,7 +1103,11 @@ export default function Utilisateurs() {
                       {cols.includes('country')&&<th style={{width:colWidths['country']||120,minWidth:80}}>Pays<div className="us-resize-handle" onMouseDown={e=>startResize(e,'country')}/></th>}
                       {cols.includes('lastSignIn')&&<th style={{width:colWidths['lastSignIn']||140,minWidth:100}}>Dernière connexion<div className="us-resize-handle" onMouseDown={e=>startResize(e,'lastSignIn')}/></th>}
                       {cols.includes('isGuest')&&<th style={{width:colWidths['isGuest']||80,minWidth:70}}>Invité<div className="us-resize-handle" onMouseDown={e=>startResize(e,'isGuest')}/></th>}
-                      <th style={{width:50}}/>
+                      <th style={{width:200,minWidth:200,textAlign:'right'}}>
+                        <button onClick={()=>setShowColsPanel(true)} style={{display:'inline-flex',alignItems:'center',gap:6,background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:12,fontWeight:400,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+                          <TableEdit16Regular/> Choisissez les colonnes
+                        </button>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -955,33 +1130,42 @@ export default function Utilisateurs() {
                     ):filtered.map((u,i)=>{
                       const isSel = selected.includes(u.id)
                       const col = ROLES_COLORS[u.role]||'#0078d4'
-                      const avSize = viewMode==='compact' ? 26 : 34
-                      const fontSize = viewMode==='compact' ? 10 : 12
-                      const statusColor = blockedUsers.includes(u.id) ? '#f59e0b' : (!u.statut||u.statut==='actif') ? '#00c896' : '#8b949e'
+                      const licences = userLicencesMap[u.id]
                       return (
                         <tr key={i} className={isSel?'sel':''} onClick={()=>{ if(rowMenu!==u.id){ setSelectedUser(u); setUserPanelTab('compte'); loadUserData(u) } }}>
-                          <td className="ind-td" style={{'--ind-c':statusColor}} onClick={e=>{e.stopPropagation();toggleSelect(u.id)}}>
-                            <div className={`us-cb ${isSel?'on':''}`}>
+                          <td onClick={e=>e.stopPropagation()}>
+                            <div className={`us-cb ${isSel?'on':''}`} onClick={()=>toggleSelect(u.id)}>
                               {isSel&&<svg width="8" height="8" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
                             </div>
                           </td>
-                          <td>
-                            <div style={{display:'flex',alignItems:'center',gap:10}}>
-                              <div className="us-av" style={{width:avSize,height:avSize,background:`linear-gradient(135deg,${col},${col}88)`,fontSize}}>
-                                {getInitials(u)}
-                                {viewMode==='normal'&&<div className="us-avdot" style={{background:statusColor}}/>}
-                              </div>
-                              <div>
-                                <div className="us-uname" style={{fontSize:viewMode==='compact'?12.5:13.5}}>
-                                  {u.prenom} {u.nom}
-                                  {u.isOwner&&<span className="us-owner" style={{display:'inline-flex',alignItems:'center'}}><Crown size={10}/></span>}
-                                  {blockedUsers.includes(u.id)&&<span style={{fontSize:10,padding:'1px 7px',borderRadius:'100px',background:'rgba(245,158,11,0.12)',color:'#f59e0b',fontWeight:600,border:'1px solid rgba(245,158,11,0.25)'}}>Bloqué</span>}
-                                </div>
-                                {viewMode==='normal'&&<div className="us-uemail">{u.email||'—'}</div>}
+                          <td style={{whiteSpace:'normal',position:'relative',overflow:'visible'}}>
+                            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                              <span style={{fontWeight:600,color:'#f5f5f5',fontSize:14}}>
+                                {u.prenom} {u.nom}
+                                {u.isOwner&&<span style={{display:'inline-flex',marginLeft:6}}><Crown size={11}/></span>}
+                                {blockedUsers.includes(u.id)&&<span style={{marginLeft:6,fontSize:10,padding:'1px 7px',borderRadius:'100px',background:'rgba(245,158,11,0.12)',color:'#f59e0b',fontWeight:600,border:'1px solid rgba(245,158,11,0.25)'}}>Bloqué</span>}
+                              </span>
+                              <div style={{position:'relative',display:'flex',alignItems:'center',gap:2}} onClick={e=>e.stopPropagation()}>
+                                <button className={`us-rowdots us-rowdots-hover ${rowMenu===u.id?'open':''}`} title="Réinitialiser le mot de passe" style={{color:'#2c85dd'}} onClick={()=>openResetPassword(u)}><SearchIcon style={{fontSize:13}}/></button>
+                                <button className="us-rowdots" title="Autres actions" onClick={(e)=>{
+                                  if(rowMenu===u.id){setRowMenu(null);return}
+                                  const r=e.currentTarget.getBoundingClientRect()
+                                  setRowMenuPos({top:r.bottom+4,left:r.right-230})
+                                  setRowMenu(u.id)
+                                }}><MoreVertical20Regular/></button>
+                                {rowMenu===u.id&&rowMenuPos&&createPortal(
+                                  <div className="us-dd" style={{position:'fixed',top:rowMenuPos.top,left:rowMenuPos.left}} onClick={e=>e.stopPropagation()}>
+                                    <button className="us-ddi" onClick={()=>{setSelectedUser(u);setUserPanelTab('licences');loadUserData(u);setRowMenu(null)}}><ClipboardArrowRight20Regular style={{color:'#2c85dd'}}/> Gérer les licences de produits</button>
+                                    <button className="us-ddi" onClick={()=>{setRowMenu(null);toast('Gestion des groupes — bientôt disponible',{icon:'🔧'})}}><PeopleAddIcon style={{color:'#2c85dd'}}/> Gérer des groupes</button>
+                                    {!u.isOwner&&<button className="us-ddi" onClick={()=>{setRowMenu(null);handleDelete(u)}}><UserRemoveIcon style={{color:'#2c85dd'}}/> Supprimer un utilisateur</button>}
+                                    <button className="us-ddi" onClick={()=>{setSelectedUser(u);setUserPanelTab('compte');loadUserData(u);setEditMode(true);setRowMenu(null)}}><Mention20Regular style={{color:'#2c85dd'}}/> Gérer les détails de connexion...</button>
+                                  </div>,
+                                  document.body
+                                )}
                               </div>
                             </div>
                           </td>
-                          {cols.includes('userPrincipalName')&&<td style={{color:'rgba(255,255,255,0.45)',fontSize:12}}>{u.email||'—'}</td>}
+                          {cols.includes('userPrincipalName')&&<td style={{whiteSpace:'normal',color:'rgba(255,255,255,0.55)',fontSize:13}}>{u.email||'—'}</td>}
                           {cols.includes('role')&&(
                             <td>
                               {(userRolesMap[u.id]||[]).length>0 ? (
@@ -992,14 +1176,8 @@ export default function Utilisateurs() {
                             </td>
                           )}
                           {cols.includes('licenses')&&(
-                            <td>
-                              {(userLicencesMap[u.id]||[]).length===0 ? (
-                                <span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>Sans licence</span>
-                              ) : viewMode==='compact' ? (
-                                <span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>{userLicencesMap[u.id][0]}{userLicencesMap[u.id].length>1?` +${userLicencesMap[u.id].length-1}`:''}</span>
-                              ) : (
-                                <div className="us-lic">{userLicencesMap[u.id].map((l,j)=><div key={j} className="us-li">{l}</div>)}</div>
-                              )}
+                            <td style={{whiteSpace:'normal',color:'rgba(255,255,255,0.55)',fontSize:13,lineHeight:1.5}}>
+                              {(licences||[]).length===0 ? 'Sans licence' : licences.join(' , ')}
                             </td>
                           )}
                           {cols.includes('department')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{u.departement||'—'}</td>}
@@ -1014,24 +1192,11 @@ export default function Utilisateurs() {
                           {cols.includes('firstName')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.55)'}}>{u.prenom||'—'}</td>}
                           {cols.includes('lastName')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.55)'}}>{u.nom||'—'}</td>}
                           {cols.includes('jobTitle')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{u.poste||'—'}</td>}
-                          {cols.includes('city')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>—</td>}
-                          {cols.includes('country')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{u.pays||'Bénin'}</td>}
+                          {cols.includes('city')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{u.ville||'—'}</td>}
+                          {cols.includes('country')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{u.pays||'—'}</td>}
                           {cols.includes('lastSignIn')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{u.derniere_connexion?new Date(u.derniere_connexion).toLocaleDateString('fr-FR'):'—'}</td>}
                           {cols.includes('isGuest')&&<td style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>{u.type_compte==='invite'?'Oui':'—'}</td>}
-                          <td onClick={e=>e.stopPropagation()} style={{position:'relative'}}>
-                            <button className="us-mbtn" title="Réinitialiser un mot de passe" onClick={e=>{e.stopPropagation();bulkResetPassword([u.id])}}><Key size={13}/></button>
-                            <button className="us-mbtn" onClick={e=>{e.stopPropagation();setRowMenu(rowMenu===u.id?null:u.id)}}>···</button>
-                            {rowMenu===u.id&&(
-                              <div className="us-dd">
-                                <button className="us-ddi" onClick={()=>{setSelectedUser(u);setUserPanelTab('licences');loadUserData(u);setRowMenu(null)}}><Wallet size={14}/> Gérer les licences de produits</button>
-                                <button className="us-ddi" onClick={()=>{setRowMenu(null);toast('Gestion des groupes — bientôt disponible',{icon:'🔧'})}}><Users size={14}/> Gérer des groupes</button>
-                                {!u.isOwner&&<button className="us-ddi red" onClick={()=>{setRowMenu(null);handleDelete(u)}}><Trash2 size={14}/> Supprimer un utilisateur</button>}
-                                <button className="us-ddi" onClick={()=>{setSelectedUser(u);setUserPanelTab('compte');loadUserData(u);setEditMode(true);setRowMenu(null)}}><Mail size={14}/> Gérer les détails de connexion...</button>
-                                <div className="us-dds"/>
-                                <button className="us-ddi" onClick={()=>{setRowMenu(null);toggleBlock(u)}}>{blockedUsers.includes(u.id)?<><Check size={14}/> Débloquer la connexion</>:<><Ban size={14}/> Bloquer la connexion</>}</button>
-                              </div>
-                            )}
-                          </td>
+                          <td/>
                         </tr>
                       )
                     })}
@@ -1052,7 +1217,7 @@ export default function Utilisateurs() {
             <div style={{marginBottom:18}}><Contact2 size={48}/></div>
             <div style={{fontSize:20,fontWeight:700,color:'#e6edf3',marginBottom:12}}>Contacts</div>
             <div style={{fontSize:14,color:'rgba(255,255,255,0.45)',lineHeight:1.85,marginBottom:24}}>
-              Les contacts sont des personnes externes à votre organisation que vous aimeriez que tout le monde puisse trouver. Toutes les personnes répertoriées ici sont disponibles dans <strong style={{color:'rgba(255,255,255,0.7)'}}>Outlook</strong> sous Personnes dans <strong style={{color:'rgba(255,255,255,0.7)'}}>Microsoft 365</strong>.
+              Les contacts sont des personnes externes à votre organisation que vous aimeriez que tout le monde puisse trouver. Toutes les personnes répertoriées ici sont disponibles dans <strong style={{color:'rgba(255,255,255,0.7)'}}>ImoConnect</strong> sous Personnes dans <strong style={{color:'rgba(255,255,255,0.7)'}}>Imoloc</strong>.
             </div>
             <div style={{padding:'14px 20px',borderRadius:8,background:'rgba(0,120,212,0.07)',border:'1px solid rgba(0,120,212,0.18)',fontSize:13.5,color:'rgba(255,255,255,0.4)',display:'flex',alignItems:'center',gap:8}}>
               <Construction size={16}/> Fonctionnalité disponible prochainement.
@@ -1282,7 +1447,7 @@ export default function Utilisateurs() {
                           <div className="ud-field-lbl2" style={{marginBottom:0}}>Déconnexion</div>
                           <span style={{fontSize:15,color:'rgba(255,255,255,0.35)',lineHeight:1}}><Info size={14}/></span>
                         </div>
-                        <div className="ud-field-val2">Signer l'utilisateur à partir de toutes les sessions Microsoft 365 actives.</div>
+                        <div className="ud-field-val2">Déconnecter l'utilisateur de toutes les sessions Imoloc actives.</div>
                         <a href="#" className="ud-link">Déconnectez-vous de toutes les sessions</a>
                       </div>
                       <div className="ud-blk">
@@ -1495,7 +1660,7 @@ export default function Utilisateurs() {
                             <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:3}}>{lu.licences?.nom||'Licence'}</div>
                             <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>Attribuée le {lu.date_attribution?new Date(lu.date_attribution).toLocaleDateString('fr-FR'):'—'}</div>
                           </div>
-                          <button className="ud-revoke-btn" onClick={()=>removeLicence(selectedUser, lu.id)}>Retirer</button>
+                          <button className="ud-revoke-btn" disabled={suspendu} title={suspendu?'Abonnement suspendu — reactivez-le pour modifier les licences':''} onClick={()=>!suspendu && removeLicence(selectedUser, lu.id)}>Retirer</button>
                         </div>
                       ))}
                     </div>
@@ -1514,27 +1679,61 @@ export default function Utilisateurs() {
                               <div style={{fontSize:14,fontWeight:600,color:'#e6edf3',marginBottom:3}}>{l.nom}</div>
                               <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>{(l.licences_applications||[]).map(la=>la.applications?.nom).filter(Boolean).join(', ')||'—'}</div>
                             </div>
-                            <button className="ud-link" style={{background:'none',border:'none',cursor:'pointer'}} onClick={()=>assignLicence(selectedUser, l)}>+ Attribuer</button>
+                            <button className="ud-link" style={{background:'none',border:'none',cursor:suspendu?'not-allowed':'pointer',opacity:suspendu?0.4:1}} disabled={suspendu} title={suspendu?'Abonnement suspendu — reactivez-le pour modifier les licences':''} onClick={()=>!suspendu && assignLicence(selectedUser, l)}>+ Attribuer</button>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Applications découlant des licences attribuées */}
-                  <div className="ud-accord">
-                    <div className="ud-accord-head">
-                      <span>Applications ({[...new Set(userLicences.flatMap(lu=>(lu.licences?.licences_applications||[]).map(la=>la.applications?.nom)))].filter(Boolean).length})</span>
-                    </div>
-                    <div className="ud-accord-body">
-                      {(()=>{
-                        const apps = [...new Set(userLicences.flatMap(lu=>(lu.licences?.licences_applications||[]).map(la=>la.applications?.nom)))].filter(Boolean)
-                        return apps.length===0
-                          ? <div className="ud-empty-tab" style={{padding:'14px 0'}}>Aucune application accessible tant qu'aucune licence n'est attribuée.</div>
-                          : apps.map(a=><div key={a} style={{fontSize:13.5,color:'rgba(255,255,255,0.65)',padding:'6px 0'}}>{a}</div>)
-                      })()}
-                    </div>
-                  </div>
+                  {/* Composantes par application ("plans de service"), decoulant
+                      des licences attribuees — individuellement desactivables,
+                      exactement comme decocher Teams sans retirer la licence. */}
+                  {(() => {
+                    const map = new Map()
+                    userLicences.forEach(lu => (lu.licences?.licences_applications||[]).forEach(la => {
+                      if (!la.applications) return
+                      const key = la.applications.code
+                      if (!map.has(key)) map.set(key, { code:key, nom:la.applications.nom, ressources:[] })
+                      const entry = map.get(key)
+                      ;(la.applications.ressources||[]).forEach(r => {
+                        if (!entry.ressources.some(x=>x.id===r.id)) entry.ressources.push(r)
+                      })
+                    }))
+                    const apps = Array.from(map.values())
+                    const flat = apps.flatMap(a=>a.ressources)
+                    return (
+                      <div className="ud-accord">
+                        <div className="ud-accord-head">
+                          <span>Applications ({flat.filter(r=>!userRessourcesDesactivees.includes(r.id)).length})</span>
+                        </div>
+                        <div className="ud-accord-body">
+                          {flat.length===0 ? (
+                            <div className="ud-empty-tab" style={{padding:'14px 0'}}>Aucune application accessible tant qu'aucune licence n'est attribuée.</div>
+                          ) : apps.flatMap(app => app.ressources.map(r => {
+                            const desactivee = userRessourcesDesactivees.includes(r.id)
+                            const bloque = !r.assignable_individuellement
+                            return (
+                              <div key={r.id} className="ud-lic-item">
+                                <div className="ud-lic-cb" style={{opacity:desactivee?0.25:1}}>
+                                  {!desactivee && <svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4.5 12.75l6 6 9-13.5"/></svg>}
+                                </div>
+                                <div style={{flex:1}}>
+                                  <div style={{fontSize:14,fontWeight:600,color:desactivee?'rgba(255,255,255,0.4)':'#e6edf3',marginBottom:3}}>{r.nom}</div>
+                                  <div style={{fontSize:12.5,color:'rgba(255,255,255,0.35)'}}>{app.nom}{bloque?" — Attribuée au niveau de l'organisation, ne peut pas être désactivée individuellement":''}</div>
+                                </div>
+                                {!bloque && (
+                                  <button className="ud-revoke-btn" disabled={suspendu} title={suspendu?'Abonnement suspendu — reactivez-le pour modifier les applications':''} onClick={()=>!suspendu && toggleRessourceUtilisateur(selectedUser, r.id, desactivee)}>
+                                    {desactivee?'Réactiver':'Désactiver'}
+                                  </button>
+                                )}
+                              </div>
+                            )
+                          }))}
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </>
               )}
 
@@ -1688,6 +1887,102 @@ export default function Utilisateurs() {
         </div>
       )}
 
+      {/* ══ PANEL RÉINITIALISER LE MOT DE PASSE (image 55/56) ══ */}
+      {resetPwUser&&(
+        <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',justifyContent:'flex-end',pointerEvents:'none'}}>
+          <div className="up-panel" style={{width:420,pointerEvents:'auto'}}>
+            {resetPwStep==='form'?(
+              <>
+                <div className="up-head" style={{alignItems:'flex-start',flexDirection:'column',gap:4}}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%'}}>
+                    <span className="up-title">Réinitialiser le mot de passe</span>
+                    <button className="up-cls" onClick={()=>setResetPwUser(null)}>
+                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                  <span style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>{resetPwUser.email}</span>
+                </div>
+                <div className="up-body">
+                  <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',marginBottom:16}}>
+                    <input type="checkbox" checked={resetPwAuto} onChange={e=>setResetPwAuto(e.target.checked)} style={{width:15,height:15}}/>
+                    <span className="up-lbl">Créer automatiquement un mot de passe</span>
+                  </label>
+                  {!resetPwAuto&&(
+                    <>
+                      <div style={{fontSize:12.5,color:'rgba(255,255,255,0.45)',lineHeight:1.6,marginBottom:14}}>
+                        Les mots de passe doivent comprendre entre 8 et 256 caractères et utiliser une combinaison d'au moins trois des éléments suivants : capitales, minuscules, chiffres et symboles.
+                      </div>
+                      <label className="up-lbl" style={{display:'block',marginBottom:6,fontSize:13}}>Mot de passe <span style={{color:'#ff8a8a'}}>*</span></label>
+                      <div style={{position:'relative',marginBottom:16}}>
+                        <input
+                          type={resetPwShow?'text':'password'}
+                          value={resetPwValue}
+                          onChange={e=>setResetPwValue(e.target.value)}
+                          style={{width:'100%',boxSizing:'border-box',padding:'9px 40px 9px 12px',background:'transparent',border:'1px solid rgba(255,255,255,0.25)',borderRadius:4,color:'#e6edf3',fontSize:14,fontFamily:'inherit'}}
+                        />
+                        <button onClick={()=>setResetPwShow(v=>!v)} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.45)',display:'flex'}}>
+                          <Eye size={16}/>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  <label style={{display:'flex',alignItems:'flex-start',gap:8,cursor:'pointer'}}>
+                    <input type="checkbox" checked={resetPwNotify} onChange={e=>setResetPwNotify(e.target.checked)} style={{width:15,height:15,marginTop:1}}/>
+                    <span className="up-lbl">Demander à cet utilisateur de modifier son mot de passe lors de sa première connexion</span>
+                  </label>
+                </div>
+                <div className="up-foot">
+                  <button className="up-fbtn up-fbtn-b" disabled={resetPwSaving||(!resetPwAuto&&resetPwValue.length<8)} style={{opacity:(resetPwSaving||(!resetPwAuto&&resetPwValue.length<8))?0.5:1}} onClick={submitResetPassword}>
+                    {resetPwSaving?'Réinitialisation...':'Réinitialiser le mot de passe'}
+                  </button>
+                </div>
+              </>
+            ):(
+              <>
+                <div className="up-head">
+                  <span className="up-title" style={{display:'flex',alignItems:'center',gap:8}}>
+                    <span style={{width:20,height:20,borderRadius:'50%',background:'#00c896',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <Check size={13} color="#0b1f18"/>
+                    </span>
+                    Le mot de passe a été réinitialisé
+                  </span>
+                  <button className="up-cls" onClick={()=>setResetPwUser(null)}>
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+                <div className="up-body">
+                  <button onClick={()=>window.print()} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',color:'#2c85dd',fontSize:13,cursor:'pointer',fontFamily:'inherit',padding:0,marginBottom:18}}>
+                    <FileText size={14}/> Imprimer
+                  </button>
+                  <div style={{fontSize:13.5,color:'rgba(255,255,255,0.65)',marginBottom:18}}>Vous avez réinitialisé le mot de passe de cet utilisateur.</div>
+                  <table style={{width:'100%',borderCollapse:'collapse'}}>
+                    <thead>
+                      <tr>
+                        <th style={{textAlign:'left',fontSize:12,fontWeight:400,color:'rgba(255,255,255,0.45)',padding:'0 0 8px',borderBottom:'1px solid #323232'}}>Utilisateur</th>
+                        <th style={{textAlign:'left',fontSize:12,fontWeight:400,color:'rgba(255,255,255,0.45)',padding:'0 0 8px',borderBottom:'1px solid #323232'}}>
+                          <button onClick={()=>setResetPwResultShow(v=>!v)} style={{background:'none',border:'none',color:'#2c85dd',cursor:'pointer',fontFamily:'inherit',fontSize:12,padding:0}}>
+                            Mot de passe ({resetPwResultShow?'masquer':'afficher'})
+                          </button>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={{padding:'10px 0',fontSize:13,color:'rgba(255,255,255,0.75)'}}>{resetPwResult?.email}</td>
+                        <td style={{padding:'10px 0',fontSize:13,color:'rgba(255,255,255,0.75)',fontFamily:'monospace'}}>{resetPwResultShow?resetPwResult?.password:'••••••••'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="up-foot">
+                  <button className="up-fbtn up-fbtn-b" style={{flex:'none',padding:'9px 24px'}} onClick={()=>setResetPwUser(null)}>Fermer</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ══ PANEL CHOIX COLONNES ══ */}
       {showColsPanel&&(
         <div className="up-ov" onClick={e=>e.target===e.currentTarget&&setShowColsPanel(false)}>
@@ -1771,7 +2066,7 @@ export default function Utilisateurs() {
       )}
     <>
       {/* ══ MODAL AJOUTER UN UTILISATEUR ══ */}
-      {showAddUserModal&&<AddUserModal onClose={()=>{ setShowAddUserModal(false); fetchData() }} agenceName={agence?.nom||'Mon organisation'}/>}
+      {showAddUserModal&&<AddUserModal onClose={()=>{ setShowAddUserModal(false); fetchData() }} agenceName={agence?.nom||'Mon organisation'} agenceId={agence?.id}/>}
 
             {/* ══ PANEL AJOUTER PLUSIEURS UTILISATEURS ══ */}
       {showBulkPanel&&(

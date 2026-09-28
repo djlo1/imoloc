@@ -2,6 +2,8 @@ import { useState, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
+import RequireLicencedApp from './components/RequireLicencedApp'
+import RequireResource from './components/RequireResource'
 
 // Chaque page n'est chargee que lorsqu on y navigue.
 const Overview = lazy(() => import('./pages/Overview'))
@@ -45,7 +47,7 @@ export default function DashboardAgence() {
         html,body,#root{width:100%;min-height:100vh}
 
         /* ── Layout principal ── */
-        .ac-root{display:flex;flex-direction:column;width:100vw;min-height:100vh;background:#0d1117;font-family:'Inter',sans-serif;color:#e6edf3}
+        .ac-root{display:flex;flex-direction:column;width:100vw;min-height:100vh;background:#0d1117;font-family:'Segoe UI','Inter',sans-serif;color:#e6edf3}
 
         /* Header pleine largeur EN HAUT */
         .ac-header{width:100%;flex-shrink:0}
@@ -91,38 +93,38 @@ export default function DashboardAgence() {
               <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route index element={<Overview />} />
-                <Route path="loci" element={<Loci />} />
-                <Route path="loci/chat" element={<Loci />} />
-                <Route path="loci/outils" element={<Loci />} />
-                <Route path="biens" element={<Biens />} />
-                <Route path="biens/*" element={<Biens />} />
-                <Route path="locataires" element={<Locataires />} />
-                <Route path="locataires/*" element={<Locataires />} />
-                <Route path="paiements" element={<Paiements />} />
-                <Route path="paiements/factures-diverses" element={<Facturation />} />
-                <Route path="paiements/releves-proprietaires" element={<Facturation />} />
-                <Route path="paiements/depenses-charges" element={<Facturation />} />
-                <Route path="baux" element={<Baux />} />
-                <Route path="utilisateurs" element={<Utilisateurs />} />
-                <Route path="utilisateurs/contacts" element={<Contacts />} />
+                <Route path="loci" element={<RequireLicencedApp app="loci_ai"><Loci /></RequireLicencedApp>} />
+                <Route path="loci/chat" element={<RequireLicencedApp app="loci_ai"><Loci /></RequireLicencedApp>} />
+                <Route path="loci/outils" element={<RequireLicencedApp app="loci_ai"><Loci /></RequireLicencedApp>} />
+                <Route path="biens" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="biens"><Biens /></RequireResource></RequireLicencedApp>} />
+                <Route path="biens/*" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="biens"><Biens /></RequireResource></RequireLicencedApp>} />
+                <Route path="locataires" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="locataires"><Locataires /></RequireResource></RequireLicencedApp>} />
+                <Route path="locataires/*" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="locataires"><Locataires /></RequireResource></RequireLicencedApp>} />
+                <Route path="paiements" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="paiements"><Paiements /></RequireResource></RequireLicencedApp>} />
+                <Route path="paiements/factures-diverses" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="factures_releves"><Facturation /></RequireResource></RequireLicencedApp>} />
+                <Route path="paiements/releves-proprietaires" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="factures_releves"><Facturation /></RequireResource></RequireLicencedApp>} />
+                <Route path="paiements/depenses-charges" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="factures_releves"><Facturation /></RequireResource></RequireLicencedApp>} />
+                <Route path="baux" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="baux"><Baux /></RequireResource></RequireLicencedApp>} />
+                <Route path="utilisateurs" element={<RequireResource code="utilisateurs"><Utilisateurs /></RequireResource>} />
+                <Route path="utilisateurs/contacts" element={<RequireResource code="utilisateurs"><Contacts /></RequireResource>} />
                 <Route path="nouveautes" element={<Nouveautes />} />
                 <Route path="modeles" element={<ModelesDocuments />} />
-                <Route path="imoloc/*" element={<ImolocCenter />} />
-                <Route path="utilisateurs/contacts" element={<Utilisateurs />} />
-                <Route path="utilisateurs/invites" element={<Utilisateurs />} />
-                <Route path="utilisateurs/supprimes" element={<Utilisateurs />} />
-                <Route path="utilisateurs/*" element={<Utilisateurs />} />
+                <Route path="imoloc/*" element={<RequireLicencedApp app="imoloc_manager"><ImolocCenter /></RequireLicencedApp>} />
+                <Route path="utilisateurs/contacts" element={<RequireResource code="utilisateurs"><Utilisateurs /></RequireResource>} />
+                <Route path="utilisateurs/invites" element={<RequireResource code="invitations"><Utilisateurs /></RequireResource>} />
+                <Route path="utilisateurs/supprimes" element={<RequireResource code="utilisateurs"><Utilisateurs /></RequireResource>} />
+                <Route path="utilisateurs/*" element={<RequireResource code="utilisateurs"><Utilisateurs /></RequireResource>} />
                 <Route path="organisation" element={<Organisation />} />
-                <Route path="abonnement" element={<Abonnement />} />
-                <Route path="abonnement/modes" element={<Abonnement />} />
-                <Route path="abonnement/plan" element={<AbonnementPlan />} />
-                <Route path="securite" element={<Securite />} />
+                <Route path="abonnement" element={<RequireResource code="facturation_abonnement"><Abonnement /></RequireResource>} />
+                <Route path="abonnement/modes" element={<RequireResource code="facturation_abonnement"><Abonnement /></RequireResource>} />
+                <Route path="abonnement/plan" element={<RequireResource code="facturation_abonnement"><AbonnementPlan /></RequireResource>} />
+                <Route path="securite" element={<RequireResource code="securite"><Securite /></RequireResource>} />
                 <Route path="parametres" element={<Parametres />} />
                 <Route path="parametres/*" element={<Parametres />} />
-                <Route path="rapports" element={<Rapports />} />
-                <Route path="tickets" element={<Tickets />} />
-                <Route path="tickets/*" element={<Tickets />} />
-                <Route path="integrations" element={<Integrations />} />
+                <Route path="rapports" element={<RequireLicencedApp app="imoloc_insights"><RequireResource code="rapports"><Rapports /></RequireResource></RequireLicencedApp>} />
+                <Route path="tickets" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="tickets_sinistres"><Tickets /></RequireResource></RequireLicencedApp>} />
+                <Route path="tickets/*" element={<RequireLicencedApp app="imoloc_manager"><RequireResource code="tickets_sinistres"><Tickets /></RequireResource></RequireLicencedApp>} />
+                <Route path="integrations" element={<RequireLicencedApp app="imoloc_hub"><RequireResource code="integrations"><Integrations /></RequireResource></RequireLicencedApp>} />
                 <Route path="*" element={<Navigate to="/agence" replace />} />
               </Routes>
               </Suspense>
