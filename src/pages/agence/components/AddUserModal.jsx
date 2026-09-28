@@ -535,13 +535,19 @@ export default function AddUserModal({ onClose, agenceName='Mon organisation', a
                         {suspendu && <div style={{fontSize:12.5,color:'#ef4444',marginBottom:10}}>Abonnement suspendu — attribution de licences bloquée jusqu'à régularisation.</div>}
                         {licencesData.map(lic => {
                           const c = licenceCounts[lic.id]
-                          const epuisee = suspendu || (c?.total != null && c.disponible <= 0)
+                          // Recalcul en direct : si cette licence est deja
+                          // cochee pour le nouvel utilisateur, elle en
+                          // consommera une une fois cree — le "disponible"
+                          // affiche l'anticipe, sans attendre la sauvegarde.
+                          const dejaCoche = form.licences.includes(lic.id)
+                          const disponibleAffiche = c?.total != null ? Math.max(0, c.disponible - (dejaCoche ? 1 : 0)) : null
+                          const epuisee = !dejaCoche && (suspendu || (disponibleAffiche != null && disponibleAffiche <= 0))
                           return (
                             <div key={lic.id} className={`au-licence-item ${epuisee?'au-licence-disabled':''}`} onClick={()=>{ if (!epuisee) toggleLicence(lic.id) }}>
-                              <div className={`au-checkbox ${form.licences.includes(lic.id)?'checked':''}`}>{form.licences.includes(lic.id)&&<Check size={10} color="#fff"/>}</div>
+                              <div className={`au-checkbox ${dejaCoche?'checked':''}`}>{dejaCoche&&<Check size={10} color="#fff"/>}</div>
                               <div>
                                 <div className="au-licence-name">{lic.nom}</div>
-                                <div className="au-licence-sub">{c?.total != null ? `${c.disponible} licence(s) sur ${c.total} disponible(s)` : 'Nombre illimité de licences disponibles'}</div>
+                                <div className="au-licence-sub">{disponibleAffiche != null ? `${disponibleAffiche} licence(s) sur ${c.total} disponible(s)` : 'Nombre illimité de licences disponibles'}</div>
                               </div>
                             </div>
                           )
